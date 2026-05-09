@@ -52,3 +52,4 @@ drizzle/meta/
 # playwright test outputs
 playwright-report/
 test-results/
+.env*.local
