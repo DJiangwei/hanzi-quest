@@ -1,0 +1,12 @@
+{
+  "Common": {
+    "appName": "Hanzi Quest",
+    "loading": "Loading…",
+    "error": "Something went wrong"
+  },
+  "Home": {
+    "title": "Hanzi Quest",
+    "subtitle": "Make your school's weekly characters playable.",
+    "phase": "Phase 0 · Bootstrapped"
+  }
+}

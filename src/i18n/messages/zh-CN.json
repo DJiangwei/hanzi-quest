@@ -1,0 +1,12 @@
+{
+  "Common": {
+    "appName": "汉字探险",
+    "loading": "加载中…",
+    "error": "出错了"
+  },
+  "Home": {
+    "title": "汉字探险",
+    "subtitle": "把学校每周的生字变成好玩的游戏。",
+    "phase": "Phase 0 · 启动完成"
+  }
+}
