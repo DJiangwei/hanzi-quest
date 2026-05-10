@@ -90,16 +90,22 @@ export function SceneRunner({
 
   if (done || !currentLevel) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
-        <h1 className="text-5xl font-bold">🎉</h1>
-        <h2 className="text-3xl font-bold">Level complete!</h2>
-        <p className="text-lg text-zinc-600">
-          {weekLabel} · +{coinsThisSession} coins
+      <main className="flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
+        <h1 className="text-6xl">🎉</h1>
+        <h2 className="font-hanzi text-4xl font-bold text-[var(--color-ocean-900)]">
+          Island cleared!
+        </h2>
+        <p className="text-lg text-[var(--color-sand-900)]">
+          <span className="font-hanzi">{weekLabel}</span>
+          <span className="mx-2 text-[var(--color-sand-700)]">·</span>
+          <span className="font-semibold text-[var(--color-treasure-700)]">
+            🪙 +{coinsThisSession}
+          </span>
         </p>
         <button
           type="button"
           onClick={() => router.push(`/play/${childId}`)}
-          className="rounded-full bg-zinc-900 px-8 py-3 text-base font-bold text-white hover:bg-zinc-700"
+          className="rounded-full bg-[var(--color-ocean-500)] px-8 py-3 text-base font-bold text-white shadow-lg transition-transform hover:scale-[1.03] hover:bg-[var(--color-ocean-700)] active:scale-95"
         >
           Back to map
         </button>
@@ -237,10 +243,15 @@ export function SceneRunner({
 
   return (
     <main className="flex min-h-[80vh] flex-1 flex-col">
-      <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-3 text-sm text-zinc-600">
-        <span>{weekLabel}</span>
-        <span>
-          {index + 1} / {totalLevels} · 🪙 {coinsThisSession}
+      <div className="flex items-center justify-between border-b border-[var(--color-sand-200)] bg-white/50 px-6 py-3 text-sm text-[var(--color-sand-900)] backdrop-blur">
+        <span className="font-hanzi font-semibold">{weekLabel}</span>
+        <span className="flex items-center gap-3">
+          <span className="rounded-full bg-[var(--color-ocean-100)] px-2.5 py-0.5 text-xs font-bold text-[var(--color-ocean-700)]">
+            {index + 1} / {totalLevels}
+          </span>
+          <span className="rounded-full bg-[var(--color-treasure-400)] px-3 py-0.5 text-sm font-bold text-[var(--color-treasure-700)]">
+            🪙 {coinsThisSession}
+          </span>
         </span>
       </div>
       {body}
@@ -250,7 +261,7 @@ export function SceneRunner({
 
 function MissingData() {
   return (
-    <main className="flex flex-1 items-center justify-center px-6 text-center text-red-600">
+    <main className="flex flex-1 items-center justify-center px-6 text-center text-[var(--color-bad)]">
       Missing data for this scene — re-publish the week from /parent.
     </main>
   );

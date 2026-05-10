@@ -34,7 +34,7 @@ export function FlashcardScene({ data, onComplete }: Props) {
       <button
         type="button"
         onClick={() => speak(data.hanzi)}
-        className="select-none text-[14rem] leading-none transition-transform active:scale-95"
+        className="font-hanzi select-none text-[14rem] leading-none text-[var(--color-ocean-900)] transition-transform active:scale-95"
         aria-label={`Play audio for ${data.hanzi}`}
       >
         {data.hanzi}
@@ -45,7 +45,7 @@ export function FlashcardScene({ data, onComplete }: Props) {
           <button
             type="button"
             onClick={() => speak(data.hanzi)}
-            className="text-3xl font-medium tracking-wider text-zinc-700"
+            className="text-3xl font-medium tracking-wider text-[var(--color-ocean-700)]"
           >
             {data.pinyin.join(' ')}
           </button>
@@ -53,17 +53,17 @@ export function FlashcardScene({ data, onComplete }: Props) {
           <button
             type="button"
             onClick={() => setPinyinShown(true)}
-            className="rounded-full border-2 border-dashed border-zinc-400 px-6 py-2 text-zinc-500 hover:border-zinc-600 hover:text-zinc-700"
+            className="rounded-full border-2 border-dashed border-[var(--color-ocean-300)] px-6 py-2 text-[var(--color-ocean-700)] hover:border-[var(--color-ocean-500)] hover:bg-[var(--color-ocean-100)]"
           >
             Tap to show pinyin
           </button>
         )}
 
         {meaningShown ? (
-          <p className="text-xl text-zinc-600">
+          <p className="text-xl text-[var(--color-sand-900)]">
             {data.meaningEn ?? '—'}
             {data.meaningZh ? (
-              <span className="ml-2 text-base text-zinc-400">
+              <span className="ml-2 text-base text-[var(--color-sand-700)]">
                 · {data.meaningZh}
               </span>
             ) : null}
@@ -72,7 +72,7 @@ export function FlashcardScene({ data, onComplete }: Props) {
           <button
             type="button"
             onClick={() => setMeaningShown(true)}
-            className="text-sm text-zinc-400 hover:text-zinc-600"
+            className="text-sm text-[var(--color-sand-700)] hover:text-[var(--color-sand-900)]"
           >
             Tap to show meaning
           </button>
@@ -82,7 +82,8 @@ export function FlashcardScene({ data, onComplete }: Props) {
       <button
         type="button"
         onClick={onComplete}
-        className="rounded-full bg-emerald-500 px-10 py-3 text-lg font-bold text-white shadow-lg hover:bg-emerald-600 active:scale-95"
+        className="rounded-full bg-[var(--color-good)] px-10 py-3 text-lg font-bold text-white shadow-lg transition-transform hover:scale-[1.03] active:scale-95"
+        style={{ background: 'var(--color-good)' }}
       >
         Got it →
       </button>
