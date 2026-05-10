@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 汉字探险 · Hanzi Quest
+
+A Mario-style web game for kids reviewing the Chinese characters from their weekly school class. See [`PLAN.md`](./PLAN.md) for the full design spec.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+vercel link        # link to the hanzi-quest Vercel project
+vercel env pull .env.local   # pulls Clerk + Neon credentials
+pnpm db:migrate    # apply Drizzle migrations to the linked Neon dev branch
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | What it does |
+|---|---|
+| `pnpm dev` | Start the Next.js dev server (Turbopack) |
+| `pnpm typecheck` | `tsc --noEmit` — must stay clean |
+| `pnpm lint` | ESLint over the whole tree |
+| `pnpm test` | Run Vitest unit suite |
+| `pnpm test:e2e` | Run Playwright E2E suite |
+| `pnpm db:generate` | Re-derive a Drizzle migration from `src/db/schema/*` |
+| `pnpm db:migrate` | Apply pending migrations to `DATABASE_URL` |
+| `pnpm db:studio` | Open drizzle-studio for the linked DB |
 
-## Learn More
+## Clerk webhook setup (one-time)
 
-To learn more about Next.js, take a look at the following resources:
+Clerk fires `user.created` / `user.updated` / `user.deleted` events to keep our `users` table in sync. The Vercel Marketplace integration provisions Clerk's auth keys but **not** the webhook signing secret — you have to wire that yourself.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Add a webhook endpoint in the Clerk dashboard** (Configure → Webhooks → Add Endpoint):
+   - URL: `https://hanzi-quest-eight.vercel.app/api/webhooks/clerk`
+   - Events: `user.created`, `user.updated`, `user.deleted`
+2. **Copy the signing secret** (starts with `whsec_`).
+3. **Add it to every Vercel environment**:
+   ```bash
+   vercel env add CLERK_WEBHOOK_SIGNING_SECRET production
+   vercel env add CLERK_WEBHOOK_SIGNING_SECRET preview
+   vercel env add CLERK_WEBHOOK_SIGNING_SECRET development
+   ```
+4. **Pull it locally** for the dev server: `vercel env pull .env.local`.
+5. **Verify** by signing up a fresh test user — there should be a row in `users` and a corresponding `school-custom` row in `curriculum_packs`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For local end-to-end testing without a public URL, use the Clerk CLI's `clerk webhooks listen` (forwards events to `http://localhost:3000/api/webhooks/clerk`).
