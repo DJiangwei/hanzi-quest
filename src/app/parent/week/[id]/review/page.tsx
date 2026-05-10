@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CharacterReviewCard } from '@/components/parent/CharacterReviewCard';
+import { PublishWeekButton } from '@/components/parent/PublishWeekButton';
 import { assertParent } from '@/lib/auth/guards';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import { getWeekOwnedBy } from '@/lib/db/weeks';
@@ -30,6 +31,27 @@ export default async function ReviewWeekPage({ params }: PageProps) {
           ← Back
         </Link>
       </header>
+
+      {chars.length > 0 &&
+      (week.status === 'awaiting_review' || week.status === 'published') ? (
+        <section className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <div>
+            <p className="text-sm font-medium text-emerald-900">
+              {week.status === 'published'
+                ? 'Already published — child can play this on the map.'
+                : 'Looks good? Publish to make it playable.'}
+            </p>
+            <p className="text-xs text-emerald-700">
+              Publishing compiles {chars.length} flashcard scenes into{' '}
+              <code>week_levels</code>.
+            </p>
+          </div>
+          <PublishWeekButton
+            weekId={week.id}
+            alreadyPublished={week.status === 'published'}
+          />
+        </section>
+      ) : null}
 
       {chars.length === 0 ? (
         <p className="rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">

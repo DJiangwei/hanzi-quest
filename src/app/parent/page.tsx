@@ -83,12 +83,20 @@ export default async function ParentDashboardPage() {
                     </span>
                   ) : null}
                 </span>
-                <Link
-                  href={`/parent/children/${c.id}`}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  Edit
-                </Link>
+                <span className="flex items-center gap-3 text-sm">
+                  <Link
+                    href={`/play/${c.id}`}
+                    className="rounded bg-amber-200 px-3 py-1 font-medium text-amber-900 hover:bg-amber-300"
+                  >
+                    Play →
+                  </Link>
+                  <Link
+                    href={`/parent/children/${c.id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Edit
+                  </Link>
+                </span>
               </li>
             ))}
           </ul>

@@ -22,6 +22,9 @@ import {
   setWeekStatus,
 } from '@/lib/db/weeks';
 import { extractHanzi } from '@/lib/hanzi/extract';
+import { compileWeekIntoLevels } from '@/lib/scenes/compile-week';
+import { eq, sql } from 'drizzle-orm';
+import { weeks } from '@/db/schema';
 
 export type CreateWeekState = { error?: string; weekId?: string };
 export type CreateStageState = { error?: string; createdCount?: number };
@@ -202,6 +205,39 @@ export async function saveCharacterEditsAction(
 export async function listChildWeeks(childId: string) {
   const { child } = await requireChild(childId);
   return listWeeksByChild(child.id);
+}
+
+/**
+ * Mark an awaiting_review week as published and compile its week_levels
+ * sequence. Idempotent — re-publishing replaces the existing levels.
+ */
+export async function publishWeekAction(
+  weekId: string,
+): Promise<{ error?: string }> {
+  const parent = await assertParent();
+  const week = await getWeekOwnedBy(weekId, parent.id);
+  if (!week) return { error: 'Week not found' };
+  if (week.status !== 'awaiting_review' && week.status !== 'published') {
+    return {
+      error: `Week is in '${week.status}'; only awaiting_review weeks can be published.`,
+    };
+  }
+
+  try {
+    await compileWeekIntoLevels(weekId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+
+  await db
+    .update(weeks)
+    .set({ status: 'published', publishedAt: sql`now()`, updatedAt: sql`now()` })
+    .where(eq(weeks.id, weekId));
+
+  revalidatePath('/parent');
+  revalidatePath(`/parent/week/${weekId}/review`);
+  revalidatePath(`/play/${week.childId}`);
+  return {};
 }
 
 const CreateStageSchema = z.object({
