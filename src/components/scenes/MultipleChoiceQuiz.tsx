@@ -32,7 +32,9 @@ export function MultipleChoiceQuiz({
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-6">
       {prompt ? (
-        <p className="text-center text-base text-zinc-600">{prompt}</p>
+        <p className="font-hanzi text-center text-lg text-[var(--color-ocean-700)]">
+          {prompt}
+        </p>
       ) : null}
       <div className="flex items-center justify-center">{stimulus}</div>
       <div className="grid w-full max-w-md grid-cols-2 gap-3">
@@ -54,12 +56,12 @@ export function MultipleChoiceQuiz({
               disabled={revealed !== null}
               onClick={() => handlePick(c.key, c.isCorrect)}
               className={[
-                'rounded-2xl border-2 px-4 py-6 text-3xl font-bold transition-transform active:scale-95',
-                state === 'idle' && 'border-zinc-200 bg-white hover:border-zinc-400',
-                state === 'correct' && 'border-emerald-500 bg-emerald-100 text-emerald-900',
-                state === 'wrong' && 'border-red-500 bg-red-100 text-red-900',
-                state === 'reveal-correct' && 'border-emerald-300 bg-emerald-50',
-                state === 'dim' && 'border-zinc-100 bg-zinc-50 text-zinc-400',
+                'rounded-2xl border-2 px-4 py-6 text-3xl font-bold shadow-sm transition-transform active:scale-95',
+                state === 'idle' && 'border-[var(--color-sand-200)] bg-white text-[var(--color-ocean-900)] hover:border-[var(--color-ocean-300)] hover:bg-[var(--color-ocean-100)]',
+                state === 'correct' && 'border-[var(--color-good)] bg-[var(--color-good-bg)] text-[var(--color-ocean-900)]',
+                state === 'wrong' && 'border-[var(--color-bad)] bg-[var(--color-bad-bg)] text-[var(--color-ocean-900)]',
+                state === 'reveal-correct' && 'border-[var(--color-good)] bg-[var(--color-good-bg)]/60',
+                state === 'dim' && 'border-[var(--color-sand-200)] bg-[var(--color-sand-100)] text-[var(--color-sand-700)]',
               ]
                 .filter(Boolean)
                 .join(' ')}

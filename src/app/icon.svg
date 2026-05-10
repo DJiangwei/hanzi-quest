@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="56" fill="#2a9a93"/>
+  <!-- compass star -->
+  <g transform="translate(128 128)" fill="#f5c537">
+    <path d="M0 -74 L18 -18 L74 0 L18 18 L0 74 L-18 18 L-74 0 L-18 -18 Z"/>
+    <circle r="8" fill="#fdf8ec"/>
+  </g>
+  <!-- subtle wave -->
+  <path d="M0 200 Q 64 184 128 200 T 256 200 L 256 256 L 0 256 Z" fill="#fdf8ec" opacity="0.18"/>
+</svg>
