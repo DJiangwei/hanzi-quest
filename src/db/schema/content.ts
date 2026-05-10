@@ -45,6 +45,7 @@ export const characters = pgTable(
     strokeCount: smallint('stroke_count'),
     frequencyRank: integer('frequency_rank'),
     imageUrl: text('image_url'),
+    imageHook: text('image_hook'),
     audioUrl: text('audio_url'),
     source: characterSource('source').notNull().default('ai_generated'),
     createdByUserId: text('created_by_user_id').references(() => users.id, {

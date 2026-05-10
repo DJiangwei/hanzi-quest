@@ -1,10 +1,9 @@
 import { notFound } from 'next/navigation';
-import { SceneRunner } from '@/components/scenes/SceneRunner';
+import { SceneRunner, type SceneType } from '@/components/scenes/SceneRunner';
 import { requireChild } from '@/lib/auth/guards';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import { listLevelsForWeek } from '@/lib/db/play';
 import { getWeekOwnedBy } from '@/lib/db/weeks';
-import type { FlashcardConfig } from '@/lib/scenes/configs';
 
 interface PageProps {
   params: Promise<{ childId: string; weekId: string }>;
@@ -24,28 +23,23 @@ export default async function PlayLevelPage({ params }: PageProps) {
   ]);
   if (levels.length === 0) notFound();
 
-  const charactersById = Object.fromEntries(
-    characters.map((c) => [
-      c.id,
-      {
-        characterId: c.id,
-        hanzi: c.hanzi,
-        pinyinArray: c.pinyinArray ?? [],
-        meaningEn: c.meaningEn ?? null,
-        meaningZh: c.meaningZh ?? null,
-      },
-    ]),
-  );
+  const pool = characters.map((c) => ({
+    characterId: c.id,
+    hanzi: c.hanzi,
+    pinyinArray: c.pinyinArray ?? [],
+    meaningEn: c.meaningEn ?? null,
+    meaningZh: c.meaningZh ?? null,
+    imageHook: c.imageHook ?? null,
+    firstWord: c.words[0]?.text ?? null,
+  }));
+  const charactersById = Object.fromEntries(pool.map((c) => [c.characterId, c]));
 
-  const compiledLevels = levels.map((l) => {
-    const cfg = l.sceneConfig as FlashcardConfig;
-    return {
-      id: l.id,
-      position: l.position,
-      sceneType: l.sceneType,
-      characterId: cfg.characterId,
-    };
-  });
+  const compiledLevels = levels.map((l) => ({
+    id: l.id,
+    position: l.position,
+    sceneType: l.sceneType as SceneType,
+    config: l.sceneConfig as Record<string, unknown>,
+  }));
 
   return (
     <SceneRunner
@@ -54,6 +48,7 @@ export default async function PlayLevelPage({ params }: PageProps) {
       weekLabel={week.label}
       levels={compiledLevels}
       charactersById={charactersById}
+      pool={pool}
     />
   );
 }
