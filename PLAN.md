@@ -500,12 +500,12 @@ These are the files that will be touched first or are foundational. Most don't e
 Once Phase 6 ships, this is the smoke test that proves the platform works:
 
 1. Sign up as new parent → confirm Clerk session, `users` + `child_profiles` (1 row) + `school-custom` curriculum_pack created.
-2. Add daughter (display name `Anna`, age 6).
+2. Add daughter (display name `Yinuo`, age 6).
 3. `/parent/week/new` → enter 10 chars (e.g., `大 小 山 水 火 土 木 金 田 月`).
 4. Wait ≤ 60s. Land on `/parent/week/[id]/review`. Confirm all 10 chars have pinyin/3 words/1 sentence.
 5. Edit one word manually. Click `regenerate` on another character. Confirm both edits persist.
 6. Click "Publish". Confirm `week_levels` populated with 13 scene rows (10 flashcards + 1 audio_pick + 1 word_match + 1 boss).
-7. Switch to child profile (Anna). Land on `/map`. Confirm Week 1 node animated/available.
+7. Switch to child profile (Yinuo). Land on `/map`. Confirm Week 1 node animated/available.
 8. Tap node → run through 5 base scenes. Verify coin balance increments. Verify pinyin hidden by default + reveals on tap.
 9. Reach tracing scene. Confirm `hanzi-writer` shows correct stroke order for 大. Trace it with mouse/touch — accept/grade.
 10. Reach boss. Make 2 mistakes intentionally. Use revive item from inventory. Continue. Clear boss.
