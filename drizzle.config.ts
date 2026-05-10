@@ -1,5 +1,9 @@
 import { defineConfig } from 'drizzle-kit';
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+
+// Vercel CLI writes env vars to .env.local; dotenv/config only loads .env.
+loadEnv({ path: '.env.local', quiet: true });
+loadEnv({ quiet: true });
 
 const url = process.env.DATABASE_URL;
 if (!url) {

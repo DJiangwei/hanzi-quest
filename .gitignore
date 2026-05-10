@@ -46,9 +46,6 @@ next-env.d.ts
 .claude/conversations/
 .claude/cache/
 
-# drizzle migration metadata
-drizzle/meta/
-
 # playwright test outputs
 playwright-report/
 test-results/
