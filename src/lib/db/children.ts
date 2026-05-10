@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { childProfiles } from '@/db/schema';
 
@@ -53,4 +53,44 @@ export async function getChildOwnedBy(
     )
     .limit(1);
   return row;
+}
+
+export interface UpdateChildInput {
+  displayName?: string;
+  birthYear?: number | null;
+  currentCurriculumPackId?: string | null;
+}
+
+export async function updateChildOwnedBy(
+  childId: string,
+  parentUserId: string,
+  input: UpdateChildInput,
+): Promise<ChildProfileRow | undefined> {
+  const [row] = await db
+    .update(childProfiles)
+    .set({ ...input, updatedAt: sql`now()` })
+    .where(
+      and(
+        eq(childProfiles.id, childId),
+        eq(childProfiles.parentUserId, parentUserId),
+      ),
+    )
+    .returning();
+  return row;
+}
+
+export async function deleteChildOwnedBy(
+  childId: string,
+  parentUserId: string,
+): Promise<boolean> {
+  const rows = await db
+    .delete(childProfiles)
+    .where(
+      and(
+        eq(childProfiles.id, childId),
+        eq(childProfiles.parentUserId, parentUserId),
+      ),
+    )
+    .returning({ id: childProfiles.id });
+  return rows.length > 0;
 }
