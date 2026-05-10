@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { GenerateWeekButton } from '@/components/parent/GenerateWeekButton';
 import { assertParent } from '@/lib/auth/guards';
 import { listChildrenByParent } from '@/lib/db/children';
 import { listWeeksByChild } from '@/lib/db/weeks';
@@ -28,12 +29,20 @@ export default async function ParentDashboardPage() {
           </p>
         </div>
         {children.length > 0 ? (
-          <Link
-            href="/parent/week/new"
-            className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            + New week
-          </Link>
+          <div className="flex flex-col items-end gap-2">
+            <Link
+              href="/parent/stage/new"
+              className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+            >
+              + New stage (bulk)
+            </Link>
+            <Link
+              href="/parent/week/new"
+              className="text-xs text-zinc-600 hover:underline"
+            >
+              or single week →
+            </Link>
+          </div>
         ) : null}
       </section>
 
@@ -110,12 +119,18 @@ export default async function ParentDashboardPage() {
                             #{w.weekNumber} · {w.status}
                           </span>
                         </span>
-                        <Link
-                          href={`/parent/week/${w.id}/review`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          Review →
-                        </Link>
+                        {w.status === 'draft' ? (
+                          <GenerateWeekButton weekId={w.id} />
+                        ) : (
+                          <Link
+                            href={`/parent/week/${w.id}/review`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            {w.status === 'awaiting_review'
+                              ? 'Review →'
+                              : 'Open →'}
+                          </Link>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -128,9 +143,10 @@ export default async function ParentDashboardPage() {
 
       <section className="rounded-lg border border-dashed border-zinc-200 p-5 text-sm text-zinc-500">
         <p>
-          Phase 2a · AI generation. Click <strong>+ New week</strong>, paste 1–12
-          characters, watch Claude Sonnet write pinyin + words + sentence in
-          ~30s, then review/edit/regenerate per character.
+          Phase 2 · DeepSeek V4 Pro. Use <strong>+ New stage (bulk)</strong> for
+          a 10-lesson stage from one paste; click <strong>Generate AI</strong>{' '}
+          on each draft week to fill in pinyin + words + sentence (~3 min per
+          week), then review/edit/regenerate per character.
         </p>
       </section>
     </main>

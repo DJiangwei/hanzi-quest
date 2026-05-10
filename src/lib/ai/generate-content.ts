@@ -1,3 +1,4 @@
+import { deepseek } from '@ai-sdk/deepseek';
 import { generateObject } from 'ai';
 import { db } from '@/db';
 import { completeJob, createJob, failJob } from '@/lib/db/ai-jobs';
@@ -20,7 +21,12 @@ import {
   type WeekContent,
 } from './schemas';
 
-const MODEL = 'anthropic/claude-sonnet-4-6';
+// DeepSeek V4 Pro: Chinese-native, ~10x cheaper than Sonnet for this workload,
+// and produces equivalent quality on this prompt (verified 2026-05-10 with
+// scripts/preview-week-gen.ts on the school's Lesson 1).
+const MODEL_ID = 'deepseek-v4-pro';
+const MODEL_LABEL = `deepseek/${MODEL_ID}`;
+const model = deepseek(MODEL_ID);
 
 interface GenerateWeekInput {
   weekId: string;
@@ -48,12 +54,12 @@ export async function generateWeekContent(
       characters: input.characters,
       childAge: input.childAge,
     },
-    model: MODEL,
+    model: MODEL_LABEL,
   });
 
   try {
     const result = await generateObject({
-      model: MODEL,
+      model,
       schema: WeekContentSchemaV1,
       schemaName: 'WeekContent',
       schemaDescription:
@@ -166,12 +172,12 @@ export async function regenerateCharacter(
       characterId: input.characterId,
       hanzi: input.hanzi,
     },
-    model: MODEL,
+    model: MODEL_LABEL,
   });
 
   try {
     const result = await generateObject({
-      model: MODEL,
+      model,
       schema: PerCharacterSchema,
       schemaName: 'PerCharacter',
       schemaDescription:

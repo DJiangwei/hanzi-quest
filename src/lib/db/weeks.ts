@@ -16,6 +16,7 @@ export interface CreateWeekInput {
   curriculumPackId: string;
   label: string;
   notes?: string | null;
+  status?: WeekStatus;
 }
 
 export async function createWeek(input: CreateWeekInput): Promise<WeekRow> {
@@ -33,7 +34,7 @@ export async function createWeek(input: CreateWeekInput): Promise<WeekRow> {
       weekNumber: next,
       label: input.label,
       notes: input.notes ?? null,
-      status: 'ai_generating',
+      status: input.status ?? 'ai_generating',
     })
     .returning();
   return row;
