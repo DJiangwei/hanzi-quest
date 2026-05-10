@@ -30,7 +30,8 @@ const model = deepseek(MODEL_ID);
 
 interface GenerateWeekInput {
   weekId: string;
-  parentUserId: string;
+  /** null when generating shared/curated content (no owning parent) */
+  parentUserId: string | null;
   childAge: number | null;
   weekLabel: string;
   characters: string[];
@@ -106,7 +107,7 @@ export async function generateWeekContent(
 
 async function persistWeekContent(args: {
   weekId: string;
-  parentUserId: string;
+  parentUserId: string | null;
   content: WeekContent;
 }): Promise<void> {
   await db.transaction(async (tx) => {
