@@ -1,4 +1,5 @@
 // Drizzle schema · content — see PLAN.md §4
+import { sql } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -136,12 +137,15 @@ export const weeks = pgTable(
   'weeks',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    parentUserId: text('parent_user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    childId: uuid('child_id')
-      .notNull()
-      .references(() => childProfiles.id, { onDelete: 'cascade' }),
+    // Null for shared pack-level weeks (e.g. 海盗班 Level 1) — those belong to
+    // a curriculum_pack and are played by every child whose
+    // current_curriculum_pack_id points at that pack.
+    parentUserId: text('parent_user_id').references(() => users.id, {
+      onDelete: 'cascade',
+    }),
+    childId: uuid('child_id').references(() => childProfiles.id, {
+      onDelete: 'cascade',
+    }),
     curriculumPackId: uuid('curriculum_pack_id')
       .notNull()
       .references(() => curriculumPacks.id, { onDelete: 'restrict' }),
@@ -160,7 +164,16 @@ export const weeks = pgTable(
   (t) => [
     index('weeks_child_idx').on(t.childId),
     index('weeks_status_idx').on(t.status),
+    index('weeks_pack_idx').on(t.curriculumPackId),
+    // Per-family uniqueness: a given child cannot have two weeks with the
+    // same week_number. Postgres treats NULLs as distinct in uniques, so
+    // this naturally only constrains rows where child_id is set.
     uniqueIndex('weeks_child_week_unique').on(t.childId, t.weekNumber),
+    // Pack-level uniqueness for shared weeks (child_id IS NULL): pirate-
+    // class can only have one week_number=1.
+    uniqueIndex('weeks_pack_week_unique')
+      .on(t.curriculumPackId, t.weekNumber)
+      .where(sql`${t.childId} IS NULL`),
   ],
 );
 

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
 import { listProgressByChild } from '@/lib/db/play';
-import { listWeeksByChild } from '@/lib/db/weeks';
+import { listChildPlayableWeeks } from '@/lib/db/weeks';
 
 interface PageProps {
   params: Promise<{ childId: string }>;
@@ -12,13 +12,12 @@ export default async function PlayHomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const [allWeeks, progressRows, balance] = await Promise.all([
-    listWeeksByChild(child.id),
+  const [playableWeeks, progressRows, balance] = await Promise.all([
+    listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
     getCoinBalance(child.id),
   ]);
 
-  const playableWeeks = allWeeks.filter((w) => w.status === 'published');
   const progressByWeek = new Map(
     progressRows.map((p) => [p.weekId, p.completionPercent]),
   );

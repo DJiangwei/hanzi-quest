@@ -2,18 +2,23 @@ import Link from 'next/link';
 import { GenerateWeekButton } from '@/components/parent/GenerateWeekButton';
 import { assertParent } from '@/lib/auth/guards';
 import { listChildrenByParent } from '@/lib/db/children';
+import { listChildEnrollmentSummaries } from '@/lib/db/curriculum';
 import { listWeeksByChild } from '@/lib/db/weeks';
 
 export default async function ParentDashboardPage() {
   const parent = await assertParent();
   const children = await listChildrenByParent(parent.id);
 
-  const weeksByChild = await Promise.all(
-    children.map(async (c) => ({
-      child: c,
-      weeks: (await listWeeksByChild(c.id)).slice(0, 5),
-    })),
-  );
+  const [weeksByChild, enrollments] = await Promise.all([
+    Promise.all(
+      children.map(async (c) => ({
+        child: c,
+        weeks: (await listWeeksByChild(c.id)).slice(0, 5),
+      })),
+    ),
+    listChildEnrollmentSummaries(children.map((c) => c.id)),
+  ]);
+  const enrollmentByChild = new Map(enrollments.map((e) => [e.childId, e]));
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
@@ -70,35 +75,54 @@ export default async function ParentDashboardPage() {
           </p>
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
-            {children.map((c) => (
-              <li
-                key={c.id}
-                className="flex items-center justify-between rounded border border-zinc-100 px-3 py-2"
-              >
-                <span>
-                  <span className="font-medium">{c.displayName}</span>
-                  {c.birthYear ? (
-                    <span className="ml-2 text-xs text-zinc-500">
-                      Born {c.birthYear}
+            {children.map((c) => {
+              const enrollment = enrollmentByChild.get(c.id);
+              return (
+                <li
+                  key={c.id}
+                  className="flex items-center justify-between rounded border border-zinc-100 px-3 py-2"
+                >
+                  <span className="flex flex-col">
+                    <span className="flex items-baseline gap-2">
+                      <span className="font-medium">{c.displayName}</span>
+                      {c.birthYear ? (
+                        <span className="text-xs text-zinc-500">
+                          Born {c.birthYear}
+                        </span>
+                      ) : null}
                     </span>
-                  ) : null}
-                </span>
-                <span className="flex items-center gap-3 text-sm">
-                  <Link
-                    href={`/play/${c.id}`}
-                    className="rounded bg-amber-200 px-3 py-1 font-medium text-amber-900 hover:bg-amber-300"
-                  >
-                    Play →
-                  </Link>
-                  <Link
-                    href={`/parent/children/${c.id}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </Link>
-                </span>
-              </li>
-            ))}
+                    <span className="text-xs text-zinc-500">
+                      {enrollment?.pack ? (
+                        <>
+                          <span className="font-medium text-zinc-700">
+                            {enrollment.pack.name}
+                          </span>
+                          {' · '}
+                          {enrollment.publishedWeeks}/{enrollment.totalWeeks}{' '}
+                          weeks ready
+                        </>
+                      ) : (
+                        <span className="italic">No class enrolled</span>
+                      )}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-3 text-sm">
+                    <Link
+                      href={`/play/${c.id}`}
+                      className="rounded bg-amber-200 px-3 py-1 font-medium text-amber-900 hover:bg-amber-300"
+                    >
+                      Play →
+                    </Link>
+                    <Link
+                      href={`/parent/children/${c.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </Link>
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

@@ -21,7 +21,8 @@ export interface UpsertCharacterInput {
   meaningEn?: string | null;
   meaningZh?: string | null;
   imageHook?: string | null;
-  createdByUserId: string;
+  // null when creating shared/curated content (e.g. seeded class packs)
+  createdByUserId: string | null;
 }
 
 /**
@@ -42,7 +43,7 @@ export async function upsertSimplifiedCharacter(
       meaningZh: input.meaningZh ?? null,
       imageHook: input.imageHook ?? null,
       source: 'ai_generated',
-      createdByUserId: input.createdByUserId,
+      createdByUserId: input.createdByUserId ?? null,
     })
     .onConflictDoUpdate({
       target: [characters.hanzi, characters.script],
