@@ -40,6 +40,7 @@ export async function upsertSimplifiedCharacter(
       pinyinArray: input.pinyinArray,
       meaningEn: input.meaningEn ?? null,
       meaningZh: input.meaningZh ?? null,
+      imageHook: input.imageHook ?? null,
       source: 'ai_generated',
       createdByUserId: input.createdByUserId,
     })
@@ -49,6 +50,7 @@ export async function upsertSimplifiedCharacter(
         pinyinArray: input.pinyinArray,
         meaningEn: input.meaningEn ?? null,
         meaningZh: input.meaningZh ?? null,
+        imageHook: input.imageHook ?? null,
       },
     })
     .returning();

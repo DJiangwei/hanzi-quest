@@ -2,12 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { FlashcardScene } from './FlashcardScene';
 import {
   finishAttemptAction,
   finishLevelAction,
   startSessionAction,
 } from '@/lib/actions/play';
+import { AudioPickScene } from './AudioPickScene';
+import { FlashcardScene } from './FlashcardScene';
+import { ImagePickScene } from './ImagePickScene';
+import { VisualPickScene } from './VisualPickScene';
+import { WordMatchScene } from './WordMatchScene';
 
 interface CharacterDetail {
   characterId: string;
@@ -15,13 +19,24 @@ interface CharacterDetail {
   pinyinArray: string[];
   meaningEn: string | null;
   meaningZh: string | null;
+  imageHook: string | null;
+  firstWord: string | null;
 }
+
+export type SceneType =
+  | 'flashcard'
+  | 'audio_pick'
+  | 'visual_pick'
+  | 'image_pick'
+  | 'word_match'
+  | 'tracing'
+  | 'boss';
 
 interface CompiledLevel {
   id: string;
   position: number;
-  sceneType: 'flashcard' | string;
-  characterId: string;
+  sceneType: SceneType;
+  config: Record<string, unknown>;
 }
 
 interface Props {
@@ -30,6 +45,7 @@ interface Props {
   weekLabel: string;
   levels: CompiledLevel[];
   charactersById: Record<string, CharacterDetail>;
+  pool: CharacterDetail[]; // ordered character list for the week
 }
 
 export function SceneRunner({
@@ -38,6 +54,7 @@ export function SceneRunner({
   weekLabel,
   levels,
   charactersById,
+  pool,
 }: Props) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -90,16 +107,7 @@ export function SceneRunner({
     );
   }
 
-  const character = charactersById[currentLevel.characterId];
-  if (!character) {
-    return (
-      <main className="flex flex-1 items-center justify-center text-red-600">
-        Missing character data for this card.
-      </main>
-    );
-  }
-
-  const handleSceneComplete = () => {
+  const advance = (correct: boolean) => {
     if (pending) return;
     startTransition(async () => {
       const result = await finishAttemptAction({
@@ -107,7 +115,7 @@ export function SceneRunner({
         weekLevelId: currentLevel.id,
         weekId,
         childId,
-        correctCount: 1,
+        correctCount: correct ? 1 : 0,
         totalCount: 1,
         hintsUsed: 0,
       });
@@ -133,6 +141,100 @@ export function SceneRunner({
     });
   };
 
+  let body: React.ReactNode;
+  switch (currentLevel.sceneType) {
+    case 'flashcard': {
+      const characterId = currentLevel.config.characterId as string | undefined;
+      const c = characterId ? charactersById[characterId] : undefined;
+      body = c ? (
+        <FlashcardScene
+          key={currentLevel.id}
+          data={{
+            hanzi: c.hanzi,
+            pinyin: c.pinyinArray,
+            meaningEn: c.meaningEn,
+            meaningZh: c.meaningZh,
+            imageHook: c.imageHook,
+          }}
+          onComplete={() => advance(true)}
+        />
+      ) : (
+        <MissingData />
+      );
+      break;
+    }
+    case 'audio_pick': {
+      const characterId = currentLevel.config.characterId as string | undefined;
+      const c = characterId ? charactersById[characterId] : undefined;
+      body = c ? (
+        <AudioPickScene
+          key={currentLevel.id}
+          target={c}
+          pool={pool}
+          onComplete={advance}
+        />
+      ) : (
+        <MissingData />
+      );
+      break;
+    }
+    case 'visual_pick': {
+      const characterId = currentLevel.config.characterId as string | undefined;
+      const c = characterId ? charactersById[characterId] : undefined;
+      body = c ? (
+        <VisualPickScene
+          key={currentLevel.id}
+          target={c}
+          pool={pool}
+          onComplete={advance}
+        />
+      ) : (
+        <MissingData />
+      );
+      break;
+    }
+    case 'image_pick': {
+      const characterId = currentLevel.config.characterId as string | undefined;
+      const c = characterId ? charactersById[characterId] : undefined;
+      body = c ? (
+        <ImagePickScene
+          key={currentLevel.id}
+          target={c}
+          pool={pool}
+          onComplete={advance}
+        />
+      ) : (
+        <MissingData />
+      );
+      break;
+    }
+    case 'word_match': {
+      const ids = (currentLevel.config.characterIds as string[] | undefined) ?? [];
+      const pairs = ids
+        .map((id) => {
+          const c = charactersById[id];
+          return c && c.firstWord
+            ? { characterId: id, hanzi: c.hanzi, word: c.firstWord }
+            : null;
+        })
+        .filter((p): p is { characterId: string; hanzi: string; word: string } =>
+          Boolean(p),
+        );
+      body = pairs.length >= 2 ? (
+        <WordMatchScene
+          key={currentLevel.id}
+          pairs={pairs}
+          onComplete={advance}
+        />
+      ) : (
+        <MissingData />
+      );
+      break;
+    }
+    default:
+      body = <MissingData />;
+  }
+
   return (
     <main className="flex min-h-[80vh] flex-1 flex-col">
       <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-3 text-sm text-zinc-600">
@@ -141,17 +243,15 @@ export function SceneRunner({
           {index + 1} / {totalLevels} · 🪙 {coinsThisSession}
         </span>
       </div>
-      <FlashcardScene
-        key={currentLevel.id}
-        data={{
-          hanzi: character.hanzi,
-          pinyin: character.pinyinArray,
-          meaningEn: character.meaningEn,
-          meaningZh: character.meaningZh,
-          imageHook: null,
-        }}
-        onComplete={handleSceneComplete}
-      />
+      {body}
+    </main>
+  );
+}
+
+function MissingData() {
+  return (
+    <main className="flex flex-1 items-center justify-center px-6 text-center text-red-600">
+      Missing data for this scene — re-publish the week from /parent.
     </main>
   );
 }
