@@ -15,7 +15,7 @@
 
 ## 1. Status
 
-Production at <https://hanzi-adventure.vercel.app> (old alias `hanzi-quest-eight.vercel.app` still works). One real test user (David / banbanhu4ever@gmail.com), one child profile (小板), enrolled in `pirate-class-level-1` (10/10 lessons published).
+Production at <https://hanzi-adventure.vercel.app>. One real test user (David / banbanhu4ever@gmail.com), one child profile (小板), enrolled in `pirate-class-level-1` (10/10 lessons published).
 
 ### Shipped
 

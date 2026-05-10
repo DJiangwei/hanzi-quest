@@ -32,7 +32,7 @@ Open [http://localhost:3000](http://localhost:3000).
 Clerk fires `user.created` / `user.updated` / `user.deleted` events to keep our `users` table in sync. The Vercel Marketplace integration provisions Clerk's auth keys but **not** the webhook signing secret — you have to wire that yourself.
 
 1. **Add a webhook endpoint in the Clerk dashboard** (Configure → Webhooks → Add Endpoint):
-   - URL: `https://hanzi-quest-eight.vercel.app/api/webhooks/clerk`
+   - URL: `https://hanzi-adventure.vercel.app/api/webhooks/clerk`
    - Events: `user.created`, `user.updated`, `user.deleted`
 2. **Copy the signing secret** (starts with `whsec_`).
 3. **Add it to every Vercel environment**:

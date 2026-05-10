@@ -290,7 +290,7 @@ Every scene completion goes through `finishAttemptAction(...)`, which awards coi
 
 | Resource | Provisioned by | Notes |
 |---|---|---|
-| Vercel project | `daviddaijw-6886s-projects/hanzi-adventure` | Renamed 2026-05-10 from `hanzi-quest`. Auto-aliased at `hanzi-adventure.vercel.app`; old alias `hanzi-quest-eight.vercel.app` still works. |
+| Vercel project | `daviddaijw-6886s-projects/hanzi-adventure` | Renamed 2026-05-10 from `hanzi-quest`. Auto-aliased at `hanzi-adventure.vercel.app` — registered via `vercel domains add` so every prod deploy auto-tracks. The old `hanzi-quest-eight.vercel.app` alias has been retired; do not re-introduce. |
 | GitHub repo | `DJiangwei/hanzi-quest` | SSH push only (gh CLI OAuth token lacks `workflow` scope; can't push `.github/workflows/*` over HTTPS). |
 | GitHub → Vercel deploy | wired | Every push to `main` → prod deploy; every PR → preview deploy. |
 | Neon Postgres | `neon-cordovan-leaf` via Vercel Marketplace | One DB shared across prod / preview / dev envs. |
