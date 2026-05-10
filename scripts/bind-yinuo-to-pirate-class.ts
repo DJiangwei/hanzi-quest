@@ -1,13 +1,17 @@
 /**
- * One-shot data migration: bind Yinuo's child_profile to the seeded
- * 海盗班 Level 1 pack and clean up stale per-family Lesson 1 rows from
- * David's earlier hand-testing.
+ * One-shot data migration: enroll every child under a given parent in a
+ * shared curriculum_pack, and drop any stale per-family weeks they may have
+ * accumulated from earlier hand-testing.
  *
  * Usage:
  *   pnpm tsx scripts/bind-yinuo-to-pirate-class.ts
  *
- * Idempotent — safe to re-run; SELECTs the targets first and no-ops if
- * already aligned.
+ * Default targets banbanhu4ever@gmail.com (David's account) and the
+ * `pirate-class-level-1` pack. Override via PARENT_EMAIL / PACK_SLUG env.
+ *
+ * Idempotent: safe to re-run; SELECTs the targets first and no-ops if
+ * already aligned. Filename kept (Yinuo-specific) for git history clarity
+ * even though the script is now name-agnostic.
  */
 
 import { config as loadEnv } from 'dotenv';
@@ -20,18 +24,17 @@ if (!process.env.DATABASE_URL) {
   process.exit(2);
 }
 
-const PARENT_EMAIL = 'banbanhu4ever@gmail.com';
-const CHILD_NAME = 'Yinuo';
-const PACK_SLUG = 'pirate-class-level-1';
+const PARENT_EMAIL = process.env.PARENT_EMAIL ?? 'banbanhu4ever@gmail.com';
+const PACK_SLUG = process.env.PACK_SLUG ?? 'pirate-class-level-1';
 
 async function main() {
-  const { and, eq, isNotNull, isNull } = await import('drizzle-orm');
+  const { and, eq, inArray, isNotNull, isNull } = await import('drizzle-orm');
   const { db } = await import('../src/db');
   const { childProfiles, curriculumPacks, users, weeks } = await import(
     '../src/db/schema'
   );
 
-  console.log('[bind] looking up parent…');
+  console.log(`[bind] parent=${PARENT_EMAIL} pack=${PACK_SLUG}`);
   const [parent] = await db
     .select({ id: users.id })
     .from(users)
@@ -42,23 +45,6 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('[bind] looking up child…');
-  const [child] = await db
-    .select({ id: childProfiles.id, currentPack: childProfiles.currentCurriculumPackId })
-    .from(childProfiles)
-    .where(
-      and(
-        eq(childProfiles.parentUserId, parent.id),
-        eq(childProfiles.displayName, CHILD_NAME),
-      ),
-    )
-    .limit(1);
-  if (!child) {
-    console.error(`[bind] child ${CHILD_NAME} not found under parent`);
-    process.exit(1);
-  }
-
-  console.log('[bind] looking up pack…');
   const [pack] = await db
     .select({ id: curriculumPacks.id, name: curriculumPacks.name })
     .from(curriculumPacks)
@@ -74,35 +60,45 @@ async function main() {
     process.exit(1);
   }
 
-  // Set enrollment
-  if (child.currentPack === pack.id) {
-    console.log(`[bind] already enrolled in ${pack.name}, skipping update`);
-  } else {
-    await db
-      .update(childProfiles)
-      .set({ currentCurriculumPackId: pack.id })
-      .where(eq(childProfiles.id, child.id));
-    console.log(`[bind] ✓ enrolled child in ${pack.name}`);
+  const childRows = await db
+    .select({ id: childProfiles.id, displayName: childProfiles.displayName })
+    .from(childProfiles)
+    .where(eq(childProfiles.parentUserId, parent.id));
+  if (childRows.length === 0) {
+    console.log('[bind] parent has no children, nothing to enroll');
+    process.exit(0);
   }
+  console.log(
+    '[bind] children:',
+    childRows.map((c) => c.displayName),
+  );
 
-  // Drop David's old per-family Lesson 1 weeks (and their compiled levels via cascade).
-  // Per-family weeks have parent_user_id IS NOT NULL.
+  const childIds = childRows.map((c) => c.id);
+
+  await db
+    .update(childProfiles)
+    .set({ currentCurriculumPackId: pack.id })
+    .where(inArray(childProfiles.id, childIds));
+  console.log(`[bind] ✓ enrolled ${childIds.length} child(ren) in ${pack.name}`);
+
   const stale = await db
     .select({ id: weeks.id, label: weeks.label })
     .from(weeks)
     .where(
-      and(eq(weeks.childId, child.id), isNotNull(weeks.parentUserId)),
+      and(inArray(weeks.childId, childIds), isNotNull(weeks.parentUserId)),
     );
   if (stale.length === 0) {
-    console.log('[bind] no stale per-family weeks for this child');
+    console.log('[bind] no stale per-family weeks');
   } else {
     console.log(
-      `[bind] deleting ${stale.length} per-family week(s) for cleanup:`,
+      `[bind] deleting ${stale.length} stale per-family week(s):`,
       stale.map((w) => w.label),
     );
-    for (const w of stale) {
-      await db.delete(weeks).where(eq(weeks.id, w.id));
-    }
+    await db
+      .delete(weeks)
+      .where(
+        and(inArray(weeks.childId, childIds), isNotNull(weeks.parentUserId)),
+      );
     console.log('[bind] ✓ cleanup done');
   }
 
