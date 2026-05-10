@@ -16,6 +16,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^2.0.34",
     "@clerk/nextjs": "^7.3.3",
     "ai": "^6.0.177",
     "drizzle-orm": "^0.45.2",

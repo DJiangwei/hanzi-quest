@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { generateWeekContent, regenerateCharacter } from '@/lib/ai/generate-content';
 import { assertParent, requireChild } from '@/lib/auth/guards';
 import {
+  linkWeekCharacters,
   replaceCharacterSentence,
   replaceCharacterWords,
   upsertSimplifiedCharacter,
@@ -13,10 +14,17 @@ import {
 } from '@/lib/db/characters';
 import { db } from '@/db';
 import { ensureSchoolCustomPack } from '@/lib/db/curriculum';
-import { createWeek, getWeekOwnedBy, listWeeksByChild } from '@/lib/db/weeks';
+import {
+  createWeek,
+  getWeekOwnedBy,
+  listCharactersForWeek,
+  listWeeksByChild,
+  setWeekStatus,
+} from '@/lib/db/weeks';
 import { extractHanzi } from '@/lib/hanzi/extract';
 
 export type CreateWeekState = { error?: string; weekId?: string };
+export type CreateStageState = { error?: string; createdCount?: number };
 
 const CreateWeekSchema = z.object({
   childId: z.string().uuid('Pick a child'),
@@ -194,4 +202,125 @@ export async function saveCharacterEditsAction(
 export async function listChildWeeks(childId: string) {
   const { child } = await requireChild(childId);
   return listWeeksByChild(child.id);
+}
+
+const CreateStageSchema = z.object({
+  childId: z.string().uuid('Pick a child'),
+  labelPrefix: z.string().trim().min(1).max(40),
+  rawText: z.string().min(1),
+});
+
+interface ParsedLesson {
+  index: number;
+  characters: string[];
+}
+
+function parseStageText(raw: string): ParsedLesson[] {
+  return raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .map((line, idx) => ({
+      index: idx + 1,
+      characters: extractHanzi(line),
+    }));
+}
+
+/**
+ * Bulk-create N draft weeks from a paste-multiline textarea (one lesson per
+ * non-empty line). No AI is invoked; each week lands in 'draft' with its
+ * characters stored in `week_characters`. Use generateWeekAction to fill in
+ * the AI content per week.
+ */
+export async function createStageAction(
+  _prev: CreateStageState,
+  formData: FormData,
+): Promise<CreateStageState> {
+  const parsed = CreateStageSchema.safeParse({
+    childId: formData.get('childId'),
+    labelPrefix: (formData.get('labelPrefix') as string | null) || 'Lesson',
+    rawText: formData.get('rawText'),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
+  }
+
+  const lessons = parseStageText(parsed.data.rawText);
+  if (lessons.length === 0) {
+    return { error: 'No non-empty lines found in the textarea.' };
+  }
+  const bad = lessons.find(
+    (l) => l.characters.length < 1 || l.characters.length > 12,
+  );
+  if (bad) {
+    return {
+      error: `Line ${bad.index} has ${bad.characters.length} unique Chinese characters; each line must have 1–12.`,
+    };
+  }
+
+  const { parent, child } = await requireChild(parsed.data.childId);
+  const packId =
+    child.currentCurriculumPackId ?? (await ensureSchoolCustomPack(parent.id));
+
+  for (const lesson of lessons) {
+    const week = await createWeek({
+      parentUserId: parent.id,
+      childId: child.id,
+      curriculumPackId: packId,
+      label: `${parsed.data.labelPrefix} ${lesson.index}`,
+      status: 'draft',
+    });
+
+    await db.transaction(async (tx) => {
+      const pairs: Array<{ characterId: string; position: number }> = [];
+      for (let i = 0; i < lesson.characters.length; i++) {
+        const charRow = await upsertSimplifiedCharacter(tx, {
+          hanzi: lesson.characters[i],
+          pinyinArray: [],
+          createdByUserId: parent.id,
+        });
+        pairs.push({ characterId: charRow.id, position: i });
+      }
+      await linkWeekCharacters(tx, week.id, pairs);
+    });
+  }
+
+  revalidatePath('/parent');
+  redirect('/parent');
+}
+
+/**
+ * Run AI generation on an existing draft week's stored characters. Flips
+ * draft → ai_generating during the call; generateWeekContent flips it to
+ * awaiting_review on success or back to draft on failure.
+ */
+export async function generateWeekAction(
+  weekId: string,
+): Promise<{ error?: string }> {
+  const parent = await assertParent();
+  const week = await getWeekOwnedBy(weekId, parent.id);
+  if (!week) return { error: 'Week not found' };
+
+  const stored = await listCharactersForWeek(weekId);
+  if (stored.length === 0) {
+    return { error: 'This week has no stored characters yet.' };
+  }
+  const characters = stored.map((s) => s.character.hanzi);
+
+  await setWeekStatus(weekId, 'ai_generating');
+  try {
+    await generateWeekContent({
+      weekId,
+      parentUserId: parent.id,
+      childAge: null,
+      weekLabel: week.label,
+      characters,
+    });
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+
+  revalidatePath('/parent');
+  revalidatePath(`/parent/week/${weekId}/review`);
+  redirect(`/parent/week/${weekId}/review`);
 }
