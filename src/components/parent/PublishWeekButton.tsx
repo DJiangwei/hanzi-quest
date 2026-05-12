@@ -27,7 +27,7 @@ export function PublishWeekButton({
             else setDone(true);
           });
         }}
-        className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
+        className="rounded-full bg-[var(--color-good)] px-5 py-2 text-sm font-semibold text-white shadow-md hover:brightness-110 active:scale-95 disabled:opacity-60"
       >
         {pending
           ? 'Publishing…'
@@ -35,7 +35,7 @@ export function PublishWeekButton({
             ? '✓ Published — re-publish'
             : 'Publish to play'}
       </button>
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {error ? <span className="text-xs text-[var(--color-bad)]">{error}</span> : null}
     </span>
   );
 }

@@ -25,7 +25,7 @@ export function DeleteChildButton({
           startTransition(() => deleteChildAction(childId));
         }
       }}
-      className="self-start rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+      className="self-start rounded-full border-2 border-[var(--color-bad)] bg-white px-5 py-2 text-sm font-semibold text-[var(--color-bad)] hover:bg-[var(--color-bad-bg)] disabled:opacity-50"
     >
       {pending ? 'Deleting…' : `Delete ${childName}`}
     </button>

@@ -92,3 +92,25 @@ body {
     font-family: var(--font-display-hanzi);
   }
 }
+
+/* Map / island animations. Kept in globals so SSR-rendered SVG can use
+   them without any client hydration delay. */
+.island-pulse {
+  transform-origin: center;
+  animation: island-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes island-pulse {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.15;
+    transform: scale(1.18);
+  }
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+}

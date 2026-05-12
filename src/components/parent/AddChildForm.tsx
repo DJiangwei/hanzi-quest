@@ -25,13 +25,13 @@ export function AddChildForm() {
     <form
       ref={formRef}
       action={formAction}
-      className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4"
+      className="flex flex-col gap-3 rounded-2xl border border-[var(--color-sand-200)] bg-white p-5 shadow-sm"
     >
-      <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-500">
+      <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-sand-700)]">
         Add a child
       </h2>
       <div className="flex flex-col gap-1">
-        <label htmlFor="displayName" className="text-xs text-zinc-600">
+        <label htmlFor="displayName" className="text-xs text-[var(--color-sand-700)]">
           Display name
         </label>
         <input
@@ -39,12 +39,12 @@ export function AddChildForm() {
           name="displayName"
           required
           maxLength={60}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+          className="rounded-xl border border-[var(--color-sand-200)] px-3 py-2 text-sm focus:border-[var(--color-ocean-500)] focus:outline-none"
           placeholder="Yinuo"
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="birthYear" className="text-xs text-zinc-600">
+        <label htmlFor="birthYear" className="text-xs text-[var(--color-sand-700)]">
           Birth year (optional)
         </label>
         <input
@@ -53,17 +53,17 @@ export function AddChildForm() {
           type="number"
           min={2000}
           max={new Date().getFullYear()}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+          className="rounded-xl border border-[var(--color-sand-200)] px-3 py-2 text-sm focus:border-[var(--color-ocean-500)] focus:outline-none"
           placeholder="2019"
         />
       </div>
       {state.error ? (
-        <p className="text-xs text-red-600">{state.error}</p>
+        <p className="text-xs text-[var(--color-bad)]">{state.error}</p>
       ) : null}
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:bg-zinc-400"
+        className="self-start rounded-full bg-[var(--color-ocean-500)] px-5 py-2 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95 disabled:bg-[var(--color-sand-200)] disabled:text-[var(--color-sand-700)]"
       >
         {pending ? 'Adding…' : 'Add child'}
       </button>

@@ -19,11 +19,13 @@ export function GenerateWeekButton({ weekId }: { weekId: string }) {
             if (r?.error) setError(r.error);
           });
         }}
-        className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-60"
+        className="rounded-full bg-[var(--color-sunset-500)] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[var(--color-sunset-600)] active:scale-95 disabled:opacity-60"
       >
         {pending ? 'Generating… (~3min)' : 'Generate AI'}
       </button>
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {error ? (
+        <span className="text-xs text-[var(--color-bad)]">{error}</span>
+      ) : null}
     </span>
   );
 }
