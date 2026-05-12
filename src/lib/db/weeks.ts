@@ -86,6 +86,48 @@ export async function listCharactersForWeek(weekId: string) {
 }
 
 /**
+ * Returns a single week if the given child is allowed to play it: either
+ * a per-family week owned by the child, or a shared (child_id IS NULL)
+ * pack week from the curriculum_pack the child is enrolled in. Status must
+ * be 'published'. Returns undefined otherwise — callers should `notFound()`.
+ *
+ * This is the per-week version of listChildPlayableWeeks and MUST stay in
+ * sync with it. The level page used to call getWeekOwnedBy(weekId, parentId)
+ * which broke for shared pack weeks (parent_user_id IS NULL) — that's the
+ * bug this function fixes.
+ */
+export async function getPlayableWeekForChild(
+  childId: string,
+  weekId: string,
+): Promise<WeekRow | undefined> {
+  const [child] = await db
+    .select({ packId: childProfiles.currentCurriculumPackId })
+    .from(childProfiles)
+    .where(eq(childProfiles.id, childId))
+    .limit(1);
+
+  const packId = child?.packId ?? null;
+
+  const condition = packId
+    ? and(
+        eq(weeks.id, weekId),
+        eq(weeks.status, 'published'),
+        or(
+          eq(weeks.childId, childId),
+          and(isNull(weeks.childId), eq(weeks.curriculumPackId, packId)),
+        ),
+      )
+    : and(
+        eq(weeks.id, weekId),
+        eq(weeks.status, 'published'),
+        eq(weeks.childId, childId),
+      );
+
+  const [row] = await db.select().from(weeks).where(condition).limit(1);
+  return row;
+}
+
+/**
  * Returns weeks the given child can play right now: their own published
  * per-family weeks, plus any shared (child_id IS NULL) published weeks
  * from the curriculum_pack the child is currently enrolled in. Shared pack

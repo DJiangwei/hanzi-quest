@@ -3,7 +3,7 @@ import { SceneRunner, type SceneType } from '@/components/scenes/SceneRunner';
 import { requireChild } from '@/lib/auth/guards';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import { listLevelsForWeek } from '@/lib/db/play';
-import { getWeekOwnedBy } from '@/lib/db/weeks';
+import { getPlayableWeekForChild } from '@/lib/db/weeks';
 
 interface PageProps {
   params: Promise<{ childId: string; weekId: string }>;
@@ -11,11 +11,14 @@ interface PageProps {
 
 export default async function PlayLevelPage({ params }: PageProps) {
   const { childId, weekId } = await params;
-  const { parent, child } = await requireChild(childId);
+  const { child } = await requireChild(childId);
 
-  const week = await getWeekOwnedBy(weekId, parent.id);
-  if (!week || week.childId !== child.id) notFound();
-  if (week.status !== 'published') notFound();
+  // Use the same access rule as the map (listChildPlayableWeeks):
+  // owner-of-week OR pack-shared-week-and-enrolled. The previous code used
+  // getWeekOwnedBy(weekId, parent.id) which broke for shared pack weeks
+  // (parent_user_id IS NULL).
+  const week = await getPlayableWeekForChild(child.id, weekId);
+  if (!week) notFound();
 
   const [levels, characters] = await Promise.all([
     listLevelsForWeek(weekId),
