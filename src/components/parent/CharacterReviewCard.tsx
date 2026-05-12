@@ -45,10 +45,12 @@ export function CharacterReviewCard(props: Props) {
   return (
     <form
       action={saveAction}
-      className="flex flex-col gap-4 rounded-lg border border-zinc-200 p-5"
+      className="flex flex-col gap-4 rounded-2xl border border-[var(--color-sand-200)] bg-white p-5 shadow-sm"
     >
       <header className="flex items-center justify-between">
-        <h3 className="text-5xl font-bold">{props.hanzi}</h3>
+        <h3 className="font-hanzi text-5xl font-bold text-[var(--color-ocean-900)]">
+          {props.hanzi}
+        </h3>
         <button
           type="button"
           disabled={regenPending || savePending}
@@ -62,14 +64,14 @@ export function CharacterReviewCard(props: Props) {
               if (r.error) setRegenError(r.error);
             });
           }}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-xs hover:bg-zinc-50 disabled:opacity-50"
+          className="rounded-full border border-[var(--color-sand-200)] px-3 py-1.5 text-xs font-semibold text-[var(--color-sand-700)] hover:bg-[var(--color-sand-100)] disabled:opacity-50"
         >
           {regenPending ? 'Regenerating…' : 'Regenerate'}
         </button>
       </header>
 
       {regenError ? (
-        <p className="text-xs text-red-600">{regenError}</p>
+        <p className="text-xs text-[var(--color-bad)]">{regenError}</p>
       ) : null}
 
       <div className="grid grid-cols-2 gap-3 text-sm">
@@ -90,8 +92,8 @@ export function CharacterReviewCard(props: Props) {
         />
       </div>
 
-      <fieldset className="flex flex-col gap-2 rounded border border-zinc-100 p-3">
-        <legend className="px-1 text-xs uppercase tracking-widest text-zinc-500">
+      <fieldset className="flex flex-col gap-2 rounded-xl border border-[var(--color-sand-200)] p-3">
+        <legend className="px-1 text-xs uppercase tracking-[0.18em] text-[var(--color-sand-700)]">
           Words
         </legend>
         {[1, 2, 3].map((idx) => {
@@ -122,8 +124,8 @@ export function CharacterReviewCard(props: Props) {
         })}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-2 rounded border border-zinc-100 p-3">
-        <legend className="px-1 text-xs uppercase tracking-widest text-zinc-500">
+      <fieldset className="flex flex-col gap-2 rounded-xl border border-[var(--color-sand-200)] p-3">
+        <legend className="px-1 text-xs uppercase tracking-[0.18em] text-[var(--color-sand-700)]">
           Sentence
         </legend>
         <div className="grid grid-cols-3 gap-2 text-sm">
@@ -146,13 +148,13 @@ export function CharacterReviewCard(props: Props) {
       </fieldset>
 
       {saveState.error ? (
-        <p className="text-xs text-red-600">{saveState.error}</p>
+        <p className="text-xs text-[var(--color-bad)]">{saveState.error}</p>
       ) : null}
 
       <button
         type="submit"
         disabled={savePending || regenPending}
-        className="self-end rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:bg-zinc-400"
+        className="self-end rounded-full bg-[var(--color-ocean-500)] px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-[var(--color-ocean-700)] active:scale-95 disabled:bg-[var(--color-sand-200)] disabled:text-[var(--color-sand-700)]"
       >
         {savePending ? 'Saving…' : 'Save edits'}
       </button>
@@ -171,13 +173,12 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-xs text-zinc-500">{label}</span>
+      <span className="text-xs text-[var(--color-sand-700)]">{label}</span>
       <input
         name={name}
         defaultValue={defaultValue}
-        className="rounded border border-zinc-300 px-2 py-1.5 text-sm focus:border-zinc-500 focus:outline-none"
+        className="rounded-lg border border-[var(--color-sand-200)] px-2 py-1.5 text-sm focus:border-[var(--color-ocean-500)] focus:outline-none"
       />
     </label>
   );
 }
-

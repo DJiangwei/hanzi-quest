@@ -21,12 +21,12 @@ export default async function EditChildPage({ params }: PageProps) {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-10">
       <header className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="font-hanzi text-3xl font-bold tracking-tight text-[var(--color-ocean-900)]">
           Edit {child.displayName}
         </h1>
         <Link
           href="/parent/children"
-          className="text-sm text-zinc-600 hover:underline"
+          className="text-sm font-semibold text-[var(--color-ocean-700)] hover:underline"
         >
           ← Back
         </Link>
@@ -38,11 +38,11 @@ export default async function EditChildPage({ params }: PageProps) {
         defaultBirthYear={child.birthYear}
       />
 
-      <section className="flex flex-col gap-2 rounded-lg border border-red-100 p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-red-500">
+      <section className="flex flex-col gap-2 rounded-2xl border border-[var(--color-bad-bg)] bg-[var(--color-bad-bg)]/40 p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-bad)]">
           Danger zone
         </h2>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-[var(--color-sand-700)]">
           Removes all play sessions, attempts, coins, and inventory for this
           child. Cannot be undone.
         </p>
