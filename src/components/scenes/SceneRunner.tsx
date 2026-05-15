@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import {
@@ -7,11 +8,19 @@ import {
   finishLevelAction,
   startSessionAction,
 } from '@/lib/actions/play';
+import { setAudioMuted } from '@/lib/audio/play';
+import { CoinHudContext } from '@/lib/hooks/coin-hud-context';
+import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { AudioPickScene } from './AudioPickScene';
 import { FlashcardScene } from './FlashcardScene';
 import { ImagePickScene } from './ImagePickScene';
 import { VisualPickScene } from './VisualPickScene';
 import { WordMatchScene } from './WordMatchScene';
+
+const LevelFanfare = dynamic(
+  () => import('./fx/LevelFanfare').then((m) => m.LevelFanfare),
+  { ssr: false },
+);
 
 interface CharacterDetail {
   characterId: string;
@@ -45,7 +54,7 @@ interface Props {
   weekLabel: string;
   levels: CompiledLevel[];
   charactersById: Record<string, CharacterDetail>;
-  pool: CharacterDetail[]; // ordered character list for the week
+  pool: CharacterDetail[];
 }
 
 export function SceneRunner({
@@ -57,12 +66,18 @@ export function SceneRunner({
   pool,
 }: Props) {
   const router = useRouter();
+  const reduced = useReducedMotion();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [coinsThisSession, setCoinsThisSession] = useState(0);
   const [done, setDone] = useState(false);
   const [pending, startTransition] = useTransition();
   const startedAtRef = useRef<number>(0);
+  const coinHudRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setAudioMuted(reduced);
+  }, [reduced]);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,26 +105,11 @@ export function SceneRunner({
 
   if (done || !currentLevel) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-        <h1 className="text-6xl">🎉</h1>
-        <h2 className="font-hanzi text-4xl font-bold text-[var(--color-ocean-900)]">
-          Island cleared!
-        </h2>
-        <p className="text-lg text-[var(--color-sand-900)]">
-          <span className="font-hanzi">{weekLabel}</span>
-          <span className="mx-2 text-[var(--color-sand-700)]">·</span>
-          <span className="font-semibold text-[var(--color-treasure-700)]">
-            🪙 +{coinsThisSession}
-          </span>
-        </p>
-        <button
-          type="button"
-          onClick={() => router.push(`/play/${childId}`)}
-          className="rounded-full bg-[var(--color-ocean-500)] px-8 py-3 text-base font-bold text-white shadow-lg transition-transform hover:scale-[1.03] hover:bg-[var(--color-ocean-700)] active:scale-95"
-        >
-          Back to map
-        </button>
-      </main>
+      <LevelFanfare
+        weekLabel={weekLabel}
+        coinsThisSession={coinsThisSession}
+        onContinue={() => router.push(`/play/${childId}`)}
+      />
     );
   }
 
@@ -173,12 +173,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <AudioPickScene
-          key={currentLevel.id}
-          target={c}
-          pool={pool}
-          onComplete={advance}
-        />
+        <AudioPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} />
       ) : (
         <MissingData />
       );
@@ -188,12 +183,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <VisualPickScene
-          key={currentLevel.id}
-          target={c}
-          pool={pool}
-          onComplete={advance}
-        />
+        <VisualPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} />
       ) : (
         <MissingData />
       );
@@ -203,12 +193,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <ImagePickScene
-          key={currentLevel.id}
-          target={c}
-          pool={pool}
-          onComplete={advance}
-        />
+        <ImagePickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} />
       ) : (
         <MissingData />
       );
@@ -223,18 +208,15 @@ export function SceneRunner({
             ? { characterId: id, hanzi: c.hanzi, word: c.firstWord }
             : null;
         })
-        .filter((p): p is { characterId: string; hanzi: string; word: string } =>
-          Boolean(p),
+        .filter(
+          (p): p is { characterId: string; hanzi: string; word: string } => Boolean(p),
         );
-      body = pairs.length >= 2 ? (
-        <WordMatchScene
-          key={currentLevel.id}
-          pairs={pairs}
-          onComplete={advance}
-        />
-      ) : (
-        <MissingData />
-      );
+      body =
+        pairs.length >= 2 ? (
+          <WordMatchScene key={currentLevel.id} pairs={pairs} onComplete={advance} />
+        ) : (
+          <MissingData />
+        );
       break;
     }
     default:
@@ -242,20 +224,25 @@ export function SceneRunner({
   }
 
   return (
-    <main className="flex min-h-[80vh] flex-1 flex-col">
-      <div className="flex items-center justify-between border-b border-[var(--color-sand-200)] bg-white/50 px-6 py-3 text-sm text-[var(--color-sand-900)] backdrop-blur">
-        <span className="font-hanzi font-semibold">{weekLabel}</span>
-        <span className="flex items-center gap-3">
-          <span className="rounded-full bg-[var(--color-ocean-100)] px-2.5 py-0.5 text-xs font-bold text-[var(--color-ocean-700)]">
-            {index + 1} / {totalLevels}
+    <CoinHudContext.Provider value={{ coinHudRef }}>
+      <main className="flex min-h-[80vh] flex-1 flex-col">
+        <div className="flex items-center justify-between border-b border-[var(--color-sand-200)] bg-white/50 px-6 py-3 text-sm text-[var(--color-sand-900)] backdrop-blur">
+          <span className="font-hanzi font-semibold">{weekLabel}</span>
+          <span className="flex items-center gap-3">
+            <span className="rounded-full bg-[var(--color-ocean-100)] px-2.5 py-0.5 text-xs font-bold text-[var(--color-ocean-700)]">
+              {index + 1} / {totalLevels}
+            </span>
+            <span
+              ref={coinHudRef as React.RefObject<HTMLSpanElement>}
+              className="rounded-full bg-[var(--color-treasure-400)] px-3 py-0.5 text-sm font-bold text-[var(--color-treasure-700)]"
+            >
+              🪙 {coinsThisSession}
+            </span>
           </span>
-          <span className="rounded-full bg-[var(--color-treasure-400)] px-3 py-0.5 text-sm font-bold text-[var(--color-treasure-700)]">
-            🪙 {coinsThisSession}
-          </span>
-        </span>
-      </div>
-      {body}
-    </main>
+        </div>
+        {body}
+      </main>
+    </CoinHudContext.Provider>
   );
 }
 

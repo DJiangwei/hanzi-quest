@@ -5,6 +5,7 @@ import {
   type CreateStageState,
   createStageAction,
 } from '@/lib/actions/weeks';
+import { WoodSignButton } from '@/components/ui/WoodSignButton';
 
 const INITIAL: CreateStageState = {};
 const PLACEHOLDER = `人 口 大 中 小 哭 笑 一 上 下
@@ -99,13 +100,9 @@ export function NewStageForm({ kids }: Props) {
         <p className="text-sm text-[var(--color-bad)]">{state.error}</p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded-full bg-[var(--color-ocean-500)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95 disabled:bg-[var(--color-sand-200)] disabled:text-[var(--color-sand-700)]"
-      >
+      <WoodSignButton type="submit" disabled={pending} className="self-start">
         {pending ? 'Creating…' : 'Create draft lessons'}
-      </button>
+      </WoodSignButton>
 
       <p className="text-xs text-[var(--color-sand-700)]">
         AI generation runs separately, one week at a time, from the dashboard.

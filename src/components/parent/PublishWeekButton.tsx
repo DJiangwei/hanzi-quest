@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { publishWeekAction } from '@/lib/actions/weeks';
+import { WoodSignButton } from '@/components/ui/WoodSignButton';
 
 export function PublishWeekButton({
   weekId,
@@ -16,8 +17,7 @@ export function PublishWeekButton({
 
   return (
     <span className="flex items-center gap-2">
-      <button
-        type="button"
+      <WoodSignButton
         disabled={pending}
         onClick={() => {
           setError(undefined);
@@ -27,14 +27,13 @@ export function PublishWeekButton({
             else setDone(true);
           });
         }}
-        className="rounded-full bg-[var(--color-good)] px-5 py-2 text-sm font-semibold text-white shadow-md hover:brightness-110 active:scale-95 disabled:opacity-60"
       >
         {pending
           ? 'Publishing…'
           : done
             ? '✓ Published — re-publish'
             : 'Publish to play'}
-      </button>
+      </WoodSignButton>
       {error ? <span className="text-xs text-[var(--color-bad)]">{error}</span> : null}
     </span>
   );

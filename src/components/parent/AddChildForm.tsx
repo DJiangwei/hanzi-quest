@@ -5,6 +5,7 @@ import {
   type ChildActionState,
   createChildAction,
 } from '@/lib/actions/children';
+import { WoodSignButton } from '@/components/ui/WoodSignButton';
 
 const INITIAL: ChildActionState = {};
 
@@ -60,13 +61,9 @@ export function AddChildForm() {
       {state.error ? (
         <p className="text-xs text-[var(--color-bad)]">{state.error}</p>
       ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded-full bg-[var(--color-ocean-500)] px-5 py-2 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95 disabled:bg-[var(--color-sand-200)] disabled:text-[var(--color-sand-700)]"
-      >
+      <WoodSignButton type="submit" disabled={pending} className="self-start">
         {pending ? 'Adding…' : 'Add child'}
-      </button>
+      </WoodSignButton>
     </form>
   );
 }

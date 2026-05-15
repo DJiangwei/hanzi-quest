@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react';
 import { deleteChildAction } from '@/lib/actions/children';
+import { WoodSignButton } from '@/components/ui/WoodSignButton';
 
 export function DeleteChildButton({
   childId,
@@ -13,8 +14,8 @@ export function DeleteChildButton({
   const [pending, startTransition] = useTransition();
 
   return (
-    <button
-      type="button"
+    <WoodSignButton
+      variant="ghost"
       disabled={pending}
       onClick={() => {
         if (
@@ -25,9 +26,9 @@ export function DeleteChildButton({
           startTransition(() => deleteChildAction(childId));
         }
       }}
-      className="self-start rounded-full border-2 border-[var(--color-bad)] bg-white px-5 py-2 text-sm font-semibold text-[var(--color-bad)] hover:bg-[var(--color-bad-bg)] disabled:opacity-50"
+      className="self-start"
     >
       {pending ? 'Deleting…' : `Delete ${childName}`}
-    </button>
+    </WoodSignButton>
   );
 }
