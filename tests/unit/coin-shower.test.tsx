@@ -27,4 +27,11 @@ describe('CoinShower', () => {
     const { container } = render(<CoinShower />);
     expect(container.querySelectorAll('[data-testid="coin"]')).toHaveLength(0);
   });
+
+  it('calls onComplete exactly once under reduced-motion', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(true);
+    const onComplete = vi.fn();
+    render(<CoinShower onComplete={onComplete} />);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
 });

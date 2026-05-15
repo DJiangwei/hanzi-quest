@@ -1,7 +1,7 @@
 'use client';
 
 import { LazyMotion, domAnimation, m } from 'framer-motion';
-import { useMemo, type RefObject } from 'react';
+import { useEffect, useMemo, type RefObject } from 'react';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 
 interface Props {
@@ -51,16 +51,21 @@ function buildCoins(
 export function CoinShower({ count = 5, originRect, targetEl, onComplete }: Props) {
   const reduced = useReducedMotion();
 
+  useEffect(() => {
+    if (reduced) onComplete?.();
+    // intentionally only depends on `reduced` — onComplete identity changes
+    // would otherwise cause repeated firings. CoinShower is a fire-and-forget
+    // FX, so this single shot is the contract.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduced]);
+
   const coins = useMemo<CoinSpec[]>(() => {
     if (reduced) return [];
     return buildCoins(count, originRect, targetEl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (reduced) {
-    onComplete?.();
-    return null;
-  }
+  if (reduced) return null;
 
   return (
     <LazyMotion features={domAnimation}>
