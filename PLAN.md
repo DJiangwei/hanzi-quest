@@ -35,10 +35,11 @@ Production at <https://hanzi-adventure.vercel.app>. One real test user (David / 
 | #12 | SVG island map + admin pirate palette | Mario-style 10-island map, dotted path, locked/active/done states |
 | — | Hotfix `22f0a24` | `/play/[childId]/level/[weekId]` 404 on shared-pack weeks |
 | #13 | Post-#12 housekeeping (this PR) | `/parent` explicit redirect + branch protection + Preview DeepSeek key + PLAN sync |
+| #14 | PR #14 spec — pirate-polish design doc + implementation plan | brainstorming + writing-plans skill output |
+| #15 | Pirate polish layer (PR #14 implementation) | treasure-map flashcard backdrop · coin-shower + shake + Web Audio · WoodSignButton CTAs on /play and /parent · Lottie level fanfare · prefers-reduced-motion fully respected |
 
 ### Next up (locked order, per art-direction memory)
-- **PR #14** — Answer-feedback animations, treasure-map flashcard backdrop, Lottie coin shower + level fanfare, wood-sign buttons
-- **PR #15** — Boss kraken (Phase 4) + treasure-chest gacha reveal (Phase 5 entry)
+- **PR #16** — Boss kraken (Phase 4) + treasure-chest gacha reveal (Phase 5 entry)
 
 ### Loose ends to land at convenience
 - (none currently — `/parent` redirect, branch protection, and Preview `DEEPSEEK_API_KEY` all landed 2026-05-14)
@@ -55,9 +56,9 @@ The original Phase 0–7 plan from October still describes the long arc. Below i
 | 0 — Bootstrap | Next 16 scaffold, Vercel link, Marketplace Neon + Clerk, CI, first deploy | ✅ done |
 | 1 — Auth + schema | 32-table schema, Clerk webhook + bootstrap, Children CRUD, scene_templates seed | ✅ done |
 | 2 — Parent input + AI generation | Single-week + bulk-stage input, DeepSeek pipeline, review UI | ✅ done (Phase 2a + 2b) |
-| 3 — Map + scenes | 5 base scene types, map, coin economy | ✅ MVP + full + SVG map (PRs #6, #8, #12). Animations/feedback polish = PR #14 |
-| 4 — Writing + Boss | HanziWriter tracing scene + boss gauntlet | ⏳ planned PR #15 |
-| 5 — Economy + shop + gacha + zodiac | 12-zodiac gacha pack, shop tabs, avatar slots, shards, powerups | ⏳ planned PR #15+ |
+| 3 — Map + scenes | 5 base scene types, map, coin economy | ✅ MVP + full + SVG map (PRs #6, #8, #12). Animations/feedback polish landed in PR #15 |
+| 4 — Writing + Boss | HanziWriter tracing scene + boss gauntlet | ⏳ planned PR #16 |
+| 5 — Economy + shop + gacha + zodiac | 12-zodiac gacha pack, shop tabs, avatar slots, shards, powerups | ⏳ planned PR #16+ |
 | 6 — Streaks + parent progress + polish | streak tracking, recharts, sounds, a11y, i18n audit | ⏳ |
 | 7 — Real-world beta with Yinuo | Iterate from observed play | ⏳ ongoing already in informal form |
 
