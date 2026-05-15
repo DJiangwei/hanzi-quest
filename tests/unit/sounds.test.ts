@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { playDing, playBuzz, playFanfare } from '@/lib/audio/sounds';
 
 function makeMockCtx() {
-  const oscs: Array<{ start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>; frequency: { value: number }; type: string }> = [];
+  const oscs: Array<{ start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>; frequency: { value: number; setValueAtTime: ReturnType<typeof vi.fn>; exponentialRampToValueAtTime: ReturnType<typeof vi.fn> }; type: string }> = [];
   const gains: Array<{ gain: { setValueAtTime: ReturnType<typeof vi.fn>; exponentialRampToValueAtTime: ReturnType<typeof vi.fn> } }> = [];
   const ctx = {
     currentTime: 0,
@@ -11,7 +11,11 @@ function makeMockCtx() {
     createOscillator: vi.fn(() => {
       const osc = {
         type: 'sine',
-        frequency: { value: 440 },
+        frequency: {
+          value: 440,
+          setValueAtTime: vi.fn(),
+          exponentialRampToValueAtTime: vi.fn(),
+        },
         start: vi.fn(),
         stop: vi.fn(),
         connect: vi.fn(() => ({ connect: vi.fn() })),

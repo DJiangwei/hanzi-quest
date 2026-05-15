@@ -37,7 +37,8 @@ export function playBuzz(ctx: AudioContext): void {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = 'sawtooth';
-  osc.frequency.value = 300;
+  osc.frequency.setValueAtTime(300, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.25);
   gain.gain.setValueAtTime(0.1, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
   osc.connect(gain).connect(ctx.destination);
