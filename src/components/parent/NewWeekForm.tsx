@@ -5,6 +5,7 @@ import {
   type CreateWeekState,
   createWeekAction,
 } from '@/lib/actions/weeks';
+import { WoodSignButton } from '@/components/ui/WoodSignButton';
 
 const INITIAL: CreateWeekState = {};
 
@@ -84,13 +85,9 @@ export function NewWeekForm({ kids }: Props) {
         <p className="text-sm text-[var(--color-bad)]">{state.error}</p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded-full bg-[var(--color-ocean-500)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95 disabled:bg-[var(--color-sand-200)] disabled:text-[var(--color-sand-700)]"
-      >
+      <WoodSignButton type="submit" disabled={pending} className="self-start">
         {pending ? 'Generating with AI… (~30s)' : 'Generate week'}
-      </button>
+      </WoodSignButton>
     </form>
   );
 }
