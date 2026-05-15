@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import {
@@ -15,7 +16,11 @@ import { FlashcardScene } from './FlashcardScene';
 import { ImagePickScene } from './ImagePickScene';
 import { VisualPickScene } from './VisualPickScene';
 import { WordMatchScene } from './WordMatchScene';
-import { LevelFanfare } from './fx/LevelFanfare';
+
+const LevelFanfare = dynamic(
+  () => import('./fx/LevelFanfare').then((m) => m.LevelFanfare),
+  { ssr: false },
+);
 
 interface CharacterDetail {
   characterId: string;
