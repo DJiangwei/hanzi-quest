@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CollectionHudPill } from './CollectionHudPill';
 
 /**
  * The world map a child sees on /play/[childId]: a vertical zigzag of
@@ -30,6 +31,7 @@ interface IslandInput {
 interface Props {
   childId: string;
   islands: IslandInput[];
+  ownedCount: number;
 }
 
 const ISLAND_RADIUS = 36;
@@ -57,7 +59,7 @@ function pathBetween(a: { x: number; y: number }, b: { x: number; y: number }): 
   return `M ${a.x} ${a.y} Q ${cx} ${midY} ${b.x} ${b.y}`;
 }
 
-export function IslandMap({ childId, islands }: Props) {
+export function IslandMap({ childId, islands, ownedCount }: Props) {
   const total = islands.length;
   if (total === 0) return null;
 
@@ -67,6 +69,11 @@ export function IslandMap({ childId, islands }: Props) {
 
   return (
     <div className="relative mx-auto w-full max-w-md">
+      {/* Map top bar: collection pill */}
+      <div className="mb-3 flex items-center justify-end">
+        <CollectionHudPill childId={childId} ownedCount={ownedCount} />
+      </div>
+
       <svg
         viewBox={`0 0 ${SVG_WIDTH} ${svgHeight}`}
         className="block h-auto w-full"

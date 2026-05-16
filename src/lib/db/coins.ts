@@ -4,6 +4,27 @@ import { coinBalances, coinTransactions } from '@/db/schema';
 
 export type CoinBalance = typeof coinBalances.$inferSelect;
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export type AwardCoinReason =
+  | 'scene_complete'
+  | 'scene_replay'
+  | 'scene_perfect_bonus'
+  | 'boss_clear'
+  | 'streak_daily'
+  | 'shop_purchase'
+  | 'gacha_pull'
+  | 'shard_redeem'
+  | 'admin_adjust';
+
+interface AwardInput {
+  childId: string;
+  delta: number;
+  reason: AwardCoinReason;
+  refType?: string;
+  refId?: string;
+}
+
 export async function getCoinBalance(childId: string): Promise<CoinBalance> {
   const [existing] = await db
     .select()
@@ -30,48 +51,36 @@ export async function getCoinBalance(childId: string): Promise<CoinBalance> {
   return retry;
 }
 
-export async function awardCoins(input: {
-  childId: string;
-  delta: number;
-  reason:
-    | 'scene_complete'
-    | 'scene_replay'
-    | 'scene_perfect_bonus'
-    | 'boss_clear'
-    | 'streak_daily'
-    | 'shop_purchase'
-    | 'gacha_pull'
-    | 'shard_redeem'
-    | 'admin_adjust';
-  refType?: string;
-  refId?: string;
-}): Promise<void> {
+export async function awardCoinsInTx(tx: Tx, input: AwardInput): Promise<void> {
   if (input.delta === 0) return;
-  await db.transaction(async (tx) => {
-    await tx.insert(coinTransactions).values({
-      childId: input.childId,
-      delta: input.delta,
-      reason: input.reason,
-      refType: input.refType ?? null,
-      refId: input.refId ?? null,
-    });
-    await tx
-      .insert(coinBalances)
-      .values({
-        childId: input.childId,
-        balance: Math.max(input.delta, 0),
-        lifetimeEarned: Math.max(input.delta, 0),
-      })
-      .onConflictDoUpdate({
-        target: coinBalances.childId,
-        set: {
-          balance: sql`${coinBalances.balance} + ${input.delta}`,
-          lifetimeEarned:
-            input.delta > 0
-              ? sql`${coinBalances.lifetimeEarned} + ${input.delta}`
-              : sql`${coinBalances.lifetimeEarned}`,
-          updatedAt: sql`now()`,
-        },
-      });
+  await tx.insert(coinTransactions).values({
+    childId: input.childId,
+    delta: input.delta,
+    reason: input.reason,
+    refType: input.refType ?? null,
+    refId: input.refId ?? null,
   });
+  await tx
+    .insert(coinBalances)
+    .values({
+      childId: input.childId,
+      balance: Math.max(input.delta, 0),
+      lifetimeEarned: Math.max(input.delta, 0),
+    })
+    .onConflictDoUpdate({
+      target: coinBalances.childId,
+      set: {
+        balance: sql`${coinBalances.balance} + ${input.delta}`,
+        lifetimeEarned:
+          input.delta > 0
+            ? sql`${coinBalances.lifetimeEarned} + ${input.delta}`
+            : sql`${coinBalances.lifetimeEarned}`,
+        updatedAt: sql`now()`,
+      },
+    });
+}
+
+export async function awardCoins(input: AwardInput): Promise<void> {
+  if (input.delta === 0) return;
+  await db.transaction((tx) => awardCoinsInTx(tx, input));
 }

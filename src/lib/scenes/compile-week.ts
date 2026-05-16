@@ -4,6 +4,7 @@ import { sceneTemplates, weekLevels } from '@/db/schema';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import type {
   AudioPickConfig,
+  BossConfig,
   FlashcardConfig,
   ImagePickConfig,
   VisualPickConfig,
@@ -53,7 +54,8 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
       | AudioPickConfig
       | VisualPickConfig
       | ImagePickConfig
-      | WordMatchConfig,
+      | WordMatchConfig
+      | BossConfig,
   ) => {
     rows.push({
       weekId,
@@ -100,6 +102,16 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
         push(wordId, { characterIds: sample.map((c) => c.id) });
       }
     }
+  }
+
+  // 3. Boss — only if pack has at least 10 chars AND a boss template is seeded.
+  const bossId = tmplByType.get('boss');
+  if (bossId && chars.length >= 10) {
+    const shuffled = shuffle(chars).slice(0, 10);
+    push(bossId, {
+      characterIds: shuffled.map((c) => c.id),
+      questionTypes: ['audio_pick', 'visual_pick', 'image_pick'],
+    });
   }
 
   await db.transaction(async (tx) => {

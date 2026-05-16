@@ -20,6 +20,16 @@ vi.mock('@/lib/audio/play', () => ({
 vi.mock('@lottiefiles/dotlottie-react', () => ({
   DotLottieReact: () => <div data-testid="lottie" />,
 }));
+vi.mock('@/components/scenes/BossScene', () => ({
+  BossScene: () => <div data-testid="boss-scene-mock" />,
+}));
+vi.mock('@/lib/actions/gacha', () => ({
+  pullFreeFromBoss: vi.fn(),
+  AlreadyClaimedError: class extends Error {},
+}));
+vi.mock('@/components/scenes/fx/TreasureChestReveal', () => ({
+  TreasureChestReveal: () => <div data-testid="treasure-chest-reveal" />,
+}));
 
 import { SceneRunner } from '@/components/scenes/SceneRunner';
 import { setAudioMuted } from '@/lib/audio/play';
@@ -57,5 +67,28 @@ describe('SceneRunner', () => {
     // the end-state renders LevelFanfare which (via our mock) shows lottie
     await screen.findByTestId('lottie');
     expect(screen.getByRole('heading', { name: /Island cleared/i })).toBeInTheDocument();
+  });
+
+  it('mounts <BossScene> when current level has sceneType=boss', async () => {
+    const { startSessionAction } = await import('@/lib/actions/play');
+    vi.mocked(startSessionAction).mockResolvedValue({ sessionId: 's1' });
+
+    const charactersById = {
+      c1: { characterId: 'c1', hanzi: '海', pinyinArray: ['hǎi'], meaningEn: null, meaningZh: null, imageHook: null, firstWord: null },
+    };
+
+    render(
+      <SceneRunner
+        childId="c1"
+        weekId="w1"
+        weekLabel="Lesson 5"
+        levels={[
+          { id: 'l-boss', position: 0, sceneType: 'boss', config: { characterIds: ['c1'], questionTypes: ['audio_pick'] } },
+        ]}
+        charactersById={charactersById}
+        pool={Object.values(charactersById)}
+      />,
+    );
+    expect(await screen.findByTestId('boss-scene-mock')).toBeInTheDocument();
   });
 });

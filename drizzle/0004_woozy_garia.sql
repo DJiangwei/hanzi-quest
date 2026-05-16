@@ -1,0 +1,1 @@
+ALTER TABLE "week_progress" ADD COLUMN "free_pull_claimed" boolean DEFAULT false NOT NULL;

@@ -118,23 +118,33 @@ export async function upsertWeekProgress(input: {
   weekId: string;
   completionPercent: number;
   totalTimeDeltaSeconds: number;
+  bossCleared?: boolean;
 }): Promise<void> {
+  const insertValues = {
+    childId: input.childId,
+    weekId: input.weekId,
+    completionPercent: input.completionPercent,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    lastPlayedAt: sql`now()` as any,
+    totalTimeSeconds: input.totalTimeDeltaSeconds,
+    ...(input.bossCleared ? { bossCleared: true } : {}),
+  };
+
+  const setOnConflict: Record<string, unknown> = {
+    completionPercent: sql`GREATEST(${weekProgress.completionPercent}, ${input.completionPercent})`,
+    lastPlayedAt: sql`now()`,
+    totalTimeSeconds: sql`${weekProgress.totalTimeSeconds} + ${input.totalTimeDeltaSeconds}`,
+  };
+  if (input.bossCleared) {
+    setOnConflict.bossCleared = sql`true`;
+  }
+
   await db
     .insert(weekProgress)
-    .values({
-      childId: input.childId,
-      weekId: input.weekId,
-      completionPercent: input.completionPercent,
-      lastPlayedAt: sql`now()`,
-      totalTimeSeconds: input.totalTimeDeltaSeconds,
-    })
+    .values(insertValues)
     .onConflictDoUpdate({
       target: [weekProgress.childId, weekProgress.weekId],
-      set: {
-        completionPercent: sql`GREATEST(${weekProgress.completionPercent}, ${input.completionPercent})`,
-        lastPlayedAt: sql`now()`,
-        totalTimeSeconds: sql`${weekProgress.totalTimeSeconds} + ${input.totalTimeDeltaSeconds}`,
-      },
+      set: setOnConflict,
     });
 }
 
@@ -151,6 +161,26 @@ export async function listProgressByChild(
     .where(eq(weekProgress.childId, childId))
     .orderBy(desc(weekProgress.lastPlayedAt));
   return rows;
+}
+
+export async function getWeekProgress(
+  childId: string,
+  weekId: string,
+): Promise<{ bossCleared: boolean; freePullClaimed: boolean } | null> {
+  const [row] = await db
+    .select({
+      bossCleared: weekProgress.bossCleared,
+      freePullClaimed: weekProgress.freePullClaimed,
+    })
+    .from(weekProgress)
+    .where(
+      and(
+        eq(weekProgress.childId, childId),
+        eq(weekProgress.weekId, weekId),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
 }
 
 export async function getCharacterById(characterId: string) {

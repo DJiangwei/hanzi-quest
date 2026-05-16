@@ -6,7 +6,9 @@ import { requireChild } from '@/lib/auth/guards';
 import { awardCoins } from '@/lib/db/coins';
 import {
   endPlaySession,
+  getWeekProgress,
   hasPriorAttempt,
+  listLevelsForWeek,
   recordSceneAttempt,
   startPlaySession,
   upsertWeekProgress,
@@ -16,6 +18,7 @@ import { getWeekOwnedBy, listCharactersForWeek } from '@/lib/db/weeks';
 const SCENE_COMPLETE_AWARD = 50;
 const SCENE_REPLAY_AWARD = 5;
 const PERFECT_BONUS = 25;
+const BOSS_CLEAR_REWARD = 300;
 
 export async function startSessionAction(
   childId: string,
@@ -95,7 +98,7 @@ const FinishLevelSchema = z.object({
 
 export async function finishLevelAction(
   input: z.input<typeof FinishLevelSchema>,
-): Promise<{ ok: true }> {
+): Promise<{ ok: true; bossCleared: boolean }> {
   const parsed = FinishLevelSchema.parse(input);
   const { parent, child } = await requireChild(parsed.childId);
 
@@ -109,12 +112,33 @@ export async function finishLevelAction(
     (parsed.totalScenesPassed / parsed.totalScenesInWeek) * 100,
   );
 
+  // Detect boss clear: last level type is 'boss' AND all scenes were passed.
+  const levels = await listLevelsForWeek(parsed.weekId);
+  const lastLevel = levels[levels.length - 1];
+  const allScenesCleared = parsed.totalScenesPassed === parsed.totalScenesInWeek;
+  const bossCleared = lastLevel?.sceneType === 'boss' && allScenesCleared;
+
+  // Read existing progress BEFORE the upsert to guard against double-awarding on retry.
+  const existing = await getWeekProgress(child.id, parsed.weekId);
+  const alreadyAwarded = existing?.bossCleared === true;
+
   await upsertWeekProgress({
     childId: child.id,
     weekId: parsed.weekId,
     completionPercent,
     totalTimeDeltaSeconds: parsed.durationSeconds,
+    bossCleared,
   });
+
+  if (bossCleared && !alreadyAwarded) {
+    await awardCoins({
+      childId: child.id,
+      delta: BOSS_CLEAR_REWARD,
+      reason: 'boss_clear',
+      refType: 'week',
+      refId: parsed.weekId,
+    });
+  }
 
   await endPlaySession(parsed.sessionId, {
     weekId: parsed.weekId,
@@ -123,7 +147,7 @@ export async function finishLevelAction(
   });
 
   revalidatePath(`/play/${child.id}`);
-  return { ok: true };
+  return { ok: true, bossCleared };
 }
 
 export async function listWeekChars(weekId: string, childId: string) {
