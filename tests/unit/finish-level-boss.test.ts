@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   requireChild: vi.fn(),
-  getWeekOwnedBy: vi.fn(),
+  getPlayableWeekForChild: vi.fn(),
   listLevelsForWeek: vi.fn(),
   getWeekProgress: vi.fn(),
   upsertWeekProgress: vi.fn(),
@@ -11,7 +11,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
-vi.mock('@/lib/db/weeks', () => ({ getWeekOwnedBy: mocks.getWeekOwnedBy, listCharactersForWeek: vi.fn() }));
+vi.mock('@/lib/db/weeks', () => ({
+  getPlayableWeekForChild: mocks.getPlayableWeekForChild,
+  listCharactersForWeek: vi.fn(),
+}));
 vi.mock('@/lib/db/play', () => ({
   startPlaySession: vi.fn(),
   endPlaySession: mocks.endPlaySession,
@@ -30,7 +33,7 @@ describe('finishLevelAction boss-clear', () => {
   beforeEach(() => vi.clearAllMocks());
   it('awards +300 coins and sets bossCleared=true when last scene was boss + all scenes passed', async () => {
     mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
-    mocks.getWeekOwnedBy.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
     mocks.listLevelsForWeek.mockResolvedValue([
       { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
       { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
@@ -57,7 +60,7 @@ describe('finishLevelAction boss-clear', () => {
 
   it('does NOT award boss bonus when last scene was not boss', async () => {
     mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
-    mocks.getWeekOwnedBy.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
     mocks.listLevelsForWeek.mockResolvedValue([
       { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
       { id: 'l2', position: 1, sceneType: 'word_match', sceneConfig: {} },
@@ -78,7 +81,7 @@ describe('finishLevelAction boss-clear', () => {
 
   it('does NOT award boss bonus when scenes < total (boss skipped)', async () => {
     mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
-    mocks.getWeekOwnedBy.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
     mocks.listLevelsForWeek.mockResolvedValue([
       { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
       { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
@@ -99,7 +102,7 @@ describe('finishLevelAction boss-clear', () => {
 
   it('does NOT re-award +300 coins when bossCleared was already true', async () => {
     mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
-    mocks.getWeekOwnedBy.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
     mocks.listLevelsForWeek.mockResolvedValue([
       { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
       { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
