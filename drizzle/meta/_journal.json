@@ -29,6 +29,13 @@
       "when": 1778446846278,
       "tag": "0003_cooing_supernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778915566855,
+      "tag": "0004_woozy_garia",
+      "breakpoints": true
     }
   ]
 }

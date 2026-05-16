@@ -118,6 +118,7 @@ export const weekProgress = pgTable(
       .references(() => weeks.id, { onDelete: 'cascade' }),
     completionPercent: smallint('completion_percent').notNull().default(0),
     bossCleared: boolean('boss_cleared').notNull().default(false),
+    freePullClaimed: boolean('free_pull_claimed').notNull().default(false),
     lastPlayedAt: timestamp('last_played_at', { withTimezone: true }),
     totalTimeSeconds: integer('total_time_seconds').notNull().default(0),
   },
