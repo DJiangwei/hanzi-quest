@@ -37,9 +37,12 @@ Production at <https://hanzi-adventure.vercel.app>. One real test user (David / 
 | #13 | Post-#12 housekeeping (this PR) | `/parent` explicit redirect + branch protection + Preview DeepSeek key + PLAN sync |
 | #14 | PR #14 spec — pirate-polish design doc + implementation plan | brainstorming + writing-plans skill output |
 | #15 | Pirate polish layer (PR #14 implementation) | treasure-map flashcard backdrop · coin-shower + shake + Web Audio · WoodSignButton CTAs on /play and /parent · Lottie level fanfare · prefers-reduced-motion fully respected |
+| #16 | PR #16 spec — boss + gacha design doc + implementation plan | brainstorming + writing-plans skill output |
+| #17 | Boss kraken + treasure-chest gacha (PR #16 implementation) | Phase 4 + Phase 5 entry: 10q/3l boss · /collection page · 12 zodiac SVG set · free pull on boss clear · paid pull 500 coins · shard accrual on dupes |
 
-### Next up (locked order, per art-direction memory)
-- **PR #16** — Boss kraken (Phase 4) + treasure-chest gacha reveal (Phase 5 entry)
+### Next up
+
+(art_direction phased PRs #10/#12/#15/#17 all shipped. Future PR ideas in PLAN §2 phase plan; no specific PR is queued.)
 
 ### Loose ends to land at convenience
 - (none currently — `/parent` redirect, branch protection, and Preview `DEEPSEEK_API_KEY` all landed 2026-05-14)
@@ -57,8 +60,8 @@ The original Phase 0–7 plan from October still describes the long arc. Below i
 | 1 — Auth + schema | 32-table schema, Clerk webhook + bootstrap, Children CRUD, scene_templates seed | ✅ done |
 | 2 — Parent input + AI generation | Single-week + bulk-stage input, DeepSeek pipeline, review UI | ✅ done (Phase 2a + 2b) |
 | 3 — Map + scenes | 5 base scene types, map, coin economy | ✅ MVP + full + SVG map (PRs #6, #8, #12). Animations/feedback polish landed in PR #15 |
-| 4 — Writing + Boss | HanziWriter tracing scene + boss gauntlet | ⏳ planned PR #16 |
-| 5 — Economy + shop + gacha + zodiac | 12-zodiac gacha pack, shop tabs, avatar slots, shards, powerups | ⏳ planned PR #16+ |
+| 4 — Writing + Boss | HanziWriter tracing scene + boss gauntlet | ✅ boss shipped PR #17; tracing deferred to a future small PR |
+| 5 — Economy + shop + gacha + zodiac | 12-zodiac gacha pack, shop tabs, avatar slots, shards, powerups | ✅ entry shipped PR #17 (gacha + collection + dupe→shard); shop tabs + avatar + voucher redemption queued for V1.5 |
 | 6 — Streaks + parent progress + polish | streak tracking, recharts, sounds, a11y, i18n audit | ⏳ |
 | 7 — Real-world beta with Yinuo | Iterate from observed play | ⏳ ongoing already in informal form |
 
