@@ -8,20 +8,9 @@ import {
   shardBalances,
 } from '@/db/schema';
 import { awardCoinsInTx } from './coins';
+import type { CollectibleItem } from './collections';
 
-// TEMPORARY — replaced when ./collections lands in Task 6
-export type CollectibleItem = {
-  id: string;
-  packId: string;
-  slug: string;
-  nameZh: string;
-  nameEn: string;
-  loreZh: string | null;
-  loreEn: string | null;
-  rarity: 'common' | 'rare' | 'epic';
-  dropWeight: number;
-  imageUrl: string | null;
-};
+export type { CollectibleItem };
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
