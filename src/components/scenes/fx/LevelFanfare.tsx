@@ -3,7 +3,8 @@
 
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useEffect, useState, useTransition } from 'react';
-import { AlreadyClaimedError, pullFreeFromBoss } from '@/lib/actions/gacha';
+import { pullFreeFromBoss } from '@/lib/actions/gacha';
+import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { playSound } from '@/lib/audio/play';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';

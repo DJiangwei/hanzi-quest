@@ -10,6 +10,13 @@ import {
 import { awardCoinsInTx } from './coins';
 import type { CollectibleItem } from './collections';
 
+// Re-export the pure error classes from the dedicated errors module so callers
+// who already import gacha can keep working. New client-side callers should
+// import directly from '@/lib/errors/gacha-errors' to avoid pulling the db
+// client (postgres / fs / net) into the browser bundle.
+import { AlreadyClaimedError, InsufficientCoinsError } from '@/lib/errors/gacha-errors';
+export { AlreadyClaimedError, InsufficientCoinsError };
+
 export type { CollectibleItem };
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -19,23 +26,6 @@ export interface PullResult {
   wasDuplicate: boolean;
   shardsAfter: number | null;
   coinsAfter: number;
-}
-
-export class InsufficientCoinsError extends Error {
-  constructor(
-    public readonly required: number,
-    public readonly available: number,
-  ) {
-    super(`Insufficient coins: need ${required}, have ${available}`);
-    this.name = 'InsufficientCoinsError';
-  }
-}
-
-export class AlreadyClaimedError extends Error {
-  constructor() {
-    super('Free pull already claimed for this week');
-    this.name = 'AlreadyClaimedError';
-  }
 }
 
 export async function pull(

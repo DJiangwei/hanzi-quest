@@ -6,14 +6,12 @@ import { db } from '@/db';
 import { weekProgress } from '@/db/schema';
 import { requireChild } from '@/lib/auth/guards';
 import { getPackBySlug } from '@/lib/db/collections';
-import {
-  AlreadyClaimedError,
-  pull,
-  pullInTx,
-  type PullResult,
-} from '@/lib/db/gacha';
+import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
+import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 
-export { AlreadyClaimedError } from '@/lib/db/gacha';
+// AlreadyClaimedError is NOT re-exported here — 'use server' files may only
+// export async functions. Client components import it directly from
+// '@/lib/errors/gacha-errors'.
 
 const ZODIAC_PACK_SLUG = 'zodiac-v1';
 const PAID_PULL_COST = 500;
