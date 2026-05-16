@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { IslandMap } from '@/components/play/IslandMap';
 import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
+import { getPackBySlug, listChildCollection } from '@/lib/db/collections';
 import { listProgressByChild } from '@/lib/db/play';
 import { listChildPlayableWeeks } from '@/lib/db/weeks';
 
@@ -13,11 +14,16 @@ export default async function PlayHomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const [playableWeeks, progressRows, balance] = await Promise.all([
+  const [playableWeeks, progressRows, balance, pack] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
     getCoinBalance(child.id),
+    getPackBySlug('zodiac-v1'),
   ]);
+
+  const ownedCount = pack
+    ? (await listChildCollection(child.id, pack.id)).length
+    : 0;
 
   const progressByWeek = new Map(
     progressRows.map((p) => [p.weekId, p.completionPercent]),
@@ -65,7 +71,7 @@ export default async function PlayHomePage({ params }: PageProps) {
           </p>
         </div>
       ) : (
-        <IslandMap childId={childId} islands={islands} />
+        <IslandMap childId={childId} islands={islands} ownedCount={ownedCount} />
       )}
     </main>
   );
