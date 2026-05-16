@@ -23,6 +23,13 @@ vi.mock('@lottiefiles/dotlottie-react', () => ({
 vi.mock('@/components/scenes/BossScene', () => ({
   BossScene: () => <div data-testid="boss-scene-mock" />,
 }));
+vi.mock('@/lib/actions/gacha', () => ({
+  pullFreeFromBoss: vi.fn(),
+  AlreadyClaimedError: class extends Error {},
+}));
+vi.mock('@/components/scenes/fx/TreasureChestReveal', () => ({
+  TreasureChestReveal: () => <div data-testid="treasure-chest-reveal" />,
+}));
 
 import { SceneRunner } from '@/components/scenes/SceneRunner';
 import { setAudioMuted } from '@/lib/audio/play';

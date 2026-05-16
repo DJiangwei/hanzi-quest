@@ -111,6 +111,9 @@ export function SceneRunner({
       <LevelFanfare
         weekLabel={weekLabel}
         coinsThisSession={coinsThisSession}
+        childId={childId}
+        weekId={weekId}
+        chestAvailable={lastSceneType === 'boss'}
         onContinue={() => router.push(`/play/${childId}`)}
       />
     );
