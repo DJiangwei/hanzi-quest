@@ -13,7 +13,10 @@ import {
   startPlaySession,
   upsertWeekProgress,
 } from '@/lib/db/play';
-import { getWeekOwnedBy, listCharactersForWeek } from '@/lib/db/weeks';
+import {
+  getPlayableWeekForChild,
+  listCharactersForWeek,
+} from '@/lib/db/weeks';
 
 const SCENE_COMPLETE_AWARD = 50;
 const SCENE_REPLAY_AWARD = 5;
@@ -100,13 +103,14 @@ export async function finishLevelAction(
   input: z.input<typeof FinishLevelSchema>,
 ): Promise<{ ok: true; bossCleared: boolean }> {
   const parsed = FinishLevelSchema.parse(input);
-  const { parent, child } = await requireChild(parsed.childId);
+  const { child } = await requireChild(parsed.childId);
 
-  const week = await getWeekOwnedBy(parsed.weekId, parent.id);
-  if (!week) throw new Error('Week not found for this parent');
-  if (week.childId !== child.id) {
-    throw new Error('Week does not belong to this child');
-  }
+  // Use getPlayableWeekForChild — works for both per-family weeks AND shared
+  // pack weeks (parent_user_id IS NULL + child enrolled in pack). The older
+  // getWeekOwnedBy(weekId, parent.id) path was a regression for shared-pack
+  // sessions (hotfix 22f0a24 patched the level page but missed this action).
+  const week = await getPlayableWeekForChild(child.id, parsed.weekId);
+  if (!week) throw new Error('Week not playable for this child');
 
   const completionPercent = Math.round(
     (parsed.totalScenesPassed / parsed.totalScenesInWeek) * 100,
@@ -151,8 +155,10 @@ export async function finishLevelAction(
 }
 
 export async function listWeekChars(weekId: string, childId: string) {
-  const { parent } = await requireChild(childId);
-  const week = await getWeekOwnedBy(weekId, parent.id);
-  if (!week || week.childId !== childId) return [];
+  const { child } = await requireChild(childId);
+  // Same fix as finishLevelAction — handle shared pack weeks where the parent
+  // doesn't own the week directly.
+  const week = await getPlayableWeekForChild(child.id, weekId);
+  if (!week) return [];
   return listCharactersForWeek(weekId);
 }
