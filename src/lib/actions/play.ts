@@ -6,6 +6,7 @@ import { requireChild } from '@/lib/auth/guards';
 import { awardCoins } from '@/lib/db/coins';
 import {
   endPlaySession,
+  getWeekProgress,
   hasPriorAttempt,
   listLevelsForWeek,
   recordSceneAttempt,
@@ -117,6 +118,10 @@ export async function finishLevelAction(
   const allScenesCleared = parsed.totalScenesPassed === parsed.totalScenesInWeek;
   const bossCleared = lastLevel?.sceneType === 'boss' && allScenesCleared;
 
+  // Read existing progress BEFORE the upsert to guard against double-awarding on retry.
+  const existing = await getWeekProgress(child.id, parsed.weekId);
+  const alreadyAwarded = existing?.bossCleared === true;
+
   await upsertWeekProgress({
     childId: child.id,
     weekId: parsed.weekId,
@@ -125,7 +130,7 @@ export async function finishLevelAction(
     bossCleared,
   });
 
-  if (bossCleared) {
+  if (bossCleared && !alreadyAwarded) {
     await awardCoins({
       childId: child.id,
       delta: BOSS_CLEAR_REWARD,

@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   requireChild: vi.fn(),
   getWeekOwnedBy: vi.fn(),
   listLevelsForWeek: vi.fn(),
+  getWeekProgress: vi.fn(),
   upsertWeekProgress: vi.fn(),
   endPlaySession: vi.fn(),
   awardCoins: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock('@/lib/db/play', () => ({
   recordSceneAttempt: vi.fn(),
   upsertWeekProgress: mocks.upsertWeekProgress,
   listLevelsForWeek: mocks.listLevelsForWeek,
+  getWeekProgress: mocks.getWeekProgress,
 }));
 vi.mock('@/lib/db/coins', () => ({ awardCoins: mocks.awardCoins }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
@@ -33,6 +35,8 @@ describe('finishLevelAction boss-clear', () => {
       { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
       { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
     ]);
+    // No prior progress row — first clear
+    mocks.getWeekProgress.mockResolvedValue(null);
 
     await finishLevelAction({
       sessionId: '11111111-2222-4333-a444-555555555555',
@@ -58,6 +62,7 @@ describe('finishLevelAction boss-clear', () => {
       { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
       { id: 'l2', position: 1, sceneType: 'word_match', sceneConfig: {} },
     ]);
+    mocks.getWeekProgress.mockResolvedValue(null);
 
     await finishLevelAction({
       sessionId: '11111111-2222-4333-a444-555555555555',
@@ -78,12 +83,35 @@ describe('finishLevelAction boss-clear', () => {
       { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
       { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
     ]);
+    mocks.getWeekProgress.mockResolvedValue(null);
 
     await finishLevelAction({
       sessionId: '11111111-2222-4333-a444-555555555555',
       childId: '22222222-3333-4444-a555-666666666666',
       weekId: '33333333-4444-4555-a666-777777777777',
       totalScenesPassed: 1,
+      totalScenesInWeek: 2,
+      durationSeconds: 120,
+    });
+
+    expect(mocks.awardCoins).not.toHaveBeenCalled();
+  });
+
+  it('does NOT re-award +300 coins when bossCleared was already true', async () => {
+    mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
+    mocks.getWeekOwnedBy.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.listLevelsForWeek.mockResolvedValue([
+      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
+      { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
+    ]);
+    // Simulate: week_progress already has bossCleared=true from a prior successful run
+    mocks.getWeekProgress.mockResolvedValue({ bossCleared: true, freePullClaimed: false });
+
+    await finishLevelAction({
+      sessionId: '11111111-2222-4333-a444-555555555555',
+      childId: '22222222-3333-4444-a555-666666666666',
+      weekId: '33333333-4444-4555-a666-777777777777',
+      totalScenesPassed: 2,
       totalScenesInWeek: 2,
       durationSeconds: 120,
     });

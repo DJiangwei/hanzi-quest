@@ -163,6 +163,26 @@ export async function listProgressByChild(
   return rows;
 }
 
+export async function getWeekProgress(
+  childId: string,
+  weekId: string,
+): Promise<{ bossCleared: boolean; freePullClaimed: boolean } | null> {
+  const [row] = await db
+    .select({
+      bossCleared: weekProgress.bossCleared,
+      freePullClaimed: weekProgress.freePullClaimed,
+    })
+    .from(weekProgress)
+    .where(
+      and(
+        eq(weekProgress.childId, childId),
+        eq(weekProgress.weekId, weekId),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
 export async function getCharacterById(characterId: string) {
   const [row] = await db
     .select()
