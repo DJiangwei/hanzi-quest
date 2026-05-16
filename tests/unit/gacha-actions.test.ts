@@ -49,11 +49,8 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
-import {
-  AlreadyClaimedError,
-  pullFreeFromBoss,
-  pullPaid,
-} from '@/lib/actions/gacha';
+import { pullFreeFromBoss, pullPaid } from '@/lib/actions/gacha';
+import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 
 describe('pullFreeFromBoss', () => {
   it('throws AlreadyClaimedError when freePullClaimed is already true', async () => {
