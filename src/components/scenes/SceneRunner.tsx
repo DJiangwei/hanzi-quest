@@ -12,10 +12,12 @@ import { setAudioMuted } from '@/lib/audio/play';
 import { CoinHudContext } from '@/lib/hooks/coin-hud-context';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { AudioPickScene } from './AudioPickScene';
+import { BossScene } from './BossScene';
 import { FlashcardScene } from './FlashcardScene';
 import { ImagePickScene } from './ImagePickScene';
 import { VisualPickScene } from './VisualPickScene';
 import { WordMatchScene } from './WordMatchScene';
+import type { BossQuestionType } from '@/lib/scenes/configs';
 
 const LevelFanfare = dynamic(
   () => import('./fx/LevelFanfare').then((m) => m.LevelFanfare),
@@ -71,6 +73,7 @@ export function SceneRunner({
   const [index, setIndex] = useState(0);
   const [coinsThisSession, setCoinsThisSession] = useState(0);
   const [done, setDone] = useState(false);
+  const [lastSceneType, setLastSceneType] = useState<SceneType | null>(null);
   const [pending, startTransition] = useTransition();
   const startedAtRef = useRef<number>(0);
   const coinHudRef = useRef<HTMLElement | null>(null);
@@ -127,6 +130,7 @@ export function SceneRunner({
       });
       setCoinsThisSession((c) => c + result.coinsAwarded);
 
+      setLastSceneType(currentLevel.sceneType);
       const nextIndex = index + 1;
       if (nextIndex >= totalLevels) {
         const elapsedSeconds = Math.round(
@@ -217,6 +221,20 @@ export function SceneRunner({
         ) : (
           <MissingData />
         );
+      break;
+    }
+    case 'boss': {
+      const characterIds = (currentLevel.config.characterIds as string[] | undefined) ?? [];
+      const questionTypes = (currentLevel.config.questionTypes as BossQuestionType[] | undefined) ?? ['audio_pick'];
+      body = (
+        <BossScene
+          key={currentLevel.id}
+          characterIds={characterIds}
+          questionTypes={questionTypes}
+          pool={pool}
+          onComplete={advance}
+        />
+      );
       break;
     }
     default:
