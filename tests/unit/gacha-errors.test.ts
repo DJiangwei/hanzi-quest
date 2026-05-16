@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// gacha.ts imports @/db (for the Tx alias and the pull algorithm). The db
+// module throws at import time if DATABASE_URL is unset, so mock it for
+// these pure-class tests.
+vi.mock('@/db', () => ({ db: {} }));
+
 import { AlreadyClaimedError, InsufficientCoinsError } from '@/lib/db/gacha';
 
 describe('Gacha error classes', () => {
