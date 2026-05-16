@@ -25,3 +25,16 @@ export const WordMatchConfigSchema = z.object({
   characterIds: z.array(z.string().uuid()).min(2).max(6),
 });
 export type WordMatchConfig = z.infer<typeof WordMatchConfigSchema>;
+
+export const BossQuestionTypeSchema = z.enum([
+  'audio_pick',
+  'visual_pick',
+  'image_pick',
+]);
+export type BossQuestionType = z.infer<typeof BossQuestionTypeSchema>;
+
+export const BossConfigSchema = z.object({
+  characterIds: z.array(z.string().uuid()).min(2),
+  questionTypes: z.array(BossQuestionTypeSchema).min(1),
+});
+export type BossConfig = z.infer<typeof BossConfigSchema>;
