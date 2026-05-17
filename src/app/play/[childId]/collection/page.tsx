@@ -7,7 +7,7 @@ import {
   listChildCollection,
 } from '@/lib/db/collections';
 import { CollectionPageBody } from '@/components/play/CollectionPageBody';
-import { ZodiacIconDefs, type ZodiacSlug } from '@/components/play/zodiac-icons';
+import type { ZodiacSlug } from '@/components/play/zodiac-icons';
 
 const ZODIAC_PACK_SLUG = 'zodiac-v1';
 
@@ -31,7 +31,6 @@ export default async function CollectionPage({
 
   return (
     <main className="flex flex-1 flex-col items-center gap-4 p-6">
-      <ZodiacIconDefs />
       <CollectionPageBody
         childId={childId}
         packSlug={ZODIAC_PACK_SLUG}
