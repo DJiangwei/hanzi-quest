@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
+import { ZodiacIconDefs } from '@/components/play/zodiac-icons';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,6 +36,10 @@ export default async function PlayLayout({ children, params }: LayoutProps) {
         </span>
         <span className="w-[80px]" />
       </header>
+      {/* Mounted once at the layout level so any descendant (collection page,
+          treasure-chest reveal, future zodiac sticker) can <use href="#z-xxx" />
+          without each page worrying about defs visibility. */}
+      <ZodiacIconDefs />
       <div className="flex flex-1 flex-col">{children}</div>
     </div>
   );

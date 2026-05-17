@@ -22,7 +22,7 @@ export function TreasureMapBackdrop({ children, intensity = 'medium' }: Props) {
           aria-hidden="true"
           viewBox="0 0 300 320"
           preserveAspectRatio="none"
-          className="pointer-events-none absolute inset-0 h-full w-full opacity-55"
+          className="pointer-events-none absolute inset-0 h-full w-full opacity-30"
         >
           <path
             data-testid="map-route"

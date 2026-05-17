@@ -38,9 +38,12 @@ export function FlashcardScene({ data, onComplete }: Props) {
         <button
           type="button"
           onClick={() => speak(data.hanzi)}
-          className="font-hanzi select-none text-[14rem] leading-none text-[var(--color-ocean-900)] transition-transform active:scale-95"
+          className="font-hanzi block select-none leading-none text-[var(--color-ocean-900)] transition-transform active:scale-95"
           aria-label={`Play audio for ${data.hanzi}`}
-          style={{ textShadow: '0 2px 0 rgba(255,250,225,0.5)' }}
+          style={{
+            fontSize: 'clamp(11rem, 55vw, 22rem)',
+            textShadow: '0 2px 0 rgba(255,250,225,0.5)',
+          }}
         >
           {data.hanzi}
         </button>
