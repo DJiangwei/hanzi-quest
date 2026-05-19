@@ -1,8 +1,10 @@
 import type { ComponentType } from 'react';
 import type { CollectibleItem } from '@/lib/db/collections';
 import { FlagCard } from '@/components/play/items/FlagCard';
+import { SeaCreatureCard } from '@/components/play/items/SeaCreatureCard';
 import { ZodiacGridItem } from '@/components/play/items/ZodiacGridItem';
 import { FLAGS_BY_SLUG } from '@/lib/collections/flagsData';
+import { SEA_CREATURES_BY_SLUG } from '@/lib/collections/seaCreaturesData';
 
 export interface ItemCardProps {
   item: CollectibleItem;
@@ -64,6 +66,20 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: FlagCard,
     resolveRevealEmoji: (slug) => FLAGS_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'sea-creatures-v1': {
+    displayNameZh: '海洋生物',
+    displayNameEn: 'Sea Creatures',
+    sloganZh: '航海路上遇到的所有伙伴。',
+    sloganEn: 'Every friend you meet on the high seas.',
+    themeEmoji: '🐠',
+    themeBannerClass:
+      'bg-gradient-to-br from-cyan-200 via-teal-300 to-sky-500',
+    themeAccentClass: 'text-teal-900',
+    paidPullCost: 300,
+    gridColumns: 3,
+    ItemCard: SeaCreatureCard,
+    resolveRevealEmoji: (slug) => SEA_CREATURES_BY_SLUG[slug]?.emoji ?? null,
   },
 };
 
