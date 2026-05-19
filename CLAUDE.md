@@ -16,17 +16,19 @@ It is **not** a multi-tenant SaaS. Optimize for Yinuo's daily fun, not for theor
 
 ## Current state (last refreshed 2026-05-19)
 
-**Shipped:** PR #1 → #24. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 6 scene types + boss, coins, 12-zodiac gacha + flags gacha, **Collector's Atlas hub** (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages), **shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"), layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
+**Shipped:** PR #1 → #25. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 6 scene types + boss, coins, **4 collection packs** in the Collector's Atlas (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages): zodiac (12), flags (30), sea creatures (20), dinosaurs (15). **Shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"). Layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
 
-**PR #21–#24 (just shipped, 2026-05-19):**
+**PR #21–#26 (just shipped, 2026-05-19):**
 - PR #21 (spec doc) + #22 (impl) — Shop hub + Avatar cosmetics. `/play/[childId]/shop`, `ShopHudButton` mounted in play layout, `AvatarRender` in island-map header, ~20 seeded items. New: `src/lib/db/shop.ts`, `src/lib/actions/shop.ts`, `src/lib/errors/shop-errors.ts`, `src/lib/avatar/{defaultLook,itemCatalog}.tsx`.
 - PR #23 (spec doc) + #24 (impl) — Collector's Atlas hub + Flags pack. `/collection` is now `AtlasHub` (multi-pack lobby); `/collection/[packSlug]` is generic. New: `src/lib/collections/{packRegistry,flagsData}.ts`, `src/components/play/{AtlasHub,AtlasHallCard,PackGrid,PackPageBody}.tsx`, `src/components/play/items/{FlagCard,ZodiacGridItem}.tsx`. 30 country flags seeded into prod via `scripts/seed-flags-pack.ts`. Per-pack gacha cost from `getPackMeta(slug).paidPullCost` (zodiac=500, flags=300).
+- PR #25 — Sea Creatures pack (20 bilingual ocean creatures, pirate-themed). `src/lib/collections/seaCreaturesData.ts` + `src/components/play/items/SeaCreatureCard.tsx`. Habitat instead of capital. cost=300.
+- PR #26 — Dinosaurs pack (15 dinosaurs across Triassic/Jurassic/Cretaceous eras). Only 2 emojis exist (🦖/🦕), so `DinosaurCard` color-codes the card by era + renders a bilingual era badge for differentiation. cost=300.
 
 **Most recent regressions fixed:**
 - PR #18 — `finishLevelAction` / `listWeekChars` used `getWeekOwnedBy` which fails for shared-pack weeks (parent_user_id NULL). Fixed by switching to `getPlayableWeekForChild`.
 - PR #20 — flashcard hanzi was 14rem fixed → now `clamp(11rem, 55vw, 22rem)`; `ZodiacIconDefs` (SVG `<symbol>` defs) only mounted on `/collection`, broke chest reveal — now mounted in the play layout.
 
-**Next up (per `docs/superpowers/specs/2026-05-18-pr23-collection-atlas-design.md` roadmap):** PR #25 — Sea Creatures pack (~20 pirate-themed creatures, reuses Atlas framework). Then Dinosaurs, Solar System, Coin economy expansion. ALWAYS confirm with David before starting a new PR.
+**Next up (per `docs/superpowers/specs/2026-05-18-pr23-collection-atlas-design.md` roadmap):** PR #27 — Solar System pack (8 planets + sun + moon). Then Coin economy expansion (daily-login / streak / perfect-week bonuses). ALWAYS confirm with David before starting a new PR.
 
 ---
 

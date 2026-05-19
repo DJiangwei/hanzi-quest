@@ -1,8 +1,10 @@
 import type { ComponentType } from 'react';
 import type { CollectibleItem } from '@/lib/db/collections';
+import { DinosaurCard } from '@/components/play/items/DinosaurCard';
 import { FlagCard } from '@/components/play/items/FlagCard';
 import { SeaCreatureCard } from '@/components/play/items/SeaCreatureCard';
 import { ZodiacGridItem } from '@/components/play/items/ZodiacGridItem';
+import { DINOSAURS_BY_SLUG } from '@/lib/collections/dinosaursData';
 import { FLAGS_BY_SLUG } from '@/lib/collections/flagsData';
 import { SEA_CREATURES_BY_SLUG } from '@/lib/collections/seaCreaturesData';
 
@@ -80,6 +82,20 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: SeaCreatureCard,
     resolveRevealEmoji: (slug) => SEA_CREATURES_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'dinosaurs-v1': {
+    displayNameZh: '恐龙世界',
+    displayNameEn: 'Dinosaurs',
+    sloganZh: '亿万年前的远古巨兽。',
+    sloganEn: 'Giant beasts from millions of years ago.',
+    themeEmoji: '🦖',
+    themeBannerClass:
+      'bg-gradient-to-br from-amber-200 via-orange-300 to-rose-400',
+    themeAccentClass: 'text-amber-900',
+    paidPullCost: 300,
+    gridColumns: 3,
+    ItemCard: DinosaurCard,
+    resolveRevealEmoji: (slug) => DINOSAURS_BY_SLUG[slug]?.emoji ?? null,
   },
 };
 
