@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { IslandMap } from '@/components/play/IslandMap';
+import { AvatarRender } from '@/components/play/AvatarRender';
 import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
 import {
@@ -9,6 +10,7 @@ import {
 } from '@/lib/db/collections';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { listProgressByChild } from '@/lib/db/play';
+import { getEquippedAvatar } from '@/lib/db/shop';
 import { listChildPlayableWeeks } from '@/lib/db/weeks';
 
 interface PageProps {
@@ -19,12 +21,19 @@ export default async function PlayHomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const [playableWeeks, progressRows, balance, activePacks] = await Promise.all([
-    listChildPlayableWeeks(child.id),
-    listProgressByChild(child.id),
-    getCoinBalance(child.id),
-    listActivePacks(),
-  ]);
+  const [playableWeeks, progressRows, balance, activePacks, equipped] =
+    await Promise.all([
+      listChildPlayableWeeks(child.id),
+      listProgressByChild(child.id),
+      getCoinBalance(child.id),
+      listActivePacks(),
+      getEquippedAvatar(child.id),
+    ]);
+
+  const equippedRefs: Partial<Record<string, string | null>> = {};
+  for (const [slot, info] of Object.entries(equipped)) {
+    equippedRefs[slot] = info.unlockRef;
+  }
 
   const packStats = await Promise.all(
     activePacks
@@ -55,17 +64,25 @@ export default async function PlayHomePage({ params }: PageProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
-      <section className="flex items-end justify-between">
-        <div>
-          <h1 className="font-hanzi text-3xl font-bold tracking-tight text-[var(--color-ocean-900)]">
-            {child.displayName} 的航海图
-          </h1>
-          <p className="text-sm text-[var(--color-sand-700)]">
-            {clearedCount}/{islands.length} island
-            {islands.length === 1 ? '' : 's'} cleared
-          </p>
+      <section className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <AvatarRender
+            equipped={equippedRefs}
+            size={64}
+            label={`${child.displayName} 的形象`}
+            className="shrink-0"
+          />
+          <div>
+            <h1 className="font-hanzi text-2xl font-bold tracking-tight text-[var(--color-ocean-900)]">
+              {child.displayName} 的航海图
+            </h1>
+            <p className="text-sm text-[var(--color-sand-700)]">
+              {clearedCount}/{islands.length} island
+              {islands.length === 1 ? '' : 's'} cleared
+            </p>
+          </div>
         </div>
-        <span className="flex items-center gap-1.5 rounded-full bg-[var(--color-treasure-400)] px-4 py-1.5 text-lg font-bold text-[var(--color-treasure-700)] shadow-md">
+        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-treasure-400)] px-3 py-1.5 text-base font-bold text-[var(--color-treasure-700)] shadow-md">
           <span className="text-xl">🪙</span>
           {balance.balance}
         </span>
