@@ -14,15 +14,19 @@ It is **not** a multi-tenant SaaS. Optimize for Yinuo's daily fun, not for theor
 
 ---
 
-## Current state (last refreshed 2026-05-17)
+## Current state (last refreshed 2026-05-19)
 
-**Shipped:** PR #1 → #20. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 6 scene types + boss, coins, 12-zodiac gacha collection, animations + audio + treasure-map cards, PWA manifest.
+**Shipped:** PR #1 → #24. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 6 scene types + boss, coins, 12-zodiac gacha + flags gacha, **Collector's Atlas hub** (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages), **shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"), layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
+
+**PR #21–#24 (just shipped, 2026-05-19):**
+- PR #21 (spec doc) + #22 (impl) — Shop hub + Avatar cosmetics. `/play/[childId]/shop`, `ShopHudButton` mounted in play layout, `AvatarRender` in island-map header, ~20 seeded items. New: `src/lib/db/shop.ts`, `src/lib/actions/shop.ts`, `src/lib/errors/shop-errors.ts`, `src/lib/avatar/{defaultLook,itemCatalog}.tsx`.
+- PR #23 (spec doc) + #24 (impl) — Collector's Atlas hub + Flags pack. `/collection` is now `AtlasHub` (multi-pack lobby); `/collection/[packSlug]` is generic. New: `src/lib/collections/{packRegistry,flagsData}.ts`, `src/components/play/{AtlasHub,AtlasHallCard,PackGrid,PackPageBody}.tsx`, `src/components/play/items/{FlagCard,ZodiacGridItem}.tsx`. 30 country flags seeded into prod via `scripts/seed-flags-pack.ts`. Per-pack gacha cost from `getPackMeta(slug).paidPullCost` (zodiac=500, flags=300).
 
 **Most recent regressions fixed:**
 - PR #18 — `finishLevelAction` / `listWeekChars` used `getWeekOwnedBy` which fails for shared-pack weeks (parent_user_id NULL). Fixed by switching to `getPlayableWeekForChild`.
 - PR #20 — flashcard hanzi was 14rem fixed → now `clamp(11rem, 55vw, 22rem)`; `ZodiacIconDefs` (SVG `<symbol>` defs) only mounted on `/collection`, broke chest reveal — now mounted in the play layout.
 
-**Next up (per PLAN.md §1):** likely streaks / daily-quest layer + analytics, but ALWAYS confirm with David before starting a new PR.
+**Next up (per `docs/superpowers/specs/2026-05-18-pr23-collection-atlas-design.md` roadmap):** PR #25 — Sea Creatures pack (~20 pirate-themed creatures, reuses Atlas framework). Then Dinosaurs, Solar System, Coin economy expansion. ALWAYS confirm with David before starting a new PR.
 
 ---
 
@@ -61,14 +65,18 @@ For most bug fixes and small features, you don't need any of the deep docs.
 ```
 src/
   app/                  Next.js App Router pages
-    play/[childId]/       Kid-facing surfaces (layout mounts ZodiacIconDefs)
-      page.tsx              Island map
+    play/[childId]/       Kid-facing surfaces (layout mounts ZodiacIconDefs + ShopHudButton)
+      page.tsx              Island map + AvatarRender + coin pill + collection HUD
       level/[weekId]/       Scene runner (the 12-15 level sequence)
-      collection/           Zodiac gacha collection
+      collection/           Collector's Atlas hub (AtlasHub) — multi-pack lobby
+      collection/[packSlug] Per-pack page (PackPageBody + paid pull)
+      shop/                 Shop hub (tabbed: Avatar live; Sounds/Pet/Decor/Powerups WIP)
     parent/               David-facing admin (week authoring, child mgmt)
   components/
     scenes/               6 scene types + BossScene + SceneRunner + fx/*
-    play/                 Kid-facing UI primitives (IslandMap, Zodiac*, HUD)
+    play/                 Kid-facing UI primitives (IslandMap, Zodiac*, HUD, AtlasHub, AvatarRender)
+      items/                Per-pack card components (FlagCard, ZodiacGridItem) — ItemCardProps
+    shop/                 Shop UI (ShopGrid, ShopItemCard, ShopCategoryTabs, PurchaseConfirmDialog)
     ui/                   Shared primitives (WoodSignButton, TreasureMapBackdrop)
     parent/               Admin forms + cards
   db/schema/            Drizzle source-of-truth tables — DO NOT edit drizzle/*.sql by hand
@@ -77,6 +85,8 @@ src/
     db/                   Postgres queries (NEVER imported in client bundles)
     errors/               Pure error classes (client-safe — no postgres imports)
     scenes/               Scene compilation (compileWeekIntoLevels) + configs
+    collections/          Per-pack data (flagsData) + pack registry (packRegistry) keyed by slug
+    avatar/               defaultLook + itemCatalog.tsx (slot → SVG component map)
     audio/                Procedural Web Audio (ding/buzz/fanfare)
     hooks/                Client hooks (useReducedMotion, useCoinHud)
     auth/                 Clerk wrappers (requireChild, etc.)
@@ -94,6 +104,9 @@ docs/superpowers/       Spec + plan docs from brainstorming/writing-plans skills
 - **React 19 strict mode** double-renders. Any `onComplete?.()` in a render body double-fires — wrap in `useEffect`.
 - **`prefers-reduced-motion`** — every fx component must respect `useReducedMotion()` and fall back gracefully.
 - **`DATABASE_URL` shared across Vercel envs** (Neon free tier) — production scripts can write to prod inadvertently. Confirm before running anything that mutates.
+- **Bilingual rule for collectibles** (locked): Yinuo is English-native. All pack items render both `nameZh` AND `nameEn` side-by-side. Lore is also dual `loreZh`/`loreEn`. No language toggle. New packs must seed both columns.
+- **Per-pack gacha cost lives in `packRegistry.ts`** (`getPackMeta(slug).paidPullCost`), NOT a DB column. Adding a new pack? Add an entry to `PACK_REGISTRY` with `paidPullCost`, `ItemCard` component, `themeEmoji`, bilingual display names + slogan, else `pullPaid` throws "no UI meta" and the per-pack page can't render.
+- **`AvatarRender` uses `useId()` for clipPath IDs** — multiple instances on the same page collide otherwise. If you build a similar SVG component, use `useId()` not a hardcoded ID.
 
 ---
 
