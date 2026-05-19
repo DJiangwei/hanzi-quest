@@ -32,6 +32,8 @@ interface Props {
   childId: string;
   islands: IslandInput[];
   ownedCount: number;
+  /** Aggregate across all active collection packs. Optional for backwards compat. */
+  totalCount?: number;
 }
 
 const ISLAND_RADIUS = 36;
@@ -59,7 +61,7 @@ function pathBetween(a: { x: number; y: number }, b: { x: number; y: number }): 
   return `M ${a.x} ${a.y} Q ${cx} ${midY} ${b.x} ${b.y}`;
 }
 
-export function IslandMap({ childId, islands, ownedCount }: Props) {
+export function IslandMap({ childId, islands, ownedCount, totalCount }: Props) {
   const total = islands.length;
   if (total === 0) return null;
 
@@ -71,7 +73,11 @@ export function IslandMap({ childId, islands, ownedCount }: Props) {
     <div className="relative mx-auto w-full max-w-md">
       {/* Map top bar: collection pill */}
       <div className="mb-3 flex items-center justify-end">
-        <CollectionHudPill childId={childId} ownedCount={ownedCount} />
+        <CollectionHudPill
+          childId={childId}
+          ownedCount={ownedCount}
+          totalCount={totalCount}
+        />
       </div>
 
       <svg

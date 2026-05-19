@@ -2,7 +2,12 @@ import Link from 'next/link';
 import { IslandMap } from '@/components/play/IslandMap';
 import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
-import { getPackBySlug, listChildCollection } from '@/lib/db/collections';
+import {
+  listActivePacks,
+  listChildCollection,
+  listPackItems,
+} from '@/lib/db/collections';
+import { getPackMeta } from '@/lib/collections/packRegistry';
 import { listProgressByChild } from '@/lib/db/play';
 import { listChildPlayableWeeks } from '@/lib/db/weeks';
 
@@ -14,16 +19,26 @@ export default async function PlayHomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const [playableWeeks, progressRows, balance, pack] = await Promise.all([
+  const [playableWeeks, progressRows, balance, activePacks] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
     getCoinBalance(child.id),
-    getPackBySlug('zodiac-v1'),
+    listActivePacks(),
   ]);
 
-  const ownedCount = pack
-    ? (await listChildCollection(child.id, pack.id)).length
-    : 0;
+  const packStats = await Promise.all(
+    activePacks
+      .filter((p) => getPackMeta(p.slug) !== null)
+      .map(async (p) => {
+        const [items, owned] = await Promise.all([
+          listPackItems(p.id),
+          listChildCollection(child.id, p.id),
+        ]);
+        return { total: items.length, owned: owned.length };
+      }),
+  );
+  const ownedCount = packStats.reduce((s, p) => s + p.owned, 0);
+  const totalCount = packStats.reduce((s, p) => s + p.total, 0);
 
   const progressByWeek = new Map(
     progressRows.map((p) => [p.weekId, p.completionPercent]),
@@ -71,7 +86,12 @@ export default async function PlayHomePage({ params }: PageProps) {
           </p>
         </div>
       ) : (
-        <IslandMap childId={childId} islands={islands} ownedCount={ownedCount} />
+        <IslandMap
+          childId={childId}
+          islands={islands}
+          ownedCount={ownedCount}
+          totalCount={totalCount}
+        />
       )}
     </main>
   );

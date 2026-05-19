@@ -4,15 +4,22 @@ import { LazyMotion, domAnimation, m } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { playSound } from '@/lib/audio/play';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
-import { ZodiacIcon, type ZodiacSlug } from '@/components/play/zodiac-icons';
+import {
+  ZODIAC_SLUGS,
+  ZodiacIcon,
+  type ZodiacSlug,
+} from '@/components/play/zodiac-icons';
 
 interface RevealItem {
   id: string;
-  slug: ZodiacSlug;
+  slug: string;
   nameZh: string;
   nameEn: string;
   loreZh: string | null;
   loreEn: string | null;
+  /** Optional emoji glyph for non-zodiac packs (flags, etc.). When present,
+   *  renders instead of ZodiacIcon. */
+  emoji?: string | null;
 }
 
 interface Props {
@@ -20,6 +27,8 @@ interface Props {
   wasDuplicate: boolean;
   shardsAfter: number | null;
 }
+
+const ZODIAC_SLUG_SET = new Set<string>(ZODIAC_SLUGS);
 
 type Phase = 'shake' | 'open' | 'reveal';
 
@@ -60,8 +69,21 @@ export function TreasureChestReveal({ item, wasDuplicate, shardsAfter }: Props) 
             className="rounded-2xl border-[3px] border-[#c89f5e] p-6 shadow-[inset_0_0_0_2px_rgba(245,197,55,0.6),0_4px_10px_rgba(0,0,0,0.15)] [background:radial-gradient(ellipse_at_center,#fef9ef_0%,#fef9ef_70%,#f5d875_100%)]"
             style={{ width: 260 }}
           >
-            <div className="mx-auto mb-3 h-32 w-32">
-              <ZodiacIcon slug={item.slug} className="h-full w-full" />
+            <div className="mx-auto mb-3 flex h-32 w-32 items-center justify-center">
+              {item.emoji ? (
+                <span className="text-7xl" aria-hidden="true">
+                  {item.emoji}
+                </span>
+              ) : ZODIAC_SLUG_SET.has(item.slug) ? (
+                <ZodiacIcon
+                  slug={item.slug as ZodiacSlug}
+                  className="h-full w-full"
+                />
+              ) : (
+                <span className="text-7xl" aria-hidden="true">
+                  ✨
+                </span>
+              )}
             </div>
             <div className="text-center font-hanzi text-4xl font-bold text-[#0c3d3a]">
               {item.nameZh}
@@ -70,8 +92,13 @@ export function TreasureChestReveal({ item, wasDuplicate, shardsAfter }: Props) 
               {item.nameEn}
             </div>
             {item.loreZh && (
-              <div className="mt-2 text-center text-xs text-[#6b4720]">
+              <div className="mt-2 text-center font-hanzi text-xs text-[#6b4720]">
                 {item.loreZh}
+              </div>
+            )}
+            {item.loreEn && (
+              <div className="mt-0.5 text-center text-[11px] italic text-[#6b4720]/80">
+                {item.loreEn}
               </div>
             )}
 
