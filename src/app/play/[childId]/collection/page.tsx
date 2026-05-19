@@ -1,17 +1,14 @@
 // src/app/play/[childId]/collection/page.tsx
-import { notFound } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
-import { getCoinBalance } from '@/lib/db/coins';
 import {
-  getPackBySlug,
+  listActivePacks,
   listChildCollection,
+  listPackItems,
 } from '@/lib/db/collections';
-import { CollectionPageBody } from '@/components/play/CollectionPageBody';
-import type { ZodiacSlug } from '@/components/play/zodiac-icons';
+import { AtlasHub, type AtlasHallSummary } from '@/components/play/AtlasHub';
+import { getPackMeta } from '@/lib/collections/packRegistry';
 
-const ZODIAC_PACK_SLUG = 'zodiac-v1';
-
-export default async function CollectionPage({
+export default async function CollectionAtlasPage({
   params,
 }: {
   params: Promise<{ childId: string }>;
@@ -19,24 +16,29 @@ export default async function CollectionPage({
   const { childId } = await params;
   await requireChild(childId);
 
-  const pack = await getPackBySlug(ZODIAC_PACK_SLUG);
-  if (!pack) notFound();
-
-  const [collection, balance] = await Promise.all([
-    listChildCollection(childId, pack.id),
-    getCoinBalance(childId),
-  ]);
-
-  const ownedSlugs = collection.map((c) => c.slug as ZodiacSlug);
+  const packs = await listActivePacks();
+  const halls: AtlasHallSummary[] = (
+    await Promise.all(
+      packs.map(async (pack) => {
+        const meta = getPackMeta(pack.slug);
+        if (!meta) return null;
+        const [items, owned] = await Promise.all([
+          listPackItems(pack.id),
+          listChildCollection(childId, pack.id),
+        ]);
+        return {
+          packSlug: pack.slug,
+          meta,
+          ownedCount: owned.length,
+          totalCount: items.length,
+        };
+      }),
+    )
+  ).filter((h): h is AtlasHallSummary => h !== null);
 
   return (
     <main className="flex flex-1 flex-col items-center gap-4 p-6">
-      <CollectionPageBody
-        childId={childId}
-        packSlug={ZODIAC_PACK_SLUG}
-        ownedSlugs={ownedSlugs}
-        balance={balance.balance}
-      />
+      <AtlasHub childId={childId} halls={halls} />
     </main>
   );
 }

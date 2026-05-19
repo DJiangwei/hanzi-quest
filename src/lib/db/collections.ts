@@ -25,6 +25,13 @@ export async function getPackBySlug(
   return row ?? null;
 }
 
+export async function listActivePacks(): Promise<CollectionPack[]> {
+  return db
+    .select()
+    .from(collectionPacks)
+    .where(eq(collectionPacks.isActive, true));
+}
+
 export async function listPackItems(packId: string): Promise<CollectibleItem[]> {
   return db
     .select()

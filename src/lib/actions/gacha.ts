@@ -8,13 +8,15 @@ import { requireChild } from '@/lib/auth/guards';
 import { getPackBySlug } from '@/lib/db/collections';
 import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
 import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
+import { getPackMeta } from '@/lib/collections/packRegistry';
 
 // AlreadyClaimedError is NOT re-exported here — 'use server' files may only
 // export async functions. Client components import it directly from
 // '@/lib/errors/gacha-errors'.
 
 const ZODIAC_PACK_SLUG = 'zodiac-v1';
-const PAID_PULL_COST = 500;
+// Per-pack paid pull cost is read from packRegistry at action time. The
+// previous hard-coded 500 was zodiac-specific; flags is 300 etc.
 
 interface PullActionArgs {
   childId: string;
@@ -76,11 +78,15 @@ export async function pullPaid(
   const pack = await getPackBySlug(packSlug);
   if (!pack) throw new Error(`Unknown pack: ${packSlug}`);
 
+  const meta = getPackMeta(packSlug);
+  if (!meta) throw new Error(`Pack ${packSlug} has no UI meta registered`);
+
   const result = await pull(child.id, pack.id, {
     isFree: false,
-    costCoins: PAID_PULL_COST,
+    costCoins: meta.paidPullCost,
   });
 
   revalidatePath(`/play/${child.id}/collection`);
+  revalidatePath(`/play/${child.id}/collection/${packSlug}`);
   return result;
 }

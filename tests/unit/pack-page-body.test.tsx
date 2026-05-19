@@ -1,0 +1,146 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  refresh: vi.fn(),
+  pullPaid: vi.fn(),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mocks.push,
+    refresh: mocks.refresh,
+  }),
+}));
+
+vi.mock('@/lib/actions/gacha', () => ({
+  pullPaid: mocks.pullPaid,
+}));
+
+import { PackPageBody } from '@/components/play/PackPageBody';
+import { getPackMeta } from '@/lib/collections/packRegistry';
+import type { CollectibleItem, CollectionPack } from '@/lib/db/collections';
+
+const flagsMeta = getPackMeta('flags-v1')!;
+
+const pack: CollectionPack = {
+  id: 'pack-flags',
+  slug: 'flags-v1',
+  name: '世界国旗',
+  description: null,
+  themeColor: '#3aa8e3',
+  isActive: true,
+  availableFrom: null,
+  availableTo: null,
+  createdAt: new Date(),
+};
+
+const items: CollectibleItem[] = [
+  {
+    id: 'i1',
+    packId: 'pack-flags',
+    slug: 'china',
+    nameZh: '中国',
+    nameEn: 'China',
+    loreZh: '首都：北京。大熊猫的故乡。',
+    loreEn: 'Capital: Beijing. Home of the giant panda!',
+    rarity: 'common',
+    dropWeight: 3,
+    imageUrl: '🇨🇳',
+    createdAt: new Date(),
+  },
+  {
+    id: 'i2',
+    packId: 'pack-flags',
+    slug: 'uk',
+    nameZh: '英国',
+    nameEn: 'United Kingdom',
+    loreZh: '首都：伦敦。有红色双层巴士。',
+    loreEn: 'Capital: London. Famous for red double-decker buses.',
+    rarity: 'common',
+    dropWeight: 3,
+    imageUrl: '🇬🇧',
+    createdAt: new Date(),
+  },
+];
+
+beforeEach(() => {
+  mocks.push.mockReset();
+  mocks.refresh.mockReset();
+  mocks.pullPaid.mockReset();
+});
+
+afterEach(() => vi.clearAllMocks());
+
+describe('PackPageBody', () => {
+  it('renders bilingual pack header + slogan', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        pack={pack}
+        meta={flagsMeta}
+        items={items}
+        ownedItemIds={['i1']}
+        balance={1000}
+      />,
+    );
+    expect(screen.getByText('世界国旗')).toBeInTheDocument();
+    expect(screen.getByText('World Flags')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Collect flags and capitals from around the world/i),
+    ).toBeInTheDocument();
+  });
+
+  it('shows pack progress (X / Y)', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        pack={pack}
+        meta={flagsMeta}
+        items={items}
+        ownedItemIds={['i1']}
+        balance={1000}
+      />,
+    );
+    expect(screen.getByText(/1 \/ 2/)).toBeInTheDocument();
+  });
+
+  it('disables the pull button when balance < pack cost', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        pack={pack}
+        meta={flagsMeta}
+        items={items}
+        ownedItemIds={[]}
+        balance={100}
+      />,
+    );
+    const button = screen.getByRole('button', { name: /抽卡 300/ });
+    expect(button).toBeDisabled();
+  });
+
+  it('calls pullPaid with the pack slug when the pull button is tapped', async () => {
+    mocks.pullPaid.mockResolvedValue({
+      item: items[0],
+      wasDuplicate: false,
+      shardsAfter: null,
+      coinsAfter: 700,
+    });
+    render(
+      <PackPageBody
+        childId="c1"
+        pack={pack}
+        meta={flagsMeta}
+        items={items}
+        ownedItemIds={[]}
+        balance={1000}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /抽卡 300/ }));
+    // pullPaid is invoked inside a transition; flush microtasks.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mocks.pullPaid).toHaveBeenCalledWith('flags-v1', { childId: 'c1' });
+  });
+});
