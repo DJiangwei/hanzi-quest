@@ -8,6 +8,24 @@ const mocks = vi.hoisted(() => ({
   upsertWeekProgress: vi.fn(),
   endPlaySession: vi.fn(),
   awardCoins: vi.fn(),
+  isPerfectWeekForChild: vi.fn().mockResolvedValue(false),
+  awardPerfectWeekIfDue: vi
+    .fn()
+    .mockResolvedValue({ awarded: false, delta: 0 }),
+  awardDailyLoginIfDue: vi
+    .fn()
+    .mockResolvedValue({ awarded: false, delta: 0 }),
+  awardStreakMilestoneIfDue: vi
+    .fn()
+    .mockResolvedValue({ awarded: false, delta: 0, milestone: null }),
+  tickStreak: vi
+    .fn()
+    .mockResolvedValue({
+      currentStreak: 1,
+      longestStreak: 1,
+      ticked: false,
+      reset: false,
+    }),
 }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
@@ -23,8 +41,18 @@ vi.mock('@/lib/db/play', () => ({
   upsertWeekProgress: mocks.upsertWeekProgress,
   listLevelsForWeek: mocks.listLevelsForWeek,
   getWeekProgress: mocks.getWeekProgress,
+  isPerfectWeekForChild: mocks.isPerfectWeekForChild,
 }));
-vi.mock('@/lib/db/coins', () => ({ awardCoins: mocks.awardCoins }));
+vi.mock('@/lib/db/coins', () => ({
+  awardCoins: mocks.awardCoins,
+  awardPerfectWeekIfDue: mocks.awardPerfectWeekIfDue,
+  awardDailyLoginIfDue: mocks.awardDailyLoginIfDue,
+  awardStreakMilestoneIfDue: mocks.awardStreakMilestoneIfDue,
+}));
+vi.mock('@/lib/db/streaks', () => ({
+  tickStreak: mocks.tickStreak,
+  todayUtcIso: () => '2026-05-19',
+}));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 import { finishLevelAction } from '@/lib/actions/play';

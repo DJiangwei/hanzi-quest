@@ -22,6 +22,9 @@ export const coinReason = pgEnum('coin_reason', [
   'gacha_pull',
   'shard_redeem',
   'admin_adjust',
+  'daily_login',
+  'streak_milestone',
+  'perfect_week',
 ]);
 
 export const shopItemKind = pgEnum('shop_item_kind', [
