@@ -3,10 +3,12 @@ import type { CollectibleItem } from '@/lib/db/collections';
 import { DinosaurCard } from '@/components/play/items/DinosaurCard';
 import { FlagCard } from '@/components/play/items/FlagCard';
 import { SeaCreatureCard } from '@/components/play/items/SeaCreatureCard';
+import { SolarBodyCard } from '@/components/play/items/SolarBodyCard';
 import { ZodiacGridItem } from '@/components/play/items/ZodiacGridItem';
 import { DINOSAURS_BY_SLUG } from '@/lib/collections/dinosaursData';
 import { FLAGS_BY_SLUG } from '@/lib/collections/flagsData';
 import { SEA_CREATURES_BY_SLUG } from '@/lib/collections/seaCreaturesData';
+import { SOLAR_BODIES_BY_SLUG } from '@/lib/collections/solarSystemData';
 
 export interface ItemCardProps {
   item: CollectibleItem;
@@ -96,6 +98,20 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: DinosaurCard,
     resolveRevealEmoji: (slug) => DINOSAURS_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'solar-system-v1': {
+    displayNameZh: '太阳系',
+    displayNameEn: 'Solar System',
+    sloganZh: '太阳和它身边的行星家族。',
+    sloganEn: 'The Sun and its family of worlds.',
+    themeEmoji: '🪐',
+    themeBannerClass:
+      'bg-gradient-to-br from-indigo-300 via-purple-400 to-fuchsia-500',
+    themeAccentClass: 'text-indigo-900',
+    paidPullCost: 300,
+    gridColumns: 3,
+    ItemCard: SolarBodyCard,
+    resolveRevealEmoji: (slug) => SOLAR_BODIES_BY_SLUG[slug]?.emoji ?? null,
   },
 };
 
