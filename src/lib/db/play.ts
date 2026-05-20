@@ -113,6 +113,39 @@ export async function hasPriorAttempt(
   return Boolean(row);
 }
 
+/**
+ * True iff every weekLevel for `weekId` has at least one sceneAttempt by
+ * `childId` with score=100. Powers the +200 perfect_week bonus.
+ */
+export async function isPerfectWeekForChild(
+  childId: string,
+  weekId: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({
+      levelId: weekLevels.id,
+      bestScore: sql<number>`COALESCE(MAX(${sceneAttempts.score}), 0)`,
+    })
+    .from(weekLevels)
+    .leftJoin(
+      sceneAttempts,
+      eq(sceneAttempts.weekLevelId, weekLevels.id),
+    )
+    .leftJoin(playSessions, eq(playSessions.id, sceneAttempts.sessionId))
+    .where(
+      and(
+        eq(weekLevels.weekId, weekId),
+        // Filter joined attempts to this child; levels with no attempts by
+        // this child yield bestScore=0 (i.e., not perfect).
+        sql`(${playSessions.childId} = ${childId} OR ${playSessions.childId} IS NULL)`,
+      ),
+    )
+    .groupBy(weekLevels.id);
+
+  if (rows.length === 0) return false;
+  return rows.every((r) => r.bestScore >= 100);
+}
+
 export async function upsertWeekProgress(input: {
   childId: string;
   weekId: string;

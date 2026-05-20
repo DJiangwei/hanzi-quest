@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
+import type { EconomyBonus } from '@/lib/actions/play';
 import {
   finishAttemptAction,
   finishLevelAction,
@@ -11,6 +12,7 @@ import {
 import { setAudioMuted } from '@/lib/audio/play';
 import { CoinHudContext } from '@/lib/hooks/coin-hud-context';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
+import { BonusToast } from '@/components/play/BonusToast';
 import { AudioPickScene } from './AudioPickScene';
 import { BossScene } from './BossScene';
 import { FlashcardScene } from './FlashcardScene';
@@ -74,6 +76,7 @@ export function SceneRunner({
   const [coinsThisSession, setCoinsThisSession] = useState(0);
   const [done, setDone] = useState(false);
   const [lastSceneType, setLastSceneType] = useState<SceneType | null>(null);
+  const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
   const [pending, startTransition] = useTransition();
   const startedAtRef = useRef<number>(0);
   const coinHudRef = useRef<HTMLElement | null>(null);
@@ -132,6 +135,7 @@ export function SceneRunner({
         hintsUsed: 0,
       });
       setCoinsThisSession((c) => c + result.coinsAwarded);
+      const collectedBonuses: EconomyBonus[] = [...result.bonuses];
 
       setLastSceneType(currentLevel.sceneType);
       const nextIndex = index + 1;
@@ -139,7 +143,7 @@ export function SceneRunner({
         const elapsedSeconds = Math.round(
           (Date.now() - startedAtRef.current) / 1000,
         );
-        await finishLevelAction({
+        const levelResult = await finishLevelAction({
           sessionId,
           childId,
           weekId,
@@ -147,9 +151,13 @@ export function SceneRunner({
           totalScenesInWeek: totalLevels,
           durationSeconds: elapsedSeconds,
         });
+        collectedBonuses.push(...levelResult.bonuses);
         setDone(true);
       } else {
         setIndex(nextIndex);
+      }
+      if (collectedBonuses.length > 0) {
+        setActiveBonuses(collectedBonuses);
       }
     });
   };
@@ -262,6 +270,10 @@ export function SceneRunner({
           </span>
         </div>
         {body}
+        <BonusToast
+          bonuses={activeBonuses}
+          onDone={() => setActiveBonuses([])}
+        />
       </main>
     </CoinHudContext.Provider>
   );

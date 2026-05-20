@@ -16,7 +16,7 @@ It is **not** a multi-tenant SaaS. Optimize for Yinuo's daily fun, not for theor
 
 ## Current state (last refreshed 2026-05-19)
 
-**Shipped:** PR #1 → #26. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 6 scene types + boss, coins, **5 collection packs** in the Collector's Atlas (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages): zodiac (12), flags (30), sea creatures (20), dinosaurs (15), solar system (10). **Shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"). Layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
+**Shipped:** PR #1 → #27. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 6 scene types + boss, coins (with daily-login / streak-milestone / perfect-week bonuses + a `BonusToast` HUD layer), **5 collection packs** in the Collector's Atlas (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages): zodiac (12), flags (30), sea creatures (20), dinosaurs (15), solar system (10). **Shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"). Layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
 
 **PR #21–#27 (just shipped, 2026-05-19):**
 - PR #21 (spec doc) + #22 (impl) — Shop hub + Avatar cosmetics. `/play/[childId]/shop`, `ShopHudButton` mounted in play layout, `AvatarRender` in island-map header, ~20 seeded items. New: `src/lib/db/shop.ts`, `src/lib/actions/shop.ts`, `src/lib/errors/shop-errors.ts`, `src/lib/avatar/{defaultLook,itemCatalog}.tsx`.
@@ -24,12 +24,13 @@ It is **not** a multi-tenant SaaS. Optimize for Yinuo's daily fun, not for theor
 - PR #25 — Sea Creatures pack (20 bilingual ocean creatures, pirate-themed). `src/lib/collections/seaCreaturesData.ts` + `src/components/play/items/SeaCreatureCard.tsx`. Habitat instead of capital. cost=300.
 - PR #26 — Dinosaurs pack (15 dinosaurs across Triassic/Jurassic/Cretaceous eras). Only 2 emojis exist (🦖/🦕), so `DinosaurCard` color-codes the card by era + renders a bilingual era badge for differentiation. cost=300.
 - PR #27 — Solar System pack (8 planets + Sun + Moon = 10). Mostly coloured-disc emojis (🔴/🟠/🟡/🔵/🟣/⚪) plus the only real ones (🪐/☀️/🌝/🌍). `SolarBodyCard` colour-codes by body type (rocky/gas/ice/star/moon) + bilingual type badge. cost=300.
+- PR #28 — Coin economy expansion. 3 new enum values on `coin_reason` (drizzle 0005): `daily_login` (+20, idempotent per UTC date), `streak_milestone` (+100 every 7 days, hooks the previously-empty `streaks` table via `tickStreak`), `perfect_week` (+200 when every scene of a week has at least one score=100 attempt; idempotent per week). New: `src/lib/db/streaks.ts` (tickStreak + todayUtcIso), `src/lib/db/play.ts isPerfectWeekForChild`, `src/components/play/BonusToast.tsx`. Actions return `bonuses: EconomyBonus[]` that the SceneRunner pipes into the toast layer.
 
 **Most recent regressions fixed:**
 - PR #18 — `finishLevelAction` / `listWeekChars` used `getWeekOwnedBy` which fails for shared-pack weeks (parent_user_id NULL). Fixed by switching to `getPlayableWeekForChild`.
 - PR #20 — flashcard hanzi was 14rem fixed → now `clamp(11rem, 55vw, 22rem)`; `ZodiacIconDefs` (SVG `<symbol>` defs) only mounted on `/collection`, broke chest reveal — now mounted in the play layout.
 
-**Next up (per `docs/superpowers/specs/2026-05-18-pr23-collection-atlas-design.md` roadmap):** Coin economy expansion (daily-login / streak / perfect-week bonuses) — the 4 Atlas packs are now all live, so the next priority is making coins easier to earn so Yinuo can actually fill them. Then sound themes, powerups, pet companion, decor (original PR #21 roadmap). ALWAYS confirm with David before starting a new PR.
+**Next up (per `docs/superpowers/specs/2026-05-18-pr21-shop-expansion-design.md` roadmap):** Sound/FX themes (PR #23 in spec terms — a `child_settings.soundThemeId`, audio handler registry, ~4 themes seeded as shop items). Then consumable powerups (hint / skip / streak-freeze), pet companion, island decorations. ALWAYS confirm with David before starting a new PR.
 
 ---
 

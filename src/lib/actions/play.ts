@@ -3,16 +3,23 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireChild } from '@/lib/auth/guards';
-import { awardCoins } from '@/lib/db/coins';
+import {
+  awardCoins,
+  awardDailyLoginIfDue,
+  awardPerfectWeekIfDue,
+  awardStreakMilestoneIfDue,
+} from '@/lib/db/coins';
 import {
   endPlaySession,
   getWeekProgress,
   hasPriorAttempt,
+  isPerfectWeekForChild,
   listLevelsForWeek,
   recordSceneAttempt,
   startPlaySession,
   upsertWeekProgress,
 } from '@/lib/db/play';
+import { tickStreak, todayUtcIso } from '@/lib/db/streaks';
 import {
   getPlayableWeekForChild,
   listCharactersForWeek,
@@ -22,6 +29,19 @@ const SCENE_COMPLETE_AWARD = 50;
 const SCENE_REPLAY_AWARD = 5;
 const PERFECT_BONUS = 25;
 const BOSS_CLEAR_REWARD = 300;
+
+export type EconomyBonusReason =
+  | 'daily_login'
+  | 'streak_milestone'
+  | 'perfect_week';
+
+export interface EconomyBonus {
+  reason: EconomyBonusReason;
+  delta: number;
+  labelZh: string;
+  labelEn: string;
+  meta?: { milestone?: number };
+}
 
 export async function startSessionAction(
   childId: string,
@@ -43,7 +63,11 @@ const FinishAttemptSchema = z.object({
 
 export async function finishAttemptAction(
   input: z.input<typeof FinishAttemptSchema>,
-): Promise<{ coinsAwarded: number; perfect: boolean }> {
+): Promise<{
+  coinsAwarded: number;
+  perfect: boolean;
+  bonuses: EconomyBonus[];
+}> {
   const parsed = FinishAttemptSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
 
@@ -51,8 +75,8 @@ export async function finishAttemptAction(
   const baseAward = isReplay ? SCENE_REPLAY_AWARD : SCENE_COMPLETE_AWARD;
   const perfect =
     parsed.totalCount > 0 && parsed.correctCount === parsed.totalCount;
-  const bonus = perfect && !isReplay ? PERFECT_BONUS : 0;
-  const coinsAwarded = baseAward + bonus;
+  const sceneBonus = perfect && !isReplay ? PERFECT_BONUS : 0;
+  const coinsAwarded = baseAward + sceneBonus;
 
   const score = parsed.totalCount > 0
     ? Math.round((parsed.correctCount / parsed.totalCount) * 100)
@@ -76,10 +100,10 @@ export async function finishAttemptAction(
       refType: 'scene_attempt',
       refId: attempt.id,
     });
-    if (bonus > 0) {
+    if (sceneBonus > 0) {
       await awardCoins({
         childId: child.id,
-        delta: bonus,
+        delta: sceneBonus,
         reason: 'scene_perfect_bonus',
         refType: 'scene_attempt',
         refId: attempt.id,
@@ -87,7 +111,37 @@ export async function finishAttemptAction(
     }
   }
 
-  return { coinsAwarded, perfect };
+  // Economy: tick the streak and award any due first-of-day / milestone
+  // bonuses. Both helpers are idempotent so retries are safe.
+  const bonuses: EconomyBonus[] = [];
+  const today = todayUtcIso();
+  const tick = await tickStreak(child.id, today);
+  if (tick.ticked) {
+    const daily = await awardDailyLoginIfDue(child.id, today);
+    if (daily.awarded) {
+      bonuses.push({
+        reason: 'daily_login',
+        delta: daily.delta,
+        labelZh: '今日首战！',
+        labelEn: "First play of the day!",
+      });
+    }
+    const milestone = await awardStreakMilestoneIfDue(
+      child.id,
+      tick.currentStreak,
+    );
+    if (milestone.awarded && milestone.milestone) {
+      bonuses.push({
+        reason: 'streak_milestone',
+        delta: milestone.delta,
+        labelZh: `连胜 ${milestone.milestone} 天！`,
+        labelEn: `${milestone.milestone}-day streak!`,
+        meta: { milestone: milestone.milestone },
+      });
+    }
+  }
+
+  return { coinsAwarded, perfect, bonuses };
 }
 
 const FinishLevelSchema = z.object({
@@ -101,7 +155,11 @@ const FinishLevelSchema = z.object({
 
 export async function finishLevelAction(
   input: z.input<typeof FinishLevelSchema>,
-): Promise<{ ok: true; bossCleared: boolean }> {
+): Promise<{
+  ok: true;
+  bossCleared: boolean;
+  bonuses: EconomyBonus[];
+}> {
   const parsed = FinishLevelSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
 
@@ -134,6 +192,7 @@ export async function finishLevelAction(
     bossCleared,
   });
 
+  const bonuses: EconomyBonus[] = [];
   if (bossCleared && !alreadyAwarded) {
     await awardCoins({
       childId: child.id,
@@ -142,6 +201,19 @@ export async function finishLevelAction(
       refType: 'week',
       refId: parsed.weekId,
     });
+    // Check for perfect-week bonus: every scene this child played for this
+    // week must have at least one attempt with score=100.
+    if (await isPerfectWeekForChild(child.id, parsed.weekId)) {
+      const perfectAward = await awardPerfectWeekIfDue(child.id, parsed.weekId);
+      if (perfectAward.awarded) {
+        bonuses.push({
+          reason: 'perfect_week',
+          delta: perfectAward.delta,
+          labelZh: '完美一周！',
+          labelEn: 'Perfect week!',
+        });
+      }
+    }
   }
 
   await endPlaySession(parsed.sessionId, {
@@ -151,7 +223,7 @@ export async function finishLevelAction(
   });
 
   revalidatePath(`/play/${child.id}`);
-  return { ok: true, bossCleared };
+  return { ok: true, bossCleared, bonuses };
 }
 
 export async function listWeekChars(weekId: string, childId: string) {
