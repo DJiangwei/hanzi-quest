@@ -19,10 +19,7 @@ vi.mock('@/lib/actions/gacha', () => ({
 }));
 
 import { PackPageBody } from '@/components/play/PackPageBody';
-import { getPackMeta } from '@/lib/collections/packRegistry';
 import type { CollectibleItem, CollectionPack } from '@/lib/db/collections';
-
-const flagsMeta = getPackMeta('flags-v1')!;
 
 const pack: CollectionPack = {
   id: 'pack-flags',
@@ -79,7 +76,7 @@ describe('PackPageBody', () => {
       <PackPageBody
         childId="c1"
         pack={pack}
-        meta={flagsMeta}
+        packSlug="flags-v1"
         items={items}
         ownedItemIds={['i1']}
         balance={1000}
@@ -97,7 +94,7 @@ describe('PackPageBody', () => {
       <PackPageBody
         childId="c1"
         pack={pack}
-        meta={flagsMeta}
+        packSlug="flags-v1"
         items={items}
         ownedItemIds={['i1']}
         balance={1000}
@@ -111,7 +108,7 @@ describe('PackPageBody', () => {
       <PackPageBody
         childId="c1"
         pack={pack}
-        meta={flagsMeta}
+        packSlug="flags-v1"
         items={items}
         ownedItemIds={[]}
         balance={100}
@@ -132,7 +129,7 @@ describe('PackPageBody', () => {
       <PackPageBody
         childId="c1"
         pack={pack}
-        meta={flagsMeta}
+        packSlug="flags-v1"
         items={items}
         ownedItemIds={[]}
         balance={1000}

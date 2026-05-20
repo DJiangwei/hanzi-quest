@@ -7,13 +7,19 @@ import { GachaPullButton } from './GachaPullButton';
 import { TreasureChestReveal } from '@/components/scenes/fx/TreasureChestReveal';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { CollectibleItem, CollectionPack } from '@/lib/db/collections';
-import type { PackUiMeta } from '@/lib/collections/packRegistry';
+import { getPackMeta } from '@/lib/collections/packRegistry';
 import type { PullResult } from '@/lib/db/gacha';
 
 interface Props {
   childId: string;
   pack: CollectionPack;
-  meta: PackUiMeta;
+  /**
+   * Looked up via `getPackMeta(packSlug)` on the client. We deliberately do
+   * NOT take `meta` as a prop — `PackUiMeta` carries a React component
+   * (`ItemCard`) and a callback (`resolveRevealEmoji`), neither of which
+   * survives RSC serialisation across the server→client boundary.
+   */
+  packSlug: string;
   items: CollectibleItem[];
   ownedItemIds: string[];
   balance: number;
@@ -30,11 +36,15 @@ interface Props {
 export function PackPageBody({
   childId,
   pack,
-  meta,
+  packSlug,
   items,
   ownedItemIds,
   balance,
 }: Props) {
+  const meta = getPackMeta(packSlug);
+  if (!meta) {
+    throw new Error(`PackPageBody: no UI meta registered for ${packSlug}`);
+  }
   const router = useRouter();
   const [reveal, setReveal] = useState<PullResult | null>(null);
   const [optimisticBalance, setOptimisticBalance] = useState(balance);
