@@ -111,6 +111,7 @@ docs/superpowers/       Spec + plan docs from brainstorming/writing-plans skills
 - **Bilingual rule for collectibles** (locked): Yinuo is English-native. All pack items render both `nameZh` AND `nameEn` side-by-side. Lore is also dual `loreZh`/`loreEn`. No language toggle. New packs must seed both columns.
 - **Per-pack gacha cost lives in `packRegistry.ts`** (`getPackMeta(slug).paidPullCost`), NOT a DB column. Adding a new pack? Add an entry to `PACK_REGISTRY` with `paidPullCost`, `ItemCard` component, `themeEmoji`, bilingual display names + slogan, else `pullPaid` throws "no UI meta" and the per-pack page can't render.
 - **`AvatarRender` uses `useId()` for clipPath IDs** — multiple instances on the same page collide otherwise. If you build a similar SVG component, use `useId()` not a hardcoded ID.
+- **Never pass `PackUiMeta` (or any function-bearing object) from a server component into a `'use client'` component**: `meta.ItemCard` is a React component and `meta.resolveRevealEmoji` is a callback. RSC silently serialises everything else fine, then crashes at request time with `"Functions cannot be passed directly to Client Components"`. Local tests + `pnpm build` will NOT catch this — only prod / `pnpm dev` exercises the boundary. Fix pattern: take `packSlug: string` instead, and `getPackMeta(slug)` inside the client component. See `PackPageBody.tsx`.
 
 ---
 

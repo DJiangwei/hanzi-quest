@@ -19,6 +19,11 @@ export default async function PackPage({ params }: PageProps) {
   await requireChild(childId);
 
   const pack = await getPackBySlug(packSlug);
+  // `meta` here is server-side: we validate the slug is registered so that
+  // unknown packs 404 instead of crashing inside the client child. The client
+  // re-resolves the meta from the slug itself (see PackPageBody) — RSC can't
+  // serialise the ItemCard / resolveRevealEmoji functions across the
+  // server→client boundary.
   const meta = getPackMeta(packSlug);
   if (!pack || !meta) notFound();
 
@@ -35,7 +40,7 @@ export default async function PackPage({ params }: PageProps) {
       <PackPageBody
         childId={childId}
         pack={pack}
-        meta={meta}
+        packSlug={packSlug}
         items={items}
         ownedItemIds={ownedItemIds}
         balance={balance.balance}
