@@ -78,7 +78,7 @@ src/
       shop/                 Shop hub (tabbed: Avatar live; Sounds/Pet/Decor/Powerups WIP)
     parent/               David-facing admin (week authoring, child mgmt)
   components/
-    scenes/               6 scene types + BossScene + SceneRunner + fx/*
+    scenes/               9 scene types + BossScene + SceneRunner + fx/*
     play/                 Kid-facing UI primitives (IslandMap, Zodiac*, HUD, AtlasHub, AvatarRender)
       items/                Per-pack card components (FlagCard, ZodiacGridItem) — ItemCardProps
     shop/                 Shop UI (ShopGrid, ShopItemCard, ShopCategoryTabs, PurchaseConfirmDialog)
