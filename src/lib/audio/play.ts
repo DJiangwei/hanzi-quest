@@ -1,10 +1,11 @@
 // src/lib/audio/play.ts
-import { playBuzz, playDing, playFanfare } from './sounds';
+import { getTheme } from './themes';
 
 export type SoundName = 'ding' | 'buzz' | 'fanfare';
 
 let ctx: AudioContext | null = null;
 let muted = false;
+let currentThemeSlug: string | null = null;
 
 function getCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -20,19 +21,18 @@ function getCtx(): AudioContext | null {
   return ctx;
 }
 
-const handlers: Record<SoundName, (ctx: AudioContext) => void> = {
-  ding: playDing,
-  buzz: playBuzz,
-  fanfare: playFanfare,
-};
-
 export function playSound(name: SoundName): void {
   if (muted) return;
   const c = getCtx();
   if (!c) return;
-  handlers[name](c);
+  const theme = getTheme(currentThemeSlug);
+  theme[name](c);
 }
 
 export function setAudioMuted(value: boolean): void {
   muted = value;
+}
+
+export function setAudioTheme(slug: string | null): void {
+  currentThemeSlug = slug;
 }
