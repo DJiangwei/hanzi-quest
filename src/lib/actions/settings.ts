@@ -24,8 +24,7 @@ export async function equipSoundThemeAction(
     throw new Error(`Unknown theme slug: ${slug}`);
   }
 
-  const ownedSet = await listChildOwnedShopItemIds(childId);
-  const owned = ownedSet instanceof Set ? ownedSet : new Set(ownedSet as string[]);
+  const owned = await listChildOwnedShopItemIds(childId);
   if (!owned.has(match.id)) {
     throw new Error(`Theme "${slug}" not owned`);
   }

@@ -171,7 +171,7 @@ export async function purchaseShopItemInTx(
 
   if (shopItem.kind !== 'avatar') {
     throw new ItemNotPurchasableError(
-      `Shop item kind '${shopItem.kind}' is not purchasable yet — PR #21 ships avatar only`,
+      `Shop item kind '${shopItem.kind}' is not purchasable via this path — only 'avatar' items are supported here`,
     );
   }
 

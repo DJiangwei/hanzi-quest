@@ -34,7 +34,7 @@ describe('equipSoundThemeAction', () => {
     mocks.listShopItemsByKind.mockResolvedValue([
       { id: 'item_nautical', slug: 'theme-nautical' },
     ]);
-    mocks.listChildOwnedShopItemIds.mockResolvedValue([]);
+    mocks.listChildOwnedShopItemIds.mockResolvedValue(new Set());
     await expect(
       equipSoundThemeAction('c1', 'theme-nautical'),
     ).rejects.toThrow(/not owned/i);
@@ -45,7 +45,7 @@ describe('equipSoundThemeAction', () => {
     mocks.listShopItemsByKind.mockResolvedValue([
       { id: 'item_nautical', slug: 'theme-nautical' },
     ]);
-    mocks.listChildOwnedShopItemIds.mockResolvedValue(['item_nautical']);
+    mocks.listChildOwnedShopItemIds.mockResolvedValue(new Set(['item_nautical']));
     await equipSoundThemeAction('c1', 'theme-nautical');
     expect(mocks.setSoundTheme).toHaveBeenCalledWith('c1', 'theme-nautical');
   });
