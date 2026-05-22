@@ -296,6 +296,18 @@ export async function listShopItemsByKind(
     .where(and(eq(shopItems.kind, kind), eq(shopItems.isActive, true)));
 }
 
+export interface SoundThemeListing {
+  shopItem: ShopItemRow;
+}
+
+export async function listSoundThemeListings(): Promise<SoundThemeListing[]> {
+  const rows = await db
+    .select()
+    .from(shopItems)
+    .where(and(eq(shopItems.kind, 'sound_theme'), eq(shopItems.isActive, true)));
+  return rows.map((shopItem) => ({ shopItem }));
+}
+
 /**
  * shop_items + inventory + default rows joined into a single payload the
  * /shop page can hydrate against without N+1.
