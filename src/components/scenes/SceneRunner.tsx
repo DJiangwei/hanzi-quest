@@ -17,9 +17,12 @@ import { AudioPickScene } from './AudioPickScene';
 import { BossScene } from './BossScene';
 import { FlashcardScene } from './FlashcardScene';
 import { ImagePickScene } from './ImagePickScene';
+import { PinyinPickScene } from './PinyinPickScene';
+import { SentenceClozeScene } from './SentenceClozeScene';
+import { TranslatePickScene } from './TranslatePickScene';
 import { VisualPickScene } from './VisualPickScene';
 import { WordMatchScene } from './WordMatchScene';
-import type { BossQuestionType } from '@/lib/scenes/configs';
+import type { BossQuestionType, Segment, TranslateDirection } from '@/lib/scenes/configs';
 
 const LevelFanfare = dynamic(
   () => import('./fx/LevelFanfare').then((m) => m.LevelFanfare),
@@ -34,6 +37,7 @@ interface CharacterDetail {
   meaningZh: string | null;
   imageHook: string | null;
   firstWord: string | null;
+  sentence: { id: string; text: string; translationEn: string | null } | null;
 }
 
 export type SceneType =
@@ -43,7 +47,10 @@ export type SceneType =
   | 'image_pick'
   | 'word_match'
   | 'tracing'
-  | 'boss';
+  | 'boss'
+  | 'pinyin_pick'
+  | 'translate_pick'
+  | 'sentence_cloze';
 
 interface CompiledLevel {
   id: string;
@@ -162,6 +169,16 @@ export function SceneRunner({
     });
   };
 
+  const segmentLabels: Record<Segment, { zh: string; en: string }> = {
+    review: { zh: '汉字回顾', en: 'Character Review' },
+    sound: { zh: '听 & 拼', en: 'Sound & Pinyin' },
+    sight: { zh: '看 & 配', en: 'Sight & Match' },
+    meaning: { zh: '译 & 句', en: 'Meaning & Sentence' },
+    boss: { zh: '海怪', en: 'Kraken' },
+  };
+  const segment = currentLevel.config.segment as Segment | undefined;
+  const segmentChip = segment ? segmentLabels[segment] : null;
+
   let body: React.ReactNode;
   switch (currentLevel.sceneType) {
     case 'flashcard': {
@@ -248,6 +265,50 @@ export function SceneRunner({
       );
       break;
     }
+    case 'pinyin_pick': {
+      const characterId = currentLevel.config.characterId as string | undefined;
+      const c = characterId ? charactersById[characterId] : undefined;
+      body = c ? (
+        <PinyinPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} />
+      ) : (
+        <MissingData />
+      );
+      break;
+    }
+    case 'translate_pick': {
+      const characterId = currentLevel.config.characterId as string | undefined;
+      const c = characterId ? charactersById[characterId] : undefined;
+      const direction = (currentLevel.config.direction as TranslateDirection | undefined) ?? 'cn_to_en';
+      body = c ? (
+        <TranslatePickScene
+          key={currentLevel.id}
+          target={c}
+          pool={pool}
+          direction={direction}
+          onComplete={advance}
+        />
+      ) : (
+        <MissingData />
+      );
+      break;
+    }
+    case 'sentence_cloze': {
+      const characterId = currentLevel.config.characterId as string | undefined;
+      const c = characterId ? charactersById[characterId] : undefined;
+      body = c && c.sentence ? (
+        <SentenceClozeScene
+          key={currentLevel.id}
+          target={c}
+          pool={pool}
+          sentenceText={c.sentence.text}
+          translationEn={c.sentence.translationEn}
+          onComplete={advance}
+        />
+      ) : (
+        <MissingData />
+      );
+      break;
+    }
     default:
       body = <MissingData />;
   }
@@ -269,6 +330,16 @@ export function SceneRunner({
             </span>
           </span>
         </div>
+        {segmentChip && (
+          <div className="flex justify-center bg-[var(--color-sand-50)] py-2">
+            <span
+              data-testid="segment-chip"
+              className="rounded-full border border-[var(--color-sand-300)] bg-white/80 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--color-sand-900)] shadow-sm"
+            >
+              {segmentChip.zh} · {segmentChip.en}
+            </span>
+          </div>
+        )}
         {body}
         <BonusToast
           bonuses={activeBonuses}

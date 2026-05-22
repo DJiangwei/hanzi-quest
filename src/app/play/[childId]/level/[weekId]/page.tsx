@@ -34,6 +34,13 @@ export default async function PlayLevelPage({ params }: PageProps) {
     meaningZh: c.meaningZh ?? null,
     imageHook: c.imageHook ?? null,
     firstWord: c.words[0]?.text ?? null,
+    sentence: c.sentence
+      ? {
+          id: c.sentence.id,
+          text: c.sentence.text,
+          translationEn: c.sentence.meaningEn ?? null,
+        }
+      : null,
   }));
   const charactersById = Object.fromEntries(pool.map((c) => [c.characterId, c]));
 

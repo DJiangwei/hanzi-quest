@@ -18,10 +18,10 @@ vi.mock('@/lib/hooks/coin-hud-context', async () => {
 import { BossScene } from '@/components/scenes/BossScene';
 
 const pool = [
-  { characterId: 'c1', hanzi: '海', pinyinArray: ['hǎi'], meaningEn: 'sea',  meaningZh: '海洋',  imageHook: null, firstWord: '海洋' },
-  { characterId: 'c2', hanzi: '湖', pinyinArray: ['hú'],  meaningEn: 'lake', meaningZh: '湖泊',  imageHook: null, firstWord: '湖泊' },
-  { characterId: 'c3', hanzi: '江', pinyinArray: ['jiāng'], meaningEn: 'river', meaningZh: '大河', imageHook: null, firstWord: '大江' },
-  { characterId: 'c4', hanzi: '河', pinyinArray: ['hé'],  meaningEn: 'river', meaningZh: '小河',  imageHook: null, firstWord: '小河' },
+  { characterId: 'c1', hanzi: '海', pinyinArray: ['hǎi'], meaningEn: 'sea',  meaningZh: '海洋',  imageHook: null, firstWord: '海洋', sentence: null },
+  { characterId: 'c2', hanzi: '湖', pinyinArray: ['hú'],  meaningEn: 'lake', meaningZh: '湖泊',  imageHook: null, firstWord: '湖泊', sentence: null },
+  { characterId: 'c3', hanzi: '江', pinyinArray: ['jiāng'], meaningEn: 'river', meaningZh: '大河', imageHook: null, firstWord: '大江', sentence: null },
+  { characterId: 'c4', hanzi: '河', pinyinArray: ['hé'],  meaningEn: 'river', meaningZh: '小河',  imageHook: null, firstWord: '小河', sentence: null },
 ];
 
 describe('BossScene', () => {
@@ -69,5 +69,81 @@ describe('BossScene', () => {
     // switch to fake timers in the implementation.)
     // Skip the deep assertion in favour of structural one:
     expect(onComplete).not.toHaveBeenCalledWith(true);
+  });
+});
+
+describe('BossScene — new question types', () => {
+  const basePool = [
+    {
+      characterId: 'c1',
+      hanzi: '苹',
+      pinyinArray: ['píng'],
+      meaningEn: 'apple',
+      meaningZh: '苹果',
+      imageHook: 'a red apple',
+      firstWord: '苹果',
+      sentence: { id: 's1', text: '我喜欢吃苹果。', translationEn: 'I love apples.' },
+    },
+    {
+      characterId: 'c2',
+      hanzi: '梨',
+      pinyinArray: ['lí'],
+      meaningEn: 'pear',
+      meaningZh: '梨',
+      imageHook: null,
+      firstWord: '梨',
+      sentence: null,
+    },
+  ];
+
+  it('renders a pinyin_pick prompt when type is pinyin_pick', () => {
+    render(
+      <BossScene
+        characterIds={['c1', 'c2']}
+        questionTypes={['pinyin_pick']}
+        pool={basePool}
+        onComplete={() => {}}
+      />,
+    );
+    expect(screen.getByText('píng')).toBeInTheDocument();
+  });
+
+  it('renders a translate_pick (cn_to_en) when type is translate_pick', () => {
+    render(
+      <BossScene
+        characterIds={['c1', 'c2']}
+        questionTypes={['translate_pick']}
+        pool={basePool}
+        onComplete={() => {}}
+      />,
+    );
+    expect(screen.getByText('苹')).toBeInTheDocument();
+    expect(screen.getByText('apple')).toBeInTheDocument();
+  });
+
+  it('renders a sentence_cloze when type is sentence_cloze and target has a sentence', () => {
+    render(
+      <BossScene
+        characterIds={['c1']}
+        questionTypes={['sentence_cloze']}
+        pool={basePool}
+        onComplete={() => {}}
+      />,
+    );
+    expect(screen.getByText(/我喜欢吃 ____ 果/)).toBeInTheDocument();
+  });
+
+  it('falls back to translate_pick when sentence_cloze target has no sentence', () => {
+    render(
+      <BossScene
+        characterIds={['c2']}
+        questionTypes={['sentence_cloze']}
+        pool={basePool}
+        onComplete={() => {}}
+      />,
+    );
+    // No sentence → fallback to translate_pick CN→EN.
+    expect(screen.getByText('梨')).toBeInTheDocument();
+    expect(screen.getByText('pear')).toBeInTheDocument();
   });
 });

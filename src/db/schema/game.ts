@@ -24,6 +24,9 @@ export const sceneType = pgEnum('scene_type', [
   'word_match',
   'tracing',
   'boss',
+  'pinyin_pick',
+  'translate_pick',
+  'sentence_cloze',
 ]);
 
 export const sceneTemplates = pgTable(

@@ -14,9 +14,9 @@ It is **not** a multi-tenant SaaS. Optimize for Yinuo's daily fun, not for theor
 
 ---
 
-## Current state (last refreshed 2026-05-19)
+## Current state (last refreshed 2026-05-22)
 
-**Shipped:** PR #1 → #27. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 6 scene types + boss, coins (with daily-login / streak-milestone / perfect-week bonuses + a `BonusToast` HUD layer), **5 collection packs** in the Collector's Atlas (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages): zodiac (12), flags (30), sea creatures (20), dinosaurs (15), solar system (10). **Shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"). Layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
+**Shipped:** PR #1 → #30. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 9 scene types + boss, coins (with daily-login / streak-milestone / perfect-week bonuses + a `BonusToast` HUD layer), **5 collection packs** in the Collector's Atlas (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages): zodiac (12), flags (30), sea creatures (20), dinosaurs (15), solar system (10). **Shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"). Layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
 
 **PR #21–#27 (just shipped, 2026-05-19):**
 - PR #21 (spec doc) + #22 (impl) — Shop hub + Avatar cosmetics. `/play/[childId]/shop`, `ShopHudButton` mounted in play layout, `AvatarRender` in island-map header, ~20 seeded items. New: `src/lib/db/shop.ts`, `src/lib/actions/shop.ts`, `src/lib/errors/shop-errors.ts`, `src/lib/avatar/{defaultLook,itemCatalog}.tsx`.
@@ -25,12 +25,13 @@ It is **not** a multi-tenant SaaS. Optimize for Yinuo's daily fun, not for theor
 - PR #26 — Dinosaurs pack (15 dinosaurs across Triassic/Jurassic/Cretaceous eras). Only 2 emojis exist (🦖/🦕), so `DinosaurCard` color-codes the card by era + renders a bilingual era badge for differentiation. cost=300.
 - PR #27 — Solar System pack (8 planets + Sun + Moon = 10). Mostly coloured-disc emojis (🔴/🟠/🟡/🔵/🟣/⚪) plus the only real ones (🪐/☀️/🌝/🌍). `SolarBodyCard` colour-codes by body type (rocky/gas/ice/star/moon) + bilingual type badge. cost=300.
 - PR #28 — Coin economy expansion. 3 new enum values on `coin_reason` (drizzle 0005): `daily_login` (+20, idempotent per UTC date), `streak_milestone` (+100 every 7 days, hooks the previously-empty `streaks` table via `tickStreak`), `perfect_week` (+200 when every scene of a week has at least one score=100 attempt; idempotent per week). New: `src/lib/db/streaks.ts` (tickStreak + todayUtcIso), `src/lib/db/play.ts isPerfectWeekForChild`, `src/components/play/BonusToast.tsx`. Actions return `bonuses: EconomyBonus[]` that the SceneRunner pipes into the toast layer.
+- **PR #30 (just shipped, 2026-05-22)** — 4-segment weekly structure + 3 new scene types. `compileWeekIntoLevels` rewritten to emit `review → sound → sight → meaning → boss` blocks; new `pinyin_pick`, `translate_pick` (bidirectional CN↔EN), `sentence_cloze` scenes (all delegate to `MultipleChoiceQuiz`); boss question rotation widened from 3 → 6 types (word_match still excluded — it's a multi-character round); bilingual segment chip rendered in `SceneRunner` from each level's `sceneConfig.segment`. One-off `scripts/recompile-all-weeks.ts` recompiled all 10 published weeks in prod. Now **9 scene types + boss**.
 
 **Most recent regressions fixed:**
 - PR #18 — `finishLevelAction` / `listWeekChars` used `getWeekOwnedBy` which fails for shared-pack weeks (parent_user_id NULL). Fixed by switching to `getPlayableWeekForChild`.
 - PR #20 — flashcard hanzi was 14rem fixed → now `clamp(11rem, 55vw, 22rem)`; `ZodiacIconDefs` (SVG `<symbol>` defs) only mounted on `/collection`, broke chest reveal — now mounted in the play layout.
 
-**Next up (per `docs/superpowers/specs/2026-05-18-pr21-shop-expansion-design.md` roadmap):** Sound/FX themes (PR #23 in spec terms — a `child_settings.soundThemeId`, audio handler registry, ~4 themes seeded as shop items). Then consumable powerups (hint / skip / streak-freeze), pet companion, island decorations. ALWAYS confirm with David before starting a new PR.
+**Next up (per `docs/superpowers/specs/2026-05-18-pr21-shop-expansion-design.md` roadmap):** Sound/FX themes (PR #23 in spec terms — a `child_settings.soundThemeId`, audio handler registry, ~4 themes seeded as shop items). Then consumable powerups (hint / skip / streak-freeze), pet companion, island decorations. PR #30 has shipped the 译&句 / 听&拼 segments, so content-variety scene work is no longer urgent. ALWAYS confirm with David before starting a new PR.
 
 ---
 
@@ -77,7 +78,7 @@ src/
       shop/                 Shop hub (tabbed: Avatar live; Sounds/Pet/Decor/Powerups WIP)
     parent/               David-facing admin (week authoring, child mgmt)
   components/
-    scenes/               6 scene types + BossScene + SceneRunner + fx/*
+    scenes/               9 scene types + BossScene + SceneRunner + fx/*
     play/                 Kid-facing UI primitives (IslandMap, Zodiac*, HUD, AtlasHub, AvatarRender)
       items/                Per-pack card components (FlagCard, ZodiacGridItem) — ItemCardProps
     shop/                 Shop UI (ShopGrid, ShopItemCard, ShopCategoryTabs, PurchaseConfirmDialog)
