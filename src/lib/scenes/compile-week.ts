@@ -127,8 +127,10 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
     // Two "slots". Slot 0 = translate_pick (cn_to_en). Slot 1 = cloze if any
     // char has a sentence, else translate_pick (en_to_cn). Direction alternates.
     if (translateId) {
-      const t1 = pickRandom(chars);
-      push(translateId, { characterId: t1.id, direction: 'cn_to_en' }, 'meaning');
+      const t1 = pickWithMeaning(chars);
+      if (t1) {
+        push(translateId, { characterId: t1.id, direction: 'cn_to_en' }, 'meaning');
+      }
     }
 
     const withSentence = chars.filter((c) => c.sentence !== null);
@@ -141,8 +143,10 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
       );
     } else if (translateId) {
       // Fallback: extra translate_pick (opposite direction)
-      const t2 = pickRandom(chars);
-      push(translateId, { characterId: t2.id, direction: 'en_to_cn' }, 'meaning');
+      const t2 = pickWithMeaning(chars);
+      if (t2) {
+        push(translateId, { characterId: t2.id, direction: 'en_to_cn' }, 'meaning');
+      }
     }
   }
 
@@ -179,4 +183,12 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pickWithMeaning<T extends { meaningEn: string | null }>(
+  arr: T[],
+): T | null {
+  const withMeaning = arr.filter((c) => Boolean(c.meaningEn));
+  if (withMeaning.length === 0) return null;
+  return pickRandom(withMeaning);
 }

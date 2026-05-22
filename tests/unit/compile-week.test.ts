@@ -66,7 +66,7 @@ function makeChar(id: string, hanzi: string, opts: {
     id,
     hanzi,
     pinyinArray: ['x'],
-    meaningEn: null,
+    meaningEn: 'meaning',
     meaningZh: null,
     imageHook: opts.imageHook ?? null,
     words: opts.words ?? [],
