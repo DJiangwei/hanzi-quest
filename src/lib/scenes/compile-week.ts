@@ -7,19 +7,38 @@ import type {
   BossConfig,
   FlashcardConfig,
   ImagePickConfig,
+  PinyinPickConfig,
+  Segment,
+  SentenceClozeConfig,
+  TranslatePickConfig,
   VisualPickConfig,
   WordMatchConfig,
 } from './configs';
 import { shuffle } from './sample';
 
+type AnyConfig =
+  | FlashcardConfig
+  | AudioPickConfig
+  | VisualPickConfig
+  | ImagePickConfig
+  | WordMatchConfig
+  | PinyinPickConfig
+  | TranslatePickConfig
+  | SentenceClozeConfig
+  | BossConfig;
+
 /**
  * Translate a published week's characters into a sequence of `week_levels`
- * rows. V2 (Phase 3 full): one flashcard per character (review pass) followed
- * by a small mixed quiz block — audio pick, visual pick, image pick (if any
- * character has an imageHook), and a word match round. Total ≈ 13-14 levels.
+ * rows. PR #30 (4-segment structure):
+ *   - review:  N flashcards (one per char, PDF order)
+ *   - sound:   1 audio_pick + 1 pinyin_pick   (skipped if N < 2)
+ *   - sight:   1 (image_pick if any imageHook else visual_pick) + 1 word_match
+ *              (word_match only if >=2 chars have words; otherwise just sight scene)
+ *   - meaning: 2 from { translate_pick, sentence_cloze }  with cloze->translate
+ *              fallback per char if no example_sentence; alternates directions.
+ *   - boss:    1 (only if N >= 10), 6 rotating question types.
  *
- * Idempotent — drops existing rows for the week before inserting the new
- * sequence, so re-publishing safely upgrades older 10-flashcard weeks.
+ * Idempotent — drops existing rows for the week before inserting.
  */
 export async function compileWeekIntoLevels(weekId: string): Promise<number> {
   const chars = await getCharactersWithDetailsForWeek(weekId);
@@ -47,71 +66,105 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
   }> = [];
 
   let position = 0;
-  const push = (
-    templateId: string,
-    config:
-      | FlashcardConfig
-      | AudioPickConfig
-      | VisualPickConfig
-      | ImagePickConfig
-      | WordMatchConfig
-      | BossConfig,
-  ) => {
+  const push = (templateId: string, config: AnyConfig, segment: Segment) => {
     rows.push({
       weekId,
       position: position++,
       sceneTemplateId: templateId,
-      sceneConfig: config as Record<string, unknown>,
+      sceneConfig: { ...(config as Record<string, unknown>), segment },
       unlockedAfterPosition: null,
     });
   };
 
-  // 1. One flashcard per character, in PDF order.
+  // ── Segment 1: review ────────────────────────────────────────────────────
   for (const c of chars) {
-    push(flashcardId, { characterId: c.id, hanzi: c.hanzi });
+    push(flashcardId, { characterId: c.id, hanzi: c.hanzi }, 'review');
   }
 
-  // 2. Quiz block — only if we have ≥ 2 characters (need distractors).
+  // ── Segment 2: sound ─────────────────────────────────────────────────────
   if (chars.length >= 2) {
     const audioId = tmplByType.get('audio_pick');
+    const pinyinId = tmplByType.get('pinyin_pick');
     if (audioId) {
       const target = pickRandom(chars);
-      push(audioId, { characterId: target.id });
+      push(audioId, { characterId: target.id }, 'sound');
     }
-
-    const visualId = tmplByType.get('visual_pick');
-    if (visualId) {
+    if (pinyinId) {
       const target = pickRandom(chars);
-      push(visualId, { characterId: target.id });
+      push(pinyinId, { characterId: target.id }, 'sound');
     }
+  }
 
+  // ── Segment 3: sight ─────────────────────────────────────────────────────
+  if (chars.length >= 2) {
     const imageId = tmplByType.get('image_pick');
-    if (imageId) {
-      const withHook = chars.filter((c) => Boolean(c.imageHook));
-      if (withHook.length > 0) {
-        const target = pickRandom(withHook);
-        push(imageId, { characterId: target.id });
-      }
+    const visualId = tmplByType.get('visual_pick');
+    const wordId = tmplByType.get('word_match');
+
+    const withHook = chars.filter((c) => Boolean(c.imageHook));
+    if (withHook.length > 0 && imageId) {
+      const target = pickRandom(withHook);
+      push(imageId, { characterId: target.id }, 'sight');
+    } else if (visualId) {
+      const target = pickRandom(chars);
+      push(visualId, { characterId: target.id }, 'sight');
     }
 
-    const wordId = tmplByType.get('word_match');
     if (wordId) {
       const withWords = chars.filter((c) => c.words.length > 0);
       const sample = shuffle(withWords).slice(0, Math.min(4, withWords.length));
       if (sample.length >= 2) {
-        push(wordId, { characterIds: sample.map((c) => c.id) });
+        push(wordId, { characterIds: sample.map((c) => c.id) }, 'sight');
       }
     }
   }
 
-  // 3. Boss — only if pack has at least 10 chars AND a boss template is seeded.
+  // ── Segment 4: meaning ───────────────────────────────────────────────────
+  if (chars.length >= 2) {
+    const translateId = tmplByType.get('translate_pick');
+    const clozeId = tmplByType.get('sentence_cloze');
+
+    // Two "slots". Slot 0 = translate_pick (cn_to_en). Slot 1 = cloze if any
+    // char has a sentence, else translate_pick (en_to_cn). Direction alternates.
+    if (translateId) {
+      const t1 = pickRandom(chars);
+      push(translateId, { characterId: t1.id, direction: 'cn_to_en' }, 'meaning');
+    }
+
+    const withSentence = chars.filter((c) => c.sentence !== null);
+    if (clozeId && withSentence.length > 0) {
+      const target = pickRandom(withSentence);
+      push(
+        clozeId,
+        { characterId: target.id, sentenceId: target.sentence!.id },
+        'meaning',
+      );
+    } else if (translateId) {
+      // Fallback: extra translate_pick (opposite direction)
+      const t2 = pickRandom(chars);
+      push(translateId, { characterId: t2.id, direction: 'en_to_cn' }, 'meaning');
+    }
+  }
+
+  // ── Boss ─────────────────────────────────────────────────────────────────
   const bossId = tmplByType.get('boss');
   if (bossId && chars.length >= 10) {
     const shuffled = shuffle(chars).slice(0, 10);
-    push(bossId, {
-      characterIds: shuffled.map((c) => c.id),
-      questionTypes: ['audio_pick', 'visual_pick', 'image_pick'],
-    });
+    push(
+      bossId,
+      {
+        characterIds: shuffled.map((c) => c.id),
+        questionTypes: [
+          'audio_pick',
+          'visual_pick',
+          'image_pick',
+          'pinyin_pick',
+          'translate_pick',
+          'sentence_cloze',
+        ],
+      },
+      'boss',
+    );
   }
 
   await db.transaction(async (tx) => {

@@ -26,20 +26,27 @@ vi.mock('@/lib/db/characters', () => ({
 import { compileWeekIntoLevels } from '@/lib/scenes/compile-week';
 
 const TEMPLATES = [
-  { id: 'tpl-flashcard',   type: 'flashcard'   },
-  { id: 'tpl-audio-pick',  type: 'audio_pick'  },
-  { id: 'tpl-visual-pick', type: 'visual_pick' },
-  { id: 'tpl-image-pick',  type: 'image_pick'  },
-  { id: 'tpl-word-match',  type: 'word_match'  },
-  { id: 'tpl-boss',        type: 'boss'        },
+  { id: 'tpl-flashcard',   type: 'flashcard'      },
+  { id: 'tpl-audio-pick',  type: 'audio_pick'     },
+  { id: 'tpl-visual-pick', type: 'visual_pick'    },
+  { id: 'tpl-image-pick',  type: 'image_pick'     },
+  { id: 'tpl-word-match',  type: 'word_match'     },
+  { id: 'tpl-boss',        type: 'boss'           },
+  { id: 'tpl-pinyin',      type: 'pinyin_pick'    },
+  { id: 'tpl-translate',   type: 'translate_pick' },
+  { id: 'tpl-cloze',       type: 'sentence_cloze' },
 ];
 
 function makeChars(n: number) {
   return Array.from({ length: n }, (_, i) => ({
     id: `char-${i + 1}`,
     hanzi: `字${i + 1}`,
+    pinyinArray: ['zi'],
+    meaningEn: 'char',
+    meaningZh: '字',
     imageHook: 'a thing',
-    words: [{ word: 'word' }],
+    words: [{ text: '字' + (i + 1) }],
+    sentence: null,
   }));
 }
 
@@ -60,9 +67,14 @@ describe('compileWeekIntoLevels boss emission', () => {
     const last = insertedRows[insertedRows.length - 1];
     expect(last.sceneTemplateId).toBe('tpl-boss');
     expect(last.sceneConfig.characterIds).toHaveLength(10);
-    expect(last.sceneConfig.questionTypes).toEqual(
-      expect.arrayContaining(['audio_pick', 'visual_pick', 'image_pick']),
-    );
+    expect(last.sceneConfig.questionTypes).toEqual([
+      'audio_pick',
+      'visual_pick',
+      'image_pick',
+      'pinyin_pick',
+      'translate_pick',
+      'sentence_cloze',
+    ]);
   });
 
   it('does NOT emit boss when chars.length < 10', async () => {

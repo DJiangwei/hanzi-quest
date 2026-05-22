@@ -53,6 +53,9 @@ const allTemplates = [
   { id: 'tmpl_image', type: 'image_pick' },
   { id: 'tmpl_word', type: 'word_match' },
   { id: 'tmpl_boss', type: 'boss' },
+  { id: 'tmpl_pinyin', type: 'pinyin_pick' },
+  { id: 'tmpl_translate', type: 'translate_pick' },
+  { id: 'tmpl_cloze', type: 'sentence_cloze' },
 ];
 
 function makeChar(id: string, hanzi: string, opts: {
@@ -110,7 +113,7 @@ describe('compileWeekIntoLevels', () => {
     expect(rows[0].sceneTemplateId).toBe('tmpl_flashcard');
   });
 
-  it('with chars + words + imageHook emits flashcards + full quiz block', async () => {
+  it('with 3 chars + words + imageHook emits the 4-segment block (no boss, N<10)', async () => {
     const chars = [
       makeChar('c1', '人', {
         imageHook: 'a smiling crowd',
@@ -127,25 +130,38 @@ describe('compileWeekIntoLevels', () => {
     mocks.insertReturning.mockResolvedValue([]);
 
     const count = await compileWeekIntoLevels('w_1');
-    // 3 flashcards + 1 audio + 1 visual + 1 image (has imageHook) + 1 word_match (≥2 chars w/ words)
-    expect(count).toBe(7);
+    // review(3) + sound(2) + sight(2) + meaning(2) = 9; no boss (N<10).
+    expect(count).toBe(9);
 
     const [rows] = mocks.insertValuesMock.mock.calls[0];
-    const types = rows.map((r: { sceneTemplateId: string }) => r.sceneTemplateId);
-    expect(types.slice(0, 3)).toEqual([
+    const templateIds = rows.map((r: { sceneTemplateId: string }) => r.sceneTemplateId);
+    const segments = rows.map((r: { sceneConfig: { segment?: string } }) => r.sceneConfig.segment);
+
+    expect(templateIds.slice(0, 3)).toEqual([
       'tmpl_flashcard',
       'tmpl_flashcard',
       'tmpl_flashcard',
     ]);
-    expect(types.slice(3)).toEqual([
-      'tmpl_audio',
-      'tmpl_visual',
-      'tmpl_image',
-      'tmpl_word',
-    ]);
+    expect(segments.slice(0, 3)).toEqual(['review', 'review', 'review']);
+
+    // sound: audio + pinyin
+    expect(templateIds.slice(3, 5)).toEqual(['tmpl_audio', 'tmpl_pinyin']);
+    expect(segments.slice(3, 5)).toEqual(['sound', 'sound']);
+
+    // sight: image (has hook) + word_match
+    expect(templateIds.slice(5, 7)).toEqual(['tmpl_image', 'tmpl_word']);
+    expect(segments.slice(5, 7)).toEqual(['sight', 'sight']);
+
+    // meaning: translate + cloze (fallback to translate since sentence:null on makeChar)
+    // Both fallback paths yield `tmpl_translate`, so allow either composition.
+    const meaningSlice = templateIds.slice(7, 9);
+    expect(meaningSlice.every((t: string) =>
+      t === 'tmpl_translate' || t === 'tmpl_cloze',
+    )).toBe(true);
+    expect(segments.slice(7, 9)).toEqual(['meaning', 'meaning']);
   });
 
-  it('skips image_pick when no character has an imageHook', async () => {
+  it('substitutes visual_pick when no character has an imageHook', async () => {
     mocks.getCharactersWithDetailsForWeekMock.mockResolvedValue([
       makeChar('c1', '人', { words: [{ text: '大人' }] }),
       makeChar('c2', '口', { words: [{ text: '门口' }] }),
@@ -154,14 +170,16 @@ describe('compileWeekIntoLevels', () => {
     mocks.insertReturning.mockResolvedValue([]);
 
     const count = await compileWeekIntoLevels('w_1');
-    // 2 flashcards + audio + visual + word_match (no image_pick)
-    expect(count).toBe(5);
+    // 2 flashcards + sound(2) + sight(2: visual + word_match) + meaning(2) = 8
+    expect(count).toBe(8);
     const [rows] = mocks.insertValuesMock.mock.calls[0];
-    const types = rows.map((r: { sceneTemplateId: string }) => r.sceneTemplateId);
-    expect(types).not.toContain('tmpl_image');
+    const templateIds = rows.map((r: { sceneTemplateId: string }) => r.sceneTemplateId);
+    expect(templateIds).not.toContain('tmpl_image');
+    expect(templateIds).toContain('tmpl_visual');
+    expect(templateIds).toContain('tmpl_word');
   });
 
-  it('skips word_match when fewer than 2 characters have words', async () => {
+  it('skips word_match when fewer than 2 chars have words; keeps other sight scenes', async () => {
     mocks.getCharactersWithDetailsForWeekMock.mockResolvedValue([
       makeChar('c1', '人', { words: [{ text: '大人' }] }),
       makeChar('c2', '口'),
@@ -170,10 +188,10 @@ describe('compileWeekIntoLevels', () => {
     mocks.insertReturning.mockResolvedValue([]);
 
     const count = await compileWeekIntoLevels('w_1');
-    // 2 flashcards + audio + visual (no image, no word_match)
-    expect(count).toBe(4);
+    // 2 flashcards + sound(2) + sight(1: visual_pick only, no word_match) + meaning(2) = 7
+    expect(count).toBe(7);
     const [rows] = mocks.insertValuesMock.mock.calls[0];
-    const types = rows.map((r: { sceneTemplateId: string }) => r.sceneTemplateId);
-    expect(types).not.toContain('tmpl_word');
+    const templateIds = rows.map((r: { sceneTemplateId: string }) => r.sceneTemplateId);
+    expect(templateIds).not.toContain('tmpl_word');
   });
 });
