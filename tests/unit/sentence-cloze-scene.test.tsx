@@ -1,5 +1,19 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/lib/audio/play', () => ({ playSound: vi.fn() }));
+vi.mock('@/lib/hooks/coin-hud-context', async () => {
+  const { createContext, useContext } = await import('react');
+  const ctx = createContext({ coinHudRef: { current: null } });
+  return {
+    CoinHudContext: ctx,
+    useCoinHud: () => useContext(ctx),
+  };
+});
+vi.mock('@/lib/hooks/use-reduced-motion', () => ({
+  useReducedMotion: () => false,
+}));
+
 import { SentenceClozeScene } from '@/components/scenes/SentenceClozeScene';
 
 const target = {
@@ -22,7 +36,14 @@ const pool = [
 const sentenceText = '我喜欢吃苹果。';
 const translationEn = 'I love eating apples.';
 
-afterEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.clearAllMocks();
+});
 
 describe('SentenceClozeScene', () => {
   it('renders the sentence with the target hanzi blanked out', () => {
@@ -40,7 +61,7 @@ describe('SentenceClozeScene', () => {
     expect(screen.getByText(translationEn)).toBeInTheDocument();
   });
 
-  it('renders 4 hanzi options', () => {
+  it('renders 4 hanzi options plus 1 audio button (5 total)', () => {
     render(
       <SentenceClozeScene
         target={target}
@@ -50,7 +71,8 @@ describe('SentenceClozeScene', () => {
         onComplete={vi.fn()}
       />,
     );
-    expect(screen.getAllByRole('button')).toHaveLength(5); // 4 options + 1 audio button
+    // 4 choice buttons (rendered by MultipleChoiceQuiz) + 1 audio button (in stimulus)
+    expect(screen.getAllByRole('button')).toHaveLength(5);
   });
 
   it('calls onComplete(true) when the correct hanzi is picked', () => {
@@ -65,6 +87,7 @@ describe('SentenceClozeScene', () => {
       />,
     );
     fireEvent.click(screen.getByText('苹'));
+    act(() => { vi.advanceTimersByTime(800); });
     expect(onComplete).toHaveBeenCalledWith(true);
   });
 
