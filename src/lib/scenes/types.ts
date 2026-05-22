@@ -8,7 +8,10 @@ export type SceneType =
   | 'image_pick'
   | 'word_match'
   | 'tracing'
-  | 'boss';
+  | 'boss'
+  | 'pinyin_pick'
+  | 'translate_pick'
+  | 'sentence_cloze';
 
 export interface SceneResult {
   correct: number;

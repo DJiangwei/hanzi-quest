@@ -48,7 +48,6 @@ async function main() {
     }
   }
 
-  console.log('Migrations applied');
 }
 
 main().catch((err) => {
