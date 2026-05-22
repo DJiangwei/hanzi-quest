@@ -30,7 +30,7 @@ async function main() {
   const { compileWeekIntoLevels } = await import('../src/lib/scenes/compile-week');
 
   const rows = await db
-    .select({ id: weeks.id, weekNumber: weeks.weekNumber, curriculumPackId: weeks.curriculumPackId })
+    .select({ id: weeks.id, weekNumber: weeks.weekNumber })
     .from(weeks)
     .where(eq(weeks.status, 'published'));
 
