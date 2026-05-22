@@ -284,6 +284,19 @@ export async function equipAvatarItem(
 }
 
 /**
+ * All active shop_items rows of the given kind. Used by equipSoundThemeAction
+ * to validate that a slug corresponds to a real, purchasable item.
+ */
+export async function listShopItemsByKind(
+  kind: ShopItemRow['kind'],
+): Promise<ShopItemRow[]> {
+  return await db
+    .select()
+    .from(shopItems)
+    .where(and(eq(shopItems.kind, kind), eq(shopItems.isActive, true)));
+}
+
+/**
  * shop_items + inventory + default rows joined into a single payload the
  * /shop page can hydrate against without N+1.
  */
