@@ -6,6 +6,9 @@ import type { BossQuestionType } from '@/lib/scenes/configs';
 import { AudioPickScene } from './AudioPickScene';
 import { BossKraken } from './fx/BossKraken';
 import { ImagePickScene } from './ImagePickScene';
+import { PinyinPickScene } from './PinyinPickScene';
+import { SentenceClozeScene } from './SentenceClozeScene';
+import { TranslatePickScene } from './TranslatePickScene';
 import { VisualPickScene } from './VisualPickScene';
 
 interface CharacterDetail {
@@ -16,6 +19,7 @@ interface CharacterDetail {
   meaningZh: string | null;
   imageHook: string | null;
   firstWord: string | null;
+  sentence: { id: string; text: string; translationEn: string | null } | null;
 }
 
 interface Props {
@@ -155,6 +159,42 @@ export function BossScene({ characterIds, questionTypes, pool, onComplete }: Pro
             key={`boss-${currentIdx}`}
             target={q.target}
             pool={pool}
+            onComplete={handleAnswer}
+          />
+        )}
+        {q.type === 'pinyin_pick' && (
+          <PinyinPickScene
+            key={`boss-${currentIdx}`}
+            target={q.target}
+            pool={pool}
+            onComplete={handleAnswer}
+          />
+        )}
+        {q.type === 'translate_pick' && (
+          <TranslatePickScene
+            key={`boss-${currentIdx}`}
+            target={q.target}
+            pool={pool}
+            direction={currentIdx % 2 === 0 ? 'cn_to_en' : 'en_to_cn'}
+            onComplete={handleAnswer}
+          />
+        )}
+        {q.type === 'sentence_cloze' && q.target.sentence && (
+          <SentenceClozeScene
+            key={`boss-${currentIdx}`}
+            target={q.target}
+            pool={pool}
+            sentenceText={q.target.sentence.text}
+            translationEn={q.target.sentence.translationEn}
+            onComplete={handleAnswer}
+          />
+        )}
+        {q.type === 'sentence_cloze' && !q.target.sentence && (
+          <TranslatePickScene
+            key={`boss-${currentIdx}`}
+            target={q.target}
+            pool={pool}
+            direction="cn_to_en"
             onComplete={handleAnswer}
           />
         )}
