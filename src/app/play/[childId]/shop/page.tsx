@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
-import { getShopPageData } from '@/lib/db/shop';
+import { getShopPageData, listSoundThemeListings } from '@/lib/db/shop';
+import { getChildSettings } from '@/lib/db/settings';
 import { ShopBody } from './ShopBody';
 
 interface PageProps {
@@ -15,17 +16,22 @@ export default async function ShopPage({ params }: PageProps) {
     notFound();
   }
 
-  const { listings, ownedShopItemIds, equipped, coinBalance } =
-    await getShopPageData(childId);
+  const [shop, sounds, settings] = await Promise.all([
+    getShopPageData(childId),
+    listSoundThemeListings(),
+    getChildSettings(childId),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <ShopBody
         childId={childId}
-        initialCoinBalance={coinBalance}
-        listings={listings}
-        initialOwnedShopItemIds={ownedShopItemIds}
-        initialEquipped={equipped}
+        initialCoinBalance={shop.coinBalance}
+        listings={shop.listings}
+        initialOwnedShopItemIds={shop.ownedShopItemIds}
+        initialEquipped={shop.equipped}
+        soundListings={sounds}
+        initialEquippedSoundThemeSlug={settings?.soundThemeSlug ?? null}
       />
     </main>
   );

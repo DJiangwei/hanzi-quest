@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 import { AvatarRender } from '@/components/play/AvatarRender';
 import { ShopCategoryTabs, type ShopCategory } from '@/components/shop/ShopCategoryTabs';
 import { ShopGrid } from '@/components/shop/ShopGrid';
+import { SoundsTabBody } from '@/components/shop/SoundsTabBody';
 import { PurchaseConfirmDialog } from '@/components/shop/PurchaseConfirmDialog';
-import type { AvatarShopListing, EquippedAvatar } from '@/lib/db/shop';
+import type { AvatarShopListing, EquippedAvatar, SoundThemeListing } from '@/lib/db/shop';
 import { lookupItem } from '@/lib/avatar/itemCatalog';
 import {
   equipAvatarItemAction,
@@ -20,6 +21,8 @@ interface Props {
   listings: AvatarShopListing[];
   initialOwnedShopItemIds: string[];
   initialEquipped: EquippedAvatar;
+  soundListings: SoundThemeListing[];
+  initialEquippedSoundThemeSlug: string | null;
 }
 
 export function ShopBody({
@@ -28,6 +31,8 @@ export function ShopBody({
   listings,
   initialOwnedShopItemIds,
   initialEquipped,
+  soundListings,
+  initialEquippedSoundThemeSlug,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ShopCategory>('avatar');
@@ -129,7 +134,7 @@ export function ShopBody({
 
       <ShopCategoryTabs active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === 'avatar' ? (
+      {activeTab === 'avatar' && (
         <ShopGrid
           listings={listings}
           ownedShopItemIds={ownedIds}
@@ -138,7 +143,17 @@ export function ShopBody({
           onPurchase={handlePurchase}
           onEquip={handleEquip}
         />
-      ) : (
+      )}
+      {activeTab === 'sound' && (
+        <SoundsTabBody
+          childId={childId}
+          listings={soundListings}
+          ownedShopItemIds={ownedIds}
+          coinBalance={coinBalance}
+          equippedThemeSlug={initialEquippedSoundThemeSlug}
+        />
+      )}
+      {(activeTab === 'pet' || activeTab === 'decor' || activeTab === 'powerup') && (
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center text-amber-900/70">
           <div className="text-5xl">🚧</div>
           <div className="mt-3 text-lg font-bold">即将上线</div>
