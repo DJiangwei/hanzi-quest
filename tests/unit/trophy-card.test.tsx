@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { TrophyCard } from '@/components/play/TrophyCard';
+import type { TrophyRow } from '@/lib/db/trophies';
 
 const trophy = {
   id: 't1',
@@ -13,7 +14,7 @@ const trophy = {
   loreZh: '勇敢的小海盗',
   loreEn: 'Brave little pirate',
   category: 'mastery' as const,
-} as any;
+} as unknown as TrophyRow;
 
 describe('TrophyCard', () => {
   it('earned: full color, shows lore + date stamp', () => {
