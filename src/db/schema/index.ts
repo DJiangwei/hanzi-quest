@@ -8,3 +8,4 @@ export * from './pets';
 export * from './settings';
 export * from './system';
 export * from './trophies';
+export * from './decorations';
