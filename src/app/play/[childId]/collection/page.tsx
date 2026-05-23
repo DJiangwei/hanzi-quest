@@ -7,6 +7,8 @@ import {
 } from '@/lib/db/collections';
 import { AtlasHub, type AtlasHallSummary } from '@/components/play/AtlasHub';
 import { getPackMeta } from '@/lib/collections/packRegistry';
+import { TrophiesHallCard } from '@/components/play/TrophiesHallCard';
+import { listAllTrophies, listEarnedTrophies } from '@/lib/db/trophies';
 
 export default async function CollectionAtlasPage({
   params,
@@ -16,7 +18,11 @@ export default async function CollectionAtlasPage({
   const { childId } = await params;
   await requireChild(childId);
 
-  const packs = await listActivePacks();
+  const [packs, allTrophies, earnedTrophies] = await Promise.all([
+    listActivePacks(),
+    listAllTrophies(),
+    listEarnedTrophies(childId),
+  ]);
   const halls: AtlasHallSummary[] = (
     await Promise.all(
       packs.map(async (pack) => {
@@ -39,6 +45,13 @@ export default async function CollectionAtlasPage({
   return (
     <main className="flex flex-1 flex-col items-center gap-4 p-6">
       <AtlasHub childId={childId} halls={halls} />
+      <div className="w-full max-w-md">
+        <TrophiesHallCard
+          childId={childId}
+          earnedCount={earnedTrophies.length}
+          totalCount={allTrophies.length}
+        />
+      </div>
     </main>
   );
 }
