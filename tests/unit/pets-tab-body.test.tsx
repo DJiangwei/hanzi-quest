@@ -10,6 +10,7 @@ vi.mock('@/lib/actions/pet', () => ({ equipPetAction: mocks.equipPetAction }));
 vi.mock('@/lib/actions/shop', () => ({ purchaseShopItemAction: mocks.purchaseShopItemAction }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
+import type { PetShopListing } from '@/lib/db/pets';
 import { PetsTabBody } from '@/components/shop/PetsTabBody';
 
 const listings = [
@@ -21,7 +22,7 @@ const listings = [
     shopItem: { id: 'shop-p2', slug: 'pet-crab', kind: 'pet', name: '螃蟹 / Crab', description: 'desc', imageUrl: '🦀', priceCoins: 300 },
     pet: { id: 'p2', slug: 'pet-crab', emoji: '🦀', nameZh: '螃蟹', nameEn: 'Crab' },
   },
-] as any;
+] as unknown as PetShopListing[];
 
 afterEach(() => {
   for (const m of Object.values(mocks)) m.mockReset();
