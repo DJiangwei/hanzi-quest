@@ -12,6 +12,8 @@ import { getPackMeta } from '@/lib/collections/packRegistry';
 import { listProgressByChild } from '@/lib/db/play';
 import { getEquippedAvatar } from '@/lib/db/shop';
 import { listChildPlayableWeeks } from '@/lib/db/weeks';
+import { PetCompanion } from '@/components/play/PetCompanion';
+import { getEquippedPet } from '@/lib/db/pets';
 
 interface PageProps {
   params: Promise<{ childId: string }>;
@@ -21,13 +23,14 @@ export default async function PlayHomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const [playableWeeks, progressRows, balance, activePacks, equipped] =
+  const [playableWeeks, progressRows, balance, activePacks, equipped, pet] =
     await Promise.all([
       listChildPlayableWeeks(child.id),
       listProgressByChild(child.id),
       getCoinBalance(child.id),
       listActivePacks(),
       getEquippedAvatar(child.id),
+      getEquippedPet(child.id),
     ]);
 
   const equippedRefs: Partial<Record<string, string | null>> = {};
@@ -71,6 +74,19 @@ export default async function PlayHomePage({ params }: PageProps) {
             size={64}
             label={`${child.displayName} 的形象`}
             className="shrink-0"
+          />
+          <PetCompanion
+            pet={
+              pet
+                ? {
+                    emoji: pet.emoji,
+                    nameZh: pet.nameZh,
+                    nameEn: pet.nameEn,
+                    speechZh: pet.speechZh,
+                    speechEn: pet.speechEn,
+                  }
+                : null
+            }
           />
           <div>
             <h1 className="font-hanzi text-2xl font-bold tracking-tight text-[var(--color-ocean-900)]">

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
 import { getShopPageData, listSoundThemeListings } from '@/lib/db/shop';
 import { getChildSettings } from '@/lib/db/settings';
+import { listPetShopListings, getEquippedPet } from '@/lib/db/pets';
 import { ShopBody } from './ShopBody';
 
 interface PageProps {
@@ -16,10 +17,12 @@ export default async function ShopPage({ params }: PageProps) {
     notFound();
   }
 
-  const [shop, sounds, settings] = await Promise.all([
+  const [shop, sounds, settings, petListings, equippedPet] = await Promise.all([
     getShopPageData(childId),
     listSoundThemeListings(),
     getChildSettings(childId),
+    listPetShopListings(),
+    getEquippedPet(childId),
   ]);
 
   return (
@@ -32,6 +35,8 @@ export default async function ShopPage({ params }: PageProps) {
         initialEquipped={shop.equipped}
         soundListings={sounds}
         initialEquippedSoundThemeSlug={settings?.soundThemeSlug ?? null}
+        petListings={petListings}
+        initialEquippedPetSlug={equippedPet?.slug ?? null}
       />
     </main>
   );

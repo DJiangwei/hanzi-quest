@@ -7,8 +7,10 @@ import { AvatarRender } from '@/components/play/AvatarRender';
 import { ShopCategoryTabs, type ShopCategory } from '@/components/shop/ShopCategoryTabs';
 import { ShopGrid } from '@/components/shop/ShopGrid';
 import { SoundsTabBody } from '@/components/shop/SoundsTabBody';
+import { PetsTabBody } from '@/components/shop/PetsTabBody';
 import { PurchaseConfirmDialog } from '@/components/shop/PurchaseConfirmDialog';
 import type { AvatarShopListing, EquippedAvatar, SoundThemeListing } from '@/lib/db/shop';
+import type { PetShopListing } from '@/lib/db/pets';
 import { lookupItem } from '@/lib/avatar/itemCatalog';
 import {
   equipAvatarItemAction,
@@ -23,6 +25,8 @@ interface Props {
   initialEquipped: EquippedAvatar;
   soundListings: SoundThemeListing[];
   initialEquippedSoundThemeSlug: string | null;
+  petListings: PetShopListing[];
+  initialEquippedPetSlug: string | null;
 }
 
 export function ShopBody({
@@ -33,6 +37,8 @@ export function ShopBody({
   initialEquipped,
   soundListings,
   initialEquippedSoundThemeSlug,
+  petListings,
+  initialEquippedPetSlug,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ShopCategory>('avatar');
@@ -153,7 +159,16 @@ export function ShopBody({
           equippedThemeSlug={initialEquippedSoundThemeSlug}
         />
       )}
-      {(activeTab === 'pet' || activeTab === 'decor' || activeTab === 'powerup') && (
+      {activeTab === 'pet' && (
+        <PetsTabBody
+          childId={childId}
+          listings={petListings}
+          ownedShopItemIds={ownedIds}
+          coinBalance={coinBalance}
+          equippedPetSlug={initialEquippedPetSlug}
+        />
+      )}
+      {(activeTab === 'decor' || activeTab === 'powerup') && (
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center text-amber-900/70">
           <div className="text-5xl">🚧</div>
           <div className="mt-3 text-lg font-bold">即将上线</div>
