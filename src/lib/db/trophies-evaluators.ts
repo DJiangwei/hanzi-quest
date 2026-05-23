@@ -7,6 +7,8 @@ import {
   playSessions,
   sceneAttempts,
   sceneTemplates,
+  shopItems,
+  shopPurchases,
   streaks,
   weekLevels,
 } from '@/db/schema';
@@ -72,4 +74,13 @@ export async function getLongestStreak(childId: string): Promise<number> {
     .where(eq(streaks.childId, childId))
     .limit(1);
   return rows[0]?.longestStreak ?? 0;
+}
+
+export async function countOwnedDecorations(childId: string): Promise<number> {
+  const rows = await db
+    .select({ count: sql<number>`COUNT(*)`.as('count') })
+    .from(shopPurchases)
+    .innerJoin(shopItems, eq(shopItems.id, shopPurchases.shopItemId))
+    .where(and(eq(shopPurchases.childId, childId), eq(shopItems.kind, 'decor')));
+  return Number(rows[0]?.count ?? 0);
 }
