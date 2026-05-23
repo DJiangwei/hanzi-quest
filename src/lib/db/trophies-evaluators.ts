@@ -8,20 +8,8 @@ import {
   sceneAttempts,
   sceneTemplates,
   streaks,
-  trophies,
   weekLevels,
 } from '@/db/schema';
-
-export type TrophyRow = typeof trophies.$inferSelect;
-
-export async function getTrophyBySlug(slug: string): Promise<TrophyRow | null> {
-  const rows = await db
-    .select()
-    .from(trophies)
-    .where(eq(trophies.slug, slug))
-    .limit(1);
-  return rows[0] ?? null;
-}
 
 export async function countCompletedLevels(childId: string): Promise<number> {
   const rows = await db
