@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   listChildOwnedShopItemIds: vi.fn(),
   listShopItemsByKind: vi.fn(),
   revalidatePath: vi.fn(),
+  checkAndGrantTrophies: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
@@ -15,12 +16,16 @@ vi.mock('@/lib/db/shop', () => ({
   listShopItemsByKind: mocks.listShopItemsByKind,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
+vi.mock('@/lib/db/trophies', () => ({
+  checkAndGrantTrophies: mocks.checkAndGrantTrophies,
+}));
 
 import { equipSoundThemeAction } from '@/lib/actions/settings';
 
 beforeEach(() => {
   for (const m of Object.values(mocks)) m.mockReset();
   mocks.requireChild.mockResolvedValue({ child: { id: 'c1' } });
+  mocks.checkAndGrantTrophies.mockResolvedValue([]);
 });
 
 describe('equipSoundThemeAction', () => {

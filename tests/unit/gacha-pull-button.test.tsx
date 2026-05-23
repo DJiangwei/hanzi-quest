@@ -31,6 +31,7 @@ describe('GachaPullButton', () => {
       wasDuplicate: false,
       shardsAfter: null,
       coinsAfter: 500,
+      trophies: [],
     });
     const onResult = vi.fn();
     const user = userEvent.setup();
