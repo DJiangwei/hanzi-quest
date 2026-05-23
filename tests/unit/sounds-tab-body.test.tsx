@@ -51,7 +51,7 @@ const listings = [
       priceCoins: 250,
     },
   },
-] as any;
+] as unknown as import('@/lib/db/shop').SoundThemeListing[];
 
 afterEach(() => {
   for (const m of Object.values(mocks)) m.mockReset();
