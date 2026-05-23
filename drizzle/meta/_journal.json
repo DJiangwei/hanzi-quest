@@ -64,6 +64,13 @@
       "when": 1779519671959,
       "tag": "0008_lush_iron_man",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779546125631,
+      "tag": "0009_complete_mantis",
+      "breakpoints": true
     }
   ]
 }

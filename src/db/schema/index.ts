@@ -4,6 +4,7 @@ export * from './game';
 export * from './economy';
 export * from './collections';
 export * from './avatar';
+export * from './pets';
 export * from './settings';
 export * from './system';
 export * from './trophies';

@@ -33,6 +33,7 @@ export const shopItemKind = pgEnum('shop_item_kind', [
   'consumable',
   'pack_voucher',
   'sound_theme',
+  'pet',
 ]);
 
 export const coinBalances = pgTable('coin_balances', {
