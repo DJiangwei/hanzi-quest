@@ -8,9 +8,11 @@ import { ShopCategoryTabs, type ShopCategory } from '@/components/shop/ShopCateg
 import { ShopGrid } from '@/components/shop/ShopGrid';
 import { SoundsTabBody } from '@/components/shop/SoundsTabBody';
 import { PetsTabBody } from '@/components/shop/PetsTabBody';
+import { DecorTabBody } from '@/components/shop/DecorTabBody';
 import { PurchaseConfirmDialog } from '@/components/shop/PurchaseConfirmDialog';
 import type { AvatarShopListing, EquippedAvatar, SoundThemeListing } from '@/lib/db/shop';
 import type { PetShopListing } from '@/lib/db/pets';
+import type { DecorShopListing } from '@/lib/db/decor';
 import { lookupItem } from '@/lib/avatar/itemCatalog';
 import {
   equipAvatarItemAction,
@@ -27,6 +29,7 @@ interface Props {
   initialEquippedSoundThemeSlug: string | null;
   petListings: PetShopListing[];
   initialEquippedPetSlug: string | null;
+  decorListings: DecorShopListing[];
 }
 
 export function ShopBody({
@@ -39,6 +42,7 @@ export function ShopBody({
   initialEquippedSoundThemeSlug,
   petListings,
   initialEquippedPetSlug,
+  decorListings,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ShopCategory>('avatar');
@@ -168,7 +172,15 @@ export function ShopBody({
           equippedPetSlug={initialEquippedPetSlug}
         />
       )}
-      {(activeTab === 'decor' || activeTab === 'powerup') && (
+      {activeTab === 'decor' && (
+        <DecorTabBody
+          childId={childId}
+          listings={decorListings}
+          ownedShopItemIds={ownedIds}
+          coinBalance={coinBalance}
+        />
+      )}
+      {activeTab === 'powerup' && (
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center text-amber-900/70">
           <div className="text-5xl">🚧</div>
           <div className="mt-3 text-lg font-bold">即将上线</div>
