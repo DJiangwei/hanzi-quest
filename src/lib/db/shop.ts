@@ -171,7 +171,7 @@ export async function purchaseShopItemInTx(
 
   if (shopItem.kind !== 'avatar') {
     throw new ItemNotPurchasableError(
-      `Shop item kind '${shopItem.kind}' is not purchasable yet — PR #21 ships avatar only`,
+      `Shop item kind '${shopItem.kind}' is not purchasable via this path — only 'avatar' items are supported here`,
     );
   }
 
@@ -281,6 +281,31 @@ export async function equipAvatarItem(
         set: { avatarItemId },
       });
   });
+}
+
+/**
+ * All active shop_items rows of the given kind. Used by equipSoundThemeAction
+ * to validate that a slug corresponds to a real, purchasable item.
+ */
+export async function listShopItemsByKind(
+  kind: ShopItemRow['kind'],
+): Promise<ShopItemRow[]> {
+  return await db
+    .select()
+    .from(shopItems)
+    .where(and(eq(shopItems.kind, kind), eq(shopItems.isActive, true)));
+}
+
+export interface SoundThemeListing {
+  shopItem: ShopItemRow;
+}
+
+export async function listSoundThemeListings(): Promise<SoundThemeListing[]> {
+  const rows = await db
+    .select()
+    .from(shopItems)
+    .where(and(eq(shopItems.kind, 'sound_theme'), eq(shopItems.isActive, true)));
+  return rows.map((shopItem) => ({ shopItem }));
 }
 
 /**

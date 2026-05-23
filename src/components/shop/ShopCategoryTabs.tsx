@@ -13,7 +13,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { id: 'avatar', emoji: '👒', label: '装扮', disabled: false },
-  { id: 'sound', emoji: '🎵', label: '音效', disabled: true },
+  { id: 'sound', emoji: '🎵', label: '音效', disabled: false },
   { id: 'pet', emoji: '🐦', label: '伙伴', disabled: true },
   { id: 'decor', emoji: '🏝️', label: '装饰', disabled: true },
   { id: 'powerup', emoji: '💡', label: '道具', disabled: true },

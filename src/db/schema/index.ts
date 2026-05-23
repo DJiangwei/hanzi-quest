@@ -4,4 +4,5 @@ export * from './game';
 export * from './economy';
 export * from './collections';
 export * from './avatar';
+export * from './settings';
 export * from './system';

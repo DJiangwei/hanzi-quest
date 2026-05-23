@@ -14,9 +14,9 @@ It is **not** a multi-tenant SaaS. Optimize for Yinuo's daily fun, not for theor
 
 ---
 
-## Current state (last refreshed 2026-05-22)
+## Current state (last refreshed 2026-05-23)
 
-**Shipped:** PR #1 → #30. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 9 scene types + boss, coins (with daily-login / streak-milestone / perfect-week bonuses + a `BonusToast` HUD layer), **5 collection packs** in the Collector's Atlas (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages): zodiac (12), flags (30), sea creatures (20), dinosaurs (15), solar system (10). **Shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"). Layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
+**Shipped:** PR #1 → #31. The product is end-to-end playable in production: weekly authoring, AI scene generation (DeepSeek V4 Pro), shared `pirate-class-level-1` curriculum pack with 10 weeks published, island map, 9 scene types + boss, coins (with daily-login / streak-milestone / perfect-week bonuses + a `BonusToast` HUD layer), **5 collection packs** in the Collector's Atlas (`/play/[childId]/collection` → museum of packs, per-pack `/collection/[packSlug]` pages): zodiac (12), flags (30), sea creatures (20), dinosaurs (15), solar system (10). **Shop hub** (`/play/[childId]/shop` → tabbed UI, Avatar tab live with ~20 procedural-SVG cosmetics, other tabs "即将上线"). Layered SVG avatar in play HUD, animations + audio + treasure-map cards, PWA manifest.
 
 **PR #21–#27 (just shipped, 2026-05-19):**
 - PR #21 (spec doc) + #22 (impl) — Shop hub + Avatar cosmetics. `/play/[childId]/shop`, `ShopHudButton` mounted in play layout, `AvatarRender` in island-map header, ~20 seeded items. New: `src/lib/db/shop.ts`, `src/lib/actions/shop.ts`, `src/lib/errors/shop-errors.ts`, `src/lib/avatar/{defaultLook,itemCatalog}.tsx`.
@@ -26,12 +26,13 @@ It is **not** a multi-tenant SaaS. Optimize for Yinuo's daily fun, not for theor
 - PR #27 — Solar System pack (8 planets + Sun + Moon = 10). Mostly coloured-disc emojis (🔴/🟠/🟡/🔵/🟣/⚪) plus the only real ones (🪐/☀️/🌝/🌍). `SolarBodyCard` colour-codes by body type (rocky/gas/ice/star/moon) + bilingual type badge. cost=300.
 - PR #28 — Coin economy expansion. 3 new enum values on `coin_reason` (drizzle 0005): `daily_login` (+20, idempotent per UTC date), `streak_milestone` (+100 every 7 days, hooks the previously-empty `streaks` table via `tickStreak`), `perfect_week` (+200 when every scene of a week has at least one score=100 attempt; idempotent per week). New: `src/lib/db/streaks.ts` (tickStreak + todayUtcIso), `src/lib/db/play.ts isPerfectWeekForChild`, `src/components/play/BonusToast.tsx`. Actions return `bonuses: EconomyBonus[]` that the SceneRunner pipes into the toast layer.
 - **PR #30 (just shipped, 2026-05-22)** — 4-segment weekly structure + 3 new scene types. `compileWeekIntoLevels` rewritten to emit `review → sound → sight → meaning → boss` blocks; new `pinyin_pick`, `translate_pick` (bidirectional CN↔EN), `sentence_cloze` scenes (all delegate to `MultipleChoiceQuiz`); boss question rotation widened from 3 → 6 types (word_match still excluded — it's a multi-character round); bilingual segment chip rendered in `SceneRunner` from each level's `sceneConfig.segment`. One-off `scripts/recompile-all-weeks.ts` recompiled all 10 published weeks in prod. Now **9 scene types + boss**.
+- **PR #31 (just shipped, 2026-05-23)** — Sound / FX themes. 4 procedural Web-Audio themes (`music-box`, `retro-arcade`, `nautical`, `fanfare-plus`) live in the Sounds shop tab. New `child_settings` table (PK childId) stores `sound_theme_slug`; `setAudioTheme(slug)` swaps the runtime handler registry; `SoundThemeBootstrap` in the play layout hydrates it on mount. Shop card has 🔊 preview button. `scripts/seed-sound-themes.ts` seeds 4 `shop_items` rows. Equip is optimistic + immediate (no page reload).
 
 **Most recent regressions fixed:**
 - PR #18 — `finishLevelAction` / `listWeekChars` used `getWeekOwnedBy` which fails for shared-pack weeks (parent_user_id NULL). Fixed by switching to `getPlayableWeekForChild`.
 - PR #20 — flashcard hanzi was 14rem fixed → now `clamp(11rem, 55vw, 22rem)`; `ZodiacIconDefs` (SVG `<symbol>` defs) only mounted on `/collection`, broke chest reveal — now mounted in the play layout.
 
-**Next up (per `docs/superpowers/specs/2026-05-18-pr21-shop-expansion-design.md` roadmap):** Sound/FX themes (PR #23 in spec terms — a `child_settings.soundThemeId`, audio handler registry, ~4 themes seeded as shop items). Then consumable powerups (hint / skip / streak-freeze), pet companion, island decorations. PR #30 has shipped the 译&句 / 听&拼 segments, so content-variety scene work is no longer urgent. ALWAYS confirm with David before starting a new PR.
+**Next up (per `docs/superpowers/specs/2026-05-18-pr21-shop-expansion-design.md` roadmap):** Remaining shop expansion — consumable powerups (hint / skip / streak-freeze), pet companion, island decorations, and achievements/trophies. ALWAYS confirm with David before starting a new PR.
 
 ---
 
@@ -113,6 +114,7 @@ docs/superpowers/       Spec + plan docs from brainstorming/writing-plans skills
 - **Per-pack gacha cost lives in `packRegistry.ts`** (`getPackMeta(slug).paidPullCost`), NOT a DB column. Adding a new pack? Add an entry to `PACK_REGISTRY` with `paidPullCost`, `ItemCard` component, `themeEmoji`, bilingual display names + slogan, else `pullPaid` throws "no UI meta" and the per-pack page can't render.
 - **`AvatarRender` uses `useId()` for clipPath IDs** — multiple instances on the same page collide otherwise. If you build a similar SVG component, use `useId()` not a hardcoded ID.
 - **Never pass `PackUiMeta` (or any function-bearing object) from a server component into a `'use client'` component**: `meta.ItemCard` is a React component and `meta.resolveRevealEmoji` is a callback. RSC silently serialises everything else fine, then crashes at request time with `"Functions cannot be passed directly to Client Components"`. Local tests + `pnpm build` will NOT catch this — only prod / `pnpm dev` exercises the boundary. Fix pattern: take `packSlug: string` instead, and `getPackMeta(slug)` inside the client component. See `PackPageBody.tsx`.
+- **`currentThemeSlug` in `src/lib/audio/play.ts` is a module-level singleton** — safe today because there is only one child session per browser tab, and `SoundThemeBootstrap` re-hydrates it on every play-layout mount. If multi-child switching is ever added (e.g. a parent previewing both children's islands in the same tab), the singleton will carry over the previous child's theme until the next mount. Fix at that time by moving state into a React context.
 
 ---
 

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
 import { ZodiacIconDefs } from '@/components/play/zodiac-icons';
 import { ShopHudButton } from '@/components/play/ShopHudButton';
+import { SoundThemeBootstrap } from '@/components/play/SoundThemeBootstrap';
+import { getChildSettings } from '@/lib/db/settings';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,6 +18,9 @@ export default async function PlayLayout({ children, params }: LayoutProps) {
   } catch {
     notFound();
   }
+
+  const settings = await getChildSettings(childId);
+  const themeSlug = settings?.soundThemeSlug ?? null;
 
   return (
     <div
@@ -41,6 +46,7 @@ export default async function PlayLayout({ children, params }: LayoutProps) {
           treasure-chest reveal, future zodiac sticker) can <use href="#z-xxx" />
           without each page worrying about defs visibility. */}
       <ZodiacIconDefs />
+      <SoundThemeBootstrap themeSlug={themeSlug} />
       <div className="flex flex-1 flex-col">{children}</div>
     </div>
   );
