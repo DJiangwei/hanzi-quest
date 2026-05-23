@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { CollectionHudPill } from './CollectionHudPill';
+import { ANCHORS } from '@/lib/decor/anchors';
+import { DECOR_CATALOG } from '@/lib/decor/catalog';
 
 /**
  * The world map a child sees on /play/[childId]: a vertical zigzag of
@@ -34,6 +36,7 @@ interface Props {
   ownedCount: number;
   /** Aggregate across all active collection packs. Optional for backwards compat. */
   totalCount?: number;
+  decorations?: { slug: string }[];
 }
 
 const ISLAND_RADIUS = 36;
@@ -61,7 +64,7 @@ function pathBetween(a: { x: number; y: number }, b: { x: number; y: number }): 
   return `M ${a.x} ${a.y} Q ${cx} ${midY} ${b.x} ${b.y}`;
 }
 
-export function IslandMap({ childId, islands, ownedCount, totalCount }: Props) {
+export function IslandMap({ childId, islands, ownedCount, totalCount, decorations = [] }: Props) {
   const total = islands.length;
   if (total === 0) return null;
 
@@ -117,6 +120,27 @@ export function IslandMap({ childId, islands, ownedCount, totalCount }: Props) {
             opacity={0.12}
           />
         ))}
+
+        {/* Owned decorations — between waves and islands */}
+        <g>
+          {decorations.map((d) => {
+            const entry = DECOR_CATALOG[d.slug];
+            if (!entry) return null;
+            const pos = ANCHORS[entry.anchor];
+            const scale = pos.scale ?? 1;
+            const Comp = entry.Component;
+            return (
+              <g
+                key={d.slug}
+                data-decor-slug={d.slug}
+                transform={`translate(${pos.x} ${pos.y})${scale === 1 ? '' : ` scale(${scale})`}`}
+                opacity={0.92}
+              >
+                <Comp />
+              </g>
+            );
+          })}
+        </g>
 
         {/* Islands */}
         {islands.map((island, idx) => {
