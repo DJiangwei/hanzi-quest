@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import type { EconomyBonus } from '@/lib/actions/play';
+import type { EconomyBonus, GrantedTrophy } from '@/lib/actions/play';
 import {
   finishAttemptAction,
   finishLevelAction,
@@ -13,6 +13,7 @@ import { setAudioMuted } from '@/lib/audio/play';
 import { CoinHudContext } from '@/lib/hooks/coin-hud-context';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { BonusToast } from '@/components/play/BonusToast';
+import { TrophyToast } from '@/components/play/TrophyToast';
 import { AudioPickScene } from './AudioPickScene';
 import { BossScene } from './BossScene';
 import { FlashcardScene } from './FlashcardScene';
@@ -84,6 +85,7 @@ export function SceneRunner({
   const [done, setDone] = useState(false);
   const [lastSceneType, setLastSceneType] = useState<SceneType | null>(null);
   const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
+  const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
   const [pending, startTransition] = useTransition();
   const startedAtRef = useRef<number>(0);
   const coinHudRef = useRef<HTMLElement | null>(null);
@@ -143,6 +145,7 @@ export function SceneRunner({
       });
       setCoinsThisSession((c) => c + result.coinsAwarded);
       const collectedBonuses: EconomyBonus[] = [...result.bonuses];
+      const collectedTrophies: GrantedTrophy[] = [...result.trophies];
 
       setLastSceneType(currentLevel.sceneType);
       const nextIndex = index + 1;
@@ -159,12 +162,16 @@ export function SceneRunner({
           durationSeconds: elapsedSeconds,
         });
         collectedBonuses.push(...levelResult.bonuses);
+        collectedTrophies.push(...levelResult.trophies);
         setDone(true);
       } else {
         setIndex(nextIndex);
       }
       if (collectedBonuses.length > 0) {
         setActiveBonuses(collectedBonuses);
+      }
+      if (collectedTrophies.length > 0) {
+        setActiveTrophies(collectedTrophies);
       }
     });
   };
@@ -344,6 +351,10 @@ export function SceneRunner({
         <BonusToast
           bonuses={activeBonuses}
           onDone={() => setActiveBonuses([])}
+        />
+        <TrophyToast
+          trophies={activeTrophies}
+          onDone={() => setActiveTrophies([])}
         />
       </main>
     </CoinHudContext.Provider>
