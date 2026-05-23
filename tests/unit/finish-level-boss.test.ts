@@ -42,6 +42,7 @@ vi.mock('@/lib/db/play', () => ({
   listLevelsForWeek: mocks.listLevelsForWeek,
   getWeekProgress: mocks.getWeekProgress,
   isPerfectWeekForChild: mocks.isPerfectWeekForChild,
+  getLevelById: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@/lib/db/coins', () => ({
   awardCoins: mocks.awardCoins,
@@ -54,6 +55,9 @@ vi.mock('@/lib/db/streaks', () => ({
   todayUtcIso: () => '2026-05-19',
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/trophies', () => ({
+  checkAndGrantTrophies: vi.fn().mockResolvedValue([]),
+}));
 
 import { finishLevelAction } from '@/lib/actions/play';
 

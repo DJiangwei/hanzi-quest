@@ -224,3 +224,17 @@ export async function getCharacterById(characterId: string) {
     .limit(1);
   return row;
 }
+
+export async function getLevelById(weekLevelId: string) {
+  const rows = await db
+    .select({
+      id: weekLevels.id,
+      weekId: weekLevels.weekId,
+      sceneType: sceneTemplates.type,
+    })
+    .from(weekLevels)
+    .innerJoin(sceneTemplates, eq(sceneTemplates.id, weekLevels.sceneTemplateId))
+    .where(eq(weekLevels.id, weekLevelId))
+    .limit(1);
+  return rows[0] ?? null;
+}
