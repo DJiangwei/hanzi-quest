@@ -6,3 +6,4 @@ export * from './collections';
 export * from './avatar';
 export * from './settings';
 export * from './system';
+export * from './trophies';

@@ -9,6 +9,7 @@ import {
 } from '@/db/schema';
 import { awardCoinsInTx } from './coins';
 import type { CollectibleItem } from './collections';
+import type { GrantedTrophy } from './trophies';
 
 // Re-export the pure error classes from the dedicated errors module so callers
 // who already import gacha can keep working. New client-side callers should
@@ -26,6 +27,7 @@ export interface PullResult {
   wasDuplicate: boolean;
   shardsAfter: number | null;
   coinsAfter: number;
+  trophies: GrantedTrophy[];
 }
 
 export async function pull(
@@ -148,5 +150,6 @@ export async function pullInTx(
     wasDuplicate,
     shardsAfter,
     coinsAfter: finalBal?.balance ?? 0,
+    trophies: [],
   };
 }

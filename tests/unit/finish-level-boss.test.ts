@@ -26,6 +26,10 @@ const mocks = vi.hoisted(() => ({
       ticked: false,
       reset: false,
     }),
+  checkAndGrantTrophies: vi.fn().mockResolvedValue([]),
+  getLevelById: vi.fn().mockResolvedValue(null),
+  recordSceneAttempt: vi.fn().mockResolvedValue({ id: 'attempt-1' }),
+  hasPriorAttempt: vi.fn().mockResolvedValue(false),
 }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
@@ -36,12 +40,13 @@ vi.mock('@/lib/db/weeks', () => ({
 vi.mock('@/lib/db/play', () => ({
   startPlaySession: vi.fn(),
   endPlaySession: mocks.endPlaySession,
-  hasPriorAttempt: vi.fn(),
-  recordSceneAttempt: vi.fn(),
+  hasPriorAttempt: mocks.hasPriorAttempt,
+  recordSceneAttempt: mocks.recordSceneAttempt,
   upsertWeekProgress: mocks.upsertWeekProgress,
   listLevelsForWeek: mocks.listLevelsForWeek,
   getWeekProgress: mocks.getWeekProgress,
   isPerfectWeekForChild: mocks.isPerfectWeekForChild,
+  getLevelById: mocks.getLevelById,
 }));
 vi.mock('@/lib/db/coins', () => ({
   awardCoins: mocks.awardCoins,
@@ -54,8 +59,11 @@ vi.mock('@/lib/db/streaks', () => ({
   todayUtcIso: () => '2026-05-19',
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/trophies', () => ({
+  checkAndGrantTrophies: mocks.checkAndGrantTrophies,
+}));
 
-import { finishLevelAction } from '@/lib/actions/play';
+import { finishAttemptAction, finishLevelAction } from '@/lib/actions/play';
 
 describe('finishLevelAction boss-clear', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -148,5 +156,50 @@ describe('finishLevelAction boss-clear', () => {
     });
 
     expect(mocks.awardCoins).not.toHaveBeenCalled();
+  });
+});
+
+describe('finishAttemptAction trophy pipeline', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns granted trophies from checkAndGrantTrophies via scene-clear kind', async () => {
+    mocks.requireChild.mockResolvedValue({
+      parent: { id: 'p1' },
+      child: { id: 'c1' },
+    });
+    mocks.hasPriorAttempt.mockResolvedValue(false);
+    mocks.recordSceneAttempt.mockResolvedValue({ id: 'attempt-1' });
+    mocks.getLevelById.mockResolvedValue({
+      id: 'level_pinyin',
+      weekId: 'w1',
+      sceneType: 'pinyin_pick',
+    });
+    // Return a trophy only for the scene-clear call; level-complete and
+    // coin-award calls return empty so the assertion is unambiguous.
+    mocks.checkAndGrantTrophies
+      .mockResolvedValueOnce([
+        {
+          slug: 'first-pinyin-pick',
+          nameZh: '拼音小能手',
+          nameEn: 'Pinyin Apprentice',
+          emoji: '🅰️',
+        },
+      ])
+      .mockResolvedValue([]);
+
+    const result = await finishAttemptAction({
+      sessionId: '11111111-2222-4333-a444-555555555555',
+      weekLevelId: 'aaaaaaaa-bbbb-4ccc-addd-eeeeeeeeeeee',
+      weekId: '33333333-4444-4555-a666-777777777777',
+      childId: '22222222-3333-4444-a555-666666666666',
+      correctCount: 1,
+      totalCount: 1,
+    });
+
+    expect(result.trophies).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ slug: 'first-pinyin-pick' }),
+      ]),
+    );
   });
 });

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getPackBySlug: vi.fn(),
   pull: vi.fn(),
   pullInTx: vi.fn(),
+  checkAndGrantTrophies: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/lib/auth/guards', () => ({
@@ -29,6 +30,10 @@ vi.mock('@/db', () => ({
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
+}));
+
+vi.mock('@/lib/db/trophies', () => ({
+  checkAndGrantTrophies: mocks.checkAndGrantTrophies,
 }));
 
 import { pullPaid } from '@/lib/actions/gacha';

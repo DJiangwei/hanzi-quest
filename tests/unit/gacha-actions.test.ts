@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   pullInTx: vi.fn(),
   pull: vi.fn(),
   getPackBySlug: vi.fn(),
+  checkAndGrantTrophies: vi.fn().mockResolvedValue([]),
   txProgress: { bossCleared: false, freePullClaimed: false } as {
     bossCleared: boolean;
     freePullClaimed: boolean;
@@ -47,6 +48,10 @@ vi.mock('@/db', () => ({
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
+}));
+
+vi.mock('@/lib/db/trophies', () => ({
+  checkAndGrantTrophies: mocks.checkAndGrantTrophies,
 }));
 
 import { pullFreeFromBoss, pullPaid } from '@/lib/actions/gacha';

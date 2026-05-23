@@ -4,18 +4,26 @@ import { revalidatePath } from 'next/cache';
 import { requireChild } from '@/lib/auth/guards';
 import { setSoundTheme } from '@/lib/db/settings';
 import { listChildOwnedShopItemIds, listShopItemsByKind } from '@/lib/db/shop';
+import {
+  checkAndGrantTrophies,
+  type GrantedTrophy,
+} from '@/lib/db/trophies';
 
 export async function equipSoundThemeAction(
   childId: string,
   slug: string | null,
-): Promise<{ themeSlug: string | null }> {
+): Promise<{ themeSlug: string | null; trophies: GrantedTrophy[] }> {
   await requireChild(childId);
 
   // Default is always allowed — slug-less fallback.
   if (slug === null || slug === 'default') {
     await setSoundTheme(childId, null);
     revalidatePath(`/play/${childId}/shop`);
-    return { themeSlug: null };
+    const trophies = await checkAndGrantTrophies(childId, {
+      kind: 'sound-theme-equip',
+      slug: null,
+    });
+    return { themeSlug: null, trophies };
   }
 
   const themes = await listShopItemsByKind('sound_theme');
@@ -31,5 +39,9 @@ export async function equipSoundThemeAction(
 
   await setSoundTheme(childId, slug);
   revalidatePath(`/play/${childId}/shop`);
-  return { themeSlug: slug };
+  const trophies = await checkAndGrantTrophies(childId, {
+    kind: 'sound-theme-equip',
+    slug,
+  });
+  return { themeSlug: slug, trophies };
 }

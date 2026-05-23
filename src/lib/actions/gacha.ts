@@ -9,6 +9,7 @@ import { getPackBySlug } from '@/lib/db/collections';
 import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
 import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { getPackMeta } from '@/lib/collections/packRegistry';
+import { checkAndGrantTrophies } from '@/lib/db/trophies';
 
 // AlreadyClaimedError is NOT re-exported here — 'use server' files may only
 // export async functions. Client components import it directly from
@@ -86,7 +87,12 @@ export async function pullPaid(
     costCoins: meta.paidPullCost,
   });
 
+  const trophies = await checkAndGrantTrophies(child.id, {
+    kind: 'pack-complete',
+    packSlug,
+  });
+
   revalidatePath(`/play/${child.id}/collection`);
   revalidatePath(`/play/${child.id}/collection/${packSlug}`);
-  return result;
+  return { ...result, trophies };
 }

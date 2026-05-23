@@ -104,7 +104,7 @@ describe('SoundsTabBody', () => {
   });
 
   it('clicking an owned (but not equipped) card calls equipSoundThemeAction', async () => {
-    mocks.equipSoundThemeAction.mockResolvedValue({ themeSlug: 'theme-nautical' });
+    mocks.equipSoundThemeAction.mockResolvedValue({ themeSlug: 'theme-nautical', trophies: [] });
     render(
       <SoundsTabBody
         childId="c1"

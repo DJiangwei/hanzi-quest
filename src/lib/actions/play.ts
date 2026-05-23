@@ -11,6 +11,7 @@ import {
 } from '@/lib/db/coins';
 import {
   endPlaySession,
+  getLevelById,
   getWeekProgress,
   hasPriorAttempt,
   isPerfectWeekForChild,
@@ -19,6 +20,8 @@ import {
   startPlaySession,
   upsertWeekProgress,
 } from '@/lib/db/play';
+import { checkAndGrantTrophies, type GrantedTrophy } from '@/lib/db/trophies';
+export type { GrantedTrophy } from '@/lib/db/trophies';
 import { tickStreak, todayUtcIso } from '@/lib/db/streaks';
 import {
   getPlayableWeekForChild,
@@ -67,6 +70,7 @@ export async function finishAttemptAction(
   coinsAwarded: number;
   perfect: boolean;
   bonuses: EconomyBonus[];
+  trophies: GrantedTrophy[];
 }> {
   const parsed = FinishAttemptSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
@@ -141,7 +145,33 @@ export async function finishAttemptAction(
     }
   }
 
-  return { coinsAwarded, perfect, bonuses };
+  const collectedTrophies: GrantedTrophy[] = [];
+
+  // scene-clear trophy check (first-pinyin/translate/cloze)
+  const levelRow = await getLevelById(parsed.weekLevelId);
+  if (levelRow) {
+    collectedTrophies.push(
+      ...(await checkAndGrantTrophies(child.id, {
+        kind: 'scene-clear',
+        sceneType: levelRow.sceneType as string,
+        score,
+      })),
+    );
+  }
+
+  // level-complete trophy check (100/500-levels + streak rollups)
+  collectedTrophies.push(
+    ...(await checkAndGrantTrophies(child.id, { kind: 'level-complete' })),
+  );
+
+  // coin-award trophy check (only fires if a coin was just awarded)
+  if (coinsAwarded > 0) {
+    collectedTrophies.push(
+      ...(await checkAndGrantTrophies(child.id, { kind: 'coin-award' })),
+    );
+  }
+
+  return { coinsAwarded, perfect, bonuses, trophies: collectedTrophies };
 }
 
 const FinishLevelSchema = z.object({
@@ -159,6 +189,7 @@ export async function finishLevelAction(
   ok: true;
   bossCleared: boolean;
   bonuses: EconomyBonus[];
+  trophies: GrantedTrophy[];
 }> {
   const parsed = FinishLevelSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
@@ -222,8 +253,26 @@ export async function finishLevelAction(
     durationSeconds: parsed.durationSeconds,
   });
 
+  const collectedTrophies: GrantedTrophy[] = [];
+
+  if (bossCleared) {
+    collectedTrophies.push(
+      ...(await checkAndGrantTrophies(child.id, { kind: 'boss-clear', weekId: parsed.weekId })),
+    );
+  }
+
+  // perfect-week — the bonus path already determined this; calling here is idempotent.
+  collectedTrophies.push(
+    ...(await checkAndGrantTrophies(child.id, { kind: 'perfect-week', weekId: parsed.weekId })),
+  );
+
+  // level-complete catches the rare boss-completion cross-100 case.
+  collectedTrophies.push(
+    ...(await checkAndGrantTrophies(child.id, { kind: 'level-complete' })),
+  );
+
   revalidatePath(`/play/${child.id}`);
-  return { ok: true, bossCleared, bonuses };
+  return { ok: true, bossCleared, bonuses, trophies: collectedTrophies };
 }
 
 export async function listWeekChars(weekId: string, childId: string) {

@@ -124,6 +124,7 @@ describe('PackPageBody', () => {
       wasDuplicate: false,
       shardsAfter: null,
       coinsAfter: 700,
+      trophies: [],
     });
     render(
       <PackPageBody
