@@ -255,7 +255,7 @@ export interface SectionStats {
   boss: SectionStat;
 }
 
-function segmentToSection(segment: string | undefined | null): WeekSection | null {
+export function segmentToSection(segment: string | undefined | null): WeekSection | null {
   if (segment === 'review') return 'review';
   if (segment === 'sound' || segment === 'sight' || segment === 'meaning') return 'practice';
   if (segment === 'boss') return 'boss';
