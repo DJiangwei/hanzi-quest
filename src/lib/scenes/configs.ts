@@ -99,4 +99,5 @@ export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 7;
 
 // Total practice scenes per week for full-size (N >= 10 chars) weeks.
 // Smaller-N weeks scale down per compile-week.ts.
-export const PRACTICE_SCENE_COUNT = 12;
+// PR #36: +2 image_word slots → 14 (was 12).
+export const PRACTICE_SCENE_COUNT = 14;
