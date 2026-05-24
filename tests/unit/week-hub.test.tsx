@@ -44,7 +44,7 @@ describe('WeekHub', () => {
         {...baseProps}
         sections={{
           review:   { done: 10, total: 10 },
-          practice: { done: 6,  total: 12 },
+          practice: { done: 7,  total: 12 },
           boss:     { done: 0,  total: 1, locked: false },
         }}
       />,

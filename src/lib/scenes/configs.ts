@@ -85,9 +85,17 @@ export const BossConfigSchema = z.object({
 });
 export type BossConfig = z.infer<typeof BossConfigSchema>;
 
+export const ImageWordConfigSchema = z.object({
+  characterId: z.string().uuid(),
+  wordId: z.string().uuid(),
+  distractorWordIds: z.array(z.string().uuid()).length(3),
+  ...withSegment,
+});
+export type ImageWordConfig = z.infer<typeof ImageWordConfigSchema>;
+
 // Boss is gated behind partial practice completion. Tune by editing this
 // constant; the WeekHub UI and the boss route guard both read it.
-export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 6;
+export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 7;
 
 // Total practice scenes per week for full-size (N >= 10 chars) weeks.
 // Smaller-N weeks scale down per compile-week.ts.
