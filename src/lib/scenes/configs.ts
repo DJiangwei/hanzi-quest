@@ -84,3 +84,11 @@ export const BossConfigSchema = z.object({
   ...withSegment,
 });
 export type BossConfig = z.infer<typeof BossConfigSchema>;
+
+// Boss is gated behind partial practice completion. Tune by editing this
+// constant; the WeekHub UI and the boss route guard both read it.
+export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 6;
+
+// Total practice scenes per week for full-size (N >= 10 chars) weeks.
+// Smaller-N weeks scale down per compile-week.ts.
+export const PRACTICE_SCENE_COUNT = 12;

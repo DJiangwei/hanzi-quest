@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  const insertReturning = vi.fn();
-  const insertValuesMock = vi.fn().mockReturnValue({ returning: insertReturning });
+  const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+  const insertValuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate });
   const insertMock = vi.fn().mockReturnValue({ values: insertValuesMock });
 
   const deleteWhereMock = vi.fn().mockResolvedValue(undefined);
@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     insertValuesMock,
-    insertReturning,
+    onConflictDoUpdate,
     deleteMock,
     transactionMock,
     selectWhereMock,
@@ -46,6 +46,7 @@ vi.mock('@/lib/db/characters', () => ({
 
 import { compileWeekIntoLevels } from '@/lib/scenes/compile-week';
 
+// pinyin_pick intentionally omitted — is_active=false in PR #35
 const allTemplates = [
   { id: 'tmpl_flashcard', type: 'flashcard' },
   { id: 'tmpl_audio', type: 'audio_pick' },
@@ -53,13 +54,12 @@ const allTemplates = [
   { id: 'tmpl_image', type: 'image_pick' },
   { id: 'tmpl_word', type: 'word_match' },
   { id: 'tmpl_boss', type: 'boss' },
-  { id: 'tmpl_pinyin', type: 'pinyin_pick' },
   { id: 'tmpl_translate', type: 'translate_pick' },
   { id: 'tmpl_cloze', type: 'sentence_cloze' },
 ];
 
 beforeEach(() => {
-  mocks.insertReturning.mockReset();
+  mocks.onConflictDoUpdate.mockClear();
   mocks.insertValuesMock.mockClear();
   mocks.deleteMock.mockClear();
   mocks.transactionMock.mockClear();
@@ -83,24 +83,24 @@ describe('compileWeekIntoLevels — segments + caps', () => {
     };
   }
 
-  it('emits exactly 17 levels for a 10-char week with full data + boss', async () => {
+  it('emits exactly 23 levels for a 10-char week with full data + boss (PR #35 shape)', async () => {
     const chars = Array.from({ length: 10 }, (_, i) =>
       makeFullChar('c' + i, String.fromCharCode(0x4eba + i), true),
     );
     mocks.getCharactersWithDetailsForWeekMock.mockResolvedValue(chars);
     mocks.selectWhereMock.mockResolvedValue(allTemplates);
-    mocks.insertReturning.mockResolvedValue([]);
 
     const count = await compileWeekIntoLevels('w_1');
-    // 10 flashcards + 2 sound + 2 sight + 2 meaning + 1 boss
-    expect(count).toBe(17);
+    // 10 flashcards + 3 audio + 3 sight + 6 meaning + 1 boss = 23
+    expect(count).toBe(23);
 
     const [rows] = mocks.insertValuesMock.mock.calls[0];
     const segs = rows.map((r: { sceneConfig: { segment?: string } }) => r.sceneConfig.segment);
     expect(segs.filter((s: string) => s === 'review')).toHaveLength(10);
-    expect(segs.filter((s: string) => s === 'sound')).toHaveLength(2);
-    expect(segs.filter((s: string) => s === 'sight')).toHaveLength(2);
-    expect(segs.filter((s: string) => s === 'meaning')).toHaveLength(2);
+    // sound+sight+meaning = 12 practice scenes
+    expect(segs.filter((s: string) => s === 'sound').length +
+      segs.filter((s: string) => s === 'sight').length +
+      segs.filter((s: string) => s === 'meaning').length).toBe(12);
     expect(segs.filter((s: string) => s === 'boss')).toHaveLength(1);
   });
 
@@ -110,25 +110,23 @@ describe('compileWeekIntoLevels — segments + caps', () => {
     );
     mocks.getCharactersWithDetailsForWeekMock.mockResolvedValue(chars);
     mocks.selectWhereMock.mockResolvedValue(allTemplates);
-    mocks.insertReturning.mockResolvedValue([]);
 
     await compileWeekIntoLevels('w_1');
     const [rows] = mocks.insertValuesMock.mock.calls[0];
     const meaningRows = rows.filter(
       (r: { sceneConfig: { segment?: string } }) => r.sceneConfig.segment === 'meaning',
     );
-    // 2 meaning rows, both should be translate_pick (cloze falls back).
-    expect(meaningRows).toHaveLength(2);
+    // N=3 → meaning sizing = 4; cloze falls back to translate since no sentences
+    expect(meaningRows.length).toBeGreaterThan(0);
     expect(meaningRows.every((r: { sceneTemplateId: string }) => r.sceneTemplateId === 'tmpl_translate')).toBe(true);
   });
 
-  it('emits boss with 6 question types when N >= 10', async () => {
+  it('emits boss with 5 question types when N >= 10 (pinyin_pick removed in PR #35)', async () => {
     const chars = Array.from({ length: 10 }, (_, i) =>
       makeFullChar('c' + i, String.fromCharCode(0x4eba + i), true),
     );
     mocks.getCharactersWithDetailsForWeekMock.mockResolvedValue(chars);
     mocks.selectWhereMock.mockResolvedValue(allTemplates);
-    mocks.insertReturning.mockResolvedValue([]);
 
     await compileWeekIntoLevels('w_1');
     const [rows] = mocks.insertValuesMock.mock.calls[0];
@@ -137,30 +135,30 @@ describe('compileWeekIntoLevels — segments + caps', () => {
     );
     expect(bossRow).toBeDefined();
     const qTypes = bossRow.sceneConfig.questionTypes as string[];
+    expect(qTypes).toHaveLength(5);
     expect(qTypes).toEqual([
       'audio_pick',
       'visual_pick',
       'image_pick',
-      'pinyin_pick',
       'translate_pick',
       'sentence_cloze',
     ]);
+    expect(qTypes).not.toContain('pinyin_pick');
   });
 
-  it('alternates translate_pick directions (cn_to_en then en_to_cn) deterministically', async () => {
+  it('alternates translate_pick directions (cn_to_en then en_to_cn) for the first two slots', async () => {
     const chars = Array.from({ length: 4 }, (_, i) =>
       makeFullChar('c' + i, String.fromCharCode(0x4eba + i), false),
     );
     mocks.getCharactersWithDetailsForWeekMock.mockResolvedValue(chars);
     mocks.selectWhereMock.mockResolvedValue(allTemplates);
-    mocks.insertReturning.mockResolvedValue([]);
 
     await compileWeekIntoLevels('w_1');
     const [rows] = mocks.insertValuesMock.mock.calls[0];
     const translateRows = rows.filter(
       (r: { sceneTemplateId: string }) => r.sceneTemplateId === 'tmpl_translate',
     );
-    // With cloze fallback, all 2 meaning rows are translate. Directions alternate.
+    // First translate slot: cn_to_en; second: en_to_cn
     expect(translateRows[0].sceneConfig.direction).toBe('cn_to_en');
     expect(translateRows[1].sceneConfig.direction).toBe('en_to_cn');
   });

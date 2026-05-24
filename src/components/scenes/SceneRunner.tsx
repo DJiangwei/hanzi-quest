@@ -67,6 +67,8 @@ interface Props {
   levels: CompiledLevel[];
   charactersById: Record<string, CharacterDetail>;
   pool: CharacterDetail[];
+  /** Where to navigate when the runner finishes. Defaults to the island map. */
+  exitHref?: string;
 }
 
 export function SceneRunner({
@@ -76,7 +78,9 @@ export function SceneRunner({
   levels,
   charactersById,
   pool,
+  exitHref,
 }: Props) {
+  const resolvedExitHref = exitHref ?? `/play/${childId}`;
   const router = useRouter();
   const reduced = useReducedMotion();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -126,7 +130,7 @@ export function SceneRunner({
         childId={childId}
         weekId={weekId}
         chestAvailable={lastSceneType === 'boss'}
-        onContinue={() => router.push(`/play/${childId}`)}
+        onContinue={() => router.push(resolvedExitHref)}
       />
     );
   }
