@@ -84,6 +84,7 @@ export default async function SectionPage({ params }: PageProps) {
       levels={compiledLevels}
       charactersById={charactersById}
       pool={pool}
+      exitHref={`/play/${child.id}/week/${week.id}`}
     />
   );
 }
