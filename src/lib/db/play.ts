@@ -40,7 +40,7 @@ export async function endPlaySession(
 export interface CompiledLevel {
   id: string;
   position: number;
-  sceneType: 'flashcard' | 'audio_pick' | 'visual_pick' | 'image_pick' | 'word_match' | 'tracing' | 'boss' | 'pinyin_pick' | 'translate_pick' | 'sentence_cloze';
+  sceneType: 'flashcard' | 'audio_pick' | 'visual_pick' | 'image_pick' | 'word_match' | 'tracing' | 'boss' | 'pinyin_pick' | 'translate_pick' | 'sentence_cloze' | 'image_word';
   sceneConfig: FlashcardConfig | Record<string, unknown>;
 }
 

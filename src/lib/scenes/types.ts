@@ -11,7 +11,8 @@ export type SceneType =
   | 'boss'
   | 'pinyin_pick'
   | 'translate_pick'
-  | 'sentence_cloze';
+  | 'sentence_cloze'
+  | 'image_word';
 
 export interface SceneResult {
   correct: number;

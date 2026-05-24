@@ -51,7 +51,8 @@ export type SceneType =
   | 'boss'
   | 'pinyin_pick'
   | 'translate_pick'
-  | 'sentence_cloze';
+  | 'sentence_cloze'
+  | 'image_word';
 
 interface CompiledLevel {
   id: string;

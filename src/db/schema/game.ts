@@ -28,6 +28,7 @@ export const sceneType = pgEnum('scene_type', [
   'pinyin_pick',
   'translate_pick',
   'sentence_cloze',
+  'image_word',
 ]);
 
 export const sceneTemplates = pgTable(

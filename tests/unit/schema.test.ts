@@ -77,7 +77,7 @@ describe('db/schema', () => {
     ]);
   });
 
-  it('scene_type enum covers all 10 scene types', () => {
+  it('scene_type enum covers all 11 scene types', () => {
     expect(schema.sceneType.enumValues).toEqual([
       'flashcard',
       'audio_pick',
@@ -89,6 +89,7 @@ describe('db/schema', () => {
       'pinyin_pick',
       'translate_pick',
       'sentence_cloze',
+      'image_word',
     ]);
   });
 
