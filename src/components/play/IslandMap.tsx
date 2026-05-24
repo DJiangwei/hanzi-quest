@@ -173,7 +173,7 @@ export function IslandMap({ childId, islands, ownedCount, totalCount, decoration
           return (
             <Link
               key={island.weekId}
-              href={`/play/${childId}/level/${island.weekId}`}
+              href={`/play/${childId}/week/${island.weekId}`}
               className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-sunset-400)]"
               style={{
                 left: `${xPct}%`,
