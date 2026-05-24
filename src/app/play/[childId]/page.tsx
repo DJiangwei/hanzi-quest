@@ -14,6 +14,7 @@ import { getEquippedAvatar } from '@/lib/db/shop';
 import { listChildPlayableWeeks } from '@/lib/db/weeks';
 import { PetCompanion } from '@/components/play/PetCompanion';
 import { getEquippedPet } from '@/lib/db/pets';
+import { listOwnedDecorationsForChild } from '@/lib/db/decor';
 
 interface PageProps {
   params: Promise<{ childId: string }>;
@@ -23,15 +24,23 @@ export default async function PlayHomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const [playableWeeks, progressRows, balance, activePacks, equipped, pet] =
-    await Promise.all([
-      listChildPlayableWeeks(child.id),
-      listProgressByChild(child.id),
-      getCoinBalance(child.id),
-      listActivePacks(),
-      getEquippedAvatar(child.id),
-      getEquippedPet(child.id),
-    ]);
+  const [
+    playableWeeks,
+    progressRows,
+    balance,
+    activePacks,
+    equipped,
+    pet,
+    ownedDecorations,
+  ] = await Promise.all([
+    listChildPlayableWeeks(child.id),
+    listProgressByChild(child.id),
+    getCoinBalance(child.id),
+    listActivePacks(),
+    getEquippedAvatar(child.id),
+    getEquippedPet(child.id),
+    listOwnedDecorationsForChild(child.id),
+  ]);
 
   const equippedRefs: Partial<Record<string, string | null>> = {};
   for (const [slot, info] of Object.entries(equipped)) {
@@ -124,6 +133,7 @@ export default async function PlayHomePage({ params }: PageProps) {
           islands={islands}
           ownedCount={ownedCount}
           totalCount={totalCount}
+          decorations={ownedDecorations.map((d) => ({ slug: d.slug }))}
         />
       )}
     </main>

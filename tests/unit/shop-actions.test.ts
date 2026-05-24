@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   requireChild: vi.fn(),
   purchaseShopItem: vi.fn(),
   equipAvatarItem: vi.fn(),
+  checkAndGrantTrophies: vi.fn(),
+  dbSelect: vi.fn(),
 }));
 
 vi.mock('@/lib/auth/guards', () => ({
@@ -13,6 +15,18 @@ vi.mock('@/lib/auth/guards', () => ({
 vi.mock('@/lib/db/shop', () => ({
   purchaseShopItem: mocks.purchaseShopItem,
   equipAvatarItem: mocks.equipAvatarItem,
+}));
+
+vi.mock('@/lib/db/trophies', () => ({
+  checkAndGrantTrophies: mocks.checkAndGrantTrophies,
+}));
+
+vi.mock('@/db', () => ({
+  db: { select: mocks.dbSelect },
+}));
+
+vi.mock('@/db/schema', () => ({
+  shopItems: {},
 }));
 
 vi.mock('next/cache', () => ({
@@ -28,6 +42,16 @@ beforeEach(() => {
   mocks.requireChild.mockReset();
   mocks.purchaseShopItem.mockReset();
   mocks.equipAvatarItem.mockReset();
+  mocks.checkAndGrantTrophies.mockReset();
+  mocks.dbSelect.mockReset();
+  // Default: item kind is 'avatar' (no trophy check)
+  mocks.dbSelect.mockReturnValue({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue([{ kind: 'avatar' }]),
+      }),
+    }),
+  });
 });
 
 describe('purchaseShopItemAction', () => {

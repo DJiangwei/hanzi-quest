@@ -3,6 +3,7 @@ import { requireChild } from '@/lib/auth/guards';
 import { getShopPageData, listSoundThemeListings } from '@/lib/db/shop';
 import { getChildSettings } from '@/lib/db/settings';
 import { listPetShopListings, getEquippedPet } from '@/lib/db/pets';
+import { listDecorShopListings } from '@/lib/db/decor';
 import { ShopBody } from './ShopBody';
 
 interface PageProps {
@@ -17,12 +18,13 @@ export default async function ShopPage({ params }: PageProps) {
     notFound();
   }
 
-  const [shop, sounds, settings, petListings, equippedPet] = await Promise.all([
+  const [shop, sounds, settings, petListings, equippedPet, decorListings] = await Promise.all([
     getShopPageData(childId),
     listSoundThemeListings(),
     getChildSettings(childId),
     listPetShopListings(),
     getEquippedPet(childId),
+    listDecorShopListings(),
   ]);
 
   return (
@@ -37,6 +39,7 @@ export default async function ShopPage({ params }: PageProps) {
         initialEquippedSoundThemeSlug={settings?.soundThemeSlug ?? null}
         petListings={petListings}
         initialEquippedPetSlug={equippedPet?.slug ?? null}
+        decorListings={decorListings}
       />
     </main>
   );

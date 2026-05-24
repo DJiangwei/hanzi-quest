@@ -4,6 +4,7 @@ import { childTrophies, trophies } from '@/db/schema';
 import {
   countCompletedLevels,
   countDistinctBossWeeks,
+  countOwnedDecorations,
   getLifetimeEarned,
   getLongestStreak,
   isPackComplete,
@@ -27,7 +28,8 @@ export type TrophyCheckContext =
   | { kind: 'coin-award' }
   | { kind: 'pack-complete'; packSlug: string }
   | { kind: 'scene-clear'; sceneType: string; score: number }
-  | { kind: 'sound-theme-equip'; slug: string | null };
+  | { kind: 'sound-theme-equip'; slug: string | null }
+  | { kind: 'decor-purchase' };
 
 export async function listAllTrophies(): Promise<TrophyRow[]> {
   return db
@@ -124,6 +126,12 @@ export async function checkAndGrantTrophies(
       if (context.slug && context.slug !== 'default') {
         slugs.add('equip-sound-theme');
       }
+      break;
+    }
+    case 'decor-purchase': {
+      const owned = await countOwnedDecorations(childId);
+      if (owned >= 1) slugs.add('decor-starter');
+      if (owned >= 10) slugs.add('decor-completionist');
       break;
     }
   }

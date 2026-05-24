@@ -9,6 +9,7 @@ import {
   shopPurchases,
 } from '@/db/schema';
 import { awardCoinsInTx } from './coins';
+import type { GrantedTrophy } from './trophies';
 import {
   AlreadyOwnedError,
   InsufficientCoinsError,
@@ -51,6 +52,7 @@ export interface PurchaseResult {
   shopItemId: string;
   coinsAfter: number;
   avatarItemId: string | null;
+  trophies?: GrantedTrophy[];
 }
 
 /**
@@ -169,12 +171,25 @@ export async function purchaseShopItemInTx(
     .limit(1);
   if (!shopItem) throw new ShopItemNotFoundError(shopItemId);
 
-  if (shopItem.kind !== 'avatar') {
-    throw new ItemNotPurchasableError(
-      `Shop item kind '${shopItem.kind}' is not purchasable via this path — only 'avatar' items are supported here`,
-    );
+  switch (shopItem.kind) {
+    case 'avatar':
+      return purchaseAvatarInTx(tx, childId, shopItem);
+    case 'sound_theme':
+    case 'pet':
+    case 'decor':
+      return purchaseGenericInTx(tx, childId, shopItem);
+    default:
+      throw new ItemNotPurchasableError(
+        `Shop item kind '${shopItem.kind}' is not purchasable`,
+      );
   }
+}
 
+async function purchaseAvatarInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<PurchaseResult> {
   const [linkedAvatarItem] = await tx
     .select()
     .from(avatarItems)
@@ -201,8 +216,57 @@ export async function purchaseShopItemInTx(
       ),
     )
     .limit(1);
-  if (existing) throw new AlreadyOwnedError(shopItemId);
+  if (existing) throw new AlreadyOwnedError(shopItem.id);
 
+  await debitAndRecordInTx(tx, childId, shopItem);
+
+  await tx.insert(childAvatarInventory).values({
+    childId,
+    avatarItemId: linkedAvatarItem.id,
+  });
+
+  const coinsAfter = await readBalanceInTx(tx, childId);
+  return {
+    shopItemId: shopItem.id,
+    coinsAfter,
+    avatarItemId: linkedAvatarItem.id,
+  };
+}
+
+async function purchaseGenericInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<PurchaseResult> {
+  // Ownership for sound_theme / pet / decor = presence of a shop_purchases row.
+  // No per-kind inventory side-effect (unlike avatar).
+  const [existing] = await tx
+    .select()
+    .from(shopPurchases)
+    .where(
+      and(
+        eq(shopPurchases.childId, childId),
+        eq(shopPurchases.shopItemId, shopItem.id),
+      ),
+    )
+    .limit(1);
+  if (existing) throw new AlreadyOwnedError(shopItem.id);
+
+  await debitAndRecordInTx(tx, childId, shopItem);
+
+  const coinsAfter = await readBalanceInTx(tx, childId);
+  return {
+    shopItemId: shopItem.id,
+    coinsAfter,
+    avatarItemId: null,
+  };
+}
+
+async function debitAndRecordInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<void> {
   const [balRow] = await tx
     .select({ balance: coinBalances.balance })
     .from(coinBalances)
@@ -217,30 +281,22 @@ export async function purchaseShopItemInTx(
     delta: -shopItem.priceCoins,
     reason: 'shop_purchase',
     refType: 'shop_item',
-    refId: shopItemId,
+    refId: shopItem.id,
   });
 
   await tx.insert(shopPurchases).values({
     childId,
-    shopItemId,
+    shopItemId: shopItem.id,
     coinsSpent: shopItem.priceCoins,
   });
+}
 
-  await tx.insert(childAvatarInventory).values({
-    childId,
-    avatarItemId: linkedAvatarItem.id,
-  });
-
-  const [finalBal] = await tx
+async function readBalanceInTx(tx: Tx, childId: string): Promise<number> {
+  const [row] = await tx
     .select({ balance: coinBalances.balance })
     .from(coinBalances)
     .where(eq(coinBalances.childId, childId));
-
-  return {
-    shopItemId,
-    coinsAfter: finalBal?.balance ?? 0,
-    avatarItemId: linkedAvatarItem.id,
-  };
+  return row?.balance ?? 0;
 }
 
 /**
