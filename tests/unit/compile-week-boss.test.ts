@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  const insertReturning = vi.fn();
-  const insertValuesMock = vi.fn().mockReturnValue({ returning: insertReturning });
+  const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+  const insertValuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate });
   const insertMock = vi.fn().mockReturnValue({ values: insertValuesMock });
   const deleteWhereMock = vi.fn().mockResolvedValue(undefined);
   const deleteMock = vi.fn().mockReturnValue({ where: deleteWhereMock });
@@ -25,6 +25,7 @@ vi.mock('@/lib/db/characters', () => ({
 
 import { compileWeekIntoLevels } from '@/lib/scenes/compile-week';
 
+// pinyin_pick intentionally omitted — is_active=false in PR #35
 const TEMPLATES = [
   { id: 'tpl-flashcard',   type: 'flashcard'      },
   { id: 'tpl-audio-pick',  type: 'audio_pick'     },
@@ -32,7 +33,6 @@ const TEMPLATES = [
   { id: 'tpl-image-pick',  type: 'image_pick'     },
   { id: 'tpl-word-match',  type: 'word_match'     },
   { id: 'tpl-boss',        type: 'boss'           },
-  { id: 'tpl-pinyin',      type: 'pinyin_pick'    },
   { id: 'tpl-translate',   type: 'translate_pick' },
   { id: 'tpl-cloze',       type: 'sentence_cloze' },
 ];
@@ -67,11 +67,11 @@ describe('compileWeekIntoLevels boss emission', () => {
     const last = insertedRows[insertedRows.length - 1];
     expect(last.sceneTemplateId).toBe('tpl-boss');
     expect(last.sceneConfig.characterIds).toHaveLength(10);
+    // PR #35: 5 question types, no pinyin_pick
     expect(last.sceneConfig.questionTypes).toEqual([
       'audio_pick',
       'visual_pick',
       'image_pick',
-      'pinyin_pick',
       'translate_pick',
       'sentence_cloze',
     ]);
