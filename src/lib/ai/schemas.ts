@@ -25,6 +25,17 @@ const Word = z.object({
     .describe('Simplified Chinese word, 1–4 chars typical.'),
   pinyin: PinyinArray,
   meaningEn: z.string().min(1).max(80),
+  imageHook: z
+    .string()
+    .min(3)
+    .max(120)
+    .describe(
+      "A child-friendly, single-subject visual description of this word's meaning. " +
+        'Vivid and concrete; like a caption you\'d write under a picture. ' +
+        'No proper nouns, no text in scene. e.g. for 大人: ' +
+        '"a smiling adult standing next to a small child"; ' +
+        'for 亮晶晶: "tiny stars sparkling in the night sky".',
+    ),
 });
 
 const Sentence = z.object({
@@ -58,6 +69,10 @@ export const PerCharacterSchema = z.object({
 export const WeekContentSchemaV1 = z.object({
   perCharacter: z.array(PerCharacterSchema),
 });
+
+// V2 is structurally identical to V1 post-extension (imageHook added to Word).
+// Alias kept so generate-content.ts can reference the current schema by version.
+export const WeekContentSchemaV2 = WeekContentSchemaV1;
 
 export type PerCharacter = z.infer<typeof PerCharacterSchema>;
 export type WeekContent = z.infer<typeof WeekContentSchemaV1>;

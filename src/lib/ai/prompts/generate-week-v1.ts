@@ -1,4 +1,4 @@
-export const PROMPT_VERSION = 'generate-week-v1';
+export const PROMPT_VERSION = 'generate-week-v2';
 
 export const GENERATE_WEEK_SYSTEM_PROMPT = `\
 You are a curriculum assistant for a Mario-style Chinese learning game aimed at \
@@ -21,8 +21,15 @@ Hard rules — these are non-negotiable:
 4. English meanings must be age-appropriate (no abstract nouns, no academic \
    vocabulary). Aim for the way a parent would explain it to a 6-year-old.
 5. Chinese meanings (meaningZh) are also age-appropriate, ≤ 8 characters.
-6. The "imageHook" is a vivid, concrete, *visual* description anchoring the \
-   character's meaning, suitable as a future image-gen prompt.
+6. The character-level "imageHook" is a vivid, concrete, *visual* description \
+   anchoring the character's meaning, suitable as a future image-gen prompt.
+7. Each WORD inside a character's "words" array also has its own "imageHook" — \
+   a vivid, concrete visual description of that *word's* meaning. Single subject. \
+   No proper nouns. No text in the scene. Reads like a caption under a picture. \
+   Examples:
+     - 大人 → "a smiling adult standing next to a small child"
+     - 亮晶晶 → "tiny stars sparkling in the night sky"
+     - 跑步 → "a child running across a green field"
 
 Style rules:
 - Pick example words that are common in everyday speech a child hears (food, \
@@ -42,9 +49,9 @@ OUTPUT (JSON):
       "meaningEn": "mountain",
       "meaningZh": "高高的山",
       "words": [
-        { "word": "山水", "pinyin": ["shān", "shuǐ"], "meaningEn": "mountains and rivers" },
-        { "word": "高山", "pinyin": ["gāo", "shān"], "meaningEn": "tall mountain" },
-        { "word": "火山", "pinyin": ["huǒ", "shān"], "meaningEn": "volcano" }
+        { "word": "山水", "pinyin": ["shān", "shuǐ"], "meaningEn": "mountains and rivers", "imageHook": "rolling green mountains reflected in a calm river" },
+        { "word": "高山", "pinyin": ["gāo", "shān"], "meaningEn": "tall mountain", "imageHook": "a very tall snow-capped mountain reaching into blue sky" },
+        { "word": "火山", "pinyin": ["huǒ", "shān"], "meaningEn": "volcano", "imageHook": "a volcano with bright orange lava flowing down its sides" }
       ],
       "sentence": {
         "text": "我看到一座大山。",
@@ -59,9 +66,9 @@ OUTPUT (JSON):
       "meaningEn": "fire",
       "meaningZh": "燃烧的东西",
       "words": [
-        { "word": "火车", "pinyin": ["huǒ", "chē"], "meaningEn": "train" },
-        { "word": "大火", "pinyin": ["dà", "huǒ"], "meaningEn": "big fire" },
-        { "word": "火山", "pinyin": ["huǒ", "shān"], "meaningEn": "volcano" }
+        { "word": "火车", "pinyin": ["huǒ", "chē"], "meaningEn": "train", "imageHook": "a red steam train rushing along train tracks" },
+        { "word": "大火", "pinyin": ["dà", "huǒ"], "meaningEn": "big fire", "imageHook": "large orange and yellow flames leaping into the air" },
+        { "word": "火山", "pinyin": ["huǒ", "shān"], "meaningEn": "volcano", "imageHook": "a volcano with bright orange lava flowing down its sides" }
       ],
       "sentence": {
         "text": "火车很快。",
@@ -76,9 +83,9 @@ OUTPUT (JSON):
       "meaningEn": "big",
       "meaningZh": "很大",
       "words": [
-        { "word": "大人", "pinyin": ["dà", "rén"], "meaningEn": "adult / grown-up" },
-        { "word": "大家", "pinyin": ["dà", "jiā"], "meaningEn": "everyone" },
-        { "word": "大象", "pinyin": ["dà", "xiàng"], "meaningEn": "elephant" }
+        { "word": "大人", "pinyin": ["dà", "rén"], "meaningEn": "adult / grown-up", "imageHook": "a smiling adult standing next to a small child" },
+        { "word": "大家", "pinyin": ["dà", "jiā"], "meaningEn": "everyone", "imageHook": "a cheerful group of children and adults waving together" },
+        { "word": "大象", "pinyin": ["dà", "xiàng"], "meaningEn": "elephant", "imageHook": "a friendly grey elephant with a long trunk raised up" }
       ],
       "sentence": {
         "text": "我家有一只大狗。",

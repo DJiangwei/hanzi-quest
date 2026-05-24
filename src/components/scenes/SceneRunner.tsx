@@ -16,6 +16,7 @@ import { BonusToast } from '@/components/play/BonusToast';
 import { TrophyToast } from '@/components/play/TrophyToast';
 import { AudioPickScene } from './AudioPickScene';
 import { BossScene } from './BossScene';
+import { ImageWordScene } from './ImageWordScene';
 import { FlashcardScene } from './FlashcardScene';
 import { ImagePickScene } from './ImagePickScene';
 import { PinyinPickScene } from './PinyinPickScene';
@@ -30,6 +31,13 @@ const LevelFanfare = dynamic(
   { ssr: false },
 );
 
+interface CharacterWord {
+  id: string;
+  text: string;
+  imageHook: string | null;
+  meaningEn: string | null;
+}
+
 interface CharacterDetail {
   characterId: string;
   hanzi: string;
@@ -38,6 +46,7 @@ interface CharacterDetail {
   meaningZh: string | null;
   imageHook: string | null;
   firstWord: string | null;
+  words: CharacterWord[];
   sentence: { id: string; text: string; translationEn: string | null } | null;
 }
 
@@ -51,7 +60,8 @@ export type SceneType =
   | 'boss'
   | 'pinyin_pick'
   | 'translate_pick'
-  | 'sentence_cloze';
+  | 'sentence_cloze'
+  | 'image_word';
 
 interface CompiledLevel {
   id: string;
@@ -317,6 +327,52 @@ export function SceneRunner({
         />
       ) : (
         <MissingData />
+      );
+      break;
+    }
+    case 'image_word': {
+      const config = currentLevel.config as {
+        characterId: string;
+        wordId: string;
+        distractorWordIds: string[];
+      };
+      const baseCharDetail = charactersById[config.characterId];
+      if (!baseCharDetail) {
+        body = <MissingData />;
+        break;
+      }
+
+      const allWords = new Map<string, CharacterWord>();
+      for (const c of pool) {
+        for (const w of c.words) allWords.set(w.id, w);
+      }
+      const correctWord = allWords.get(config.wordId);
+      const distractors = config.distractorWordIds
+        .map((id) => allWords.get(id))
+        .filter((w): w is CharacterWord => w !== undefined);
+      if (!correctWord || distractors.length !== 3) {
+        body = <MissingData />;
+        break;
+      }
+
+      body = (
+        <ImageWordScene
+          key={currentLevel.id}
+          baseChar={{ characterId: baseCharDetail.characterId, hanzi: baseCharDetail.hanzi }}
+          correctWord={{
+            wordId: correctWord.id,
+            text: correctWord.text,
+            imageHook: correctWord.imageHook,
+            meaningEn: correctWord.meaningEn,
+          }}
+          distractors={distractors.map((w) => ({
+            wordId: w.id,
+            text: w.text,
+            imageHook: w.imageHook,
+            meaningEn: w.meaningEn,
+          }))}
+          onComplete={advance}
+        />
       );
       break;
     }

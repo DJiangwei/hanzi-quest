@@ -65,6 +65,7 @@ export async function replaceCharacterWords(
     text: string;
     pinyinArray: string[];
     meaningEn: string;
+    imageHook?: string; // optional for back-compat with backfill paths
   }>,
 ): Promise<WordRow[]> {
   // Drop prior links for this character (we do not delete the words themselves
@@ -83,6 +84,7 @@ export async function replaceCharacterWords(
         script: 'simplified',
         pinyinArray: w.pinyinArray,
         meaningEn: w.meaningEn,
+        imageHook: w.imageHook ?? null,
       })
       .returning();
     await tx

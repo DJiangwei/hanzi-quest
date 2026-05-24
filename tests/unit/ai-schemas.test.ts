@@ -7,9 +7,9 @@ const validChar = {
   meaningEn: 'mountain',
   meaningZh: '高高的山',
   words: [
-    { word: '山水', pinyin: ['shān', 'shuǐ'], meaningEn: 'mountains and rivers' },
-    { word: '高山', pinyin: ['gāo', 'shān'], meaningEn: 'tall mountain' },
-    { word: '火山', pinyin: ['huǒ', 'shān'], meaningEn: 'volcano' },
+    { word: '山水', pinyin: ['shān', 'shuǐ'], meaningEn: 'mountains and rivers', imageHook: 'rolling mountains reflected in a calm river' },
+    { word: '高山', pinyin: ['gāo', 'shān'], meaningEn: 'tall mountain', imageHook: 'a tall snow-capped mountain under blue sky' },
+    { word: '火山', pinyin: ['huǒ', 'shān'], meaningEn: 'volcano', imageHook: 'a volcano with orange lava flowing down its sides' },
   ],
   sentence: {
     text: '我看到一座大山。',

@@ -80,7 +80,7 @@ describe('SectionPage boss route guard', () => {
   it('allows boss when practice.done >= threshold', async () => {
     mocks.getSectionStatsForChild.mockResolvedValue({
       review: { done: 10, total: 10 },
-      practice: { done: 6, total: 12 },
+      practice: { done: 7, total: 12 },
       boss: { done: 0, total: 1 },
     });
     // Should not throw a __REDIRECT__ — page renders (returns SceneRunner)

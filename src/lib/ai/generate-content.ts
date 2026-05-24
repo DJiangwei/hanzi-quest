@@ -131,6 +131,7 @@ async function persistWeekContent(args: {
           text: w.word,
           pinyinArray: w.pinyin,
           meaningEn: w.meaningEn,
+          imageHook: w.imageHook,
         })),
       );
 
@@ -213,6 +214,7 @@ export async function regenerateCharacter(
           text: w.word,
           pinyinArray: w.pinyin,
           meaningEn: w.meaningEn,
+          imageHook: w.imageHook,
         })),
       );
 

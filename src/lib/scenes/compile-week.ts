@@ -7,6 +7,7 @@ import type {
   BossConfig,
   FlashcardConfig,
   ImagePickConfig,
+  ImageWordConfig,
   Segment,
   SentenceClozeConfig,
   TranslatePickConfig,
@@ -20,6 +21,7 @@ type AnyConfig =
   | AudioPickConfig
   | VisualPickConfig
   | ImagePickConfig
+  | ImageWordConfig
   | WordMatchConfig
   | TranslatePickConfig
   | SentenceClozeConfig
@@ -184,6 +186,45 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
         );
       }
     }
+
+    // ── SIGHT: image_word slots ────────────────────────────────────────────
+    const imageWordId = tmplByType.get('image_word');
+    if (imageWordId && sizing.imageWord > 0) {
+      const eligibleChars = chars.filter((c) =>
+        c.words.some((w) => w.imageHook !== null),
+      );
+      let emitted = 0;
+      for (let slot = 0; slot < sizing.imageWord; slot++) {
+        if (eligibleChars.length === 0) break;
+        const target = pickRandom(eligibleChars);
+        const eligibleWords = target.words.filter((w) => w.imageHook !== null);
+        const correctWord = pickRandom(eligibleWords);
+        const allOtherWords = chars
+          .flatMap((c) => c.words.filter((w) => w.id !== correctWord.id))
+          .map((w) => w.id);
+        if (allOtherWords.length < 3) break;
+        const distractors = shuffle(allOtherWords).slice(0, 3);
+        push(
+          imageWordId,
+          { characterId: target.id, wordId: correctWord.id, distractorWordIds: distractors },
+          'sight',
+          `practice:image_word:${slot}`,
+        );
+        emitted++;
+      }
+      // Fallback: unfilled slots become extra visual_pick to keep practice count steady
+      if (emitted < sizing.imageWord && visualId) {
+        for (let i = emitted; i < sizing.imageWord; i++) {
+          const target = pickRandom(chars);
+          push(
+            visualId,
+            { characterId: target.id },
+            'sight',
+            `practice:visual_pick:fallback-${i}`,
+          );
+        }
+      }
+    }
   }
 
   // ── MEANING ─────────────────────────────────────────────────────────────
@@ -298,14 +339,15 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
 interface PracticeSizing {
   audio: number;
   sight: number;
+  imageWord: number;
   meaning: number;
 }
 
 function computePracticeSizing(n: number): PracticeSizing {
-  if (n < 2) return { audio: 0, sight: 0, meaning: 0 };
-  if (n < 4) return { audio: 1, sight: 1, meaning: 4 };
-  if (n < 10) return { audio: 2, sight: 2, meaning: 6 };
-  return { audio: 3, sight: 3, meaning: 6 }; // sums to PRACTICE_SCENE_COUNT = 12
+  if (n < 2)  return { audio: 0, sight: 0, imageWord: 0, meaning: 0 };
+  if (n < 4)  return { audio: 1, sight: 1, imageWord: 1, meaning: 4 };  // 7 practice
+  if (n < 10) return { audio: 2, sight: 2, imageWord: 1, meaning: 6 };  // 11 practice
+  return { audio: 3, sight: 3, imageWord: 2, meaning: 6 };              // 14 practice
 }
 
 function pickRandom<T>(arr: T[]): T {

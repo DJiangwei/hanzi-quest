@@ -69,6 +69,7 @@ export const words = pgTable('words', {
   pinyinArray: text('pinyin_array').array().notNull(),
   meaningEn: text('meaning_en'),
   audioUrl: text('audio_url'),
+  imageHook: text('image_hook'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
