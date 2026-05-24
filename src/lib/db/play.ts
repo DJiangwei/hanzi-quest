@@ -238,3 +238,100 @@ export async function getLevelById(weekLevelId: string) {
     .limit(1);
   return rows[0] ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// Week-Hub helpers (Task 3 — PR #35)
+// ---------------------------------------------------------------------------
+
+export type WeekSection = 'review' | 'practice' | 'boss';
+
+export interface SectionStat {
+  done: number;
+  total: number;
+}
+export interface SectionStats {
+  review: SectionStat;
+  practice: SectionStat;
+  boss: SectionStat;
+}
+
+function segmentToSection(segment: string | undefined | null): WeekSection | null {
+  if (segment === 'review') return 'review';
+  if (segment === 'sound' || segment === 'sight' || segment === 'meaning') return 'practice';
+  if (segment === 'boss') return 'boss';
+  return null;
+}
+
+/**
+ * Per-section stats for the WeekHub: {done, total} where "done" means at
+ * least one cleared attempt (score >= 100) by this child.
+ */
+export async function getSectionStatsForChild(
+  childId: string,
+  weekId: string,
+): Promise<SectionStats> {
+  const rows = await db
+    .select({
+      id: weekLevels.id,
+      segment: sql<string>`${weekLevels.sceneConfig}->>'segment'`.as('segment'),
+      maxScore: sql<number | null>`MAX(${sceneAttempts.score})`.as('max_score'),
+    })
+    .from(weekLevels)
+    .leftJoin(sceneAttempts, eq(sceneAttempts.weekLevelId, weekLevels.id))
+    .leftJoin(
+      playSessions,
+      and(
+        eq(playSessions.id, sceneAttempts.sessionId),
+        eq(playSessions.childId, childId),
+      ),
+    )
+    .where(eq(weekLevels.weekId, weekId))
+    .groupBy(weekLevels.id, sql`${weekLevels.sceneConfig}->>'segment'`);
+
+  const stats: SectionStats = {
+    review:   { done: 0, total: 0 },
+    practice: { done: 0, total: 0 },
+    boss:     { done: 0, total: 0 },
+  };
+  for (const row of rows) {
+    const section = segmentToSection(row.segment);
+    if (!section) continue;
+    stats[section].total += 1;
+    if ((row.maxScore ?? 0) >= 100) stats[section].done += 1;
+  }
+  return stats;
+}
+
+/**
+ * Count of distinct practice levels with at least one cleared attempt.
+ * Used by the boss-unlock gate.
+ */
+export async function countPracticeClearedForChild(
+  childId: string,
+  weekId: string,
+): Promise<number> {
+  const stats = await getSectionStatsForChild(childId, weekId);
+  return stats.practice.done;
+}
+
+/**
+ * Returns all weekLevels in the given week filtered to the given section,
+ * ordered by position. Used by the section-runner page.
+ */
+export async function getLevelsForSection(
+  weekId: string,
+  section: WeekSection,
+): Promise<Array<typeof weekLevels.$inferSelect>> {
+  // Fetch all rows for the week, filter in JS by derived section.
+  // Cheaper to read than to thread the section JSON filter through drizzle's
+  // JSON-path operators, and a week has only 23 rows max.
+  const rows = await db
+    .select()
+    .from(weekLevels)
+    .where(eq(weekLevels.weekId, weekId))
+    .orderBy(weekLevels.position);
+  return rows.filter((r) => {
+    const segment = (r.sceneConfig as { segment?: string } | null)?.segment;
+    return segmentToSection(segment ?? null) === section;
+  });
+}
