@@ -63,16 +63,19 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
     sceneTemplateId: string;
     sceneConfig: Record<string, unknown>;
     unlockedAfterPosition: number | null;
+    levelKey: string;
   }> = [];
 
   let position = 0;
   const push = (templateId: string, config: AnyConfig, segment: Segment) => {
+    const pos = position++;
     rows.push({
       weekId,
-      position: position++,
+      position: pos,
       sceneTemplateId: templateId,
       sceneConfig: { ...(config as Record<string, unknown>), segment },
       unlockedAfterPosition: null,
+      levelKey: `${weekId}:${pos}`,
     });
   };
 

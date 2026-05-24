@@ -11,6 +11,7 @@ import {
   smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { childProfiles } from './auth';
@@ -57,6 +58,7 @@ export const weekLevels = pgTable(
       .references(() => sceneTemplates.id, { onDelete: 'restrict' }),
     sceneConfig: jsonb('scene_config').notNull().default({}),
     unlockedAfterPosition: smallint('unlocked_after_position'),
+    levelKey: text('level_key').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -64,6 +66,7 @@ export const weekLevels = pgTable(
   (t) => [
     index('week_levels_week_idx').on(t.weekId),
     index('week_levels_week_position_idx').on(t.weekId, t.position),
+    uniqueIndex('week_levels_week_level_key_unique').on(t.weekId, t.levelKey),
   ],
 );
 
