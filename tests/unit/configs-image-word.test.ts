@@ -18,7 +18,8 @@ describe('ImageWordConfigSchema', () => {
   });
 
   it('rejects when distractorWordIds is missing', () => {
-    const { distractorWordIds: _d, ...rest } = validConfig;
+    const rest = { ...validConfig };
+    delete (rest as Partial<typeof validConfig>).distractorWordIds;
     expect(() => ImageWordConfigSchema.parse(rest)).toThrow();
   });
 
