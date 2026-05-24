@@ -23,6 +23,7 @@ describe('SceneRunner segment chip', () => {
         meaningZh: '苹果',
         imageHook: null,
         firstWord: null,
+        words: [],
         sentence: null,
       },
     ];
@@ -56,6 +57,7 @@ describe('SceneRunner segment chip', () => {
         meaningZh: '人',
         imageHook: null,
         firstWord: null,
+        words: [],
         sentence: null,
       },
     ];

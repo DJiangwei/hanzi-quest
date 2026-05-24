@@ -74,7 +74,7 @@ describe('SceneRunner', () => {
     vi.mocked(startSessionAction).mockResolvedValue({ sessionId: 's1' });
 
     const charactersById = {
-      c1: { characterId: 'c1', hanzi: '海', pinyinArray: ['hǎi'], meaningEn: null, meaningZh: null, imageHook: null, firstWord: null, sentence: null },
+      c1: { characterId: 'c1', hanzi: '海', pinyinArray: ['hǎi'], meaningEn: null, meaningZh: null, imageHook: null, firstWord: null, words: [], sentence: null },
     };
 
     render(
