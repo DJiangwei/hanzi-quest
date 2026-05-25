@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { powerupInventory, shopItems } from '@/db/schema';
+import { powerupInventory, sceneAttempts, shopItems } from '@/db/schema';
 
 export type PowerupKind = 'hint' | 'skip' | 'streak_freeze';
 
@@ -87,4 +87,21 @@ export async function listPowerupShopListings(): Promise<PowerupShopListing[]> {
     .from(shopItems)
     .where(and(eq(shopItems.kind, 'powerup'), eq(shopItems.isActive, true)));
   return rows.map((shopItem) => ({ shopItem }));
+}
+
+/** Inserts a scene_attempts row representing a skipped scene (score=0). */
+export async function recordSkippedAttempt(
+  sessionId: string,
+  weekLevelId: string,
+): Promise<void> {
+  await db.insert(sceneAttempts).values({
+    sessionId,
+    weekLevelId,
+    correctCount: 0,
+    totalCount: 1,
+    hintsUsed: 0,
+    score: 0,
+    coinsAwarded: 0,
+    completedAt: new Date(),
+  });
 }
