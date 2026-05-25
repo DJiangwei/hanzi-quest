@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { SceneRunner, type SceneType } from '@/components/scenes/SceneRunner';
+import { MidSceneFlag } from '@/components/play/MidSceneProvider';
 import { requireChild } from '@/lib/auth/guards';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import {
@@ -86,16 +87,19 @@ export default async function SectionPage({ params }: PageProps) {
   }));
 
   return (
-    <SceneRunner
-      childId={child.id}
-      weekId={week.id}
-      weekLabel={week.label}
-      levels={compiledLevels}
-      charactersById={charactersById}
-      pool={pool}
-      exitHref={`/play/${child.id}/week/${week.id}`}
-      initialPowerupCounts={initialPowerupCounts}
-      showStarterToast={grantedStarter}
-    />
+    <>
+      <MidSceneFlag />
+      <SceneRunner
+        childId={child.id}
+        weekId={week.id}
+        weekLabel={week.label}
+        levels={compiledLevels}
+        charactersById={charactersById}
+        pool={pool}
+        exitHref={`/play/${child.id}/week/${week.id}`}
+        initialPowerupCounts={initialPowerupCounts}
+        showStarterToast={grantedStarter}
+      />
+    </>
   );
 }
