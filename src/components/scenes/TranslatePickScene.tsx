@@ -16,9 +16,10 @@ interface Props {
   pool: CharacterDetail[];
   direction: TranslateDirection;
   onComplete: (correct: boolean) => void;
+  hintRequested?: boolean;
 }
 
-export function TranslatePickScene({ target, pool, direction, onComplete }: Props) {
+export function TranslatePickScene({ target, pool, direction, onComplete, hintRequested }: Props) {
   const filteredPool = useMemo(
     () => pool.filter((c) => Boolean(c.meaningEn) && c.meaningEn !== target.meaningEn),
     [pool, target.meaningEn],
@@ -65,6 +66,7 @@ export function TranslatePickScene({ target, pool, direction, onComplete }: Prop
       stimulus={stimulus}
       choices={choices}
       onComplete={onComplete}
+      hintRequested={hintRequested}
     />
   );
 }

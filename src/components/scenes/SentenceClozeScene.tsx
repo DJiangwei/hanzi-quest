@@ -15,6 +15,7 @@ interface Props {
   sentenceText: string;
   translationEn: string | null;
   onComplete: (correct: boolean) => void;
+  hintRequested?: boolean;
 }
 
 function speak(text: string) {
@@ -36,6 +37,7 @@ export function SentenceClozeScene({
   sentenceText,
   translationEn,
   onComplete,
+  hintRequested,
 }: Props) {
   const choices = useMemo(() => {
     const distractors = sampleDistractors(
@@ -78,6 +80,7 @@ export function SentenceClozeScene({
       stimulus={stimulus}
       choices={choices}
       onComplete={onComplete}
+      hintRequested={hintRequested}
     />
   );
 }

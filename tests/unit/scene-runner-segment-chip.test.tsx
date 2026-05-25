@@ -9,6 +9,10 @@ vi.mock('@/lib/actions/play', () => ({
 vi.mock('@/lib/audio/play', () => ({ setAudioMuted: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/lib/hooks/use-reduced-motion', () => ({ useReducedMotion: () => false }));
+vi.mock('@/lib/actions/powerups', () => ({
+  useHintAction: vi.fn().mockResolvedValue({ ok: true, remaining: 0 }),
+  useSkipAction: vi.fn().mockResolvedValue({ ok: true, remaining: 0 }),
+}));
 
 import { SceneRunner } from '@/components/scenes/SceneRunner';
 

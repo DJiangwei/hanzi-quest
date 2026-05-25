@@ -4,12 +4,19 @@ const mocks = vi.hoisted(() => ({
   selectFn: vi.fn(),
   insertFn: vi.fn(),
 }));
+const powerupMock = vi.hoisted(() => ({
+  consumePowerupAtomic: vi.fn(),
+}));
 
 vi.mock('@/db', () => ({
   db: {
     select: () => mocks.selectFn(),
     insert: () => mocks.insertFn(),
   },
+}));
+
+vi.mock('@/lib/db/powerups', () => ({
+  consumePowerupAtomic: powerupMock.consumePowerupAtomic,
 }));
 
 import { tickStreak, todayUtcIso } from '@/lib/db/streaks';
@@ -36,6 +43,9 @@ function mockInsertOk() {
 beforeEach(() => {
   mocks.selectFn.mockReset();
   mocks.insertFn.mockReset();
+  powerupMock.consumePowerupAtomic.mockReset();
+  // Default: no freeze available (gap>1 tests that don't specifically set this will reset)
+  powerupMock.consumePowerupAtomic.mockResolvedValue(false);
   mockInsertOk();
 });
 
@@ -48,6 +58,7 @@ describe('tickStreak', () => {
       longestStreak: 1,
       ticked: true,
       reset: false,
+      freezeBurned: false,
     });
   });
 
@@ -77,6 +88,7 @@ describe('tickStreak', () => {
       longestStreak: 4,
       ticked: true,
       reset: false,
+      freezeBurned: false,
     });
   });
 

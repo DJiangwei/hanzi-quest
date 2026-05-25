@@ -1,0 +1,1 @@
+ALTER TYPE "public"."powerup_kind" ADD VALUE 'skip';

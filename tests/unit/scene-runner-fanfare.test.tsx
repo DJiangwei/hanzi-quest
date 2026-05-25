@@ -30,6 +30,10 @@ vi.mock('@/lib/actions/gacha', () => ({
 vi.mock('@/components/scenes/fx/TreasureChestReveal', () => ({
   TreasureChestReveal: () => <div data-testid="treasure-chest-reveal" />,
 }));
+vi.mock('@/lib/actions/powerups', () => ({
+  useHintAction: vi.fn().mockResolvedValue({ ok: true, remaining: 0 }),
+  useSkipAction: vi.fn().mockResolvedValue({ ok: true, remaining: 0 }),
+}));
 
 import { SceneRunner } from '@/components/scenes/SceneRunner';
 import { setAudioMuted } from '@/lib/audio/play';

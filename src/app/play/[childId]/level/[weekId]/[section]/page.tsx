@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/play';
 import { getPlayableWeekForChild } from '@/lib/db/weeks';
 import { BOSS_UNLOCK_PRACTICE_THRESHOLD } from '@/lib/scenes/configs';
+import { grantStarterPowerupsIfNeeded, getPowerupCounts } from '@/lib/db/powerups';
 
 const SECTIONS: readonly WeekSection[] = ['review', 'practice', 'boss'] as const;
 
@@ -37,9 +38,11 @@ export default async function SectionPage({ params }: PageProps) {
     }
   }
 
-  const [allLevels, characters] = await Promise.all([
+  const [allLevels, characters, grantedStarter, initialPowerupCounts] = await Promise.all([
     listLevelsForWeek(weekId),
     getCharactersWithDetailsForWeek(weekId),
+    grantStarterPowerupsIfNeeded(child.id),
+    getPowerupCounts(child.id),
   ]);
 
   const sectionLevels = allLevels.filter((l) => {
@@ -91,6 +94,8 @@ export default async function SectionPage({ params }: PageProps) {
       charactersById={charactersById}
       pool={pool}
       exitHref={`/play/${child.id}/week/${week.id}`}
+      initialPowerupCounts={initialPowerupCounts}
+      showStarterToast={grantedStarter}
     />
   );
 }

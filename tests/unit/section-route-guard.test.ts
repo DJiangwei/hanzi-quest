@@ -38,6 +38,10 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/components/scenes/SceneRunner', () => ({
   SceneRunner: () => null,
 }));
+vi.mock('@/lib/db/powerups', () => ({
+  grantStarterPowerupsIfNeeded: vi.fn().mockResolvedValue(false),
+  getPowerupCounts: vi.fn().mockResolvedValue({ hint: 0, skip: 0, streak_freeze: 0 }),
+}));
 
 import SectionPage from '@/app/play/[childId]/level/[weekId]/[section]/page';
 

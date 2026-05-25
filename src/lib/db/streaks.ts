@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { streaks } from '@/db/schema';
+import { consumePowerupAtomic } from './powerups';
 
 export interface StreakState {
   currentStreak: number;
@@ -14,8 +15,10 @@ export interface StreakTick {
   longestStreak: number;
   /** True iff currentStreak just incremented (today != lastPlayedDate). */
   ticked: boolean;
-  /** True iff the streak just reset to 1 (gap > 1 day). */
+  /** True iff the streak just reset to 1 (gap > 1 day, no freeze). */
   reset: boolean;
+  /** True iff a streak_freeze powerup was consumed to preserve the streak. */
+  freezeBurned: boolean;
 }
 
 /**
@@ -78,6 +81,7 @@ export async function tickStreak(
       longestStreak: prior.longestStreak,
       ticked: false,
       reset: false,
+      freezeBurned: false,
     };
   }
 
@@ -87,9 +91,22 @@ export async function tickStreak(
 
   let newStreak: number;
   let reset = false;
+  let freezeBurned = false;
+
   if (gap === 1) {
     newStreak = prior.currentStreak + 1;
+  } else if (gap !== null && gap > 1 && prior.currentStreak > 0) {
+    // Try to burn a freeze token to bridge the gap
+    const burned = await consumePowerupAtomic(childId, 'streak_freeze');
+    if (burned) {
+      newStreak = prior.currentStreak + 1;
+      freezeBurned = true;
+    } else {
+      newStreak = 1;
+      reset = true;
+    }
   } else {
+    // First-ever play (gap === null) or no prior streak
     newStreak = 1;
     reset = prior.currentStreak > 0;
   }
@@ -119,6 +136,7 @@ export async function tickStreak(
     longestStreak: newLongest,
     ticked: true,
     reset,
+    freezeBurned,
   };
 }
 

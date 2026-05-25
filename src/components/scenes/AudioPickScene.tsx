@@ -14,6 +14,7 @@ interface Props {
   target: CharacterDetail;
   pool: CharacterDetail[];
   onComplete: (correct: boolean) => void;
+  hintRequested?: boolean;
 }
 
 function speak(text: string) {
@@ -25,7 +26,7 @@ function speak(text: string) {
   window.speechSynthesis.speak(u);
 }
 
-export function AudioPickScene({ target, pool, onComplete }: Props) {
+export function AudioPickScene({ target, pool, onComplete, hintRequested }: Props) {
   const choices = useMemo(() => {
     const distractors = sampleDistractors(
       pool,
@@ -55,6 +56,7 @@ export function AudioPickScene({ target, pool, onComplete }: Props) {
       }
       choices={choices}
       onComplete={onComplete}
+      hintRequested={hintRequested}
     />
   );
 }

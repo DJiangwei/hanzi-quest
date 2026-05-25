@@ -23,6 +23,7 @@ export const powerupKind = pgEnum('powerup_kind', [
   'revive',
   'hint',
   'streak_freeze',
+  'skip',
 ]);
 
 export const avatarSlots = pgTable('avatar_slots', {

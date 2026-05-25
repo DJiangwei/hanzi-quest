@@ -36,7 +36,8 @@ const BOSS_CLEAR_REWARD = 300;
 export type EconomyBonusReason =
   | 'daily_login'
   | 'streak_milestone'
-  | 'perfect_week';
+  | 'perfect_week'
+  | 'streak_freeze';
 
 export interface EconomyBonus {
   reason: EconomyBonusReason;
@@ -141,6 +142,14 @@ export async function finishAttemptAction(
         labelZh: `连胜 ${milestone.milestone} 天！`,
         labelEn: `${milestone.milestone}-day streak!`,
         meta: { milestone: milestone.milestone },
+      });
+    }
+    if (tick.freezeBurned) {
+      bonuses.push({
+        reason: 'streak_freeze',
+        delta: 0,
+        labelZh: '连胜保住了！',
+        labelEn: 'Streak saved!',
       });
     }
   }
