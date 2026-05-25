@@ -1,10 +1,11 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   avatarItems,
   childAvatarEquipped,
   childAvatarInventory,
   coinBalances,
+  powerupInventory,
   shopItems,
   shopPurchases,
 } from '@/db/schema';
@@ -178,6 +179,8 @@ export async function purchaseShopItemInTx(
     case 'pet':
     case 'decor':
       return purchaseGenericInTx(tx, childId, shopItem);
+    case 'powerup':
+      return purchasePowerupInTx(tx, childId, shopItem);
     default:
       throw new ItemNotPurchasableError(
         `Shop item kind '${shopItem.kind}' is not purchasable`,
@@ -253,6 +256,41 @@ async function purchaseGenericInTx(
   if (existing) throw new AlreadyOwnedError(shopItem.id);
 
   await debitAndRecordInTx(tx, childId, shopItem);
+
+  const coinsAfter = await readBalanceInTx(tx, childId);
+  return {
+    shopItemId: shopItem.id,
+    coinsAfter,
+    avatarItemId: null,
+  };
+}
+
+const VALID_POWERUP_KINDS = ['hint', 'skip', 'streak_freeze', 'revive'] as const;
+type ValidPowerupKind = (typeof VALID_POWERUP_KINDS)[number];
+
+async function purchasePowerupInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<PurchaseResult> {
+  const meta = (shopItem.metadata ?? {}) as { powerupKind?: string };
+  const kind = meta.powerupKind;
+  if (!kind || !(VALID_POWERUP_KINDS as readonly string[]).includes(kind)) {
+    throw new ItemNotPurchasableError(
+      `Shop item ${shopItem.slug} has invalid metadata.powerupKind=${kind}`,
+    );
+  }
+
+  // Powerups are stackable — no duplicate ownership check.
+  await debitAndRecordInTx(tx, childId, shopItem);
+
+  await tx
+    .insert(powerupInventory)
+    .values({ childId, kind: kind as ValidPowerupKind, count: 1 })
+    .onConflictDoUpdate({
+      target: [powerupInventory.childId, powerupInventory.kind],
+      set: { count: sql`${powerupInventory.count} + 1` },
+    });
 
   const coinsAfter = await readBalanceInTx(tx, childId);
   return {
