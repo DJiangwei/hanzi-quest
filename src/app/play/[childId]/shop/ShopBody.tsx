@@ -9,10 +9,12 @@ import { ShopGrid } from '@/components/shop/ShopGrid';
 import { SoundsTabBody } from '@/components/shop/SoundsTabBody';
 import { PetsTabBody } from '@/components/shop/PetsTabBody';
 import { DecorTabBody } from '@/components/shop/DecorTabBody';
+import { PowerupsTabBody } from '@/components/shop/PowerupsTabBody';
 import { PurchaseConfirmDialog } from '@/components/shop/PurchaseConfirmDialog';
 import type { AvatarShopListing, EquippedAvatar, SoundThemeListing } from '@/lib/db/shop';
 import type { PetShopListing } from '@/lib/db/pets';
 import type { DecorShopListing } from '@/lib/db/decor';
+import type { PowerupShopListing, PowerupCounts } from '@/lib/db/powerups';
 import { lookupItem } from '@/lib/avatar/itemCatalog';
 import {
   equipAvatarItemAction,
@@ -30,6 +32,8 @@ interface Props {
   petListings: PetShopListing[];
   initialEquippedPetSlug: string | null;
   decorListings: DecorShopListing[];
+  powerupListings: PowerupShopListing[];
+  powerupCounts: PowerupCounts;
 }
 
 export function ShopBody({
@@ -43,6 +47,8 @@ export function ShopBody({
   petListings,
   initialEquippedPetSlug,
   decorListings,
+  powerupListings,
+  powerupCounts,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ShopCategory>('avatar');
@@ -181,11 +187,12 @@ export function ShopBody({
         />
       )}
       {activeTab === 'powerup' && (
-        <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center text-amber-900/70">
-          <div className="text-5xl">🚧</div>
-          <div className="mt-3 text-lg font-bold">即将上线</div>
-          <div className="mt-1 text-sm">下次更新见！</div>
-        </div>
+        <PowerupsTabBody
+          childId={childId}
+          listings={powerupListings}
+          powerupCounts={powerupCounts}
+          coinBalance={coinBalance}
+        />
       )}
 
       <PurchaseConfirmDialog

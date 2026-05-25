@@ -16,7 +16,7 @@ const TABS: TabDef[] = [
   { id: 'sound', emoji: '🎵', label: '音效', disabled: false },
   { id: 'pet', emoji: '🐦', label: '伙伴', disabled: false },
   { id: 'decor', emoji: '🏝️', label: '装饰', disabled: false },
-  { id: 'powerup', emoji: '💡', label: '道具', disabled: true },
+  { id: 'powerup', emoji: '💡', label: '道具', disabled: false },
 ];
 
 interface Props {
