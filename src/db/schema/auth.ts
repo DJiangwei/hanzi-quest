@@ -45,3 +45,13 @@ export const childProfiles = pgTable('child_profiles', {
     .notNull()
     .defaultNow(),
 });
+
+export const parentSettings = pgTable('parent_settings', {
+  clerkUserId: text('clerk_user_id').primaryKey(),
+  parentPinHash: text('parent_pin_hash').notNull(),
+  pinSetAt: timestamp('pin_set_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  failedAttempts: smallint('failed_attempts').notNull().default(0),
+  lockedUntil: timestamp('locked_until', { withTimezone: true }),
+});
