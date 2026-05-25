@@ -14,9 +14,10 @@ interface Props {
   target: CharacterDetail;
   pool: CharacterDetail[];
   onComplete: (correct: boolean) => void;
+  hintRequested?: boolean;
 }
 
-export function PinyinPickScene({ target, pool, onComplete }: Props) {
+export function PinyinPickScene({ target, pool, onComplete, hintRequested }: Props) {
   const choices = useMemo(() => {
     const distractors = sampleDistractors(
       pool,
@@ -43,6 +44,7 @@ export function PinyinPickScene({ target, pool, onComplete }: Props) {
       }
       choices={choices}
       onComplete={onComplete}
+      hintRequested={hintRequested}
     />
   );
 }

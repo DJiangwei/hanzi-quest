@@ -14,11 +14,12 @@ interface Props {
   target: CharacterDetail;
   pool: CharacterDetail[];
   onComplete: (correct: boolean) => void;
+  hintRequested?: boolean;
 }
 
 const joinPinyin = (p: string[]) => p.join('');
 
-export function VisualPickScene({ target, pool, onComplete }: Props) {
+export function VisualPickScene({ target, pool, onComplete, hintRequested }: Props) {
   const choices = useMemo(() => {
     const targetKey = joinPinyin(target.pinyinArray);
     const distractorChars = sampleDistractors(
@@ -44,6 +45,7 @@ export function VisualPickScene({ target, pool, onComplete }: Props) {
       }
       choices={choices}
       onComplete={onComplete}
+      hintRequested={hintRequested}
     />
   );
 }

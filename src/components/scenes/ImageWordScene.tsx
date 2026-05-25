@@ -21,9 +21,10 @@ interface Props {
   correctWord: WordOption;
   distractors: WordOption[];
   onComplete: (correct: boolean) => void;
+  hintRequested?: boolean;
 }
 
-export function ImageWordScene({ baseChar, correctWord, distractors, onComplete }: Props) {
+export function ImageWordScene({ baseChar, correctWord, distractors, onComplete, hintRequested }: Props) {
   const choices = useMemo(
     () =>
       shuffle([correctWord, ...distractors]).map((w) => ({
@@ -59,6 +60,7 @@ export function ImageWordScene({ baseChar, correctWord, distractors, onComplete 
       }
       choices={choices}
       onComplete={onComplete}
+      hintRequested={hintRequested}
     />
   );
 }

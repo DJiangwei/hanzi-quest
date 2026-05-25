@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { EconomyBonus, GrantedTrophy } from '@/lib/actions/play';
+import type { PowerupCounts } from '@/lib/db/powerups';
 import {
   finishAttemptAction,
   finishLevelAction,
@@ -13,6 +14,7 @@ import { setAudioMuted } from '@/lib/audio/play';
 import { CoinHudContext } from '@/lib/hooks/coin-hud-context';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { BonusToast } from '@/components/play/BonusToast';
+import { PowerupTray } from '@/components/play/PowerupTray';
 import { TrophyToast } from '@/components/play/TrophyToast';
 import { AudioPickScene } from './AudioPickScene';
 import { BossScene } from './BossScene';
@@ -79,6 +81,10 @@ interface Props {
   pool: CharacterDetail[];
   /** Where to navigate when the runner finishes. Defaults to the island map. */
   exitHref?: string;
+  /** Powerup inventory counts at session start. Defaults to all-zero. */
+  initialPowerupCounts?: PowerupCounts;
+  /** Show a one-shot starter-pack toast when the child first arrives with powerups. */
+  showStarterToast?: boolean;
 }
 
 export function SceneRunner({
@@ -89,6 +95,8 @@ export function SceneRunner({
   charactersById,
   pool,
   exitHref,
+  initialPowerupCounts = { hint: 0, skip: 0, streak_freeze: 0 },
+  showStarterToast = false,
 }: Props) {
   const resolvedExitHref = exitHref ?? `/play/${childId}`;
   const router = useRouter();
@@ -101,12 +109,25 @@ export function SceneRunner({
   const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
   const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
   const [pending, startTransition] = useTransition();
+  const [hintCount, setHintCount] = useState(initialPowerupCounts.hint);
+  const [skipCount, setSkipCount] = useState(initialPowerupCounts.skip);
+  // Track which level index the hint was activated for, so it auto-clears on level change.
+  const [hintActivatedAtIndex, setHintActivatedAtIndex] = useState<number | null>(null);
+  const hintRequested = hintActivatedAtIndex === index;
+  const [starterDismissed, setStarterDismissed] = useState(false);
   const startedAtRef = useRef<number>(0);
   const coinHudRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setAudioMuted(reduced);
   }, [reduced]);
+
+  useEffect(() => {
+    if (showStarterToast && !starterDismissed) {
+      const t = setTimeout(() => setStarterDismissed(true), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [showStarterToast, starterDismissed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,6 +221,9 @@ export function SceneRunner({
   const segment = currentLevel.config.segment as Segment | undefined;
   const segmentChip = segment ? segmentLabels[segment] : null;
 
+  const sceneSupportsHint =
+    currentLevel.sceneType !== 'flashcard' && currentLevel.sceneType !== 'word_match';
+
   let body: React.ReactNode;
   switch (currentLevel.sceneType) {
     case 'flashcard': {
@@ -226,7 +250,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <AudioPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} />
+        <AudioPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} hintRequested={hintRequested} />
       ) : (
         <MissingData />
       );
@@ -236,7 +260,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <VisualPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} />
+        <VisualPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} hintRequested={hintRequested} />
       ) : (
         <MissingData />
       );
@@ -246,7 +270,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <ImagePickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} />
+        <ImagePickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} hintRequested={hintRequested} />
       ) : (
         <MissingData />
       );
@@ -290,7 +314,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <PinyinPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} />
+        <PinyinPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} hintRequested={hintRequested} />
       ) : (
         <MissingData />
       );
@@ -307,6 +331,7 @@ export function SceneRunner({
           pool={pool}
           direction={direction}
           onComplete={advance}
+          hintRequested={hintRequested}
         />
       ) : (
         <MissingData />
@@ -324,6 +349,7 @@ export function SceneRunner({
           sentenceText={c.sentence.text}
           translationEn={c.sentence.translationEn}
           onComplete={advance}
+          hintRequested={hintRequested}
         />
       ) : (
         <MissingData />
@@ -372,6 +398,7 @@ export function SceneRunner({
             meaningEn: w.meaningEn,
           }))}
           onComplete={advance}
+          hintRequested={hintRequested}
         />
       );
       break;
@@ -408,6 +435,39 @@ export function SceneRunner({
           </div>
         )}
         {body}
+        {sessionId && (
+          <PowerupTray
+            childId={childId}
+            hintCount={hintCount}
+            skipCount={skipCount}
+            sceneSupportsHint={sceneSupportsHint}
+            weekLevelId={currentLevel.id}
+            sessionId={sessionId}
+            onHintActivated={() => {
+              setHintCount((n) => n - 1);
+              setHintActivatedAtIndex(index);
+            }}
+            onSkipped={() => {
+              setSkipCount((n) => n - 1);
+              const nextIndex = index + 1;
+              if (nextIndex >= levels.length) {
+                setLastSceneType(currentLevel.sceneType);
+                setDone(true);
+              } else {
+                setLastSceneType(currentLevel.sceneType);
+                setIndex(nextIndex);
+              }
+            }}
+          />
+        )}
+        {showStarterToast && !starterDismissed && (
+          <div className="fixed left-1/2 top-20 z-40 -translate-x-1/2 rounded-2xl border-4 border-amber-800/40 bg-amber-100 px-4 py-3 text-center text-sm font-bold text-amber-950 shadow-2xl">
+            🎁 礼物! / Starter pack!
+            <div className="mt-1 text-xs font-semibold text-amber-900">
+              💡 + ⏭️ 在你的工具栏 / in your tray
+            </div>
+          </div>
+        )}
         <BonusToast
           bonuses={activeBonuses}
           onDone={() => setActiveBonuses([])}

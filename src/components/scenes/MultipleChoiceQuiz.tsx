@@ -17,6 +17,7 @@ interface Props {
   stimulus: ReactNode;
   choices: Choice[];
   onComplete: (correct: boolean) => void;
+  hintRequested?: boolean;
 }
 
 export function MultipleChoiceQuiz({
@@ -24,12 +25,18 @@ export function MultipleChoiceQuiz({
   stimulus,
   choices,
   onComplete,
+  hintRequested,
 }: Props) {
   const [revealed, setRevealed] = useState<string | null>(null);
   const [triggerKey, setTriggerKey] = useState(0);
   const [tappedRect, setTappedRect] = useState<DOMRect | null>(null);
   const [showCoins, setShowCoins] = useState(false);
   const completeRef = useRef(onComplete);
+
+  // When a hint is active, gray out the first wrong choice (deterministic, pure — no random in render).
+  const grayedKey = hintRequested
+    ? (choices.find((c) => !c.isCorrect)?.key ?? null)
+    : null;
   useEffect(() => {
     completeRef.current = onComplete;
   });
@@ -40,7 +47,7 @@ export function MultipleChoiceQuiz({
     isCorrect: boolean,
     el: HTMLButtonElement,
   ) => {
-    if (revealed) return;
+    if (revealed || (grayedKey !== null && key === grayedKey)) return;
     setRevealed(key);
     setTappedRect(el.getBoundingClientRect());
     if (isCorrect) {
@@ -64,21 +71,24 @@ export function MultipleChoiceQuiz({
       <ShakeWrap triggerKey={triggerKey}>
         <div className="grid w-full max-w-md grid-cols-2 gap-3">
           {choices.map((c) => {
+            const isGrayed = grayedKey !== null && c.key === grayedKey && revealed === null;
             const state =
-              revealed === null
-                ? 'idle'
-                : c.key === revealed
-                  ? c.isCorrect
-                    ? 'correct'
-                    : 'wrong'
-                  : c.isCorrect
-                    ? 'reveal-correct'
-                    : 'dim';
+              isGrayed
+                ? 'dim'
+                : revealed === null
+                  ? 'idle'
+                  : c.key === revealed
+                    ? c.isCorrect
+                      ? 'correct'
+                      : 'wrong'
+                    : c.isCorrect
+                      ? 'reveal-correct'
+                      : 'dim';
             return (
               <button
                 key={c.key}
                 type="button"
-                disabled={revealed !== null}
+                disabled={revealed !== null || isGrayed}
                 onClick={(e) => handlePick(c.key, c.isCorrect, e.currentTarget)}
                 className={[
                   'rounded-2xl border-2 px-4 py-6 text-3xl font-bold shadow-sm transition-transform active:scale-95',
