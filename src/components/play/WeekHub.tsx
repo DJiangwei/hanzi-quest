@@ -18,6 +18,8 @@ interface Props {
     practice: Stat;
     boss: BossStat;
   };
+  /** weekId for View Transitions API morph with the island Link on the map */
+  weekId?: string;
 }
 
 function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cleared' {
@@ -27,7 +29,7 @@ function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cle
   return 'idle';
 }
 
-export function WeekHub({ childId, week, sections }: Props) {
+export function WeekHub({ childId, week, sections, weekId }: Props) {
   const reviewState = deriveState(sections.review.done, sections.review.total);
   const practiceState = deriveState(sections.practice.done, sections.practice.total);
   const bossState: 'idle' | 'in-progress' | 'cleared' | 'locked' = sections.boss.locked
@@ -36,7 +38,10 @@ export function WeekHub({ childId, week, sections }: Props) {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6">
-      <header className="flex items-center justify-between gap-2">
+      <header
+        className="flex items-center justify-between gap-2"
+        style={weekId ? { viewTransitionName: `island-${weekId}` } : undefined}
+      >
         <Link
           href={`/play/${childId}`}
           className="rounded-lg border-2 border-amber-800/40 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900 hover:bg-amber-100"
