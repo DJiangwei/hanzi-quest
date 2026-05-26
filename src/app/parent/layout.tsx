@@ -1,7 +1,9 @@
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ensureUserBootstrapped } from '@/lib/auth/bootstrap';
+import { getParentSettings } from '@/lib/db/parent-settings';
 
 export default async function ParentLayout({
   children,
@@ -11,8 +13,26 @@ export default async function ParentLayout({
   const user = await ensureUserBootstrapped();
   if (!user) redirect('/sign-in');
 
+  const jar = await cookies();
+  const unlocked = jar.get('parent_unlocked')?.value === '1';
+  const settings = await getParentSettings(user.id);
+
+  if (settings?.parentPinHash && !unlocked) {
+    redirect('/parent/unlock');
+  }
+
+  const showFirstTimeBanner = !settings?.parentPinHash;
+
   return (
     <div className="flex flex-1 flex-col bg-[var(--color-sand-50)]">
+      {showFirstTimeBanner && (
+        <div className="bg-[var(--color-sunset-100)] px-6 py-2 text-center text-sm text-[var(--color-sunset-700)]">
+          <Link href="/parent/unlock" className="font-bold underline">
+            Set a parent PIN
+          </Link>{' '}
+          to keep Yinuo from accidentally editing your work.
+        </div>
+      )}
       <header className="flex items-center justify-between border-b border-[var(--color-sand-200)] bg-white/80 px-6 py-3 backdrop-blur">
         <Link href="/parent" className="flex items-center gap-2">
           <span className="font-hanzi text-xl font-bold tracking-tight text-[var(--color-ocean-900)]">

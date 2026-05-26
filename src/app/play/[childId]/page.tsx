@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { IslandMap } from '@/components/play/IslandMap';
 import { AvatarRender } from '@/components/play/AvatarRender';
+import { WeekStrip } from '@/components/play/WeekStrip';
 import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
 import {
@@ -15,6 +16,22 @@ import { listChildPlayableWeeks } from '@/lib/db/weeks';
 import { PetCompanion } from '@/components/play/PetCompanion';
 import { getEquippedPet } from '@/lib/db/pets';
 import { listOwnedDecorationsForChild } from '@/lib/db/decor';
+import { getActivityForRange } from '@/lib/db/activity';
+import { todayUtcIso } from '@/lib/db/streaks';
+
+function mondayOfIsoWeek(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  const dow = d.getUTCDay(); // 0=Sun..6=Sat
+  const back = dow === 0 ? 6 : dow - 1;
+  d.setUTCDate(d.getUTCDate() - back);
+  return d.toISOString().slice(0, 10);
+}
+
+function isoDateAddDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 interface PageProps {
   params: Promise<{ childId: string }>;
@@ -24,6 +41,10 @@ export default async function PlayHomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
+  const todayIso = todayUtcIso();
+  const monday = mondayOfIsoWeek(todayIso);
+  const sunday = isoDateAddDays(monday, 6);
+
   const [
     playableWeeks,
     progressRows,
@@ -32,6 +53,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     equipped,
     pet,
     ownedDecorations,
+    weekActivity,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -40,6 +62,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     getEquippedAvatar(child.id),
     getEquippedPet(child.id),
     listOwnedDecorationsForChild(child.id),
+    getActivityForRange(child.id, monday, sunday),
   ]);
 
   const equippedRefs: Partial<Record<string, string | null>> = {};
@@ -112,6 +135,8 @@ export default async function PlayHomePage({ params }: PageProps) {
           {balance.balance}
         </span>
       </section>
+
+      <WeekStrip activity={weekActivity} todayIso={todayIso} childId={childId} />
 
       {islands.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--color-sunset-400)] bg-white/70 p-8 text-center text-sm text-[var(--color-sand-900)]">

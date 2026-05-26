@@ -22,6 +22,7 @@ export default async function WeekHubPage({ params }: PageProps) {
   return (
     <WeekHub
       childId={childId}
+      weekId={weekId}
       week={{ id: week.id, weekNumber: week.weekNumber, label: week.label }}
       sections={{
         review: stats.review,

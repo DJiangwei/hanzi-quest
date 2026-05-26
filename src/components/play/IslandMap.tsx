@@ -180,6 +180,7 @@ export function IslandMap({ childId, islands, ownedCount, totalCount, decoration
                 top: `${yPct}%`,
                 width: `${(ISLAND_RADIUS * 2 + 16) / SVG_WIDTH * 100}%`,
                 aspectRatio: '1 / 1',
+                viewTransitionName: `island-${island.weekId}`,
               }}
               aria-label={`Open ${island.label}, ${island.completionPercent}% complete`}
             />

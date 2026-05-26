@@ -1,8 +1,19 @@
-import { Show } from '@clerk/nextjs';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { ensureUserBootstrapped } from '@/lib/auth/bootstrap';
+import { listChildrenForUser } from '@/lib/db/children';
 
 export default async function HomePage() {
+  const user = await ensureUserBootstrapped();
+
+  if (user) {
+    const children = await listChildrenForUser(user.id);
+    if (children.length === 1) {
+      redirect(`/play/${children[0].id}`);
+    }
+  }
+
   const t = await getTranslations('Home');
 
   return (
@@ -18,30 +29,31 @@ export default async function HomePage() {
           {t('subtitle')}
         </p>
       </div>
-
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <Show when="signed-out">
-          <Link
-            href="/sign-up"
-            className="rounded-full bg-[var(--color-ocean-500)] px-6 py-3 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95"
-          >
-            Sign up
-          </Link>
-          <Link
-            href="/sign-in"
-            className="rounded-full border-2 border-[var(--color-ocean-300)] bg-white px-6 py-3 text-sm font-semibold text-[var(--color-ocean-700)] transition-transform hover:bg-[var(--color-ocean-100)] active:scale-95"
-          >
-            Sign in
-          </Link>
-        </Show>
-        <Show when="signed-in">
+        {!user && (
+          <>
+            <Link
+              href="/sign-up"
+              className="rounded-full bg-[var(--color-ocean-500)] px-6 py-3 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95"
+            >
+              Sign up
+            </Link>
+            <Link
+              href="/sign-in"
+              className="rounded-full border-2 border-[var(--color-ocean-300)] bg-white px-6 py-3 text-sm font-semibold text-[var(--color-ocean-700)] transition-transform hover:bg-[var(--color-ocean-100)] active:scale-95"
+            >
+              Sign in
+            </Link>
+          </>
+        )}
+        {user && (
           <Link
             href="/parent"
             className="rounded-full bg-[var(--color-ocean-500)] px-7 py-3 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95"
           >
             Open parent dashboard →
           </Link>
-        </Show>
+        )}
       </div>
     </main>
   );

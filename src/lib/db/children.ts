@@ -94,3 +94,9 @@ export async function deleteChildOwnedBy(
     .returning({ id: childProfiles.id });
   return rows.length > 0;
 }
+
+/**
+ * Alias of listChildrenByParent — preferred name for non-parent contexts
+ * (e.g. root page redirect logic where "user" is the natural term).
+ */
+export const listChildrenForUser = listChildrenByParent;
