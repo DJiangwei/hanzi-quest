@@ -9,6 +9,7 @@ import { AtlasHub, type AtlasHallSummary } from '@/components/play/AtlasHub';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { TrophiesHallCard } from '@/components/play/TrophiesHallCard';
 import { listAllTrophies, listEarnedTrophies } from '@/lib/db/trophies';
+import { getRecentlyObtainedForChild } from '@/lib/db/recent-obtained';
 
 export default async function CollectionAtlasPage({
   params,
@@ -18,10 +19,11 @@ export default async function CollectionAtlasPage({
   const { childId } = await params;
   await requireChild(childId);
 
-  const [packs, allTrophies, earnedTrophies] = await Promise.all([
+  const [packs, allTrophies, earnedTrophies, recentItems] = await Promise.all([
     listActivePacks(),
     listAllTrophies(),
     listEarnedTrophies(childId),
+    getRecentlyObtainedForChild(childId, 3),
   ]);
   const halls: AtlasHallSummary[] = (
     await Promise.all(
@@ -44,7 +46,15 @@ export default async function CollectionAtlasPage({
 
   return (
     <main className="flex flex-1 flex-col items-center gap-4 p-6">
-      <AtlasHub childId={childId} halls={halls} />
+      <AtlasHub
+        childId={childId}
+        halls={halls}
+        recentItems={recentItems}
+        // Server-side render-time snapshot for the "NEW" sticker cutoff in
+        // RecentlyObtainedStrip. Each request re-renders so impurity is bounded.
+        // eslint-disable-next-line react-hooks/purity
+        nowMs={Date.now()}
+      />
       <div className="w-full max-w-md">
         <TrophiesHallCard
           childId={childId}
