@@ -41,6 +41,12 @@ describe('KidNavBar', () => {
     expect(screen.getByRole('link', { name: /Map/i })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('marks Map tab active on /play/[childId]/maps', () => {
+    pathnameMock.mockReturnValue('/play/child_1/maps');
+    render(<KidNavBar childId="child_1" />);
+    expect(screen.getByRole('link', { name: /Map/i })).toHaveAttribute('aria-current', 'page');
+  });
+
   it('marks Backpack active on /collection', () => {
     pathnameMock.mockReturnValue('/play/child_1/collection');
     render(<KidNavBar childId="child_1" />);

@@ -124,6 +124,8 @@ export const curriculumPacks = pgTable(
     ownerUserId: text('owner_user_id').references(() => users.id, {
       onDelete: 'cascade',
     }),
+    nameZh: text('name_zh'),
+    nameEn: text('name_en'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

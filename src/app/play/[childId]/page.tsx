@@ -18,6 +18,8 @@ import { getEquippedPet } from '@/lib/db/pets';
 import { listOwnedDecorationsForChild } from '@/lib/db/decor';
 import { getActivityForRange } from '@/lib/db/activity';
 import { todayUtcIso } from '@/lib/db/streaks';
+import { MapHeaderPill } from '@/components/play/MapHeaderPill';
+import { listMapsForChild } from '@/lib/db/maps';
 
 function mondayOfIsoWeek(iso: string): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -54,6 +56,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     pet,
     ownedDecorations,
     weekActivity,
+    maps,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -63,7 +66,10 @@ export default async function PlayHomePage({ params }: PageProps) {
     getEquippedPet(child.id),
     listOwnedDecorationsForChild(child.id),
     getActivityForRange(child.id, monday, sunday),
+    listMapsForChild(child.id),
   ]);
+
+  const currentMap = maps.find((m) => m.isCurrent) ?? null;
 
   const equippedRefs: Partial<Record<string, string | null>> = {};
   for (const [slot, info] of Object.entries(equipped)) {
@@ -135,6 +141,15 @@ export default async function PlayHomePage({ params }: PageProps) {
           {balance.balance}
         </span>
       </section>
+
+      <MapHeaderPill
+        childId={childId}
+        currentMap={
+          currentMap
+            ? { nameZh: currentMap.nameZh, nameEn: currentMap.nameEn }
+            : null
+        }
+      />
 
       <WeekStrip activity={weekActivity} todayIso={todayIso} childId={childId} />
 
