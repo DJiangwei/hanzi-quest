@@ -126,21 +126,16 @@ The same try/catch wrapper goes into `regenerateCharacter` after its `db.transac
 
 ## 7. Scene swap
 
-### `src/lib/scenes/compile-week.ts` — projection update
+### Runtime data flow (no compile-week change needed)
 
-The image_word scene's `WordOption` projection extends by one column:
+`compileWeekIntoLevels` stores only IDs in `scene_config` for `image_word` scenes: `{ characterId, wordId, distractorWordIds }`. The full word details are materialized at runtime through this chain:
 
-```ts
-type WordOption = {
-  wordId: string;
-  text: string;
-  imageHook: string | null;
-  meaningEn: string | null;
-  imageUrl: string | null;   // NEW
-};
-```
+1. `getCharactersWithDetailsForWeek(weekId)` returns `WordRow[]` per character — this is the full Drizzle row and will include `imageUrl` automatically once the column exists.
+2. `src/app/play/[childId]/level/[weekId]/[section]/page.tsx` maps each `WordRow` into the `pool` shape with `{id, text, imageHook, meaningEn}`. We extend this mapper to include `imageUrl: w.imageUrl ?? null`.
+3. `SceneRunner` (`src/components/scenes/SceneRunner.tsx`) holds the `CharacterWord` interface and shapes the `correctWord`/`distractors` props passed to `ImageWordScene`. We extend `CharacterWord` with `imageUrl: string | null` and forward it through the prop shaping at line ~388.
+4. `ImageWordScene` receives the new field and swaps stimulus.
 
-After PR ships, run the existing `pnpm tsx scripts/recompile-all-weeks.ts` to refresh `scene_config` JSON across all 10 published weeks so previously-compiled `image_word` scenes pick up the new `imageUrl` field.
+**No `scene_config` JSON change, no `recompile-all-weeks.ts` run needed.** The change is purely in the runtime materialization layer.
 
 ### `src/components/scenes/ImageWordScene.tsx` — stimulus swap
 
@@ -201,8 +196,7 @@ Vitest + RTL + jsdom; mock `@/db`, `@clerk/nextjs/server`, `next/cache`, `next/n
 | `tests/unit/lib/ai/pollinations.test.ts` | `buildPollinationsUrl` produces correct URL: preamble prepended; URL-encoded; query params `model=flux`, `width=512`, `height=512`, `nologo=true`, `enhance=true`, deterministic `seed` from wordId. |
 | `tests/unit/lib/ai/pollinations-fetch.test.ts` | `fetchAndUploadImage`: success path (mocked fetch → bytes → `put` called with `words/{wordId}.png` → returns blob URL); fetch !ok throws `PollinationsError`; AbortError propagates. |
 | `tests/unit/lib/actions/images.test.ts` | `generateMissingImagesForWeek`: returns counts; skips words where `imageUrl` already set; skips words where `imageHook` is NULL; per-word error doesn't fail batch (succeeded=N-1, failed=1); concurrency cap honored. |
-| `tests/unit/components/scenes/ImageWordScene.test.tsx` (extend existing) | renders `<img>` with `src=imageUrl` + `alt=imageHook` when imageUrl set; renders text card when imageUrl null; MCQ flow still functional (3 distractors, 1 correct → onComplete(true)). |
-| `tests/unit/lib/scenes/compile-week.test.ts` (extend) | image_word scene config carries `imageUrl` per WordOption; null when DB row has null; non-null pass-through. |
+| `tests/unit/image-word-scene.test.tsx` (extend existing) | renders `<img>` with `src=imageUrl` + `alt=imageHook` when imageUrl set; renders text card when imageUrl null; MCQ flow still functional (3 distractors, 1 correct → onComplete(true)). |
 
 ### Manual verification (before opening the PR)
 
@@ -230,13 +224,14 @@ Vitest + RTL + jsdom; mock `@/db`, `@clerk/nextjs/server`, `next/cache`, `next/n
 - `src/lib/errors/images-errors.ts` — `PollinationsError`, `BlobUploadError` (pure, client-safe)
 - `scripts/backfill-word-images.ts`
 
-**Modified (4):**
+**Modified (5):**
 - `src/db/schema/content.ts` — add `imageUrl` to `words` table
 - `src/lib/ai/generate-content.ts` — call `generateMissingImagesForWeek` in `generateWeekContent` + `regenerateCharacter`
-- `src/lib/scenes/compile-week.ts` — project `imageUrl` into image_word `scene_config`
+- `src/app/play/[childId]/level/[weekId]/[section]/page.tsx` — include `imageUrl` in the `pool` word mapper
+- `src/components/scenes/SceneRunner.tsx` — extend `CharacterWord` interface + forward `imageUrl` to `ImageWordScene`
 - `src/components/scenes/ImageWordScene.tsx` — swap stimulus to `<img>` with fallback
 
-**Tests:** 5 new/extended test files; ~30-40 assertions total.
+**Tests:** 4 new/extended test files; ~25-35 assertions total.
 
 **Net LOC:** ~350-450.
 
