@@ -32,7 +32,8 @@ export function KidNavBar({ childId }: Props) {
       isActive: (p) =>
         p === `/play/${childId}` ||
         p.startsWith(`/play/${childId}/week`) ||
-        p.startsWith(`/play/${childId}/level`),
+        p.startsWith(`/play/${childId}/level`) ||
+        p.startsWith(`/play/${childId}/maps`),
     },
     {
       key: 'backpack',
