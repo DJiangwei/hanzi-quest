@@ -66,6 +66,7 @@ export default async function SectionPage({ params }: PageProps) {
       text: w.text,
       imageHook: w.imageHook ?? null,
       meaningEn: w.meaningEn ?? null,
+      imageUrl: w.imageUrl ?? null,
     })),
     sentence: c.sentence
       ? {

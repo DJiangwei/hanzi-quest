@@ -38,6 +38,7 @@ interface CharacterWord {
   text: string;
   imageHook: string | null;
   meaningEn: string | null;
+  imageUrl: string | null;
 }
 
 interface CharacterDetail {
@@ -390,12 +391,14 @@ export function SceneRunner({
             text: correctWord.text,
             imageHook: correctWord.imageHook,
             meaningEn: correctWord.meaningEn,
+            imageUrl: correctWord.imageUrl,
           }}
           distractors={distractors.map((w) => ({
             wordId: w.id,
             text: w.text,
             imageHook: w.imageHook,
             meaningEn: w.meaningEn,
+            imageUrl: w.imageUrl,
           }))}
           onComplete={advance}
           hintRequested={hintRequested}

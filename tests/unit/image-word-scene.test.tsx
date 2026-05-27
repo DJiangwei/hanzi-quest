@@ -22,11 +22,12 @@ const correctWord = {
   text: '大人',
   imageHook: 'a smiling adult standing next to a small child',
   meaningEn: 'adult',
+  imageUrl: null,
 };
 const distractors = [
-  { wordId: 'w-d1', text: '主人', imageHook: null, meaningEn: 'master' },
-  { wordId: 'w-d2', text: '人民', imageHook: null, meaningEn: 'people' },
-  { wordId: 'w-d3', text: '老人', imageHook: null, meaningEn: 'elder' },
+  { wordId: 'w-d1', text: '主人', imageHook: null, meaningEn: 'master', imageUrl: null },
+  { wordId: 'w-d2', text: '人民', imageHook: null, meaningEn: 'people', imageUrl: null },
+  { wordId: 'w-d3', text: '老人', imageHook: null, meaningEn: 'elder', imageUrl: null },
 ];
 
 beforeEach(() => {
@@ -80,5 +81,35 @@ describe('ImageWordScene', () => {
   it('falls back to meaningEn when imageHook is null', () => {
     render(<ImageWordScene baseChar={baseChar} correctWord={{ ...correctWord, imageHook: null }} distractors={distractors} onComplete={() => {}} />);
     expect(screen.getByText('adult')).toBeInTheDocument();
+  });
+
+  it('renders <img> with src=imageUrl when imageUrl is set', () => {
+    const wordWithImage = {
+      ...correctWord,
+      imageUrl: 'https://blob/x.png',
+    };
+    render(<ImageWordScene baseChar={baseChar} correctWord={wordWithImage} distractors={distractors} onComplete={() => {}} />);
+    const img = screen.getByRole('img');
+    expect(img).toHaveAttribute('src', 'https://blob/x.png');
+  });
+
+  it('uses imageHook as the <img> alt text when imageUrl is set', () => {
+    const wordWithImage = {
+      ...correctWord,
+      imageUrl: 'https://blob/x.png',
+    };
+    render(<ImageWordScene baseChar={baseChar} correctWord={wordWithImage} distractors={distractors} onComplete={() => {}} />);
+    const img = screen.getByRole('img');
+    expect(img).toHaveAttribute('alt', 'a smiling adult standing next to a small child');
+  });
+
+  it('falls back to the text card when imageUrl is null', () => {
+    const wordWithoutImage = {
+      ...correctWord,
+      imageUrl: null,
+    };
+    render(<ImageWordScene baseChar={baseChar} correctWord={wordWithoutImage} distractors={distractors} onComplete={() => {}} />);
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByText(/a smiling adult/)).toBeInTheDocument();
   });
 });
