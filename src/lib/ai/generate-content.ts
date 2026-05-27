@@ -10,6 +10,7 @@ import {
   upsertSimplifiedCharacter,
 } from '@/lib/db/characters';
 import { setWeekStatus } from '@/lib/db/weeks';
+import { generateMissingImagesForWeek } from '@/lib/actions/images';
 import {
   GENERATE_WEEK_SYSTEM_PROMPT,
   PROMPT_VERSION,
@@ -89,6 +90,15 @@ export async function generateWeekContent(
     });
 
     await setWeekStatus(input.weekId, 'awaiting_review');
+
+    try {
+      const imgs = await generateMissingImagesForWeek(input.weekId);
+      console.log(
+        `[images] week=${input.weekId} attempted=${imgs.attempted} succeeded=${imgs.succeeded} failed=${imgs.failed}`,
+      );
+    } catch (err) {
+      console.error('[images] failed for week', input.weekId, err);
+    }
 
     await completeJob(job.id, {
       output: content,
@@ -224,6 +234,15 @@ export async function regenerateCharacter(
         meaningEn: c.sentence.meaningEn,
       });
     });
+
+    try {
+      const imgs = await generateMissingImagesForWeek(input.weekId);
+      console.log(
+        `[images] regen week=${input.weekId} attempted=${imgs.attempted} succeeded=${imgs.succeeded} failed=${imgs.failed}`,
+      );
+    } catch (err) {
+      console.error('[images] regen failed for week', input.weekId, err);
+    }
 
     await completeJob(job.id, {
       output: c,
