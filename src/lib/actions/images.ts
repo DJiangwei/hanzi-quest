@@ -46,7 +46,10 @@ export async function generateMissingImagesForWeek(weekId: string): Promise<{
       batch.map(async (w) => {
         try {
           const url = await fetchAndUploadImage(w.imageHook!, w.id);
-          await db.update(words).set({ imageUrl: url }).where(eq(words.id, w.id));
+          await db
+            .update(words)
+            .set({ imageUrl: url })
+            .where(and(eq(words.id, w.id), isNull(words.imageUrl)));
           return { ok: true as const };
         } catch (err) {
           console.error(`[generateMissingImagesForWeek] ${w.text}:`, err);
