@@ -70,6 +70,7 @@ export const words = pgTable('words', {
   meaningEn: text('meaning_en'),
   audioUrl: text('audio_url'),
   imageHook: text('image_hook'),
+  imageUrl: text('image_url'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
