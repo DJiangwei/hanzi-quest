@@ -6,7 +6,10 @@ import { db } from '@/db';
 import { characterWord, weekCharacters, words } from '@/db/schema';
 import { fetchAndUploadImage } from '@/lib/ai/pollinations';
 
-const CONCURRENCY = 5;
+// Pollinations.ai free tier enforces 1 concurrent request per IP (others
+// return HTTP 402 "Queue full"). At concurrency>1 the success rate
+// collapses. ~5-10s per image; a 10-word week regen takes ~50-100s.
+const CONCURRENCY = 1;
 
 export async function generateMissingImagesForWeek(weekId: string): Promise<{
   attempted: number;
