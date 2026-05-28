@@ -9,7 +9,10 @@
  * after partial failure (retries NULLs only).
  *
  * Usage: pnpm tsx scripts/backfill-word-images.ts
- * Cost: $0 (Pollinations is free). Wall time: ~80-180s at concurrency=10 for ~238 words.
+ * Cost: $0 (Pollinations is free).
+ * Wall time: ~30-40 min for ~426 words at concurrency=1 (Pollinations free
+ * tier enforces 1 concurrent request per IP; higher concurrency hits 402
+ * "Queue full" on every request after the first).
  *
  * CAUTION: writes to prod via shared DATABASE_URL on Neon free tier and
  * shared BLOB_READ_WRITE_TOKEN.
@@ -48,7 +51,7 @@ async function main() {
 
   let succeeded = 0;
   let failed = 0;
-  const CONCURRENCY = 10;
+  const CONCURRENCY = 1;
 
   for (let i = 0; i < rows.length; i += CONCURRENCY) {
     const batch = rows.slice(i, i + CONCURRENCY);
