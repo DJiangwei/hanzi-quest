@@ -24,13 +24,13 @@ describe('buildPollinationsUrl', () => {
     expect(promptPart).toContain('%20');
   });
 
-  it('sets the required query params', () => {
+  it('sets the required query params (model=turbo, no enhance — both are paid)', () => {
     const url = new URL(buildPollinationsUrl(hook, wordId));
-    expect(url.searchParams.get('model')).toBe('flux');
+    expect(url.searchParams.get('model')).toBe('turbo');
     expect(url.searchParams.get('width')).toBe('512');
     expect(url.searchParams.get('height')).toBe('512');
     expect(url.searchParams.get('nologo')).toBe('true');
-    expect(url.searchParams.get('enhance')).toBe('true');
+    expect(url.searchParams.has('enhance')).toBe(false);
   });
 
   it('seed is deterministic from the wordId prefix', () => {
