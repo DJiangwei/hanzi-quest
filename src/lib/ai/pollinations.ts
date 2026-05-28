@@ -1,5 +1,10 @@
-// Pollinations.ai is a free, key-less image-gen API. Reference:
+// Pollinations.ai image-gen API. Reference:
 // https://image.pollinations.ai/prompt/<urlencoded>?<params>
+//
+// Free tier (no key): `model=turbo` plus the default (no model) generator.
+// Paid tier (returns 402 without auth): `model=flux`, `enhance=true`.
+// We use `turbo` because `flux` + `enhance` cost money and `turbo` produces
+// perfectly serviceable cartoon images for our 192px-tall scene container.
 
 import { put } from '@vercel/blob';
 import { BlobUploadError, PollinationsError } from '@/lib/errors/images-errors';
@@ -11,11 +16,10 @@ export function buildPollinationsUrl(imageHook: string, wordId: string): string 
   const prompt = `${POLLINATIONS_STYLE_PREAMBLE} ${imageHook}`;
   const seed = parseInt(wordId.replace(/-/g, '').slice(0, 8), 16);
   const params = new URLSearchParams({
-    model: 'flux',
+    model: 'turbo',
     width: '512',
     height: '512',
     nologo: 'true',
-    enhance: 'true',
     seed: String(seed),
   });
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?${params.toString()}`;
