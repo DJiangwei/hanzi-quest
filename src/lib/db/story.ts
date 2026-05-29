@@ -181,7 +181,6 @@ export async function getLatestBossScoreForChildWeek(
  * for that ordinal.
  */
 export async function getCharactersAvailableForChildWeek(
-  _childId: string,
   weekId: string,
 ): Promise<string[]> {
   const target = alias(weeks, 'target_week');
