@@ -1,5 +1,5 @@
 {
-  "id": "1ac932e7-579d-4a06-821a-6cbcfad2e432",
+  "id": "1e2608b0-007d-4795-b232-77b2f67543f9",
   "prevId": "73680966-557c-48ee-b5c3-b3936d0519d8",
   "version": "7",
   "dialect": "postgresql",
@@ -3549,8 +3549,8 @@
         }
       },
       "indexes": {
-        "story_chapters_child_week_uq": {
-          "name": "story_chapters_child_week_uq",
+        "story_chapters_child_week_unique": {
+          "name": "story_chapters_child_week_unique",
           "columns": [
             {
               "expression": "child_id",

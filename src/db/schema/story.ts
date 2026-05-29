@@ -40,7 +40,7 @@ export const storyChapters = pgTable(
       .defaultNow(),
   },
   (t) => [
-    uniqueIndex('story_chapters_child_week_uq').on(t.childId, t.weekId),
+    uniqueIndex('story_chapters_child_week_unique').on(t.childId, t.weekId),
     index('story_chapters_child_created_idx').on(t.childId, t.createdAt),
     check(
       'story_chapters_boss_score_range',
