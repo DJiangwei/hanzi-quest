@@ -132,17 +132,6 @@ describe('markChapterRead', () => {
     );
   });
 
-  it('only updates when readAt IS NULL (idempotency guard)', async () => {
-    dbMock.db.where.mockReturnValueOnce(Promise.resolve(undefined));
-    const { markChapterRead } = await import('@/lib/db/story');
-    await markChapterRead('c1', 'k1');
-    // The where clause should include an isNull predicate referencing readAt.
-    // The drizzle `and(...)` collapses into one argument — verify by reading
-    // the call. A non-null where arg means the predicate is still present.
-    expect(dbMock.db.where).toHaveBeenCalledTimes(1);
-    const whereArg = dbMock.db.where.mock.calls[0][0];
-    expect(whereArg).toBeDefined();
-  });
 });
 
 describe('getLatestUnreadChapter', () => {

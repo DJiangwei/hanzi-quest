@@ -101,13 +101,12 @@ export async function getStoryChapterByWeek(
 export async function listStoryChaptersForChild(
   childId: string,
 ): Promise<StoryChapterRow[]> {
-  return db
+  const rows = await db
     .select()
     .from(storyChapters)
     .where(eq(storyChapters.childId, childId))
-    .orderBy(desc(storyChapters.createdAt)) as unknown as Promise<
-    StoryChapterRow[]
-  >;
+    .orderBy(desc(storyChapters.createdAt));
+  return rows as StoryChapterRow[];
 }
 
 export async function markChapterRead(
