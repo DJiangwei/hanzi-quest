@@ -25,10 +25,21 @@ const halls: AtlasHallSummary[] = [
 ];
 
 describe('AtlasHub', () => {
-  it('renders one hall card per pack', () => {
+  it('renders one hall card per pack, plus the story-library card', () => {
     const { container } = render(<AtlasHub childId="c1" halls={halls} />);
     const list = container.querySelector('[data-testid="atlas-hall-list"]');
-    expect(list?.children.length).toBe(2);
+    // 2 pack cards + 1 story-library card
+    expect(list?.children.length).toBe(3);
+  });
+
+  it('renders a story-library hall card linking to the story library', () => {
+    const { container } = render(<AtlasHub childId="c1" halls={halls} />);
+    const storyLink = container.querySelector(
+      '[data-testid="atlas-hall-story-library"]',
+    );
+    expect(storyLink?.getAttribute('href')).toBe(
+      '/play/c1/collection/story-library',
+    );
   });
 
   it('renders both Chinese and English display names for each hall', () => {
