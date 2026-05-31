@@ -12,7 +12,7 @@ import { getPackMeta } from '@/lib/collections/packRegistry';
 import { checkAndGrantTrophies } from '@/lib/db/trophies';
 import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 import { todayUtcIso } from '@/lib/db/streaks';
-import { pullCardInTx, type CardGrantResult, type CardGrantSkipped } from '@/lib/db/grants';
+import { pullCardInTx, swapShardsInTx, type CardGrantResult, type CardGrantSkipped } from '@/lib/db/grants';
 
 // AlreadyClaimedError is NOT re-exported here — 'use server' files may only
 // export async functions. Client components import it directly from
@@ -113,6 +113,21 @@ export async function pullCardForChild(
   );
   if (result.granted) {
     revalidatePath(`/play/${childId}/collection/${result.packSlug}`);
+  }
+  return result;
+}
+
+export async function swapShardsForItem(
+  childId: string,
+  itemId: string,
+): Promise<
+  | { ok: true; shardsRemaining: number }
+  | { ok: false; reason: 'insufficient_shards' | 'already_owned' | 'item_not_found' }
+> {
+  const { child } = await requireChild(childId);
+  const result = await db.transaction((tx) => swapShardsInTx(tx, child.id, itemId));
+  if (result.ok) {
+    revalidatePath(`/play/${child.id}/collection`);
   }
   return result;
 }
