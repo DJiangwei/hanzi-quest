@@ -83,7 +83,7 @@ describe('compileWeekIntoLevels — segments + caps', () => {
     };
   }
 
-  it('emits exactly 23 levels for a 10-char week with full data + boss (PR #35 shape)', async () => {
+  it('emits exactly 22 levels for a 10-char week with full data + boss (PR #51: visual_pick retired)', async () => {
     const chars = Array.from({ length: 10 }, (_, i) =>
       makeFullChar('c' + i, String.fromCharCode(0x4eba + i), true),
     );
@@ -91,16 +91,17 @@ describe('compileWeekIntoLevels — segments + caps', () => {
     mocks.selectWhereMock.mockResolvedValue(allTemplates);
 
     const count = await compileWeekIntoLevels('w_1');
-    // 10 flashcards + 3 audio + 3 sight + 6 meaning + 1 boss = 23
-    expect(count).toBe(23);
+    // 10 flashcards + 3 audio + 2 sight (image_pick+word_match) + 6 meaning + 1 boss = 22
+    // (visual_pick retired in PR #51; no image_word template in allTemplates here)
+    expect(count).toBe(22);
 
     const [rows] = mocks.insertValuesMock.mock.calls[0];
     const segs = rows.map((r: { sceneConfig: { segment?: string } }) => r.sceneConfig.segment);
     expect(segs.filter((s: string) => s === 'review')).toHaveLength(10);
-    // sound+sight+meaning = 12 practice scenes
+    // sound+sight+meaning = 11 practice scenes (was 12; sight 3→2)
     expect(segs.filter((s: string) => s === 'sound').length +
       segs.filter((s: string) => s === 'sight').length +
-      segs.filter((s: string) => s === 'meaning').length).toBe(12);
+      segs.filter((s: string) => s === 'meaning').length).toBe(11);
     expect(segs.filter((s: string) => s === 'boss')).toHaveLength(1);
   });
 

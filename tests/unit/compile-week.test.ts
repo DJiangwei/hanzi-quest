@@ -142,7 +142,7 @@ describe('compileWeekIntoLevels', () => {
     expect(templateIds).not.toContain('tmpl_pinyin');
   });
 
-  it('substitutes visual_pick when no character has an imageHook', async () => {
+  it('PR #51: no visual_pick emitted when no character has an imageHook (slot stays unfilled)', async () => {
     mocks.getCharactersWithDetailsForWeekMock.mockResolvedValue([
       makeChar('c1', '人', { words: [{ text: '大人' }] }),
       makeChar('c2', '口', { words: [{ text: '门口' }] }),
@@ -150,12 +150,14 @@ describe('compileWeekIntoLevels', () => {
     mocks.selectWhereMock.mockResolvedValue(allTemplates);
 
     const count = await compileWeekIntoLevels('w_1');
-    // N=2: review(2) + audio(1) + sight(1: visual_pick, no word_match since sight<3) + meaning(4) = 8
-    expect(count).toBe(8);
+    // N=2: sizing {audio:1, sight:1, imageWord:1, meaning:4}
+    // SIGHT: image_pick skipped (no imageHook chars, no fallback); image_word skipped (no word imageHooks)
+    // review(2) + audio(1) + sight(0) + meaning(4) = 7
+    expect(count).toBe(7);
     const [rows] = mocks.insertValuesMock.mock.calls[0];
     const templateIds = rows.map((r: { sceneTemplateId: string }) => r.sceneTemplateId);
     expect(templateIds).not.toContain('tmpl_image');
-    expect(templateIds).toContain('tmpl_visual');
+    expect(templateIds).not.toContain('tmpl_visual');
   });
 
   it('skips word_match when N<4 (sight count = 1 for N=2-3); keeps other sight scenes', async () => {
