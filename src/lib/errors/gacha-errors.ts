@@ -22,3 +22,37 @@ export class AlreadyClaimedError extends Error {
     this.name = 'AlreadyClaimedError';
   }
 }
+
+export class WeeklyCapReachedError extends Error {
+  constructor(
+    public readonly childId: string,
+    public readonly cap: number,
+    public readonly cardsThisWeek: number,
+  ) {
+    super(`Child ${childId} reached the weekly card cap (${cardsThisWeek}/${cap})`);
+    this.name = 'WeeklyCapReachedError';
+  }
+}
+
+export class InsufficientShardsError extends Error {
+  constructor(
+    public readonly childId: string,
+    public readonly packId: string,
+    public readonly needed: number,
+    public readonly have: number,
+  ) {
+    super(`Child ${childId} has ${have} shards for pack ${packId}; needs ${needed}`);
+    this.name = 'InsufficientShardsError';
+  }
+}
+
+export class CardGrantAlreadyExistsError extends Error {
+  constructor(
+    public readonly childId: string,
+    public readonly source: string,
+    public readonly refId: string,
+  ) {
+    super(`Card grant already recorded for (${childId}, ${source}, ${refId})`);
+    this.name = 'CardGrantAlreadyExistsError';
+  }
+}
