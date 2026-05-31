@@ -45,9 +45,10 @@ describe('ImageWordScene', () => {
     expect(screen.getByText(/a smiling adult/)).toBeInTheDocument();
   });
 
-  it('renders the base 字 chip', () => {
+  it('does NOT render the standalone base hanzi chip (hidden per PR #51)', () => {
     render(<ImageWordScene baseChar={baseChar} correctWord={correctWord} distractors={distractors} onComplete={() => {}} />);
-    expect(screen.getByText('人')).toBeInTheDocument();
+    // '人' only appears as part of word choices (大人, 主人, etc.), never as a standalone styled chip
+    expect(document.querySelector('.bg-amber-200')).toBeNull();
   });
 
   it('renders 4 word choices', () => {
@@ -111,5 +112,31 @@ describe('ImageWordScene', () => {
     render(<ImageWordScene baseChar={baseChar} correctWord={wordWithoutImage} distractors={distractors} onComplete={() => {}} />);
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.getByText(/a smiling adult/)).toBeInTheDocument();
+  });
+
+  it('does not render the base hanzi chip in the prompt (PR #51)', () => {
+    const baseChar2 = { characterId: 'b1', hanzi: '鱼' };
+    const correctWord2 = {
+      wordId: 'w1', text: '小鱼', imageHook: 'a small fish', meaningEn: 'small fish', imageUrl: null,
+    };
+    const distractors2 = [
+      { wordId: 'w2', text: '金鱼', imageHook: null, meaningEn: 'goldfish', imageUrl: null },
+      { wordId: 'w3', text: '鱼缸', imageHook: null, meaningEn: 'fish tank', imageUrl: null },
+      { wordId: 'w4', text: '鱼网', imageHook: null, meaningEn: 'fish net', imageUrl: null },
+    ];
+    render(
+      <ImageWordScene
+        baseChar={baseChar2}
+        correctWord={correctWord2}
+        distractors={distractors2}
+        onComplete={() => undefined}
+      />,
+    );
+    // The prompt must NOT contain the base hanzi as a styled chip
+    const promptZone = screen.queryByText(/Match the picture|看图选词/i);
+    expect(promptZone).toBeInTheDocument();
+    // No bg-amber-200 chip with 鱼 should exist (the old chip had this exact class set)
+    const oldChip = document.querySelector('.bg-amber-200');
+    expect(oldChip).toBeNull();
   });
 });
