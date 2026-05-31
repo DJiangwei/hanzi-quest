@@ -14,7 +14,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { PackPageBody } from '@/components/play/PackPageBody';
-import type { CollectibleItem } from '@/lib/db/collections';
+import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 
 const items: CollectibleItem[] = [
   {
@@ -45,6 +45,20 @@ const items: CollectibleItem[] = [
   },
 ];
 
+// OwnedCollectibleItem fixtures for PR #52 shard/dupe tests
+const ownedItems: OwnedCollectibleItem[] = [
+  {
+    ...items[0],
+    count: 3,
+    firstObtainedAt: new Date(),
+  },
+  {
+    ...items[1],
+    count: 1,
+    firstObtainedAt: new Date(),
+  },
+];
+
 beforeEach(() => {
   mocks.push.mockReset();
   mocks.refresh.mockReset();
@@ -60,10 +74,60 @@ describe('PackPageBody gacha removal (PR #52)', () => {
         packSlug="flags-v1"
         items={items}
         ownedItemIds={['i1']}
+        ownedItems={[]}
         balance={1000}
+        shardCount={0}
       />,
     );
     expect(screen.queryByRole('button', { name: /抽卡|buy a pull|gacha/i })).toBeNull();
+  });
+});
+
+describe('PackPageBody PR #52 surface', () => {
+  it('renders ShardPill in the header', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['i1']}
+        ownedItems={ownedItems}
+        balance={1000}
+        shardCount={7}
+      />,
+    );
+    expect(screen.getByText(/7/)).toBeInTheDocument();
+    expect(screen.getByText(/🔹/)).toBeInTheDocument();
+  });
+
+  it('renders ×N badge for items where count > 1', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['i1', 'i2']}
+        ownedItems={ownedItems}
+        balance={1000}
+        shardCount={0}
+      />,
+    );
+    expect(screen.getByText(/×3/)).toBeInTheDocument();
+  });
+
+  it('does NOT render ×N badge for items where count is 1', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['i1', 'i2']}
+        ownedItems={ownedItems}
+        balance={1000}
+        shardCount={0}
+      />,
+    );
+    expect(screen.queryByText(/×1/)).toBeNull();
   });
 });
 
@@ -75,7 +139,9 @@ describe('PackPageBody', () => {
         packSlug="flags-v1"
         items={items}
         ownedItemIds={['i1']}
+        ownedItems={[]}
         balance={1000}
+        shardCount={0}
       />,
     );
     expect(screen.getByText('世界国旗')).toBeInTheDocument();
@@ -92,7 +158,9 @@ describe('PackPageBody', () => {
         packSlug="flags-v1"
         items={items}
         ownedItemIds={['i1']}
+        ownedItems={[]}
         balance={1000}
+        shardCount={0}
       />,
     );
     expect(screen.getByText(/1 \/ 2/)).toBeInTheDocument();
@@ -105,7 +173,9 @@ describe('PackPageBody', () => {
         packSlug="flags-v1"
         items={items}
         ownedItemIds={[]}
+        ownedItems={[]}
         balance={500}
+        shardCount={0}
       />,
     );
     expect(screen.getByText(/🪙 500/)).toBeInTheDocument();

@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { PackGrid } from './PackGrid';
+import { ShardPill } from './ShardPill';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
-import type { CollectibleItem } from '@/lib/db/collections';
+import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 
 interface Props {
@@ -17,7 +18,11 @@ interface Props {
   packSlug: string;
   items: CollectibleItem[];
   ownedItemIds: string[];
+  /** Full owned records with count — used for ×N dupe badges. */
+  ownedItems: OwnedCollectibleItem[];
   balance: number;
+  /** Shard balance for this child × pack pair. */
+  shardCount: number;
 }
 
 /**
@@ -33,7 +38,9 @@ export function PackPageBody({
   packSlug,
   items,
   ownedItemIds,
+  ownedItems,
   balance,
+  shardCount,
 }: Props) {
   const meta = getPackMeta(packSlug);
   if (!meta) {
@@ -41,6 +48,11 @@ export function PackPageBody({
   }
   const router = useRouter();
   const ownedSet = new Set(ownedItemIds);
+
+  // Build a map from item id → count for dupe badge rendering
+  const countById = new Map<string, number>(
+    ownedItems.map((o) => [o.id, o.count]),
+  );
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4">
@@ -52,9 +64,12 @@ export function PackPageBody({
         >
           ← 收藏馆 / Atlas
         </WoodSignButton>
-        <span className="text-sm font-semibold text-[var(--color-treasure-700)]">
-          🪙 {balance}
-        </span>
+        <div className="flex items-center gap-2">
+          <ShardPill count={shardCount} />
+          <span className="text-sm font-semibold text-[var(--color-treasure-700)]">
+            🪙 {balance}
+          </span>
+        </div>
       </div>
 
       <header
@@ -78,7 +93,32 @@ export function PackPageBody({
       </header>
 
       <div className="rounded-2xl border border-[#c89f5e] bg-[linear-gradient(180deg,#f5ead0_0%,#ead7a8_100%)] p-4">
-        <PackGrid items={items} ownedItemIds={ownedSet} meta={meta} />
+        <div
+          data-testid="pack-grid-with-badges"
+          className={`grid grid-cols-${meta.gridColumns ?? 3} gap-2.5`}
+          style={{ gridTemplateColumns: `repeat(${meta.gridColumns ?? 3}, minmax(0, 1fr))` }}
+        >
+          {items.map((item) => {
+            const Card = meta.ItemCard;
+            const count = countById.get(item.id) ?? 0;
+            const showDupe = count > 1;
+            return (
+              <div key={item.id} className="relative">
+                <Card
+                  item={item}
+                  owned={ownedSet.has(item.id)}
+                  size="md"
+                  compact={false}
+                />
+                {showDupe && (
+                  <span className="absolute right-0.5 top-0.5 z-10 rounded-full bg-sky-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white">
+                    ×{count}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

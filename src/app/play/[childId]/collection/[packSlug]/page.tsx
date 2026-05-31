@@ -4,6 +4,7 @@ import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
 import {
   getPackBySlug,
+  getShardBalance,
   listChildCollection,
   listPackItems,
 } from '@/lib/db/collections';
@@ -27,10 +28,11 @@ export default async function PackPage({ params }: PageProps) {
   const meta = getPackMeta(packSlug);
   if (!pack || !meta) notFound();
 
-  const [items, owned, balance] = await Promise.all([
+  const [items, owned, balance, shardCount] = await Promise.all([
     listPackItems(pack.id),
     listChildCollection(childId, pack.id),
     getCoinBalance(childId),
+    getShardBalance(childId, pack.id),
   ]);
 
   const ownedItemIds = owned.map((o) => o.id);
@@ -42,7 +44,9 @@ export default async function PackPage({ params }: PageProps) {
         packSlug={packSlug}
         items={items}
         ownedItemIds={ownedItemIds}
+        ownedItems={owned}
         balance={balance.balance}
+        shardCount={shardCount}
       />
     </main>
   );
