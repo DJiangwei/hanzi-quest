@@ -12,12 +12,20 @@ import type { PullResult } from '@/lib/db/gacha';
 import type { ZodiacSlug } from '@/components/play/zodiac-icons';
 import { TreasureChestReveal } from './TreasureChestReveal';
 
+interface CardGrantSummary {
+  granted: boolean;
+  itemId?: string;
+  packSlug?: string;
+  isDupe?: boolean;
+}
+
 interface Props {
   weekLabel: string;
   coinsThisSession: number;
   childId: string;
   weekId: string;
   chestAvailable: boolean;
+  cardGrant?: CardGrantSummary | null;
   onContinue: () => void;
 }
 
@@ -27,6 +35,7 @@ export function LevelFanfare({
   childId,
   weekId,
   chestAvailable,
+  cardGrant,
   onContinue,
 }: Props) {
   const reduced = useReducedMotion();
@@ -118,6 +127,17 @@ export function LevelFanfare({
         </WoodSignButton>
       </div>
       {pullError && <p className="text-sm text-[var(--color-bad)]">{pullError}</p>}
+      {cardGrant?.granted ? (
+        <div className="mt-4 rounded-2xl bg-amber-100 px-4 py-3 text-center text-amber-900">
+          <p className="text-sm font-semibold">
+            {cardGrant.isDupe ? '+1 碎片 / +1 shard' : '🎴 新卡片！/ New card!'}
+          </p>
+        </div>
+      ) : chestAvailable && cardGrant?.granted === false ? (
+        <div className="mt-4 rounded-2xl bg-stone-100 px-4 py-3 text-center text-stone-700">
+          <p className="text-sm">今天的卡片满了 🎉 / Card limit reached</p>
+        </div>
+      ) : null}
     </main>
   );
 }
