@@ -16,6 +16,7 @@ export const trophyCategory = pgEnum('trophy_category', [
   'collection',
   'coins',
   'practice',
+  'story',
 ]);
 
 export const trophies = pgTable(

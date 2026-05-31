@@ -18,7 +18,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(2);
 }
 
-type Category = 'mastery' | 'streak' | 'collection' | 'coins' | 'practice';
+type Category = 'mastery' | 'streak' | 'collection' | 'coins' | 'practice' | 'story';
 interface TrophySeed {
   slug: string;
   emoji: string;
@@ -59,6 +59,8 @@ const TROPHIES: TrophySeed[] = [
   { slug: 'first-translate-pick', emoji: '🌐', nameZh: '双语小达人', nameEn: 'Bilingual Spark', descriptionZh: '第一次中英翻译 100 分', descriptionEn: 'First translate_pick scored ≥100', loreZh: '两种语言都能玩。', loreEn: 'Two languages, one mind.', category: 'practice', displayOrder: 41 },
   { slug: 'first-sentence-cloze', emoji: '📝', nameZh: '填字大师', nameEn: 'Cloze Master', descriptionZh: '第一次句子填字 100 分', descriptionEn: 'First sentence_cloze scored ≥100', loreZh: '句子里少了一个字，被你找到了。', loreEn: 'A sentence missed a word — you found it.', category: 'practice', displayOrder: 42 },
   { slug: 'equip-sound-theme', emoji: '🎵', nameZh: '音效收藏家', nameEn: 'Sound Collector', descriptionZh: '装备第一个非默认音效主题', descriptionEn: 'Equip your first non-default sound theme', loreZh: '不一样的音乐，不一样的航行。', loreEn: 'A new sound, a new voyage.', category: 'practice', displayOrder: 43 },
+
+  { slug: 'first-chapter', emoji: '📖', nameZh: '第一章', nameEn: 'First Chapter', descriptionZh: '解锁你的第一章故事', descriptionEn: 'Unlock your first story chapter', loreZh: '海盗日记的第一页翻开了。', loreEn: "Page one of your pirate's log is open.", category: 'story', displayOrder: 100 },
 ];
 
 async function main() {

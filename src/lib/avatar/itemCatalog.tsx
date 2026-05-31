@@ -14,6 +14,13 @@ export interface ItemDef {
   /** Undefined for default items. */
   priceCoins?: number;
   /**
+   * Short English noun phrase the story-mode AI can fold into the hero's
+   * appearance line, e.g. `'a red bandana'`, `'a navy captain's coat'`. For
+   * background slots, phrase as a contextual modifier (e.g.
+   * `'with wave-blue surroundings'`). Used by `resolveNarrativeHint`.
+   */
+  narrativeHint: string;
+  /**
    * Inner SVG content for this item; rendered inside the AvatarRender's outer
    * `<svg viewBox="0 0 100 100">`. Must use only flat colours (no `<defs>` /
    * gradients) so multiple slots can share one `<svg>` without id collisions.
@@ -27,6 +34,7 @@ const defaultHead: ItemDef = {
   unlockRef: 'default-kid-warm',
   slot: 'head',
   displayName: '小水手',
+  narrativeHint: 'a sun-tanned young pirate',
   renderSvg: () => (
     <g key="default-kid-warm">
       <circle
@@ -56,6 +64,7 @@ const defaultBandana: ItemDef = {
   unlockRef: 'default-bandana-red',
   slot: 'hat',
   displayName: '红头巾',
+  narrativeHint: 'a red bandana with white polka dots',
   renderSvg: () => (
     <g key="default-bandana-red">
       <path
@@ -81,6 +90,7 @@ const defaultTee: ItemDef = {
   unlockRef: 'default-tee-stripes',
   slot: 'top',
   displayName: '条纹衫',
+  narrativeHint: 'a striped sailor shirt',
   renderSvg: () => (
     <g key="default-tee-stripes">
       <path
@@ -100,6 +110,7 @@ const defaultOcean: ItemDef = {
   unlockRef: 'default-ocean',
   slot: 'background',
   displayName: '海洋',
+  narrativeHint: 'with wave-blue ocean surroundings',
   renderSvg: () => (
     <g key="default-ocean">
       <circle cx="50" cy="50" r="50" fill="#5fb1d3" />
@@ -123,6 +134,7 @@ const hatTricorn: ItemDef = {
   unlockRef: 'avatar-hat-tricorn',
   slot: 'hat',
   displayName: '海盗三角帽',
+  narrativeHint: 'a black tricorn pirate hat',
   rarity: 'common',
   priceCoins: 120,
   renderSvg: () => (
@@ -143,6 +155,7 @@ const hatCaptain: ItemDef = {
   unlockRef: 'avatar-hat-captain',
   slot: 'hat',
   displayName: '船长帽',
+  narrativeHint: "a navy captain's hat with a gold trim",
   rarity: 'rare',
   priceCoins: 300,
   renderSvg: () => (
@@ -168,6 +181,7 @@ const hatBandanaBlue: ItemDef = {
   unlockRef: 'avatar-hat-bandana-blue',
   slot: 'hat',
   displayName: '蓝头巾',
+  narrativeHint: 'a blue bandana with white waves',
   rarity: 'common',
   priceCoins: 80,
   renderSvg: () => (
@@ -199,6 +213,7 @@ const hatParrotPerch: ItemDef = {
   slot: 'hat',
   displayName: '肩头鹦鹉',
   description: '一只忠诚的航海伙伴',
+  narrativeHint: 'a tiny red parrot perched on her shoulder',
   rarity: 'rare',
   priceCoins: 360,
   renderSvg: () => (
@@ -227,6 +242,7 @@ const hatCrownGold: ItemDef = {
   slot: 'hat',
   displayName: '黄金王冠',
   description: '海盗之王的标志',
+  narrativeHint: 'a sparkling gold crown studded with gems',
   rarity: 'epic',
   priceCoins: 820,
   renderSvg: () => (
@@ -249,6 +265,7 @@ const hatSunhat: ItemDef = {
   unlockRef: 'avatar-hat-sunhat',
   slot: 'hat',
   displayName: '草编帽',
+  narrativeHint: 'a wide-brimmed straw sunhat',
   rarity: 'common',
   priceCoins: 100,
   renderSvg: () => (
@@ -265,6 +282,7 @@ const hatBeanie: ItemDef = {
   unlockRef: 'avatar-hat-beanie',
   slot: 'hat',
   displayName: '针织帽',
+  narrativeHint: 'a cozy green knit beanie with a red pom',
   rarity: 'common',
   priceCoins: 90,
   renderSvg: () => (
@@ -285,6 +303,7 @@ const hatEyepatchSkull: ItemDef = {
   unlockRef: 'avatar-hat-skull-cap',
   slot: 'hat',
   displayName: '骷髅帽',
+  narrativeHint: 'a black skull-and-crossbones cap',
   rarity: 'epic',
   priceCoins: 700,
   renderSvg: () => (
@@ -309,6 +328,7 @@ const topPirateCoat: ItemDef = {
   unlockRef: 'avatar-top-coat-pirate',
   slot: 'top',
   displayName: '海盗大衣',
+  narrativeHint: 'a long brown pirate coat with gold buttons',
   rarity: 'rare',
   priceCoins: 320,
   renderSvg: () => (
@@ -343,6 +363,7 @@ const topVest: ItemDef = {
   unlockRef: 'avatar-top-vest',
   slot: 'top',
   displayName: '皮背心',
+  narrativeHint: 'a tan leather vest',
   rarity: 'common',
   priceCoins: 130,
   renderSvg: () => (
@@ -364,6 +385,7 @@ const topLifejacket: ItemDef = {
   unlockRef: 'avatar-top-lifejacket',
   slot: 'top',
   displayName: '救生衣',
+  narrativeHint: 'a bright orange lifejacket with reflective stripes',
   rarity: 'common',
   priceCoins: 150,
   renderSvg: () => (
@@ -391,6 +413,7 @@ const topApronTreasure: ItemDef = {
   unlockRef: 'avatar-top-apron-treasure',
   slot: 'top',
   displayName: '寻宝围裙',
+  narrativeHint: 'a treasure-hunter apron with a gold coin pocket',
   rarity: 'rare',
   priceCoins: 280,
   renderSvg: () => (
@@ -422,6 +445,7 @@ const topEpaulettesGold: ItemDef = {
   slot: 'top',
   displayName: '金肩章礼服',
   description: '舰队司令的盛装',
+  narrativeHint: 'a navy admiral coat with gold epaulettes',
   rarity: 'epic',
   priceCoins: 720,
   renderSvg: () => (
@@ -463,6 +487,7 @@ const topCapeRed: ItemDef = {
   unlockRef: 'avatar-top-cape-red',
   slot: 'top',
   displayName: '红披风',
+  narrativeHint: 'a flowing crimson cape with gold clasps',
   rarity: 'rare',
   priceCoins: 340,
   renderSvg: () => (
@@ -486,6 +511,7 @@ const bgSunset: ItemDef = {
   unlockRef: 'avatar-bg-sunset',
   slot: 'background',
   displayName: '日落',
+  narrativeHint: 'under a glowing orange sunset sky',
   rarity: 'rare',
   priceCoins: 260,
   renderSvg: () => (
@@ -506,6 +532,7 @@ const bgPalmIsland: ItemDef = {
   unlockRef: 'avatar-bg-palm-island',
   slot: 'background',
   displayName: '棕榈小岛',
+  narrativeHint: 'on a sandy palm-tree island',
   rarity: 'rare',
   priceCoins: 400,
   renderSvg: () => (
@@ -539,6 +566,7 @@ const bgTreasureCave: ItemDef = {
   slot: 'background',
   displayName: '宝藏洞窟',
   description: '金光闪闪的秘密',
+  narrativeHint: 'inside a glittering treasure cave',
   rarity: 'epic',
   priceCoins: 640,
   renderSvg: () => (
@@ -565,6 +593,7 @@ const bgStarryNight: ItemDef = {
   unlockRef: 'avatar-bg-starry-night',
   slot: 'background',
   displayName: '星夜',
+  narrativeHint: 'beneath a starry midnight sky',
   rarity: 'common',
   priceCoins: 200,
   renderSvg: () => (
@@ -637,4 +666,24 @@ export function shopItemsCatalog(): ItemDef[] {
 export function lookupItem(unlockRef: string | null | undefined): ItemDef | undefined {
   if (!unlockRef) return undefined;
   return ITEM_CATALOG[unlockRef];
+}
+
+/**
+ * Default placeholder returned by `resolveNarrativeHint` when the id is
+ * unknown, null, or undefined. Story-mode AI uses this as a safe fallback so
+ * the appearance line never breaks on legacy or deleted items.
+ */
+export const DEFAULT_NARRATIVE_HINT = 'a pirate kid';
+
+/**
+ * Returns a short English noun phrase describing how `unlockRef` looks on the
+ * hero, suitable for inclusion in a story-mode appearance line. Falls back to
+ * {@link DEFAULT_NARRATIVE_HINT} for unknown / null / undefined ids.
+ */
+export function resolveNarrativeHint(
+  unlockRef: string | null | undefined,
+): string {
+  if (!unlockRef) return DEFAULT_NARRATIVE_HINT;
+  const item = ITEM_CATALOG[unlockRef];
+  return item?.narrativeHint ?? DEFAULT_NARRATIVE_HINT;
 }

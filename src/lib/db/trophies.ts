@@ -29,7 +29,8 @@ export type TrophyCheckContext =
   | { kind: 'pack-complete'; packSlug: string }
   | { kind: 'scene-clear'; sceneType: string; score: number }
   | { kind: 'sound-theme-equip'; slug: string | null }
-  | { kind: 'decor-purchase' };
+  | { kind: 'decor-purchase' }
+  | { kind: 'story-chapter-generated' };
 
 export async function listAllTrophies(): Promise<TrophyRow[]> {
   return db
@@ -132,6 +133,10 @@ export async function checkAndGrantTrophies(
       const owned = await countOwnedDecorations(childId);
       if (owned >= 1) slugs.add('decor-starter');
       if (owned >= 10) slugs.add('decor-completionist');
+      break;
+    }
+    case 'story-chapter-generated': {
+      slugs.add('first-chapter');
       break;
     }
   }

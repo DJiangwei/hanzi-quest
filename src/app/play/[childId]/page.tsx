@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { IslandMap } from '@/components/play/IslandMap';
 import { AvatarRender } from '@/components/play/AvatarRender';
+import { LatestChapterPill } from '@/components/play/LatestChapterPill';
 import { WeekStrip } from '@/components/play/WeekStrip';
 import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
@@ -152,6 +153,8 @@ export default async function PlayHomePage({ params }: PageProps) {
       />
 
       <WeekStrip activity={weekActivity} todayIso={todayIso} childId={childId} />
+
+      <LatestChapterPill childId={child.id} />
 
       {islands.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--color-sunset-400)] bg-white/70 p-8 text-center text-sm text-[var(--color-sand-900)]">
