@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PackGrid } from './PackGrid';
 import { ShardPill } from './ShardPill';
 import { SwapDialog } from './SwapDialog';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
