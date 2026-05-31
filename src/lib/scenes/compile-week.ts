@@ -156,7 +156,6 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
       const eligibleChars = chars.filter((c) =>
         c.words.some((w) => w.imageHook !== null),
       );
-      let emitted = 0;
       for (let slot = 0; slot < sizing.imageWord; slot++) {
         if (eligibleChars.length === 0) break;
         const target = pickRandom(eligibleChars);
@@ -173,7 +172,6 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
           'sight',
           `practice:image_word:${slot}`,
         );
-        emitted++;
       }
       // No visual_pick fallback for unfilled image_word slots in PR #51+.
     }

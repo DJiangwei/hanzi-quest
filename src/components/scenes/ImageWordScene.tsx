@@ -25,7 +25,7 @@ interface Props {
   hintRequested?: boolean;
 }
 
-export function ImageWordScene({ baseChar: _baseChar, correctWord, distractors, onComplete, hintRequested }: Props) {
+export function ImageWordScene({ correctWord, distractors, onComplete, hintRequested }: Props) {
   const choices = useMemo(
     () =>
       shuffle([correctWord, ...distractors]).map((w) => ({
