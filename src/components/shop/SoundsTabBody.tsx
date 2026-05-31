@@ -94,7 +94,7 @@ export function SoundsTabBody({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const preview = (slug: string) => {
+  const preview = async (slug: string) => {
     const theme = getTheme(slug);
     if (typeof window === 'undefined') return;
     const Ctor =
@@ -103,7 +103,9 @@ export function SoundsTabBody({
         .webkitAudioContext;
     if (!Ctor) return;
     const ctx = new Ctor();
-    if (ctx.state === 'suspended') void ctx.resume();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
     theme.ding(ctx);
   };
 
@@ -152,7 +154,7 @@ export function SoundsTabBody({
         priceCoins={null}
         isEquipped={defaultEquipped}
         pending={pending}
-        onPreview={() => preview('default')}
+        onPreview={() => { void preview('default'); }}
         onAction={() => equip(null)}
         actionLabel={defaultEquipped ? '已装备' : '装备 / Equip'}
         actionDisabled={defaultEquipped}
@@ -193,7 +195,7 @@ export function SoundsTabBody({
             priceCoins={l.shopItem.priceCoins}
             isEquipped={isEquipped}
             pending={pending}
-            onPreview={() => preview(l.shopItem.slug)}
+            onPreview={() => { void preview(l.shopItem.slug); }}
             onAction={onAction}
             actionLabel={actionLabel}
             actionDisabled={actionDisabled}
