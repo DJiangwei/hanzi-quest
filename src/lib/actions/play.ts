@@ -284,7 +284,9 @@ export async function finishLevelAction(
         // Fire independently of the boss-clear cardGrant (a single boss run
         // can trigger both; each has a distinct source so deduplication in
         // pullCardForChild handles re-runs correctly).
-        void pullCardForChild(child.id, 'perfect_week', parsed.weekId);
+        pullCardForChild(child.id, 'perfect_week', parsed.weekId).catch((err) => {
+          console.error('[finishLevelAction] perfect_week pullCardForChild failed:', err);
+        });
       }
     }
   }
