@@ -20,6 +20,7 @@ import {
 import { checkAndGrantTrophies } from '@/lib/db/trophies';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import { getPlayableWeekForChild } from '@/lib/db/weeks';
+import { pullCardForChild } from './gacha';
 
 const GenerateInputSchema = z.object({
   childId: z.string(),
@@ -127,10 +128,14 @@ const MarkReadSchema = z.object({
 
 export async function markChapterReadAction(
   input: z.input<typeof MarkReadSchema>,
-): Promise<{ ok: true }> {
+): Promise<{ ok: true; cardGrant: Awaited<ReturnType<typeof pullCardForChild>> | null }> {
   const parsed = MarkReadSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
-  await markChapterRead(parsed.chapterId, child.id);
+  const { wasNew } = await markChapterRead(parsed.chapterId, child.id);
+  let cardGrant: Awaited<ReturnType<typeof pullCardForChild>> | null = null;
+  if (wasNew) {
+    cardGrant = await pullCardForChild(child.id, 'story_chapter', parsed.chapterId);
+  }
   revalidatePath(`/play/${child.id}`);
-  return { ok: true };
+  return { ok: true, cardGrant };
 }

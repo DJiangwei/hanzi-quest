@@ -122,16 +122,24 @@ describe('listStoryChaptersForChild', () => {
 });
 
 describe('markChapterRead', () => {
-  it('sets read_at for the matching chapter', async () => {
-    dbMock.db.where.mockReturnValueOnce(Promise.resolve(undefined));
+  it('returns wasNew=true when the chapter was just marked (read_at was null)', async () => {
+    // .where() returns chain; .returning() resolves with 1 row = wasNew true
+    dbMock.db.returning.mockResolvedValueOnce([{ id: 'c1' }]);
     const { markChapterRead } = await import('@/lib/db/story');
-    await markChapterRead('c1', 'k1');
+    const result = await markChapterRead('c1', 'k1');
     expect(dbMock.db.update).toHaveBeenCalled();
     expect(dbMock.db.set).toHaveBeenCalledWith(
       expect.objectContaining({ readAt: expect.any(Date) }),
     );
+    expect(result).toEqual({ wasNew: true });
   });
 
+  it('returns wasNew=false when chapter was already read (no rows updated)', async () => {
+    dbMock.db.returning.mockResolvedValueOnce([]);
+    const { markChapterRead } = await import('@/lib/db/story');
+    const result = await markChapterRead('c1', 'k1');
+    expect(result).toEqual({ wasNew: false });
+  });
 });
 
 describe('getLatestUnreadChapter', () => {
