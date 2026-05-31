@@ -197,6 +197,7 @@ export async function finishLevelAction(
 ): Promise<{
   ok: true;
   bossCleared: boolean;
+  freePullClaimed: boolean;
   bonuses: EconomyBonus[];
   trophies: GrantedTrophy[];
 }> {
@@ -281,7 +282,13 @@ export async function finishLevelAction(
   );
 
   revalidatePath(`/play/${child.id}`);
-  return { ok: true, bossCleared, bonuses, trophies: collectedTrophies };
+  return {
+    ok: true,
+    bossCleared,
+    freePullClaimed: existing?.freePullClaimed ?? false,
+    bonuses,
+    trophies: collectedTrophies,
+  };
 }
 
 export async function listWeekChars(weekId: string, childId: string) {
