@@ -28,7 +28,7 @@ describe('FlashcardScene', () => {
   it('renders the hanzi with the PR #51 fontSize clamp', () => {
     render(<FlashcardScene data={data} onComplete={() => undefined} />);
     const btn = screen.getByRole('button', { name: /Play audio for 海/i });
-    expect(btn).toHaveStyle({ fontSize: 'clamp(8rem, 42vw, 16rem)' });
+    expect(btn.className).toContain('text-[clamp(8rem,42vw,16rem)]');
   });
 });
 
