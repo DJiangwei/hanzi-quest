@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { TreasureMapBackdrop } from '@/components/ui/TreasureMapBackdrop';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
+import { useSpeak } from '@/lib/hooks/useSpeak';
 
 interface FlashcardSceneData {
   hanzi: string;
@@ -18,19 +19,10 @@ interface Props {
   onComplete: () => void;
 }
 
-function speak(text: string) {
-  if (typeof window === 'undefined') return;
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'zh-CN';
-  utter.rate = 0.85;
-  window.speechSynthesis.speak(utter);
-}
-
 export function FlashcardScene({ data, onComplete }: Props) {
   const [pinyinShown, setPinyinShown] = useState(false);
   const [meaningShown, setMeaningShown] = useState(false);
+  const speak = useSpeak();
 
   return (
     <TreasureMapBackdrop intensity="medium">
