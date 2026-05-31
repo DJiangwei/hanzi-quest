@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db, type DB } from '@/db';
 import {
   characterSentence,
@@ -172,7 +172,8 @@ export async function getCharactersWithDetailsForWeek(
     })
     .from(characterWord)
     .innerJoin(words, eq(words.id, characterWord.wordId))
-    .where(inArray(characterWord.characterId, charIds));
+    .where(inArray(characterWord.characterId, charIds))
+    .orderBy(asc(characterWord.position));
 
   const sentenceRows = await db
     .select({

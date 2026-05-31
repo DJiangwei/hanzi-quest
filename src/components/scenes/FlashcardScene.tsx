@@ -107,8 +107,8 @@ export function FlashcardScene({ data, onComplete }: Props) {
 
           {data.firstSentence ? (
             sentenceShown ? (
-              <div className="flex items-center gap-2 px-2 text-center">
-                <p className="font-hanzi text-xl text-[var(--color-ocean-800)]">
+              <div className="flex flex-col items-center gap-2 px-2">
+                <p className="font-hanzi text-xl text-[var(--color-ocean-800)] text-center">
                   {data.firstSentence}
                 </p>
                 <SpeakButton
