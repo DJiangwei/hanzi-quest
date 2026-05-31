@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
+import { useSpeak } from '@/lib/hooks/useSpeak';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 
 interface CharacterDetail {
@@ -17,16 +18,9 @@ interface Props {
   hintRequested?: boolean;
 }
 
-function speak(text: string) {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'zh-CN';
-  u.rate = 0.85;
-  window.speechSynthesis.speak(u);
-}
-
 export function AudioPickScene({ target, pool, onComplete, hintRequested }: Props) {
+  const speak = useSpeak();
+
   const choices = useMemo(() => {
     const distractors = sampleDistractors(
       pool,
