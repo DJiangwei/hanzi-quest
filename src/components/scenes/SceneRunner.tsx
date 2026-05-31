@@ -239,6 +239,8 @@ export function SceneRunner({
             meaningEn: c.meaningEn,
             meaningZh: c.meaningZh,
             imageHook: c.imageHook,
+            firstWord: c.firstWord,
+            firstSentence: c.sentence?.text ?? null,
           }}
           onComplete={() => advance(true)}
         />
