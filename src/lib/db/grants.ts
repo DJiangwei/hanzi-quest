@@ -42,8 +42,12 @@ export function weightedRandomPick<T extends WeightedItem>(
   );
   const total = weights.reduce((a, b) => a + b, 0);
   if (total === 0) {
-    // Degenerate: every pack is 100% complete. Fall back to flat random.
-    return items[Math.floor(rng() * items.length)];
+    // Catalog has no items with positive drop weight (e.g. all retired).
+    // This is unexpected in normal operation — fail loudly rather than silently
+    // re-enable retired items.
+    throw new Error(
+      'weightedRandomPick: no items with positive dropWeight in catalog',
+    );
   }
 
   let roll = rng() * total;
@@ -171,20 +175,14 @@ export async function pullCardInTx(
     shardsAfter = shardRow?.shards ?? 1;
   }
 
-  // 6. Increment weekly counter.
-  if (weeklyRows.length > 0) {
-    await tx
-      .update(childCardGrantsWeekly)
-      .set({ count: currentCount + 1 })
-      .where(
-        and(
-          eq(childCardGrantsWeekly.childId, childId),
-          eq(childCardGrantsWeekly.weekStartUtc, weekStartUtc),
-        ),
-      );
-  } else {
-    await tx.insert(childCardGrantsWeekly).values({ childId, weekStartUtc, count: 1 });
-  }
+  // 6. Increment weekly counter (upsert — safe for first-of-week race)
+  await tx
+    .insert(childCardGrantsWeekly)
+    .values({ childId, weekStartUtc, count: 1 })
+    .onConflictDoUpdate({
+      target: [childCardGrantsWeekly.childId, childCardGrantsWeekly.weekStartUtc],
+      set: { count: sql`${childCardGrantsWeekly.count} + 1` },
+    });
 
   return {
     granted: true,

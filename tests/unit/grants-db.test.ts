@@ -31,9 +31,19 @@ describe('weightedRandomPick', () => {
     expect(pickedAtNearEnd.packId).toBe('p2');
   });
 
-  it('still picks an owned item when all items are owned (degenerate case)', () => {
+  it('still picks an item when all items are owned (all-complete scenario)', () => {
     const ownedSet = new Set(['a', 'b', 'c']);
     const picked = weightedRandomPick(items, ownedSet, () => 0.5);
     expect(['a', 'b', 'c']).toContain(picked.id);
+  });
+
+  it('throws when catalog has no items with positive dropWeight (all retired)', () => {
+    const allZero: WeightedItem[] = [
+      { id: 'a', packId: 'p1', dropWeight: 0 },
+      { id: 'b', packId: 'p1', dropWeight: 0 },
+    ];
+    expect(() => weightedRandomPick(allZero, new Set(), () => 0.5)).toThrow(
+      /no items with positive dropWeight/i,
+    );
   });
 });
