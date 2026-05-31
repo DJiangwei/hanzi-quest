@@ -39,7 +39,6 @@ export default async function PackPage({ params }: PageProps) {
     <main className="flex flex-1 flex-col items-center gap-4 p-6">
       <PackPageBody
         childId={childId}
-        pack={pack}
         packSlug={packSlug}
         items={items}
         ownedItemIds={ownedItemIds}

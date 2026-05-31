@@ -74,6 +74,10 @@ export async function pullFreeFromBoss(
   return result;
 }
 
+/**
+ * @deprecated PR #52 — coin gacha removed. Kept for one release as a rollback path.
+ *   Drop in PR #53+.
+ */
 export async function pullPaid(
   packSlug: string,
   args: PullActionArgs,

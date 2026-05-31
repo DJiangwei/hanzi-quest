@@ -1,18 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PackGrid } from './PackGrid';
-import { GachaPullButton } from './GachaPullButton';
-import { TreasureChestReveal } from '@/components/scenes/fx/TreasureChestReveal';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
-import type { CollectibleItem, CollectionPack } from '@/lib/db/collections';
+import type { CollectibleItem } from '@/lib/db/collections';
 import { getPackMeta } from '@/lib/collections/packRegistry';
-import type { PullResult } from '@/lib/db/gacha';
 
 interface Props {
   childId: string;
-  pack: CollectionPack;
   /**
    * Looked up via `getPackMeta(packSlug)` on the client. We deliberately do
    * NOT take `meta` as a prop — `PackUiMeta` carries a React component
@@ -35,7 +30,6 @@ interface Props {
  */
 export function PackPageBody({
   childId,
-  pack,
   packSlug,
   items,
   ownedItemIds,
@@ -46,39 +40,7 @@ export function PackPageBody({
     throw new Error(`PackPageBody: no UI meta registered for ${packSlug}`);
   }
   const router = useRouter();
-  const [reveal, setReveal] = useState<PullResult | null>(null);
-  const [optimisticBalance, setOptimisticBalance] = useState(balance);
   const ownedSet = new Set(ownedItemIds);
-
-  if (reveal) {
-    const revealEmoji = meta.resolveRevealEmoji?.(reveal.item.slug) ?? null;
-    return (
-      <div className="flex flex-col items-center gap-4">
-        <TreasureChestReveal
-          item={{
-            id: reveal.item.id,
-            slug: reveal.item.slug,
-            nameZh: reveal.item.nameZh,
-            nameEn: reveal.item.nameEn,
-            loreZh: reveal.item.loreZh,
-            loreEn: reveal.item.loreEn,
-            emoji: revealEmoji,
-          }}
-          wasDuplicate={reveal.wasDuplicate}
-          shardsAfter={reveal.shardsAfter}
-        />
-        <WoodSignButton
-          size="lg"
-          onClick={() => {
-            setReveal(null);
-            router.refresh();
-          }}
-        >
-          再看一眼 / Look again
-        </WoodSignButton>
-      </div>
-    );
-  }
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4">
@@ -91,7 +53,7 @@ export function PackPageBody({
           ← 收藏馆 / Atlas
         </WoodSignButton>
         <span className="text-sm font-semibold text-[var(--color-treasure-700)]">
-          🪙 {optimisticBalance}
+          🪙 {balance}
         </span>
       </div>
 
@@ -114,17 +76,6 @@ export function PackPageBody({
           {meta.sloganEn}
         </p>
       </header>
-
-      <GachaPullButton
-        balance={optimisticBalance}
-        cost={meta.paidPullCost}
-        packSlug={pack.slug}
-        childId={childId}
-        onResult={(r) => {
-          setOptimisticBalance(r.coinsAfter);
-          setReveal(r);
-        }}
-      />
 
       <div className="rounded-2xl border border-[#c89f5e] bg-[linear-gradient(180deg,#f5ead0_0%,#ead7a8_100%)] p-4">
         <PackGrid items={items} ownedItemIds={ownedSet} meta={meta} />
