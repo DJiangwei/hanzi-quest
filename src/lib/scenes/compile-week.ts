@@ -33,7 +33,7 @@ type AnyConfig =
  * PR #35 shape:
  *   review:   N × flashcard
  *   sound:    K × audio_pick (3 for N>=10; 2 for 4-9; 1 for 2-3; 0 for <2)
- *   sight:    image_pick + visual_pick + word_match (count scales same as sound)
+ *   sight:    image_pick + word_match (count scales same as sound)
  *   meaning:  translate_pick + sentence_cloze (alternating direction; cloze->translate fallback)
  *   boss:     1 × boss (N>=10), 5 rotating question types
  *
