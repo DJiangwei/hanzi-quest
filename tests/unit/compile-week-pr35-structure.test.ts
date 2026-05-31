@@ -76,7 +76,7 @@ beforeEach(() => {
 });
 
 describe('compileWeekIntoLevels — PR #35 structure', () => {
-  it('10-char week produces 10 review + 12 practice + 1 boss = 23 levels', async () => {
+  it('10-char week produces 10 review + 11 practice + 1 boss = 22 levels (PR #51: visual_pick retired)', async () => {
     charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(
       Array.from({ length: 10 }, (_, i) => makeChar(i + 1)),
     );
@@ -85,13 +85,15 @@ describe('compileWeekIntoLevels — PR #35 structure', () => {
 
     const count = await compileWeekIntoLevels('w-test');
 
-    expect(count).toBe(23);
+    // setupTemplates() has no image_word template; sight 3→2 (visual_pick retired in PR #51)
+    // 10 review + 3 audio + 2 sight + 6 meaning + 1 boss = 22
+    expect(count).toBe(22);
     const bySegment = inserted.reduce<Record<string, number>>((acc, r) => {
       acc[r.sceneConfig.segment] = (acc[r.sceneConfig.segment] ?? 0) + 1;
       return acc;
     }, {});
     expect(bySegment.review).toBe(10);
-    expect((bySegment.sound ?? 0) + (bySegment.sight ?? 0) + (bySegment.meaning ?? 0)).toBe(12);
+    expect((bySegment.sound ?? 0) + (bySegment.sight ?? 0) + (bySegment.meaning ?? 0)).toBe(11);
     expect(bySegment.boss).toBe(1);
   });
 
@@ -126,5 +128,36 @@ describe('compileWeekIntoLevels — PR #35 structure', () => {
     const boss = inserted.find((r) => r.sceneConfig.segment === 'boss');
     expect(boss?.sceneConfig.questionTypes).toHaveLength(5);
     expect(boss?.sceneConfig.questionTypes).not.toContain('pinyin_pick');
+  });
+});
+
+describe('compile-week PR #51 visual_pick retirement', () => {
+  it('does not emit visual_pick levels for a 10-char week', async () => {
+    charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) => makeChar(i + 1)),
+    );
+    const inserted: RowCaptured[] = [];
+    captureInsertedRows(inserted);
+    await compileWeekIntoLevels('w-test');
+    const visualPickRows = inserted.filter((r) => r.sceneTemplateId === 't-visual_pick');
+    expect(visualPickRows).toHaveLength(0);
+  });
+
+  it('emits 11 practice-segment levels for a 10-char week without image_word template (was 12)', async () => {
+    // This test uses setupTemplates() which has no image_word template.
+    // PR #51: sight 3→2 (drop visual_pick). audio=3, sight=2, meaning=6 → 11 practice.
+    charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) => makeChar(i + 1)),
+    );
+    const inserted: RowCaptured[] = [];
+    captureInsertedRows(inserted);
+    await compileWeekIntoLevels('w-test');
+    const practice = inserted.filter(
+      (r) =>
+        r.sceneConfig.segment === 'sound' ||
+        r.sceneConfig.segment === 'sight' ||
+        r.sceneConfig.segment === 'meaning',
+    );
+    expect(practice).toHaveLength(11);
   });
 });

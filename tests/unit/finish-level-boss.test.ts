@@ -159,6 +159,54 @@ describe('finishLevelAction boss-clear', () => {
   });
 });
 
+describe('finishLevelAction return shape (PR #51)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns freePullClaimed=false when the child has no progress yet', async () => {
+    mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.listLevelsForWeek.mockResolvedValue([
+      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
+      { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
+    ]);
+    // No prior progress row
+    mocks.getWeekProgress.mockResolvedValue(null);
+
+    const result = await finishLevelAction({
+      sessionId: '11111111-2222-4333-a444-555555555555',
+      childId: '22222222-3333-4444-a555-666666666666',
+      weekId: '33333333-4444-4555-a666-777777777777',
+      totalScenesPassed: 2,
+      totalScenesInWeek: 2,
+      durationSeconds: 60,
+    });
+
+    expect(result.freePullClaimed).toBe(false);
+  });
+
+  it('returns freePullClaimed=true when child already claimed the boss chest', async () => {
+    mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.listLevelsForWeek.mockResolvedValue([
+      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
+      { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
+    ]);
+    // Simulate: boss cleared + chest already pulled
+    mocks.getWeekProgress.mockResolvedValue({ bossCleared: true, freePullClaimed: true });
+
+    const result = await finishLevelAction({
+      sessionId: '11111111-2222-4333-a444-555555555555',
+      childId: '22222222-3333-4444-a555-666666666666',
+      weekId: '33333333-4444-4555-a666-777777777777',
+      totalScenesPassed: 2,
+      totalScenesInWeek: 2,
+      durationSeconds: 60,
+    });
+
+    expect(result.freePullClaimed).toBe(true);
+  });
+});
+
 describe('finishAttemptAction trophy pipeline', () => {
   beforeEach(() => vi.clearAllMocks());
 

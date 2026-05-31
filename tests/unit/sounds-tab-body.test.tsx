@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -119,5 +120,57 @@ describe('SoundsTabBody', () => {
     fireEvent.click(equipButton);
     await new Promise((r) => setTimeout(r, 0));
     expect(mocks.equipSoundThemeAction).toHaveBeenCalledWith('c1', 'theme-nautical');
+  });
+});
+
+describe('SoundsTabBody preview await (PR #51)', () => {
+  it('awaits ctx.resume() before calling theme.ding(ctx)', async () => {
+    let resumeResolve!: () => void;
+    const resumePromise = new Promise<void>((res) => {
+      resumeResolve = res;
+    });
+    const resume = vi.fn().mockReturnValue(resumePromise);
+    const ding = vi.fn();
+
+    mocks.getTheme.mockReturnValue({ ding, buzz: vi.fn(), fanfare: vi.fn() });
+
+    // Must be a real constructor (not arrow fn) so `new FakeCtx()` works
+    function FakeCtx(this: { state: string; resume: typeof resume }) {
+      this.state = 'suspended';
+      this.resume = resume;
+    }
+    Object.defineProperty(window, 'AudioContext', {
+      configurable: true,
+      value: FakeCtx,
+    });
+
+    render(
+      <SoundsTabBody
+        childId="c1"
+        listings={listings}
+        ownedShopItemIds={new Set()}
+        coinBalance={500}
+        equippedThemeSlug={null}
+      />,
+    );
+
+    const previewButtons = screen.getAllByRole('button', { name: /preview|试听/i });
+    await userEvent.click(previewButtons[0]);
+
+    // Before resume resolves: resume called, ding NOT yet called
+    expect(resume).toHaveBeenCalledTimes(1);
+    expect(ding).toHaveBeenCalledTimes(0);
+
+    // Resolve the resume promise and flush microtasks
+    resumeResolve();
+    await new Promise((r) => setTimeout(r, 0));
+
+    // After resume resolves: ding called exactly once
+    expect(ding).toHaveBeenCalledTimes(1);
+
+    // resume must have been called before ding in invocation order
+    expect(resume.mock.invocationCallOrder[0]).toBeLessThan(
+      ding.mock.invocationCallOrder[0],
+    );
   });
 });

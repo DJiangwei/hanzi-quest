@@ -25,7 +25,7 @@ interface Props {
   hintRequested?: boolean;
 }
 
-export function ImageWordScene({ baseChar, correctWord, distractors, onComplete, hintRequested }: Props) {
+export function ImageWordScene({ correctWord, distractors, onComplete, hintRequested }: Props) {
   const choices = useMemo(
     () =>
       shuffle([correctWord, ...distractors]).map((w) => ({
@@ -62,14 +62,7 @@ export function ImageWordScene({ baseChar, correctWord, distractors, onComplete,
 
   return (
     <MultipleChoiceQuiz
-      prompt={
-        <span>
-          看图选词 / Pick the word with{' '}
-          <span className="ml-1 rounded-md bg-amber-200 px-2 py-0.5 text-2xl font-extrabold text-amber-900">
-            {baseChar.hanzi}
-          </span>
-        </span>
-      }
+      prompt="看图选词 / Match the picture to a word"
       stimulus={stimulus}
       choices={choices}
       onComplete={onComplete}

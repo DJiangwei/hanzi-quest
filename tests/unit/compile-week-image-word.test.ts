@@ -87,7 +87,7 @@ describe('compileWeekIntoLevels — image_word', () => {
     captureRows(inserted);
 
     const count = await compileWeekIntoLevels('w-test');
-    expect(count).toBe(25);     // 10 review + 14 practice + 1 boss
+    expect(count).toBe(24);     // 10 review + 13 practice + 1 boss (PR #51: sight 3→2)
     const imageWordRows = inserted.filter((r) => r.sceneTemplateId === 't-image_word');
     expect(imageWordRows).toHaveLength(2);
     for (const r of imageWordRows) {
@@ -96,7 +96,7 @@ describe('compileWeekIntoLevels — image_word', () => {
     }
   });
 
-  it('10-char week with 0 imageHooks → 0 image_word + 2 visual_pick fallback', async () => {
+  it('10-char week with 0 word imageHooks → 0 image_word, no visual_pick fallback (PR #51)', async () => {
     setupTemplates();
     const chars = Array.from({ length: 10 }, (_, i) => makeChar(i + 1, false));
     charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(chars);
@@ -105,14 +105,13 @@ describe('compileWeekIntoLevels — image_word', () => {
     captureRows(inserted);
 
     const count = await compileWeekIntoLevels('w-test');
-    expect(count).toBe(25);     // still 25, fallback fills the slots
+    // PR #51: no visual_pick fallback for unfilled image_word slots.
+    // 10 review + 3 audio + 2 sight (image_pick+word_match) + 0 image_word + 6 meaning + 1 boss = 22
+    expect(count).toBe(22);
     const imageWordRows = inserted.filter((r) => r.sceneTemplateId === 't-image_word');
     expect(imageWordRows).toHaveLength(0);
-    const visualSightRows = inserted.filter(
-      (r) => r.sceneTemplateId === 't-visual_pick' && r.sceneConfig.segment === 'sight',
-    );
-    // Original sight had 1 visual_pick; +2 fallback = ≥3 (some compile structures emit different counts)
-    expect(visualSightRows.length).toBeGreaterThanOrEqual(3);
+    const visualPickRows = inserted.filter((r) => r.sceneTemplateId === 't-visual_pick');
+    expect(visualPickRows).toHaveLength(0);
   });
 
   it('5-char week → 1 image_word slot', async () => {

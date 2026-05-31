@@ -33,7 +33,7 @@ type AnyConfig =
  * PR #35 shape:
  *   review:   N × flashcard
  *   sound:    K × audio_pick (3 for N>=10; 2 for 4-9; 1 for 2-3; 0 for <2)
- *   sight:    image_pick + visual_pick + word_match (count scales same as sound)
+ *   sight:    image_pick + word_match (count scales same as sound)
  *   meaning:  translate_pick + sentence_cloze (alternating direction; cloze->translate fallback)
  *   boss:     1 × boss (N>=10), 5 rotating question types
  *
@@ -117,11 +117,10 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
   // ── SIGHT ───────────────────────────────────────────────────────────────
   if (sizing.sight > 0) {
     const imageId = tmplByType.get('image_pick');
-    const visualId = tmplByType.get('visual_pick');
     const wordId = tmplByType.get('word_match');
     const usedCharIds = new Set<string>();
 
-    // image_pick (if any char has imageHook)
+    // image_pick (slot 0): if any char has imageHook
     if (sizing.sight >= 1 && imageId) {
       const withHook = chars.filter((c) => Boolean(c.imageHook));
       if (withHook.length > 0) {
@@ -133,38 +132,12 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
           'sight',
           'practice:image_pick:0',
         );
-      } else if (visualId) {
-        // Fallback if no char has imageHook
-        const target = pickRandom(chars);
-        usedCharIds.add(target.id);
-        push(
-          visualId,
-          { characterId: target.id },
-          'sight',
-          'practice:visual_pick:0',
-        );
       }
+      // No visual_pick fallback in PR #51+. If no eligible char, slot stays unfilled.
     }
 
-    // visual_pick (different char from image_pick)
-    let visualSlot = sizing.sight >= 1 && imageId && chars.some((c) => c.imageHook) ? 0 : 1;
-    if (sizing.sight >= 2 && visualId) {
-      const remaining = chars.filter((c) => !usedCharIds.has(c.id));
-      if (remaining.length > 0) {
-        const target = pickRandom(remaining);
-        usedCharIds.add(target.id);
-        push(
-          visualId,
-          { characterId: target.id },
-          'sight',
-          `practice:visual_pick:${visualSlot}`,
-        );
-        visualSlot++;
-      }
-    }
-
-    // word_match
-    if (sizing.sight >= 3 && wordId) {
+    // word_match (slot 1 — multi-char)
+    if (sizing.sight >= 2 && wordId) {
       const withWords = chars.filter((c) => c.words.length > 0);
       const sample = shuffle(withWords).slice(0, Math.min(4, withWords.length));
       if (sample.length >= 2) {
@@ -173,16 +146,6 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
           { characterIds: sample.map((c) => c.id) },
           'sight',
           'practice:word_match:0',
-        );
-      } else if (visualId) {
-        // Fallback: extra visual_pick
-        const remaining = chars.filter((c) => !usedCharIds.has(c.id));
-        const target = remaining.length > 0 ? pickRandom(remaining) : pickRandom(chars);
-        push(
-          visualId,
-          { characterId: target.id },
-          'sight',
-          `practice:visual_pick:${visualSlot}`,
         );
       }
     }
@@ -193,7 +156,6 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
       const eligibleChars = chars.filter((c) =>
         c.words.some((w) => w.imageHook !== null),
       );
-      let emitted = 0;
       for (let slot = 0; slot < sizing.imageWord; slot++) {
         if (eligibleChars.length === 0) break;
         const target = pickRandom(eligibleChars);
@@ -210,20 +172,8 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
           'sight',
           `practice:image_word:${slot}`,
         );
-        emitted++;
       }
-      // Fallback: unfilled slots become extra visual_pick to keep practice count steady
-      if (emitted < sizing.imageWord && visualId) {
-        for (let i = emitted; i < sizing.imageWord; i++) {
-          const target = pickRandom(chars);
-          push(
-            visualId,
-            { characterId: target.id },
-            'sight',
-            `practice:visual_pick:fallback-${i}`,
-          );
-        }
-      }
+      // No visual_pick fallback for unfilled image_word slots in PR #51+.
     }
   }
 
@@ -346,8 +296,8 @@ interface PracticeSizing {
 function computePracticeSizing(n: number): PracticeSizing {
   if (n < 2)  return { audio: 0, sight: 0, imageWord: 0, meaning: 0 };
   if (n < 4)  return { audio: 1, sight: 1, imageWord: 1, meaning: 4 };  // 7 practice
-  if (n < 10) return { audio: 2, sight: 2, imageWord: 1, meaning: 6 };  // 11 practice
-  return { audio: 3, sight: 3, imageWord: 2, meaning: 6 };              // 14 practice
+  if (n < 10) return { audio: 2, sight: 1, imageWord: 1, meaning: 6 };  // 10 practice
+  return { audio: 3, sight: 2, imageWord: 2, meaning: 6 };              // 13 practice (was 14)
 }
 
 function pickRandom<T>(arr: T[]): T {

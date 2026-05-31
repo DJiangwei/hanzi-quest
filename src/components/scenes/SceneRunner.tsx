@@ -107,6 +107,7 @@ export function SceneRunner({
   const [coinsThisSession, setCoinsThisSession] = useState(0);
   const [done, setDone] = useState(false);
   const [lastSceneType, setLastSceneType] = useState<SceneType | null>(null);
+  const [freePullClaimed, setFreePullClaimed] = useState(false);
   const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
   const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
   const [pending, startTransition] = useTransition();
@@ -161,7 +162,7 @@ export function SceneRunner({
         coinsThisSession={coinsThisSession}
         childId={childId}
         weekId={weekId}
-        chestAvailable={lastSceneType === 'boss'}
+        chestAvailable={lastSceneType === 'boss' && !freePullClaimed}
         onContinue={() => router.push(resolvedExitHref)}
       />
     );
@@ -199,6 +200,7 @@ export function SceneRunner({
         });
         collectedBonuses.push(...levelResult.bonuses);
         collectedTrophies.push(...levelResult.trophies);
+        setFreePullClaimed(levelResult.freePullClaimed);
         setDone(true);
       } else {
         setIndex(nextIndex);
@@ -239,6 +241,8 @@ export function SceneRunner({
             meaningEn: c.meaningEn,
             meaningZh: c.meaningZh,
             imageHook: c.imageHook,
+            firstWord: c.firstWord,
+            firstSentence: c.sentence?.text ?? null,
           }}
           onComplete={() => advance(true)}
         />
