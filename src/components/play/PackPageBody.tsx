@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PackGrid } from './PackGrid';
 import { ShardPill } from './ShardPill';
+import { SwapDialog } from './SwapDialog';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 import { getPackMeta } from '@/lib/collections/packRegistry';
+import { swapShardsForItem } from '@/lib/actions/gacha';
 
 interface Props {
   childId: string;
@@ -53,6 +56,8 @@ export function PackPageBody({
   const countById = new Map<string, number>(
     ownedItems.map((o) => [o.id, o.count]),
   );
+
+  const [swapItem, setSwapItem] = useState<CollectibleItem | null>(null);
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4">
@@ -102,11 +107,25 @@ export function PackPageBody({
             const Card = meta.ItemCard;
             const count = countById.get(item.id) ?? 0;
             const showDupe = count > 1;
+            const isOwned = ownedSet.has(item.id);
             return (
-              <div key={item.id} className="relative">
+              <div
+                key={item.id}
+                className="relative"
+                onClick={isOwned ? undefined : () => setSwapItem(item)}
+                role={isOwned ? undefined : 'button'}
+                tabIndex={isOwned ? undefined : 0}
+                onKeyDown={
+                  isOwned
+                    ? undefined
+                    : (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setSwapItem(item);
+                      }
+                }
+              >
                 <Card
                   item={item}
-                  owned={ownedSet.has(item.id)}
+                  owned={isOwned}
                   size="md"
                   compact={false}
                 />
@@ -120,6 +139,27 @@ export function PackPageBody({
           })}
         </div>
       </div>
+
+      {swapItem ? (
+        <SwapDialog
+          open
+          onClose={() => setSwapItem(null)}
+          itemNameZh={swapItem.nameZh}
+          itemNameEn={swapItem.nameEn}
+          shardCost={3}
+          shardBalance={shardCount}
+          onConfirm={async () => {
+            const result = await swapShardsForItem(childId, swapItem.id);
+            if (result.ok) {
+              setSwapItem(null);
+              // revalidatePath in the action handles refresh
+            } else {
+              // No toast UX in this PR; just close. v2 candidate.
+              setSwapItem(null);
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -13,6 +13,10 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+vi.mock('@/lib/actions/gacha', () => ({
+  swapShardsForItem: vi.fn().mockResolvedValue({ ok: true, shardsRemaining: 2 }),
+}));
+
 import { PackPageBody } from '@/components/play/PackPageBody';
 import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 
