@@ -84,6 +84,7 @@ describe('SceneRunner PR #51: chestAvailable respects freePullClaimed', () => {
       ok: true,
       bossCleared: true,
       freePullClaimed: false,
+      cardGrant: null,
       bonuses: [],
       trophies: [],
     });
@@ -125,6 +126,7 @@ describe('SceneRunner PR #51: chestAvailable respects freePullClaimed', () => {
       ok: true,
       bossCleared: true,
       freePullClaimed: true,
+      cardGrant: null,
       bonuses: [],
       trophies: [],
     });

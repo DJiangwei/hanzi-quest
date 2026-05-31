@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => ({
   getLevelById: vi.fn().mockResolvedValue(null),
   recordSceneAttempt: vi.fn().mockResolvedValue({ id: 'attempt-1' }),
   hasPriorAttempt: vi.fn().mockResolvedValue(false),
+  pullCardForChild: vi.fn().mockResolvedValue({ granted: false, reason: 'already_granted_this_week' }),
 }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
@@ -61,6 +62,9 @@ vi.mock('@/lib/db/streaks', () => ({
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/db/trophies', () => ({
   checkAndGrantTrophies: mocks.checkAndGrantTrophies,
+}));
+vi.mock('@/lib/actions/gacha', () => ({
+  pullCardForChild: mocks.pullCardForChild,
 }));
 
 import { finishAttemptAction, finishLevelAction } from '@/lib/actions/play';
@@ -204,6 +208,123 @@ describe('finishLevelAction return shape (PR #51)', () => {
     });
 
     expect(result.freePullClaimed).toBe(true);
+  });
+});
+
+describe('finishLevelAction card grant (PR #52)', () => {
+  const BOSS_SESSION_ID = '11111111-2222-4333-a444-555555555555';
+  const CHILD_ID = '22222222-3333-4444-a555-666666666666';
+  const WEEK_ID = '33333333-4444-4555-a666-777777777777';
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls pullCardForChild on boss clear and returns cardGrant', async () => {
+    mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.listLevelsForWeek.mockResolvedValue([
+      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
+      { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
+    ]);
+    mocks.getWeekProgress.mockResolvedValue(null);
+    mocks.pullCardForChild.mockResolvedValue({
+      granted: true,
+      packSlug: 'zodiac-v1',
+      item: { id: 'item-1', nameZh: '鼠', nameEn: 'Rat', emoji: '🐭', rarity: 'common' },
+      isNew: true,
+      shardsDelta: 0,
+    });
+
+    const result = await finishLevelAction({
+      sessionId: BOSS_SESSION_ID,
+      childId: CHILD_ID,
+      weekId: WEEK_ID,
+      totalScenesPassed: 2,
+      totalScenesInWeek: 2,
+      durationSeconds: 120,
+    });
+
+    expect(result.cardGrant).toEqual(expect.objectContaining({ granted: true }));
+    expect(mocks.pullCardForChild).toHaveBeenCalledWith(
+      'c1',
+      'boss_clear',
+      BOSS_SESSION_ID,
+    );
+  });
+
+  it('returns cardGrant=null when boss was NOT cleared (non-boss last scene)', async () => {
+    mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.listLevelsForWeek.mockResolvedValue([
+      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
+      { id: 'l2', position: 1, sceneType: 'word_match', sceneConfig: {} },
+    ]);
+    mocks.getWeekProgress.mockResolvedValue(null);
+
+    const result = await finishLevelAction({
+      sessionId: BOSS_SESSION_ID,
+      childId: CHILD_ID,
+      weekId: WEEK_ID,
+      totalScenesPassed: 2,
+      totalScenesInWeek: 2,
+      durationSeconds: 120,
+    });
+
+    expect(result.cardGrant).toBeNull();
+    expect(mocks.pullCardForChild).not.toHaveBeenCalled();
+  });
+
+  it('returns cardGrant=null when scenes < total (boss not passed)', async () => {
+    mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.listLevelsForWeek.mockResolvedValue([
+      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
+      { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
+    ]);
+    mocks.getWeekProgress.mockResolvedValue(null);
+
+    const result = await finishLevelAction({
+      sessionId: BOSS_SESSION_ID,
+      childId: CHILD_ID,
+      weekId: WEEK_ID,
+      totalScenesPassed: 1,
+      totalScenesInWeek: 2,
+      durationSeconds: 120,
+    });
+
+    expect(result.cardGrant).toBeNull();
+    expect(mocks.pullCardForChild).not.toHaveBeenCalled();
+  });
+
+  it('calls pullCardForChild even on repeat boss clears (cardGrant may be skipped)', async () => {
+    mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.listLevelsForWeek.mockResolvedValue([
+      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
+      { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
+    ]);
+    // Prior session already cleared boss
+    mocks.getWeekProgress.mockResolvedValue({ bossCleared: true, freePullClaimed: false });
+    // pullCardForChild returns skipped (already granted this week)
+    mocks.pullCardForChild.mockResolvedValue({
+      granted: false,
+      reason: 'already_granted_this_week',
+    });
+
+    const result = await finishLevelAction({
+      sessionId: BOSS_SESSION_ID,
+      childId: CHILD_ID,
+      weekId: WEEK_ID,
+      totalScenesPassed: 2,
+      totalScenesInWeek: 2,
+      durationSeconds: 120,
+    });
+
+    expect(result.cardGrant).toEqual(expect.objectContaining({ granted: false }));
+    expect(mocks.pullCardForChild).toHaveBeenCalledWith(
+      'c1',
+      'boss_clear',
+      BOSS_SESSION_ID,
+    );
   });
 });
 
