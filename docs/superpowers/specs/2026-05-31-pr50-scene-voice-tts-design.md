@@ -46,20 +46,21 @@ Yinuo (6, English-native) hears native zh-CN pronunciation of every character/wo
 - **`ChapterAudioButton` (PR #48)** — refactor to a thin wrapper: `<SpeakButton text={text} size="md" label="Read aloud" />`. Keep the export so callers don't change.
 - **`AudioPickScene`** — remove the inline `speak()` helper; replace the "play sound" CTA with `<SpeakButton text={target.hanzi} size="md" label="Play sound" />`. This also fixes the latent detection bug.
 
-### 4.3 Per-scene integration
+### 4.3 Per-scene integration (revised during planning)
 
 | Scene | 🔊 placement | Text spoken |
 |---|---|---|
-| `FlashcardScene` | 3 buttons — one per content row | main hanzi; example word; example sentence |
-| `AudioPickScene` | existing "play" CTA, refactored | target hanzi |
-| `ImagePickScene` | next to hanzi stimulus | target hanzi |
-| `VisualPickScene` | next to hanzi stimulus | target hanzi |
-| `TranslatePickScene` (direction `cn_to_en`) | next to hanzi stimulus | target hanzi |
-| `TranslatePickScene` (direction `en_to_cn`) | — | (skip; would reveal answer) |
+| `FlashcardScene` | Big hanzi tap-target + revealed pinyin row (refactor existing 2 inline-speak surfaces to use the shared hook) | target hanzi |
+| `AudioPickScene` | Existing central 🔊 CTA (refactor to shared hook) | target hanzi |
+| `TranslatePickScene` (direction `cn_to_en`) | `<SpeakButton size="sm">` next to hanzi stimulus | target hanzi |
+| `TranslatePickScene` (direction `en_to_cn`) | — | (skip; choices are hanzi → would reveal answer) |
+| `ImagePickScene` | — | (v2 — choices are hanzi → speaking stimulus reveals answer) |
+| `VisualPickScene` | — | (v2 — choices are pinyin = the sound → speaking stimulus reveals answer) |
 | `SentenceClozeScene` | — | (v2 — stem-with-blank is awkward to speak) |
 | `ImageWordScene` | — | (v2) |
 | `WordMatchScene` | — | (v2 — would reveal pairing) |
 | `BossScene` | inherits from child scene | n/a |
+| `ChapterAudioButton` (Story Mode, PR #48) | refactor to wrap SpeakButton | **deferred to post-PR-#48 follow-up** (no consumer exists on PR #50 branch) |
 
 Scenes that wrap `MultipleChoiceQuiz` pass a richer `prompt: ReactNode` containing `<SpeakButton>` adjacent to the hanzi. `MultipleChoiceQuiz` stays generic — it doesn't know it's wrapping a hanzi-bearing prompt.
 
@@ -127,8 +128,10 @@ Pre-merge:
 
 ## 10. Open questions / v2 candidates
 
+- **ImagePick + VisualPick audio:** spec v1 over-scoped these. Their stimulus is the target hanzi (or its visual proxy) and their CHOICES are the answer surface (hanzi for ImagePick, pinyin for VisualPick). Speaking the stimulus tells the kid the answer. Defer to v2 with a post-reveal pattern (button appears only after the correct choice is locked in), same shape as the cloze/image-word v2.
 - **Sentence-cloze audio:** speaking the stem with the blank is awkward; speaking the completed sentence post-reveal is cleaner. Defer to v2.
 - **Image-word post-reveal audio:** the correct-word reveal is the moment a 🔊 would add value. Defer to v2.
+- **ChapterAudioButton refactor:** PR #50 originally planned to refactor PR #48's `ChapterAudioButton` into a thin wrapper over `SpeakButton`. Skipped because PR #48 had not merged when PR #50 was implemented (creating the wrapper file with no consumer would land as dead code in review). Trivial 1-file follow-up after PR #48 merges: swap the body of `ChapterAudioButton.tsx` for `<SpeakButton text={text} size="md" label="Read aloud" />`.
 - **Voice selection UI:** if Yinuo or David finds a particular voice too robotic, expose a picker in parent settings. Defer until someone complains.
 - **Per-character mastery hook:** could log "audio replay" events as a weak mastery signal (a kid replaying = uncertainty). Cross-cutting with future adaptive-difficulty PR. Out of scope here.
 - **Auto-play on flashcard entry:** could fire once on mount; needs a parent on/off toggle. Defer until requested.
@@ -142,9 +145,9 @@ Pre-merge:
 
 ## 12. Effort + rollout
 
-- ~8 implementation tasks
-- ~10 files touched
-- One-day single-session work (subagent-driven)
+- 9 implementation tasks landed (1 hook + 1 hook + 1 component + 3 scene refactors/adds + 2 doc tasks + 1 verify) — Task 4 (ChapterAudioButton wrapper) deferred to post-PR-#48 follow-up
+- 6 files touched (3 new primitives, 2 scene refactors + 1 scene addition; 2 doc files)
+- One-day single-session work (subagent-driven, two-stage review)
 - No DB migration, no recompile, no seed script, no env var
 - No prod data risk: pure render-layer change
 - Rollout: standard PR + four-green gate + merge to main
