@@ -1,7 +1,7 @@
 // tests/unit/flashcard-scene.test.tsx
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FlashcardScene } from '@/components/scenes/FlashcardScene';
 
 describe('FlashcardScene', () => {
@@ -23,5 +23,40 @@ describe('FlashcardScene', () => {
     render(<FlashcardScene data={data} onComplete={onComplete} />);
     await userEvent.click(screen.getByRole('button', { name: /Got it/i }));
     expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('FlashcardScene speech', () => {
+  let cancel: ReturnType<typeof vi.fn>;
+  let speak: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    cancel = vi.fn();
+    speak = vi.fn();
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: { cancel, speak } as unknown as SpeechSynthesis,
+    });
+    class StubUtterance {
+      text: string;
+      lang = '';
+      rate = 1;
+      constructor(text: string) { this.text = text; }
+    }
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', {
+      configurable: true,
+      value: StubUtterance,
+    });
+  });
+
+  const data = { hanzi: '海', pinyin: ['hǎi'], meaningEn: 'sea', meaningZh: '海洋', imageHook: null };
+
+  it('tapping the big hanzi triggers speech with the hanzi text', async () => {
+    render(<FlashcardScene data={data} onComplete={() => undefined} />);
+    await userEvent.click(screen.getByRole('button', { name: /Play audio for 海/i }));
+    expect(speak).toHaveBeenCalledTimes(1);
+    const utt = speak.mock.calls[0][0] as SpeechSynthesisUtterance;
+    expect(utt.text).toBe('海');
+    expect(utt.lang).toBe('zh-CN');
   });
 });
