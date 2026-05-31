@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
 import type { TranslateDirection } from '@/lib/scenes/configs';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
+import { SpeakButton } from '@/components/play/SpeakButton';
 
 interface CharacterDetail {
   characterId: string;
@@ -46,8 +47,11 @@ export function TranslatePickScene({ target, pool, direction, onComplete, hintRe
 
   const stimulus =
     direction === 'cn_to_en' ? (
-      <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-amber-100 text-7xl font-bold text-amber-900 shadow-lg">
-        {target.hanzi}
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-amber-100 text-7xl font-bold text-amber-900 shadow-lg">
+          {target.hanzi}
+        </div>
+        <SpeakButton text={target.hanzi} size="sm" label={`Play sound for ${target.hanzi}`} />
       </div>
     ) : (
       <div className="flex h-32 items-center justify-center rounded-2xl bg-amber-100 px-8 text-3xl font-bold text-amber-900 shadow-lg">

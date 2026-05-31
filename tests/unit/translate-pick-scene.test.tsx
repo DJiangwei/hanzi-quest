@@ -103,3 +103,46 @@ describe('TranslatePickScene — EN to CN', () => {
     expect(onComplete).toHaveBeenCalledWith(true);
   });
 });
+
+describe('TranslatePickScene — SpeakButton (PR #50)', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: { cancel: vi.fn(), speak: vi.fn() } as unknown as SpeechSynthesis,
+    });
+    class StubUtterance {
+      text: string;
+      lang = '';
+      rate = 1;
+      constructor(text: string) { this.text = text; }
+    }
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', {
+      configurable: true,
+      value: StubUtterance,
+    });
+  });
+
+  it('renders a SpeakButton next to the hanzi stimulus in cn_to_en direction', () => {
+    render(
+      <TranslatePickScene
+        target={target}
+        pool={pool}
+        direction="cn_to_en"
+        onComplete={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /read aloud|play sound/i })).toBeInTheDocument();
+  });
+
+  it('does NOT render a SpeakButton in en_to_cn direction (would reveal answer)', () => {
+    render(
+      <TranslatePickScene
+        target={target}
+        pool={pool}
+        direction="en_to_cn"
+        onComplete={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /read aloud|play sound/i })).toBeNull();
+  });
+});
