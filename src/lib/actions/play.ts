@@ -280,6 +280,11 @@ export async function finishLevelAction(
           labelZh: '完美一周！',
           labelEn: 'Perfect week!',
         });
+        // First-time perfect_week: grant a card as a bonus reward.
+        // Fire independently of the boss-clear cardGrant (a single boss run
+        // can trigger both; each has a distinct source so deduplication in
+        // pullCardForChild handles re-runs correctly).
+        void pullCardForChild(child.id, 'perfect_week', parsed.weekId);
       }
     }
   }
