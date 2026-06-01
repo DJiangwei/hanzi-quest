@@ -21,14 +21,7 @@ import { getActivityForRange } from '@/lib/db/activity';
 import { todayUtcIso } from '@/lib/db/streaks';
 import { MapHeaderPill } from '@/components/play/MapHeaderPill';
 import { listMapsForChild } from '@/lib/db/maps';
-
-function mondayOfIsoWeek(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  const dow = d.getUTCDay(); // 0=Sun..6=Sat
-  const back = dow === 0 ? 6 : dow - 1;
-  d.setUTCDate(d.getUTCDate() - back);
-  return d.toISOString().slice(0, 10);
-}
+import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);

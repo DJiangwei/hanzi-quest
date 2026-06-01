@@ -107,7 +107,12 @@ export function SceneRunner({
   const [coinsThisSession, setCoinsThisSession] = useState(0);
   const [done, setDone] = useState(false);
   const [lastSceneType, setLastSceneType] = useState<SceneType | null>(null);
-  const [freePullClaimed, setFreePullClaimed] = useState(false);
+  const [cardGrant, setCardGrant] = useState<{
+    granted: boolean;
+    itemId?: string;
+    packSlug?: string;
+    isDupe?: boolean;
+  } | null>(null);
   const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
   const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
   const [pending, startTransition] = useTransition();
@@ -162,7 +167,8 @@ export function SceneRunner({
         coinsThisSession={coinsThisSession}
         childId={childId}
         weekId={weekId}
-        chestAvailable={lastSceneType === 'boss' && !freePullClaimed}
+        chestAvailable={lastSceneType === 'boss'}
+        cardGrant={cardGrant}
         onContinue={() => router.push(resolvedExitHref)}
       />
     );
@@ -200,7 +206,18 @@ export function SceneRunner({
         });
         collectedBonuses.push(...levelResult.bonuses);
         collectedTrophies.push(...levelResult.trophies);
-        setFreePullClaimed(levelResult.freePullClaimed);
+        if (levelResult.cardGrant) {
+          setCardGrant({
+            granted: levelResult.cardGrant.granted,
+            ...(levelResult.cardGrant.granted
+              ? {
+                  itemId: levelResult.cardGrant.itemId,
+                  packSlug: levelResult.cardGrant.packSlug,
+                  isDupe: levelResult.cardGrant.isDupe,
+                }
+              : {}),
+          });
+        }
         setDone(true);
       } else {
         setIndex(nextIndex);

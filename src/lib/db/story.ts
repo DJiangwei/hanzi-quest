@@ -112,8 +112,8 @@ export async function listStoryChaptersForChild(
 export async function markChapterRead(
   chapterId: string,
   childId: string,
-): Promise<void> {
-  await db
+): Promise<{ wasNew: boolean }> {
+  const updated = await db
     .update(storyChapters)
     .set({ readAt: new Date() })
     .where(
@@ -122,7 +122,9 @@ export async function markChapterRead(
         eq(storyChapters.childId, childId),
         isNull(storyChapters.readAt),
       ),
-    );
+    )
+    .returning({ id: storyChapters.id });
+  return { wasNew: updated.length > 0 };
 }
 
 export async function getLatestUnreadChapter(

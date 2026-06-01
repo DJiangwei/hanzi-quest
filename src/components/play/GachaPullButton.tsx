@@ -1,5 +1,8 @@
 'use client';
 
+// @deprecated PR #52 — coin gacha removed. File retained for one release.
+//   Drop entirely in PR #53+ along with `pullPaid` action.
+
 // src/components/play/GachaPullButton.tsx
 import { useState, useTransition } from 'react';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';

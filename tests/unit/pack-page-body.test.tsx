@@ -1,10 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   refresh: vi.fn(),
-  pullPaid: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -15,23 +14,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/actions/gacha', () => ({
-  pullPaid: mocks.pullPaid,
+  swapShardsForItem: vi.fn().mockResolvedValue({ ok: true, shardsRemaining: 2 }),
 }));
 
 import { PackPageBody } from '@/components/play/PackPageBody';
-import type { CollectibleItem, CollectionPack } from '@/lib/db/collections';
-
-const pack: CollectionPack = {
-  id: 'pack-flags',
-  slug: 'flags-v1',
-  name: '世界国旗',
-  description: null,
-  themeColor: '#3aa8e3',
-  isActive: true,
-  availableFrom: null,
-  availableTo: null,
-  createdAt: new Date(),
-};
+import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 
 const items: CollectibleItem[] = [
   {
@@ -62,24 +49,103 @@ const items: CollectibleItem[] = [
   },
 ];
 
+// OwnedCollectibleItem fixtures for PR #52 shard/dupe tests
+const ownedItems: OwnedCollectibleItem[] = [
+  {
+    ...items[0],
+    count: 3,
+    firstObtainedAt: new Date(),
+  },
+  {
+    ...items[1],
+    count: 1,
+    firstObtainedAt: new Date(),
+  },
+];
+
 beforeEach(() => {
   mocks.push.mockReset();
   mocks.refresh.mockReset();
-  mocks.pullPaid.mockReset();
 });
 
 afterEach(() => vi.clearAllMocks());
+
+describe('PackPageBody gacha removal (PR #52)', () => {
+  it('does NOT render "Buy a pull" CTA', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['i1']}
+        ownedItems={[]}
+        balance={1000}
+        shardCount={0}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /抽卡|buy a pull|gacha/i })).toBeNull();
+  });
+});
+
+describe('PackPageBody PR #52 surface', () => {
+  it('renders ShardPill in the header', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['i1']}
+        ownedItems={ownedItems}
+        balance={1000}
+        shardCount={7}
+      />,
+    );
+    expect(screen.getByText(/7/)).toBeInTheDocument();
+    expect(screen.getByText(/🔹/)).toBeInTheDocument();
+  });
+
+  it('renders ×N badge for items where count > 1', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['i1', 'i2']}
+        ownedItems={ownedItems}
+        balance={1000}
+        shardCount={0}
+      />,
+    );
+    expect(screen.getByText(/×3/)).toBeInTheDocument();
+  });
+
+  it('does NOT render ×N badge for items where count is 1', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['i1', 'i2']}
+        ownedItems={ownedItems}
+        balance={1000}
+        shardCount={0}
+      />,
+    );
+    expect(screen.queryByText(/×1/)).toBeNull();
+  });
+});
 
 describe('PackPageBody', () => {
   it('renders bilingual pack header + slogan', () => {
     render(
       <PackPageBody
         childId="c1"
-        pack={pack}
         packSlug="flags-v1"
         items={items}
         ownedItemIds={['i1']}
+        ownedItems={[]}
         balance={1000}
+        shardCount={0}
       />,
     );
     expect(screen.getByText('世界国旗')).toBeInTheDocument();
@@ -93,52 +159,29 @@ describe('PackPageBody', () => {
     render(
       <PackPageBody
         childId="c1"
-        pack={pack}
         packSlug="flags-v1"
         items={items}
         ownedItemIds={['i1']}
+        ownedItems={[]}
         balance={1000}
+        shardCount={0}
       />,
     );
     expect(screen.getByText(/1 \/ 2/)).toBeInTheDocument();
   });
 
-  it('disables the pull button when balance < pack cost', () => {
+  it('shows coin balance in header', () => {
     render(
       <PackPageBody
         childId="c1"
-        pack={pack}
         packSlug="flags-v1"
         items={items}
         ownedItemIds={[]}
-        balance={100}
+        ownedItems={[]}
+        balance={500}
+        shardCount={0}
       />,
     );
-    const button = screen.getByRole('button', { name: /抽卡 300/ });
-    expect(button).toBeDisabled();
-  });
-
-  it('calls pullPaid with the pack slug when the pull button is tapped', async () => {
-    mocks.pullPaid.mockResolvedValue({
-      item: items[0],
-      wasDuplicate: false,
-      shardsAfter: null,
-      coinsAfter: 700,
-      trophies: [],
-    });
-    render(
-      <PackPageBody
-        childId="c1"
-        pack={pack}
-        packSlug="flags-v1"
-        items={items}
-        ownedItemIds={[]}
-        balance={1000}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: /抽卡 300/ }));
-    // pullPaid is invoked inside a transition; flush microtasks.
-    await new Promise((r) => setTimeout(r, 0));
-    expect(mocks.pullPaid).toHaveBeenCalledWith('flags-v1', { childId: 'c1' });
+    expect(screen.getByText(/🪙 500/)).toBeInTheDocument();
   });
 });

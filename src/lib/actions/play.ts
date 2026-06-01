@@ -27,6 +27,7 @@ import {
   getPlayableWeekForChild,
   listCharactersForWeek,
 } from '@/lib/db/weeks';
+import { pullCardForChild } from './gacha';
 
 const SCENE_COMPLETE_AWARD = 50;
 const SCENE_REPLAY_AWARD = 5;
@@ -220,6 +221,7 @@ export async function finishLevelAction(
   ok: true;
   bossCleared: boolean;
   freePullClaimed: boolean;
+  cardGrant: Awaited<ReturnType<typeof pullCardForChild>> | null;
   bonuses: EconomyBonus[];
   trophies: GrantedTrophy[];
 }> {
@@ -278,6 +280,13 @@ export async function finishLevelAction(
           labelZh: '完美一周！',
           labelEn: 'Perfect week!',
         });
+        // First-time perfect_week: grant a card as a bonus reward.
+        // Fire independently of the boss-clear cardGrant (a single boss run
+        // can trigger both; each has a distinct source so deduplication in
+        // pullCardForChild handles re-runs correctly).
+        pullCardForChild(child.id, 'perfect_week', parsed.weekId).catch((err) => {
+          console.error('[finishLevelAction] perfect_week pullCardForChild failed:', err);
+        });
       }
     }
   }
@@ -306,11 +315,17 @@ export async function finishLevelAction(
     ...(await checkAndGrantTrophies(child.id, { kind: 'level-complete' })),
   );
 
+  let cardGrant: Awaited<ReturnType<typeof pullCardForChild>> | null = null;
+  if (bossCleared) {
+    cardGrant = await pullCardForChild(child.id, 'boss_clear', parsed.sessionId);
+  }
+
   revalidatePath(`/play/${child.id}`);
   return {
     ok: true,
     bossCleared,
     freePullClaimed: existing?.freePullClaimed ?? false,
+    cardGrant,
     bonuses,
     trophies: collectedTrophies,
   };

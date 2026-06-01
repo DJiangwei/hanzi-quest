@@ -10,6 +10,9 @@ import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
 import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { checkAndGrantTrophies } from '@/lib/db/trophies';
+import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
+import { todayUtcIso } from '@/lib/db/streaks';
+import { pullCardInTx, swapShardsInTx, type CardGrantResult, type CardGrantSkipped } from '@/lib/db/grants';
 
 // AlreadyClaimedError is NOT re-exported here — 'use server' files may only
 // export async functions. Client components import it directly from
@@ -71,6 +74,10 @@ export async function pullFreeFromBoss(
   return result;
 }
 
+/**
+ * @deprecated PR #52 — coin gacha removed. Kept for one release as a rollback path.
+ *   Drop in PR #53+.
+ */
 export async function pullPaid(
   packSlug: string,
   args: PullActionArgs,
@@ -95,4 +102,36 @@ export async function pullPaid(
   revalidatePath(`/play/${child.id}/collection`);
   revalidatePath(`/play/${child.id}/collection/${packSlug}`);
   return { ...result, trophies };
+}
+
+export type CardGrantSource = 'boss_clear' | 'perfect_week' | 'story_chapter';
+
+export async function pullCardForChild(
+  childId: string,
+  source: CardGrantSource,
+  refId: string,
+): Promise<CardGrantResult | CardGrantSkipped> {
+  const weekStartUtc = mondayOfIsoWeek(todayUtcIso());
+  const result = await db.transaction((tx) =>
+    pullCardInTx(tx, childId, source, refId, weekStartUtc, Math.random),
+  );
+  if (result.granted) {
+    revalidatePath(`/play/${childId}/collection/${result.packSlug}`);
+  }
+  return result;
+}
+
+export async function swapShardsForItem(
+  childId: string,
+  itemId: string,
+): Promise<
+  | { ok: true; shardsRemaining: number }
+  | { ok: false; reason: 'insufficient_shards' | 'already_owned' | 'item_not_found' }
+> {
+  const { child } = await requireChild(childId);
+  const result = await db.transaction((tx) => swapShardsInTx(tx, child.id, itemId));
+  if (result.ok) {
+    revalidatePath(`/play/${child.id}/collection`);
+  }
+  return result;
 }

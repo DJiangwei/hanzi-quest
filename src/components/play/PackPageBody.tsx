@@ -2,17 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PackGrid } from './PackGrid';
-import { GachaPullButton } from './GachaPullButton';
-import { TreasureChestReveal } from '@/components/scenes/fx/TreasureChestReveal';
+import { ShardPill } from './ShardPill';
+import { SwapDialog } from './SwapDialog';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
-import type { CollectibleItem, CollectionPack } from '@/lib/db/collections';
+import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 import { getPackMeta } from '@/lib/collections/packRegistry';
-import type { PullResult } from '@/lib/db/gacha';
+import { swapShardsForItem } from '@/lib/actions/gacha';
 
 interface Props {
   childId: string;
-  pack: CollectionPack;
   /**
    * Looked up via `getPackMeta(packSlug)` on the client. We deliberately do
    * NOT take `meta` as a prop — `PackUiMeta` carries a React component
@@ -22,7 +20,11 @@ interface Props {
   packSlug: string;
   items: CollectibleItem[];
   ownedItemIds: string[];
+  /** Full owned records with count — used for ×N dupe badges. */
+  ownedItems: OwnedCollectibleItem[];
   balance: number;
+  /** Shard balance for this child × pack pair. */
+  shardCount: number;
 }
 
 /**
@@ -35,50 +37,26 @@ interface Props {
  */
 export function PackPageBody({
   childId,
-  pack,
   packSlug,
   items,
   ownedItemIds,
+  ownedItems,
   balance,
+  shardCount,
 }: Props) {
   const meta = getPackMeta(packSlug);
   if (!meta) {
     throw new Error(`PackPageBody: no UI meta registered for ${packSlug}`);
   }
   const router = useRouter();
-  const [reveal, setReveal] = useState<PullResult | null>(null);
-  const [optimisticBalance, setOptimisticBalance] = useState(balance);
   const ownedSet = new Set(ownedItemIds);
 
-  if (reveal) {
-    const revealEmoji = meta.resolveRevealEmoji?.(reveal.item.slug) ?? null;
-    return (
-      <div className="flex flex-col items-center gap-4">
-        <TreasureChestReveal
-          item={{
-            id: reveal.item.id,
-            slug: reveal.item.slug,
-            nameZh: reveal.item.nameZh,
-            nameEn: reveal.item.nameEn,
-            loreZh: reveal.item.loreZh,
-            loreEn: reveal.item.loreEn,
-            emoji: revealEmoji,
-          }}
-          wasDuplicate={reveal.wasDuplicate}
-          shardsAfter={reveal.shardsAfter}
-        />
-        <WoodSignButton
-          size="lg"
-          onClick={() => {
-            setReveal(null);
-            router.refresh();
-          }}
-        >
-          再看一眼 / Look again
-        </WoodSignButton>
-      </div>
-    );
-  }
+  // Build a map from item id → count for dupe badge rendering
+  const countById = new Map<string, number>(
+    ownedItems.map((o) => [o.id, o.count]),
+  );
+
+  const [swapItem, setSwapItem] = useState<CollectibleItem | null>(null);
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4">
@@ -90,9 +68,12 @@ export function PackPageBody({
         >
           ← 收藏馆 / Atlas
         </WoodSignButton>
-        <span className="text-sm font-semibold text-[var(--color-treasure-700)]">
-          🪙 {optimisticBalance}
-        </span>
+        <div className="flex items-center gap-2">
+          <ShardPill count={shardCount} />
+          <span className="text-sm font-semibold text-[var(--color-treasure-700)]">
+            🪙 {balance}
+          </span>
+        </div>
       </div>
 
       <header
@@ -115,20 +96,69 @@ export function PackPageBody({
         </p>
       </header>
 
-      <GachaPullButton
-        balance={optimisticBalance}
-        cost={meta.paidPullCost}
-        packSlug={pack.slug}
-        childId={childId}
-        onResult={(r) => {
-          setOptimisticBalance(r.coinsAfter);
-          setReveal(r);
-        }}
-      />
-
       <div className="rounded-2xl border border-[#c89f5e] bg-[linear-gradient(180deg,#f5ead0_0%,#ead7a8_100%)] p-4">
-        <PackGrid items={items} ownedItemIds={ownedSet} meta={meta} />
+        <div
+          data-testid="pack-grid-with-badges"
+          className={`grid grid-cols-${meta.gridColumns ?? 3} gap-2.5`}
+          style={{ gridTemplateColumns: `repeat(${meta.gridColumns ?? 3}, minmax(0, 1fr))` }}
+        >
+          {items.map((item) => {
+            const Card = meta.ItemCard;
+            const count = countById.get(item.id) ?? 0;
+            const showDupe = count > 1;
+            const isOwned = ownedSet.has(item.id);
+            return (
+              <div
+                key={item.id}
+                className="relative"
+                onClick={isOwned ? undefined : () => setSwapItem(item)}
+                role={isOwned ? undefined : 'button'}
+                tabIndex={isOwned ? undefined : 0}
+                onKeyDown={
+                  isOwned
+                    ? undefined
+                    : (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setSwapItem(item);
+                      }
+                }
+              >
+                <Card
+                  item={item}
+                  owned={isOwned}
+                  size="md"
+                  compact={false}
+                />
+                {showDupe && (
+                  <span className="absolute right-0.5 top-0.5 z-10 rounded-full bg-sky-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white">
+                    ×{count}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
+
+      {swapItem ? (
+        <SwapDialog
+          open
+          onClose={() => setSwapItem(null)}
+          itemNameZh={swapItem.nameZh}
+          itemNameEn={swapItem.nameEn}
+          shardCost={3}
+          shardBalance={shardCount}
+          onConfirm={async () => {
+            const result = await swapShardsForItem(childId, swapItem.id);
+            if (result.ok) {
+              setSwapItem(null);
+              // revalidatePath in the action handles refresh
+            } else {
+              // No toast UX in this PR; just close. v2 candidate.
+              setSwapItem(null);
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }

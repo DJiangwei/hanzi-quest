@@ -4,6 +4,7 @@ import {
   childCollections,
   collectibleItems,
   collectionPacks,
+  shardBalances,
 } from '@/db/schema';
 
 export type CollectionPack = typeof collectionPacks.$inferSelect;
@@ -89,4 +90,17 @@ export async function listChildCollection(
     count: r.count,
     firstObtainedAt: r.firstObtainedAt,
   }));
+}
+
+export async function getShardBalance(
+  childId: string,
+  packId: string,
+): Promise<number> {
+  const rows = await db
+    .select({ shards: shardBalances.shards })
+    .from(shardBalances)
+    .where(
+      and(eq(shardBalances.childId, childId), eq(shardBalances.packId, packId)),
+    );
+  return rows[0]?.shards ?? 0;
 }

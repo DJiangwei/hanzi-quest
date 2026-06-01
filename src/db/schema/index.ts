@@ -10,3 +10,4 @@ export * from './system';
 export * from './trophies';
 export * from './decorations';
 export * from './story';
+export * from './gacha';

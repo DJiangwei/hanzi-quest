@@ -5,10 +5,17 @@ const dbStoryMock = vi.hoisted(() => ({
   getStoryChapterByWeek: vi.fn(),
   getLatestBossScoreForChildWeek: vi.fn(),
   getCharactersAvailableForChildWeek: vi.fn(),
-  markChapterRead: vi.fn(),
+  markChapterRead: vi.fn(() => Promise.resolve({ wasNew: true })),
   listStoryChaptersForChild: vi.fn(() => Promise.resolve([])),
 }));
 vi.mock('@/lib/db/story', () => dbStoryMock);
+
+const gachaMock = vi.hoisted(() => ({
+  pullCardForChild: vi.fn(() =>
+    Promise.resolve({ granted: true, packSlug: 'zodiac-v1', itemId: 'item-1' }),
+  ),
+}));
+vi.mock('@/lib/actions/gacha', () => gachaMock);
 
 const aiMock = vi.hoisted(() => ({
   generateStoryChapterWithAI: vi.fn(),
@@ -215,9 +222,38 @@ describe('generateStoryChapter', () => {
 
 describe('markChapterReadAction', () => {
   it('calls markChapterRead and revalidates the home page', async () => {
+    dbStoryMock.markChapterRead.mockResolvedValueOnce({ wasNew: true });
     const { markChapterReadAction } = await import('@/lib/actions/story');
     await markChapterReadAction({ chapterId: 'c1', childId: 'k1' });
     expect(dbStoryMock.markChapterRead).toHaveBeenCalledWith('c1', 'k1');
     expect(cacheMock.revalidatePath).toHaveBeenCalledWith('/play/k1');
+  });
+});
+
+describe('markChapterReadAction card grant (PR #52)', () => {
+  it('calls pullCardForChild with source=story_chapter on first read', async () => {
+    dbStoryMock.markChapterRead.mockResolvedValueOnce({ wasNew: true });
+    const grantResult = { granted: true, packSlug: 'zodiac-v1', itemId: 'item-1' };
+    gachaMock.pullCardForChild.mockResolvedValueOnce(grantResult);
+
+    const { markChapterReadAction } = await import('@/lib/actions/story');
+    const result = await markChapterReadAction({ chapterId: 'c1', childId: 'k1' });
+
+    expect(gachaMock.pullCardForChild).toHaveBeenCalledWith(
+      'k1',
+      'story_chapter',
+      'c1',
+    );
+    expect(result).toEqual({ ok: true, cardGrant: grantResult });
+  });
+
+  it('does NOT call pullCardForChild when chapter was already read', async () => {
+    dbStoryMock.markChapterRead.mockResolvedValueOnce({ wasNew: false });
+
+    const { markChapterReadAction } = await import('@/lib/actions/story');
+    const result = await markChapterReadAction({ chapterId: 'c1', childId: 'k1' });
+
+    expect(gachaMock.pullCardForChild).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: true, cardGrant: null });
   });
 });

@@ -1,0 +1,246 @@
+// NEVER import this file from client code. It pulls in postgres.
+import { and, eq, sql } from 'drizzle-orm';
+import { db } from '@/db';
+import { childCardGrantsWeekly, cardGrantsLog } from '@/db/schema/gacha';
+import {
+  childCollections,
+  collectibleItems,
+  collectionPacks,
+  shardBalances,
+} from '@/db/schema/collections';
+
+export const WEEKLY_CARD_CAP = 10;
+export const SHARD_SWAP_COST = 3;
+
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export interface WeightedItem {
+  id: string;
+  packId: string;
+  dropWeight: number;
+}
+
+export function weightedRandomPick<T extends WeightedItem>(
+  items: T[],
+  ownedSet: Set<string>,
+  rng: () => number = Math.random,
+): T {
+  if (items.length === 0) {
+    throw new Error('weightedRandomPick called with empty catalog');
+  }
+
+  // Bias by per-pack unowned count.
+  const packUnowned = new Map<string, number>();
+  for (const item of items) {
+    if (!ownedSet.has(item.id)) {
+      packUnowned.set(item.packId, (packUnowned.get(item.packId) ?? 0) + 1);
+    }
+  }
+
+  const weights = items.map(
+    (item) => item.dropWeight * (1 + (packUnowned.get(item.packId) ?? 0)),
+  );
+  const total = weights.reduce((a, b) => a + b, 0);
+  if (total === 0) {
+    // Catalog has no items with positive drop weight (e.g. all retired).
+    // This is unexpected in normal operation — fail loudly rather than silently
+    // re-enable retired items.
+    throw new Error(
+      'weightedRandomPick: no items with positive dropWeight in catalog',
+    );
+  }
+
+  let roll = rng() * total;
+  for (let i = 0; i < items.length; i++) {
+    roll -= weights[i];
+    if (roll <= 0) return items[i];
+  }
+  return items[items.length - 1]; // float-rounding safety net
+}
+
+export interface CardGrantResult {
+  granted: true;
+  itemId: string;
+  packId: string;
+  packSlug: string;
+  isDupe: boolean;
+  shardsAfter: number;
+  cardsThisWeek: number;
+}
+
+export interface CardGrantSkipped {
+  granted: false;
+  reason: 'weekly_cap_reached' | 'already_granted';
+  cardsThisWeek: number;
+}
+
+/**
+ * Inside a transaction:
+ *  1. SELECT child_card_grants_weekly (FOR UPDATE).
+ *  2. If count >= cap → return skipped.
+ *  3. INSERT card_grants_log; if PK collision → already_granted.
+ *  4. Pick weighted random item.
+ *  5. Upsert child_collections (count++).
+ *  6. If was dupe → shard_balances++.
+ *  7. Increment/insert weekly counter.
+ */
+export async function pullCardInTx(
+  tx: Tx,
+  childId: string,
+  source: 'boss_clear' | 'perfect_week' | 'story_chapter',
+  refId: string,
+  weekStartUtc: string,
+  rng: () => number = Math.random,
+): Promise<CardGrantResult | CardGrantSkipped> {
+  // 1. Weekly counter with row lock.
+  const weeklyRows = await tx
+    .select({ count: childCardGrantsWeekly.count })
+    .from(childCardGrantsWeekly)
+    .where(
+      and(
+        eq(childCardGrantsWeekly.childId, childId),
+        eq(childCardGrantsWeekly.weekStartUtc, weekStartUtc),
+      ),
+    )
+    .for('update');
+  const currentCount = weeklyRows[0]?.count ?? 0;
+
+  if (currentCount >= WEEKLY_CARD_CAP) {
+    return { granted: false, reason: 'weekly_cap_reached', cardsThisWeek: currentCount };
+  }
+
+  // 2. Idempotency log — INSERT with PK collision → already granted.
+  try {
+    await tx.insert(cardGrantsLog).values({ childId, source, refId });
+  } catch (err) {
+    // Postgres unique_violation (23505)
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      'code' in err &&
+      (err as { code: string }).code === '23505'
+    ) {
+      return { granted: false, reason: 'already_granted', cardsThisWeek: currentCount };
+    }
+    throw err;
+  }
+
+  // 3. Pick weighted random item from all active packs.
+  const catalog = await tx
+    .select({
+      id: collectibleItems.id,
+      packId: collectibleItems.packId,
+      packSlug: collectionPacks.slug,
+      dropWeight: collectibleItems.dropWeight,
+    })
+    .from(collectibleItems)
+    .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
+    .where(eq(collectionPacks.isActive, true));
+
+  const owned = await tx
+    .select({ itemId: childCollections.itemId })
+    .from(childCollections)
+    .where(eq(childCollections.childId, childId));
+  const ownedSet = new Set(owned.map((o) => o.itemId));
+
+  const picked = weightedRandomPick(catalog, ownedSet, rng);
+  const isDupe = ownedSet.has(picked.id);
+
+  // 4. Upsert child_collections.
+  if (isDupe) {
+    await tx
+      .update(childCollections)
+      .set({ count: sql`${childCollections.count} + 1` })
+      .where(
+        and(
+          eq(childCollections.childId, childId),
+          eq(childCollections.itemId, picked.id),
+        ),
+      );
+  } else {
+    await tx.insert(childCollections).values({ childId, itemId: picked.id, count: 1 });
+  }
+
+  // 5. Shard grant on dupe.
+  let shardsAfter = 0;
+  if (isDupe) {
+    const [shardRow] = await tx
+      .insert(shardBalances)
+      .values({ childId, packId: picked.packId, shards: 1 })
+      .onConflictDoUpdate({
+        target: [shardBalances.childId, shardBalances.packId],
+        set: { shards: sql`${shardBalances.shards} + 1` },
+      })
+      .returning({ shards: shardBalances.shards });
+    shardsAfter = shardRow?.shards ?? 1;
+  }
+
+  // 6. Increment weekly counter (upsert — safe for first-of-week race)
+  await tx
+    .insert(childCardGrantsWeekly)
+    .values({ childId, weekStartUtc, count: 1 })
+    .onConflictDoUpdate({
+      target: [childCardGrantsWeekly.childId, childCardGrantsWeekly.weekStartUtc],
+      set: { count: sql`${childCardGrantsWeekly.count} + 1` },
+    });
+
+  return {
+    granted: true,
+    itemId: picked.id,
+    packId: picked.packId,
+    packSlug: picked.packSlug,
+    isDupe,
+    shardsAfter,
+    cardsThisWeek: currentCount + 1,
+  };
+}
+
+/**
+ * Trade SHARD_SWAP_COST shards for a chosen unowned item.
+ */
+export async function swapShardsInTx(
+  tx: Tx,
+  childId: string,
+  itemId: string,
+): Promise<
+  | { ok: true; shardsRemaining: number }
+  | { ok: false; reason: 'insufficient_shards' | 'already_owned' | 'item_not_found' }
+> {
+  const items = await tx
+    .select({ id: collectibleItems.id, packId: collectibleItems.packId })
+    .from(collectibleItems)
+    .where(eq(collectibleItems.id, itemId));
+  if (items.length === 0) return { ok: false, reason: 'item_not_found' };
+  const packId = items[0].packId;
+
+  const owned = await tx
+    .select({ itemId: childCollections.itemId })
+    .from(childCollections)
+    .where(
+      and(
+        eq(childCollections.childId, childId),
+        eq(childCollections.itemId, itemId),
+      ),
+    );
+  if (owned.length > 0) return { ok: false, reason: 'already_owned' };
+
+  const balRows = await tx
+    .select({ shards: shardBalances.shards })
+    .from(shardBalances)
+    .where(
+      and(eq(shardBalances.childId, childId), eq(shardBalances.packId, packId)),
+    )
+    .for('update');
+  const shards = balRows[0]?.shards ?? 0;
+  if (shards < SHARD_SWAP_COST) return { ok: false, reason: 'insufficient_shards' };
+
+  await tx
+    .update(shardBalances)
+    .set({ shards: shards - SHARD_SWAP_COST })
+    .where(
+      and(eq(shardBalances.childId, childId), eq(shardBalances.packId, packId)),
+    );
+  await tx.insert(childCollections).values({ childId, itemId, count: 1 });
+
+  return { ok: true, shardsRemaining: shards - SHARD_SWAP_COST };
+}
