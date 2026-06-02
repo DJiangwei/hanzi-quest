@@ -14,6 +14,7 @@ import {
 } from '@/lib/scenes/lianliankan';
 import { playSound } from '@/lib/audio/play';
 import { LianliankanLine } from './fx/LianliankanLine';
+import { ShakeWrap } from './fx/ShakeWrap';
 
 interface CharacterDetail {
   characterId: string;
@@ -81,8 +82,9 @@ export function LianliankanScene({ chars, onComplete, hintRequested }: Props) {
 
     const path = findPath(board, selected, { row, col });
     if (path === null) {
-      // Matching pair exists but path is blocked — reshuffle instead of penalising the player.
-      setBoard((b) => shuffleRemaining(b, Math.random));
+      // Spec §4.3: matching pair with no valid path → flash + deselect, no penalty.
+      // Don't reshuffle — that's reserved for the actual deadlock case (handled by useEffect).
+      setShakeKey((k) => k + 1);
       setSelected(null);
       return;
     }
@@ -106,59 +108,60 @@ export function LianliankanScene({ chars, onComplete, hintRequested }: Props) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-6">
-      <div
-        className="relative grid"
-        data-shake-key={shakeKey}
-        style={{
-          gridTemplateColumns: `repeat(${board.cols}, clamp(48px, 14vw, 72px))`,
-          gridTemplateRows: `repeat(${board.rows}, clamp(48px, 14vw, 72px))`,
-          gap: 4,
-        }}
-      >
-        {board.cells.flatMap((row, r) =>
-          row.map((cell, c) => {
-            if (cell.kind === 'empty') {
-              return <div key={`${r}-${c}`} aria-hidden />;
-            }
-            const isSelected =
-              selected?.row === r && selected?.col === c;
-            const isHinted =
-              hintPair?.fromTileId === cell.tileId ||
-              hintPair?.toTileId === cell.tileId;
-            return (
-              <button
-                key={`${r}-${c}`}
-                type="button"
-                aria-pressed={isSelected}
-                data-hint={isHinted ? 'true' : undefined}
-                onClick={() => onTileTap(r, c)}
-                className={[
-                  'flex items-center justify-center rounded-2xl border-2 shadow-sm transition-transform active:scale-95',
-                  cell.display.kind === 'hanzi'
-                    ? 'bg-[var(--color-sand-100)] font-hanzi text-4xl text-[var(--color-ocean-900)]'
-                    : 'bg-amber-100 text-sm font-semibold text-amber-900',
-                  isSelected
-                    ? 'border-sky-400 ring-4 ring-sky-200'
-                    : 'border-[var(--color-sand-300)]',
-                  isHinted ? 'animate-pulse' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                {cell.display.text}
-              </button>
-            );
-          }),
-        )}
-        {lastPath ? (
-          <LianliankanLine
-            path={lastPath}
-            cols={board.cols}
-            rows={board.rows}
-            cellPx={CELL_PX}
-          />
-        ) : null}
-      </div>
+      <ShakeWrap triggerKey={shakeKey}>
+        <div
+          className="relative grid"
+          style={{
+            gridTemplateColumns: `repeat(${board.cols}, clamp(48px, 14vw, 72px))`,
+            gridTemplateRows: `repeat(${board.rows}, clamp(48px, 14vw, 72px))`,
+            gap: 4,
+          }}
+        >
+          {board.cells.flatMap((row, r) =>
+            row.map((cell, c) => {
+              if (cell.kind === 'empty') {
+                return <div key={`${r}-${c}`} aria-hidden />;
+              }
+              const isSelected =
+                selected?.row === r && selected?.col === c;
+              const isHinted =
+                hintPair?.fromTileId === cell.tileId ||
+                hintPair?.toTileId === cell.tileId;
+              return (
+                <button
+                  key={`${r}-${c}`}
+                  type="button"
+                  aria-pressed={isSelected}
+                  data-hint={isHinted ? 'true' : undefined}
+                  onClick={() => onTileTap(r, c)}
+                  className={[
+                    'flex items-center justify-center rounded-2xl border-2 shadow-sm transition-transform active:scale-95',
+                    cell.display.kind === 'hanzi'
+                      ? 'bg-[var(--color-sand-100)] font-hanzi text-4xl text-[var(--color-ocean-900)]'
+                      : 'bg-amber-100 text-sm font-semibold text-amber-900',
+                    isSelected
+                      ? 'border-sky-400 ring-4 ring-sky-200'
+                      : 'border-[var(--color-sand-300)]',
+                    isHinted ? 'animate-pulse' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  {cell.display.text}
+                </button>
+              );
+            }),
+          )}
+          {lastPath ? (
+            <LianliankanLine
+              path={lastPath}
+              cols={board.cols}
+              rows={board.rows}
+              cellPx={CELL_PX}
+            />
+          ) : null}
+        </div>
+      </ShakeWrap>
     </div>
   );
 }
