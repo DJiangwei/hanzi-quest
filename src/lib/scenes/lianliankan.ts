@@ -139,6 +139,29 @@ export function hasValidPair(board: LianliankanBoard): boolean {
   return findOneValidPair(board) !== null;
 }
 
+/**
+ * Returns true only when EVERY matching pair on the board has a valid path.
+ * Used by buildInitialBoard to guarantee the player is never stuck at the start.
+ */
+function allPairsReachable(board: LianliankanBoard): boolean {
+  const tiles = listRemainingTiles(board);
+  // Group tile positions by pairId
+  const byPair = new Map<string, Cell[]>();
+  for (const pos of tiles) {
+    const cell = board.cells[pos.row]![pos.col]!;
+    if (cell.kind !== 'tile') continue;
+    const group = byPair.get(cell.pairId) ?? [];
+    group.push(pos);
+    byPair.set(cell.pairId, group);
+  }
+  for (const [, positions] of byPair) {
+    if (positions.length !== 2) continue;
+    const [a, b] = positions as [Cell, Cell];
+    if (findPath(board, a, b) === null) return false;
+  }
+  return true;
+}
+
 function cloneBoard(board: LianliankanBoard): LianliankanBoard {
   return {
     rows: board.rows,
@@ -233,7 +256,7 @@ export function buildInitialBoard(
     innerPositions.forEach((p, idx) => {
       board.cells[p.row]![p.col] = arr[idx]!;
     });
-    if (hasValidPair(board)) return board;
+    if (allPairsReachable(board)) return board;
   }
 
   const arr = tiles.slice();
