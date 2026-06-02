@@ -101,3 +101,175 @@ export function findPath(
   }
   return null;
 }
+
+function listRemainingTiles(board: LianliankanBoard): Cell[] {
+  const out: Cell[] = [];
+  for (let r = 0; r < board.rows; r++) {
+    for (let c = 0; c < board.cols; c++) {
+      if (board.cells[r]![c]!.kind === 'tile') {
+        out.push({ row: r, col: c });
+      }
+    }
+  }
+  return out;
+}
+
+export function findOneValidPair(
+  board: LianliankanBoard,
+): { fromTileId: string; toTileId: string } | null {
+  const tiles = listRemainingTiles(board);
+  for (let i = 0; i < tiles.length; i++) {
+    for (let j = i + 1; j < tiles.length; j++) {
+      const a = tiles[i]!;
+      const b = tiles[j]!;
+      const ca = board.cells[a.row]![a.col]!;
+      const cb = board.cells[b.row]![b.col]!;
+      if (ca.kind !== 'tile' || cb.kind !== 'tile') continue;
+      if (ca.pairId !== cb.pairId) continue;
+      const path = findPath(board, a, b);
+      if (path !== null) {
+        return { fromTileId: ca.tileId, toTileId: cb.tileId };
+      }
+    }
+  }
+  return null;
+}
+
+export function hasValidPair(board: LianliankanBoard): boolean {
+  return findOneValidPair(board) !== null;
+}
+
+function cloneBoard(board: LianliankanBoard): LianliankanBoard {
+  return {
+    rows: board.rows,
+    cols: board.cols,
+    cells: board.cells.map((row) => row.map((cell) => ({ ...cell }))),
+  };
+}
+
+export function shuffleRemaining(
+  board: LianliankanBoard,
+  rng: () => number,
+): LianliankanBoard {
+  const positions = listRemainingTiles(board);
+  if (positions.length === 0) return board;
+
+  const tiles: CellContent[] = positions.map(
+    (p) => ({ ...board.cells[p.row]![p.col]! }),
+  );
+
+  for (let attempt = 0; attempt < 32; attempt++) {
+    const shuffled = tiles.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const tmp = shuffled[i]!;
+      shuffled[i] = shuffled[j]!;
+      shuffled[j] = tmp;
+    }
+    const next = cloneBoard(board);
+    positions.forEach((p, idx) => {
+      next.cells[p.row]![p.col] = shuffled[idx]!;
+    });
+    if (hasValidPair(next)) return next;
+  }
+  const fallback = cloneBoard(board);
+  positions.forEach((p, idx) => {
+    fallback.cells[p.row]![p.col] = tiles[idx]!;
+  });
+  return fallback;
+}
+
+export interface InitialBoardChar {
+  id: string;
+  hanzi: string;
+  meaningEn: string;
+}
+
+export function buildInitialBoard(
+  chars: InitialBoardChar[],
+  rng: () => number,
+): LianliankanBoard {
+  if (chars.length !== 4) {
+    throw new Error(`buildInitialBoard expects exactly 4 chars, got ${chars.length}`);
+  }
+  const cells: CellContent[][] = Array.from({ length: 4 }, () =>
+    Array.from({ length: 6 }, (): CellContent => ({ kind: 'empty' })),
+  );
+
+  const tiles: CellContent[] = [];
+  for (const c of chars) {
+    tiles.push({
+      kind: 'tile',
+      tileId: `${c.id}:hanzi`,
+      pairId: c.id,
+      display: { kind: 'hanzi', text: c.hanzi },
+    });
+    tiles.push({
+      kind: 'tile',
+      tileId: `${c.id}:meaning`,
+      pairId: c.id,
+      display: { kind: 'meaning', text: c.meaningEn },
+    });
+  }
+
+  const innerPositions: Cell[] = [];
+  for (let r = 1; r <= 2; r++) {
+    for (let c = 1; c <= 4; c++) innerPositions.push({ row: r, col: c });
+  }
+
+  for (let attempt = 0; attempt < 32; attempt++) {
+    const arr = tiles.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const tmp = arr[i]!;
+      arr[i] = arr[j]!;
+      arr[j] = tmp;
+    }
+    const board: LianliankanBoard = {
+      rows: 4,
+      cols: 6,
+      cells: cells.map((row) => row.map((c) => ({ ...c }))),
+    };
+    innerPositions.forEach((p, idx) => {
+      board.cells[p.row]![p.col] = arr[idx]!;
+    });
+    if (hasValidPair(board)) return board;
+  }
+
+  const arr = tiles.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = arr[i]!;
+    arr[i] = arr[j]!;
+    arr[j] = tmp;
+  }
+  const board: LianliankanBoard = {
+    rows: 4,
+    cols: 6,
+    cells: cells.map((row) => row.map((c) => ({ ...c }))),
+  };
+  innerPositions.forEach((p, idx) => {
+    board.cells[p.row]![p.col] = arr[idx]!;
+  });
+  return board;
+}
+
+export function clearTiles(
+  board: LianliankanBoard,
+  a: Cell,
+  b: Cell,
+): LianliankanBoard {
+  const next = cloneBoard(board);
+  next.cells[a.row]![a.col] = { kind: 'empty' };
+  next.cells[b.row]![b.col] = { kind: 'empty' };
+  return next;
+}
+
+export function isAllCleared(board: LianliankanBoard): boolean {
+  for (let r = 0; r < board.rows; r++) {
+    for (let c = 0; c < board.cols; c++) {
+      if (board.cells[r]![c]!.kind === 'tile') return false;
+    }
+  }
+  return true;
+}
