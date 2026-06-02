@@ -25,6 +25,11 @@ vi.mock('@/lib/db/children', () => ({
     deleteChildOwnedByMock(childId, parentUserId),
 }));
 
+const getDefaultSharedPackIdMock = vi.fn();
+vi.mock('@/lib/db/curriculum', () => ({
+  getDefaultSharedPackId: () => getDefaultSharedPackIdMock(),
+}));
+
 import {
   createChildAction,
   deleteChildAction,
@@ -44,6 +49,9 @@ beforeEach(() => {
   createChildProfileMock.mockReset();
   updateChildOwnedByMock.mockReset();
   deleteChildOwnedByMock.mockReset();
+  getDefaultSharedPackIdMock.mockReset();
+  // Default: pack exists. Override per-test for the missing-pack scenario.
+  getDefaultSharedPackIdMock.mockResolvedValue('pack_default_id');
 });
 
 describe('createChildAction', () => {
@@ -75,7 +83,34 @@ describe('createChildAction', () => {
       parentUserId: 'user_p',
       displayName: 'Anna',
       birthYear: 2019,
+      currentCurriculumPackId: 'pack_default_id',
     });
+  });
+
+  it('auto-enrolls the new child in the default shared pack', async () => {
+    assertParentMock.mockResolvedValue(parentRow);
+    createChildProfileMock.mockResolvedValue({ id: 'c_new' });
+    getDefaultSharedPackIdMock.mockResolvedValue('pack_default_id');
+
+    await createChildAction({}, fd({ displayName: 'Anna' }));
+
+    expect(getDefaultSharedPackIdMock).toHaveBeenCalledTimes(1);
+    expect(createChildProfileMock).toHaveBeenCalledWith(
+      expect.objectContaining({ currentCurriculumPackId: 'pack_default_id' }),
+    );
+  });
+
+  it('still creates the child when the default pack is missing (graceful)', async () => {
+    assertParentMock.mockResolvedValue(parentRow);
+    createChildProfileMock.mockResolvedValue({ id: 'c_new' });
+    getDefaultSharedPackIdMock.mockResolvedValue(null);
+
+    const res = await createChildAction({}, fd({ displayName: 'Anna' }));
+
+    expect(res).toEqual({});
+    expect(createChildProfileMock).toHaveBeenCalledWith(
+      expect.objectContaining({ currentCurriculumPackId: null }),
+    );
   });
 
   it('persists with null birthYear when omitted', async () => {
@@ -85,7 +120,7 @@ describe('createChildAction', () => {
     const res = await createChildAction({}, fd({ displayName: 'Anna' }));
     expect(res).toEqual({});
     expect(createChildProfileMock).toHaveBeenCalledWith(
-      expect.objectContaining({ birthYear: null }),
+      expect.objectContaining({ birthYear: null, currentCurriculumPackId: 'pack_default_id' }),
     );
   });
 });
