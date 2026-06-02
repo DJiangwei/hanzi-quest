@@ -105,16 +105,25 @@ describe('findPath', () => {
   });
 
   it('returns null when path requires > 2 bends', () => {
+    // Exercises the `if (newBends > 2) continue` guard in findPath BFS.
+    //
+    // A is at (0,0), B is at (4,0). The only corridor forces a 3-bend S-path:
+    //   A→right→(0,1) [0 bends]
+    //   →down→(1,1)→(2,1) [1 bend]
+    //   →right→(2,2)→(2,3) [2 bends]
+    //   →down→(3,3) ← blocked: newBends=3, guard fires, `continue`
+    // BFS fully explores all ≤2-bend states and returns null (not a dead-start).
     const board = makeBoard(
       [
-        ['A', 'X', E, E, 'X', E],
-        ['X', E, E, 'X', E, E],
-        [E, E, 'X', E, E, E],
-        ['B', 'X', E, E, 'X', E],
+        ['A', E, 'X', E, E],
+        ['X', E, 'X', E, 'X'],
+        ['X', E, E, E, 'X'],
+        ['X', 'X', 'X', E, 'X'],
+        ['B', E, E, E, 'X'],
       ],
       (id) => (id === 'A' || id === 'B' ? 'p1' : 'p2'),
     );
-    const path = findPath(board, { row: 0, col: 0 }, { row: 3, col: 0 });
+    const path = findPath(board, { row: 0, col: 0 }, { row: 4, col: 0 });
     expect(path).toBeNull();
   });
 
