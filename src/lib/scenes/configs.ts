@@ -45,6 +45,12 @@ export const WordMatchConfigSchema = z.object({
 });
 export type WordMatchConfig = z.infer<typeof WordMatchConfigSchema>;
 
+export const LianliankanConfigSchema = z.object({
+  characterIds: z.array(z.string().uuid()).length(4),
+  ...withSegment,
+});
+export type LianliankanConfig = z.infer<typeof LianliankanConfigSchema>;
+
 export const PinyinPickConfigSchema = z.object({
   characterId: z.string().uuid(),
   ...withSegment,
