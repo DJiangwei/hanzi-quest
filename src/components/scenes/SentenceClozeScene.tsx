@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
+import { useSpeak } from '@/lib/hooks/useSpeak';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 
 interface CharacterDetail {
@@ -18,15 +19,6 @@ interface Props {
   hintRequested?: boolean;
 }
 
-function speak(text: string) {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'zh-CN';
-  u.rate = 0.8;
-  window.speechSynthesis.speak(u);
-}
-
 function blankOut(sentence: string, hanzi: string): string {
   return sentence.replace(hanzi, ' ____ ');
 }
@@ -39,6 +31,7 @@ export function SentenceClozeScene({
   onComplete,
   hintRequested,
 }: Props) {
+  const speak = useSpeak();
   const choices = useMemo(() => {
     const distractors = sampleDistractors(
       pool,
@@ -81,6 +74,8 @@ export function SentenceClozeScene({
       choices={choices}
       onComplete={onComplete}
       hintRequested={hintRequested}
+      postRevealAudio={sentenceText}
+      postRevealHoldMs={2500}
     />
   );
 }

@@ -87,7 +87,9 @@ describe('SentenceClozeScene', () => {
       />,
     );
     fireEvent.click(screen.getByText('苹'));
-    act(() => { vi.advanceTimersByTime(800); });
+    // SentenceCloze now passes postRevealHoldMs=2500 to MCQ so the full
+    // sentence playback isn't cut off. Advance past that.
+    act(() => { vi.advanceTimersByTime(2600); });
     expect(onComplete).toHaveBeenCalledWith(true);
   });
 

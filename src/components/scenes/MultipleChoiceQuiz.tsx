@@ -5,6 +5,7 @@ import { CoinShower } from './fx/CoinShower';
 import { ShakeWrap } from './fx/ShakeWrap';
 import { playSound } from '@/lib/audio/play';
 import { useCoinHud } from '@/lib/hooks/coin-hud-context';
+import { useSpeak } from '@/lib/hooks/useSpeak';
 
 interface Choice {
   key: string;
@@ -18,6 +19,19 @@ interface Props {
   choices: Choice[];
   onComplete: (correct: boolean) => void;
   hintRequested?: boolean;
+  /**
+   * zh-CN text to auto-speak once when the answer is revealed (right or wrong).
+   * Used by scenes whose stimulus IS the answer surface (Image/Visual/Image-word
+   * /Sentence-cloze) — they can't safely speak the stimulus pre-pick because
+   * the choices are hanzi/pinyin and speaking would reveal the answer. Post-
+   * reveal speech is the safe moment to pronounce the correct content.
+   */
+  postRevealAudio?: string;
+  /**
+   * Override the default 750ms auto-advance delay after reveal. Used by
+   * SentenceClozeScene so the full sentence playback (~2-3s) isn't cut off.
+   */
+  postRevealHoldMs?: number;
 }
 
 export function MultipleChoiceQuiz({
@@ -26,6 +40,8 @@ export function MultipleChoiceQuiz({
   choices,
   onComplete,
   hintRequested,
+  postRevealAudio,
+  postRevealHoldMs,
 }: Props) {
   const [revealed, setRevealed] = useState<string | null>(null);
   const [triggerKey, setTriggerKey] = useState(0);
@@ -41,6 +57,7 @@ export function MultipleChoiceQuiz({
     completeRef.current = onComplete;
   });
   const { coinHudRef } = useCoinHud();
+  const speak = useSpeak();
 
   const handlePick = (
     key: string,
@@ -57,7 +74,14 @@ export function MultipleChoiceQuiz({
       setTriggerKey((k) => k + 1);
       playSound('buzz');
     }
-    setTimeout(() => completeRef.current(isCorrect), 750);
+    if (postRevealAudio) {
+      // Speak the correct content once on reveal. The kid's pick is the
+      // user gesture that authorizes Web Speech; chained speak() inside the
+      // click handler stays inside the gesture chain.
+      speak(postRevealAudio);
+    }
+    const holdMs = postRevealHoldMs ?? 750;
+    setTimeout(() => completeRef.current(isCorrect), holdMs);
   };
 
   return (
