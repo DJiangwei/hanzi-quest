@@ -11,8 +11,8 @@ function makeBoard(
 ): LianliankanBoard {
   const rows = layout.length;
   const cols = layout[0]?.length ?? 0;
-  const cells: CellContent[][] = layout.map((row, r) =>
-    row.map((cell, c): CellContent =>
+  const cells: CellContent[][] = layout.map((row) =>
+    row.map((cell): CellContent =>
       cell === null
         ? { kind: 'empty' }
         : {
@@ -37,7 +37,7 @@ describe('findPath', () => {
         [E, E, E, E, E, E],
         [E, E, E, E, E, E],
       ],
-      (_) => 'p1',
+      () => 'p1',
     );
     const path = findPath(board, { row: 1, col: 1 }, { row: 1, col: 2 });
     expect(path).toEqual([
@@ -54,7 +54,7 @@ describe('findPath', () => {
         [E, E, E, E, E, E],
         [E, E, E, E, E, E],
       ],
-      (_) => 'p1',
+      () => 'p1',
     );
     const path = findPath(board, { row: 1, col: 1 }, { row: 1, col: 4 });
     expect(path).not.toBeNull();
@@ -69,7 +69,7 @@ describe('findPath', () => {
         [E, E, E, E, E, E],
         [E, 'B', E, E, E, E],
       ],
-      (_) => 'p1',
+      () => 'p1',
     );
     const path = findPath(board, { row: 0, col: 1 }, { row: 3, col: 1 });
     expect(path).not.toBeNull();
@@ -84,7 +84,7 @@ describe('findPath', () => {
         [E, E, E, E, E, E],
         [E, E, E, 'B', E, E],
       ],
-      (_) => 'p1',
+      () => 'p1',
     );
     const path = findPath(board, { row: 0, col: 1 }, { row: 3, col: 3 });
     expect(path).not.toBeNull();
@@ -149,7 +149,7 @@ describe('findPath', () => {
         [E, E, E, E, E, E],
         [E, E, E, E, E, E],
       ],
-      (_) => 'p1',
+      () => 'p1',
     );
     const path = findPath(board, { row: 0, col: 1 }, { row: 0, col: 3 });
     expect(path).not.toBeNull();

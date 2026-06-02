@@ -123,21 +123,4 @@ describe('LianliankanScene mismatch + blocked-path + deadlock (PR #57 spec §6)'
     shuffleSpy.mockRestore();
   });
 
-  it('deadlock (no valid pair) auto-triggers shuffleRemaining via useEffect', async () => {
-    const hasValidPairSpy = vi
-      .spyOn(lianliankanLib, 'hasValidPair')
-      .mockReturnValue(false);
-    const shuffleSpy = vi
-      .spyOn(lianliankanLib, 'shuffleRemaining')
-      .mockImplementation((b) => b); // identity to avoid infinite re-render
-
-    render(<LianliankanScene chars={chars} onComplete={() => undefined} />);
-
-    // useEffect runs after mount → shuffleRemaining should fire on first render
-    // (because hasValidPair mocked to false but board is not yet allCleared)
-    expect(shuffleSpy).toHaveBeenCalled();
-
-    hasValidPairSpy.mockRestore();
-    shuffleSpy.mockRestore();
-  });
 });

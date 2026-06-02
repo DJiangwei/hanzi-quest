@@ -48,13 +48,6 @@ export function LianliankanScene({ chars, onComplete, hintRequested }: Props) {
     [hintRequested, board],
   );
 
-  useEffect(() => {
-    if (isAllCleared(board)) return;
-    if (!hasValidPair(board)) {
-      setBoard((b) => shuffleRemaining(b, Math.random));
-    }
-  }, [board]);
-
   const onTileTap = (row: number, col: number) => {
     const cell = board.cells[row]?.[col];
     if (!cell || cell.kind !== 'tile') return;
@@ -95,7 +88,15 @@ export function LianliankanScene({ chars, onComplete, hintRequested }: Props) {
     const b = { row, col };
     setSelected(null);
     setTimeout(() => {
-      setBoard((current) => clearTiles(current, a, b));
+      setBoard((current) => {
+        let next = clearTiles(current, a, b);
+        // Auto-shuffle on deadlock (spec §4.3) — bake into the same state update
+        // to avoid react-hooks/set-state-in-effect lint.
+        if (!isAllCleared(next) && !hasValidPair(next)) {
+          next = shuffleRemaining(next, Math.random);
+        }
+        return next;
+      });
       setLastPath(null);
     }, 600);
   };
