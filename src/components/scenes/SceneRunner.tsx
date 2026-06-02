@@ -64,7 +64,8 @@ export type SceneType =
   | 'pinyin_pick'
   | 'translate_pick'
   | 'sentence_cloze'
-  | 'image_word';
+  | 'image_word'
+  | 'lianliankan';
 
 interface CompiledLevel {
   id: string;

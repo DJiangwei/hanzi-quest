@@ -1,0 +1,1 @@
+ALTER TYPE "public"."scene_type" ADD VALUE 'lianliankan';

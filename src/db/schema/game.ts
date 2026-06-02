@@ -29,6 +29,7 @@ export const sceneType = pgEnum('scene_type', [
   'translate_pick',
   'sentence_cloze',
   'image_word',
+  'lianliankan',
 ]);
 
 export const sceneTemplates = pgTable(
