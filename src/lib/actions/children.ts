@@ -9,6 +9,7 @@ import {
   deleteChildOwnedBy,
   updateChildOwnedBy,
 } from '@/lib/db/children';
+import { getDefaultSharedPackId } from '@/lib/db/curriculum';
 
 const currentYear = new Date().getFullYear();
 
@@ -43,10 +44,16 @@ export async function createChildAction(
   }
 
   const parent = await assertParent();
+  // Auto-enroll the new child in the default shared curriculum pack so the
+  // parent doesn't have to author anything before play. If the pack is missing
+  // (rare — only happens in a fresh env without the seed), child still gets
+  // created but with no enrollment; parent can pick a pack later.
+  const defaultPackId = await getDefaultSharedPackId();
   await createChildProfile({
     parentUserId: parent.id,
     displayName: parsed.data.displayName,
     birthYear: parsed.data.birthYear,
+    currentCurriculumPackId: defaultPackId,
   });
 
   revalidatePath('/parent/children');

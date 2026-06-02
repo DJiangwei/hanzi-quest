@@ -4,6 +4,33 @@ import { childProfiles, curriculumPacks, weeks } from '@/db/schema';
 
 export const SCHOOL_CUSTOM_SLUG = 'school-custom';
 
+/**
+ * Slug of the default shared curriculum pack. Every new child profile is
+ * auto-enrolled in this pack so they get playable content immediately without
+ * any parent authoring. The pack must be a shared (ownerUserId IS NULL) row
+ * seeded by `scripts/seed-pirate-class.ts`.
+ */
+export const DEFAULT_SHARED_PACK_SLUG = 'pirate-class-level-1';
+
+/**
+ * Returns the id of the default shared curriculum pack (Caribbean Sea / Map 1).
+ * Returns null if the pack doesn't exist in this env — callers should treat
+ * that as "no enrollment, child has no playable content yet" rather than fail.
+ */
+export async function getDefaultSharedPackId(): Promise<string | null> {
+  const [row] = await db
+    .select({ id: curriculumPacks.id })
+    .from(curriculumPacks)
+    .where(
+      and(
+        eq(curriculumPacks.slug, DEFAULT_SHARED_PACK_SLUG),
+        isNull(curriculumPacks.ownerUserId),
+      ),
+    )
+    .limit(1);
+  return row?.id ?? null;
+}
+
 export type CurriculumPackRow = typeof curriculumPacks.$inferSelect;
 
 /**
