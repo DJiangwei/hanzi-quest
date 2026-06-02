@@ -81,4 +81,101 @@ describe('MultipleChoiceQuiz', () => {
     await user.click(screen.getByRole('button', { name: 'B' }));
     expect(container.querySelectorAll('[data-testid="coin"]')).toHaveLength(0);
   });
+
+  describe('post-reveal TTS', () => {
+    let cancel: ReturnType<typeof vi.fn>;
+    let speakFn: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      cancel = vi.fn();
+      speakFn = vi.fn();
+      Object.defineProperty(window, 'speechSynthesis', {
+        configurable: true,
+        value: { cancel, speak: speakFn } as unknown as SpeechSynthesis,
+      });
+      class StubUtterance {
+        text: string;
+        lang = '';
+        rate = 1;
+        constructor(text: string) {
+          this.text = text;
+        }
+      }
+      Object.defineProperty(window, 'SpeechSynthesisUtterance', {
+        configurable: true,
+        value: StubUtterance,
+      });
+    });
+
+    it('speaks postRevealAudio on correct pick', async () => {
+      vi.mocked(useReducedMotion).mockReturnValue(false);
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      render(
+        <MultipleChoiceQuiz
+          prompt={null}
+          stimulus={null}
+          choices={choices}
+          onComplete={() => undefined}
+          postRevealAudio="鱼"
+        />,
+      );
+      await user.click(screen.getByRole('button', { name: 'B' }));
+      expect(speakFn).toHaveBeenCalledTimes(1);
+      const utt = speakFn.mock.calls[0][0] as SpeechSynthesisUtterance;
+      expect(utt.text).toBe('鱼');
+      expect(utt.lang).toBe('zh-CN');
+    });
+
+    it('speaks postRevealAudio on wrong pick too (so the kid still hears the right pronunciation)', async () => {
+      vi.mocked(useReducedMotion).mockReturnValue(false);
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      render(
+        <MultipleChoiceQuiz
+          prompt={null}
+          stimulus={null}
+          choices={choices}
+          onComplete={() => undefined}
+          postRevealAudio="鱼"
+        />,
+      );
+      await user.click(screen.getByRole('button', { name: 'A' }));
+      expect(speakFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT speak when postRevealAudio is omitted', async () => {
+      vi.mocked(useReducedMotion).mockReturnValue(false);
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      render(
+        <MultipleChoiceQuiz prompt={null} stimulus={null} choices={choices} onComplete={() => undefined} />,
+      );
+      await user.click(screen.getByRole('button', { name: 'B' }));
+      expect(speakFn).not.toHaveBeenCalled();
+    });
+
+    it('honors postRevealHoldMs override (sentence_cloze case)', async () => {
+      vi.mocked(useReducedMotion).mockReturnValue(false);
+      const onComplete = vi.fn();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      render(
+        <MultipleChoiceQuiz
+          prompt={null}
+          stimulus={null}
+          choices={choices}
+          onComplete={onComplete}
+          postRevealAudio="我爱大海。"
+          postRevealHoldMs={2500}
+        />,
+      );
+      await user.click(screen.getByRole('button', { name: 'B' }));
+      // 750ms hold (default) is NOT enough — onComplete must wait the full 2500ms.
+      act(() => {
+        vi.advanceTimersByTime(800);
+      });
+      expect(onComplete).not.toHaveBeenCalled();
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+      expect(onComplete).toHaveBeenCalledWith(true);
+    });
+  });
 });

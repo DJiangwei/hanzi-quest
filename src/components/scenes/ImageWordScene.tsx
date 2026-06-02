@@ -67,6 +67,7 @@ export function ImageWordScene({ correctWord, distractors, onComplete, hintReque
       choices={choices}
       onComplete={onComplete}
       hintRequested={hintRequested}
+      postRevealAudio={correctWord.text}
     />
   );
 }

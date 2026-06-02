@@ -46,6 +46,7 @@ export function VisualPickScene({ target, pool, onComplete, hintRequested }: Pro
       choices={choices}
       onComplete={onComplete}
       hintRequested={hintRequested}
+      postRevealAudio={target.hanzi}
     />
   );
 }

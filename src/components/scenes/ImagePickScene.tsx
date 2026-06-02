@@ -44,6 +44,7 @@ export function ImagePickScene({ target, pool, onComplete, hintRequested }: Prop
       choices={choices}
       onComplete={onComplete}
       hintRequested={hintRequested}
+      postRevealAudio={target.hanzi}
     />
   );
 }
