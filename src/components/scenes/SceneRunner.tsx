@@ -26,6 +26,7 @@ import { SentenceClozeScene } from './SentenceClozeScene';
 import { TranslatePickScene } from './TranslatePickScene';
 import { VisualPickScene } from './VisualPickScene';
 import { WordMatchScene } from './WordMatchScene';
+import { LianliankanScene } from './LianliankanScene';
 import type { BossQuestionType, Segment, TranslateDirection } from '@/lib/scenes/configs';
 
 const LevelFanfare = dynamic(
@@ -426,6 +427,32 @@ export function SceneRunner({
           hintRequested={hintRequested}
         />
       );
+      break;
+    }
+    case 'lianliankan': {
+      const characterIds = currentLevel.config.characterIds as string[] | undefined;
+      if (!characterIds || characterIds.length !== 4) {
+        body = <MissingData />;
+        break;
+      }
+      const resolved = characterIds
+        .map((id) => charactersById[id])
+        .filter((c): c is NonNullable<typeof c> => Boolean(c));
+      body =
+        resolved.length === 4 ? (
+          <LianliankanScene
+            key={currentLevel.id}
+            chars={resolved.map((c) => ({
+              characterId: c.characterId,
+              hanzi: c.hanzi,
+              meaningEn: c.meaningEn ?? '',
+            }))}
+            onComplete={advance}
+            hintRequested={hintRequested}
+          />
+        ) : (
+          <MissingData />
+        );
       break;
     }
     default:
