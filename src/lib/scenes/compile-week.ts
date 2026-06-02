@@ -8,11 +8,11 @@ import type {
   FlashcardConfig,
   ImagePickConfig,
   ImageWordConfig,
+  LianliankanConfig,
   Segment,
   SentenceClozeConfig,
   TranslatePickConfig,
   VisualPickConfig,
-  WordMatchConfig,
 } from './configs';
 import { shuffle } from './sample';
 
@@ -22,7 +22,7 @@ type AnyConfig =
   | VisualPickConfig
   | ImagePickConfig
   | ImageWordConfig
-  | WordMatchConfig
+  | LianliankanConfig
   | TranslatePickConfig
   | SentenceClozeConfig
   | BossConfig;
@@ -117,7 +117,6 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
   // ── SIGHT ───────────────────────────────────────────────────────────────
   if (sizing.sight > 0) {
     const imageId = tmplByType.get('image_pick');
-    const wordId = tmplByType.get('word_match');
     const usedCharIds = new Set<string>();
 
     // image_pick (slot 0): if any char has imageHook
@@ -136,18 +135,21 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
       // No visual_pick fallback in PR #51+. If no eligible char, slot stays unfilled.
     }
 
-    // word_match (slot 1 — multi-char)
-    if (sizing.sight >= 2 && wordId) {
-      const withWords = chars.filter((c) => c.words.length > 0);
-      const sample = shuffle(withWords).slice(0, Math.min(4, withWords.length));
-      if (sample.length >= 2) {
+    // lianliankan (slot 1 — multi-char, exactly 4 chars with meaningEn)
+    const lianliankanId = tmplByType.get('lianliankan');
+    if (sizing.sight >= 2 && lianliankanId) {
+      const withMeaning = chars.filter((c) => Boolean(c.meaningEn));
+      const sample = shuffle(withMeaning).slice(0, 4);
+      if (sample.length === 4) {
         push(
-          wordId,
+          lianliankanId,
           { characterIds: sample.map((c) => c.id) },
           'sight',
-          'practice:word_match:0',
+          'practice:lianliankan:0',
         );
       }
+      // If fewer than 4 chars with meaningEn, slot stays unfilled.
+      // word_match fallback intentionally NOT added — word_match is retired.
     }
 
     // ── SIGHT: image_word slots ────────────────────────────────────────────
