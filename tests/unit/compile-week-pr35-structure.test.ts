@@ -35,11 +35,12 @@ function setupTemplates() {
         { id: 't-audio_pick', type: 'audio_pick' },
         { id: 't-visual_pick', type: 'visual_pick' },
         { id: 't-image_pick', type: 'image_pick' },
-        { id: 't-word_match', type: 'word_match' },
+        { id: 't-lianliankan', type: 'lianliankan' },
         { id: 't-translate_pick', type: 'translate_pick' },
         { id: 't-sentence_cloze', type: 'sentence_cloze' },
         { id: 't-boss', type: 'boss' },
         // pinyin_pick template intentionally absent (is_active=false in DB)
+        // word_match template intentionally absent (retired in PR #57)
       ]),
     }),
   });
@@ -128,6 +129,82 @@ describe('compileWeekIntoLevels — PR #35 structure', () => {
     const boss = inserted.find((r) => r.sceneConfig.segment === 'boss');
     expect(boss?.sceneConfig.questionTypes).toHaveLength(5);
     expect(boss?.sceneConfig.questionTypes).not.toContain('pinyin_pick');
+  });
+});
+
+describe('compile-week PR #57 lianliankan slot', () => {
+  function setupTemplatesWithLianliankan() {
+    dbMock.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([
+          { id: 't-flashcard', type: 'flashcard' },
+          { id: 't-audio_pick', type: 'audio_pick' },
+          { id: 't-visual_pick', type: 'visual_pick' },
+          { id: 't-image_pick', type: 'image_pick' },
+          { id: 't-lianliankan', type: 'lianliankan' },
+          { id: 't-translate_pick', type: 'translate_pick' },
+          { id: 't-sentence_cloze', type: 'sentence_cloze' },
+          { id: 't-boss', type: 'boss' },
+        ]),
+      }),
+    });
+  }
+
+  it('emits a lianliankan level in sight slot 1 for a 10-char week', async () => {
+    setupTemplatesWithLianliankan();
+    charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) => makeChar(i + 1)),
+    );
+    const inserted: RowCaptured[] = [];
+    captureInsertedRows(inserted);
+
+    await compileWeekIntoLevels('w-test');
+
+    expect(inserted.some((r) => r.sceneTemplateId === 't-lianliankan')).toBe(true);
+  });
+
+  it('does NOT emit any word_match level (post-PR-#57 retirement)', async () => {
+    setupTemplatesWithLianliankan();
+    charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) => makeChar(i + 1)),
+    );
+    const inserted: RowCaptured[] = [];
+    captureInsertedRows(inserted);
+
+    await compileWeekIntoLevels('w-test');
+
+    expect(inserted.filter((r) => r.sceneTemplateId === 't-word_match')).toHaveLength(0);
+  });
+
+  it('lianliankan level key is practice:lianliankan:0', async () => {
+    setupTemplatesWithLianliankan();
+    charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) => makeChar(i + 1)),
+    );
+    const inserted: RowCaptured[] = [];
+    captureInsertedRows(inserted);
+
+    await compileWeekIntoLevels('w-test');
+
+    const llk = inserted.find((r) => r.sceneTemplateId === 't-lianliankan');
+    expect(llk?.levelKey).toBe('practice:lianliankan:0');
+    expect(llk?.sceneConfig.segment).toBe('sight');
+  });
+
+  it('lianliankan slot stays unfilled when fewer than 4 chars have meaningEn', async () => {
+    setupTemplatesWithLianliankan();
+    // Only 3 chars, all with meaningEn — sight>=2 but sample.length < 4 so slot unfilled
+    charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) =>
+        makeChar(i + 1, { meaningEn: i < 3 ? `meaning-${i}` : undefined }),
+      ).map((c, i) => ({ ...c, meaningEn: i < 3 ? c.meaningEn : null })),
+    );
+    const inserted: RowCaptured[] = [];
+    captureInsertedRows(inserted);
+
+    await compileWeekIntoLevels('w-test');
+
+    expect(inserted.filter((r) => r.sceneTemplateId === 't-lianliankan')).toHaveLength(0);
   });
 });
 

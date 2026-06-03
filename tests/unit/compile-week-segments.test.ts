@@ -47,12 +47,13 @@ vi.mock('@/lib/db/characters', () => ({
 import { compileWeekIntoLevels } from '@/lib/scenes/compile-week';
 
 // pinyin_pick intentionally omitted — is_active=false in PR #35
+// word_match intentionally omitted — retired in PR #57, replaced by lianliankan
 const allTemplates = [
   { id: 'tmpl_flashcard', type: 'flashcard' },
   { id: 'tmpl_audio', type: 'audio_pick' },
   { id: 'tmpl_visual', type: 'visual_pick' },
   { id: 'tmpl_image', type: 'image_pick' },
-  { id: 'tmpl_word', type: 'word_match' },
+  { id: 'tmpl_lianliankan', type: 'lianliankan' },
   { id: 'tmpl_boss', type: 'boss' },
   { id: 'tmpl_translate', type: 'translate_pick' },
   { id: 'tmpl_cloze', type: 'sentence_cloze' },
@@ -91,8 +92,8 @@ describe('compileWeekIntoLevels — segments + caps', () => {
     mocks.selectWhereMock.mockResolvedValue(allTemplates);
 
     const count = await compileWeekIntoLevels('w_1');
-    // 10 flashcards + 3 audio + 2 sight (image_pick+word_match) + 6 meaning + 1 boss = 22
-    // (visual_pick retired in PR #51; no image_word template in allTemplates here)
+    // 10 flashcards + 3 audio + 2 sight (image_pick+lianliankan) + 6 meaning + 1 boss = 22
+    // (visual_pick retired in PR #51; word_match retired in PR #57; no image_word template here)
     expect(count).toBe(22);
 
     const [rows] = mocks.insertValuesMock.mock.calls[0];

@@ -47,12 +47,13 @@ vi.mock('@/lib/db/characters', () => ({
 import { compileWeekIntoLevels } from '@/lib/scenes/compile-week';
 
 // pinyin_pick intentionally omitted — is_active=false in PR #35
+// word_match intentionally omitted — retired in PR #57, replaced by lianliankan
 const allTemplates = [
   { id: 'tmpl_flashcard', type: 'flashcard' },
   { id: 'tmpl_audio', type: 'audio_pick' },
   { id: 'tmpl_visual', type: 'visual_pick' },
   { id: 'tmpl_image', type: 'image_pick' },
-  { id: 'tmpl_word', type: 'word_match' },
+  { id: 'tmpl_lianliankan', type: 'lianliankan' },
   { id: 'tmpl_boss', type: 'boss' },
   { id: 'tmpl_translate', type: 'translate_pick' },
   { id: 'tmpl_cloze', type: 'sentence_cloze' },
@@ -160,7 +161,7 @@ describe('compileWeekIntoLevels', () => {
     expect(templateIds).not.toContain('tmpl_visual');
   });
 
-  it('skips word_match when N<4 (sight count = 1 for N=2-3); keeps other sight scenes', async () => {
+  it('skips lianliankan when N<4 (sight count = 1 for N=2-3); no lianliankan or word_match emitted', async () => {
     mocks.getCharactersWithDetailsForWeekMock.mockResolvedValue([
       makeChar('c1', '人', { words: [{ text: '大人' }] }),
       makeChar('c2', '口'),
@@ -170,6 +171,8 @@ describe('compileWeekIntoLevels', () => {
     await compileWeekIntoLevels('w_1');
     const [rows] = mocks.insertValuesMock.mock.calls[0];
     const templateIds = rows.map((r: { sceneTemplateId: string }) => r.sceneTemplateId);
+    // sight count=1 for N=2; slot 1 (lianliankan) requires sizing.sight >= 2
+    expect(templateIds).not.toContain('tmpl_lianliankan');
     expect(templateIds).not.toContain('tmpl_word');
   });
 });

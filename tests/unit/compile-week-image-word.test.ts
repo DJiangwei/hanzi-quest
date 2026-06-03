@@ -23,10 +23,11 @@ function setupTemplates(includeImageWord = true) {
         { id: 't-audio_pick', type: 'audio_pick' },
         { id: 't-visual_pick', type: 'visual_pick' },
         { id: 't-image_pick', type: 'image_pick' },
-        { id: 't-word_match', type: 'word_match' },
+        { id: 't-lianliankan', type: 'lianliankan' },
         { id: 't-translate_pick', type: 'translate_pick' },
         { id: 't-sentence_cloze', type: 'sentence_cloze' },
         { id: 't-boss', type: 'boss' },
+        // word_match retired in PR #57
         ...(includeImageWord ? [{ id: 't-image_word', type: 'image_word' }] : []),
       ]),
     }),
@@ -106,7 +107,8 @@ describe('compileWeekIntoLevels — image_word', () => {
 
     const count = await compileWeekIntoLevels('w-test');
     // PR #51: no visual_pick fallback for unfilled image_word slots.
-    // 10 review + 3 audio + 2 sight (image_pick+word_match) + 0 image_word + 6 meaning + 1 boss = 22
+    // PR #57: word_match retired; lianliankan in slot 1 (chars have meaningEn so it fills).
+    // 10 review + 3 audio + 2 sight (image_pick+lianliankan) + 0 image_word + 6 meaning + 1 boss = 22
     expect(count).toBe(22);
     const imageWordRows = inserted.filter((r) => r.sceneTemplateId === 't-image_word');
     expect(imageWordRows).toHaveLength(0);

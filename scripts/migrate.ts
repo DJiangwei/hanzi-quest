@@ -36,14 +36,15 @@ async function main() {
             ('pinyin_pick'::scene_type,    1::smallint, '{}'::jsonb, true),
             ('translate_pick'::scene_type, 1::smallint, '{}'::jsonb, true),
             ('sentence_cloze'::scene_type, 1::smallint, '{}'::jsonb, true),
-            ('image_word'::scene_type,     1::smallint, '{}'::jsonb, true)
+            ('image_word'::scene_type,     1::smallint, '{}'::jsonb, true),
+            ('lianliankan'::scene_type,    1::smallint, '{}'::jsonb, true)
         ) AS new_rows(t, v, c, a)
         WHERE NOT EXISTS (
             SELECT 1 FROM scene_templates st
             WHERE st.type = new_rows.t AND st.version = new_rows.v
         )
       `;
-      console.log('Scene-type seed applied (pinyin_pick / translate_pick / sentence_cloze / image_word)');
+      console.log('Scene-type seed applied (pinyin_pick / translate_pick / sentence_cloze / image_word / lianliankan)');
     } finally {
       await sql.end();
     }
