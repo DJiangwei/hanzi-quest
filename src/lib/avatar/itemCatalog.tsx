@@ -128,6 +128,48 @@ const defaultOcean: ItemDef = {
   ),
 };
 
+const defaultHair: ItemDef = {
+  unlockRef: 'default-hair-brown',
+  slot: 'hair',
+  displayName: '棕色短发',
+  narrativeHint: 'with short brown hair',
+  renderSvg: () => (
+    <g key="default-hair-brown">
+      {/* Simple brown hair — drawn over the head, under the hat */}
+      <path
+        d="M 28 38 Q 28 22 50 22 Q 72 22 72 38 Q 68 30 50 30 Q 32 30 28 38 Z"
+        fill="#5a3214"
+      />
+      <path
+        d="M 28 38 Q 26 44 28 50 Q 26 40 28 38 Z"
+        fill="#4a2a10"
+      />
+      <path
+        d="M 72 38 Q 74 44 72 50 Q 74 40 72 38 Z"
+        fill="#4a2a10"
+      />
+    </g>
+  ),
+};
+
+const defaultPants: ItemDef = {
+  unlockRef: 'default-pants-blue',
+  slot: 'pants',
+  displayName: '蓝色长裤',
+  narrativeHint: 'wearing navy blue trousers',
+  renderSvg: () => (
+    <g key="default-pants-blue">
+      {/* Simple blue pants — drawn below the torso line */}
+      <path
+        d="M 30 78 L 28 100 L 48 100 L 50 88 L 52 100 L 72 100 L 70 78 Z"
+        fill="#1a3a6a"
+        stroke="#0a1a3a"
+        strokeWidth="1"
+      />
+    </g>
+  ),
+};
+
 // ─── HATS (7 shop items) ─────────────────────────────────────────────────────
 
 const hatTricorn: ItemDef = {
@@ -624,6 +666,8 @@ const ALL_ITEMS: ItemDef[] = [
   defaultBandana,
   defaultTee,
   defaultOcean,
+  defaultHair,
+  defaultPants,
   hatTricorn,
   hatCaptain,
   hatBandanaBlue,
