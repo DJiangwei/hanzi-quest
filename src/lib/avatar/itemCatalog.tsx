@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { AvatarSlotId } from './defaultLook';
+import type { AvatarTheme } from './themes';
 
 export type ItemRarity = 'common' | 'rare' | 'epic';
 
@@ -20,6 +21,8 @@ export interface ItemDef {
    * `'with wave-blue surroundings'`). Used by `resolveNarrativeHint`.
    */
   narrativeHint: string;
+  /** PR #58: cosmetic categorization. Required on every item. */
+  theme: AvatarTheme;
   /**
    * Inner SVG content for this item; rendered inside the AvatarRender's outer
    * `<svg viewBox="0 0 100 100">`. Must use only flat colours (no `<defs>` /
@@ -35,6 +38,7 @@ const defaultHead: ItemDef = {
   slot: 'head',
   displayName: '小水手',
   narrativeHint: 'a sun-tanned young pirate',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-kid-warm">
       <circle
@@ -65,6 +69,7 @@ const defaultBandana: ItemDef = {
   slot: 'hat',
   displayName: '红头巾',
   narrativeHint: 'a red bandana with white polka dots',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-bandana-red">
       <path
@@ -91,6 +96,7 @@ const defaultTee: ItemDef = {
   slot: 'top',
   displayName: '条纹衫',
   narrativeHint: 'a striped sailor shirt',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-tee-stripes">
       <path
@@ -111,6 +117,7 @@ const defaultOcean: ItemDef = {
   slot: 'background',
   displayName: '海洋',
   narrativeHint: 'with wave-blue ocean surroundings',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-ocean">
       <circle cx="50" cy="50" r="50" fill="#5fb1d3" />
@@ -133,6 +140,7 @@ const defaultHair: ItemDef = {
   slot: 'hair',
   displayName: '棕色短发',
   narrativeHint: 'with short brown hair',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-hair-brown">
       {/* Simple brown hair — drawn over the head, under the hat */}
@@ -157,6 +165,7 @@ const defaultPants: ItemDef = {
   slot: 'pants',
   displayName: '蓝色长裤',
   narrativeHint: 'wearing navy blue trousers',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-pants-blue">
       {/* Simple blue pants — drawn below the torso line */}
@@ -179,6 +188,7 @@ const hatTricorn: ItemDef = {
   narrativeHint: 'a black tricorn pirate hat',
   rarity: 'common',
   priceCoins: 120,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-tricorn">
       <path
@@ -200,6 +210,7 @@ const hatCaptain: ItemDef = {
   narrativeHint: "a navy captain's hat with a gold trim",
   rarity: 'rare',
   priceCoins: 300,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-captain">
       <path
@@ -226,6 +237,7 @@ const hatBandanaBlue: ItemDef = {
   narrativeHint: 'a blue bandana with white waves',
   rarity: 'common',
   priceCoins: 80,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-bandana-blue">
       <path
@@ -258,6 +270,7 @@ const hatParrotPerch: ItemDef = {
   narrativeHint: 'a tiny red parrot perched on her shoulder',
   rarity: 'rare',
   priceCoins: 360,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-parrot-perch">
       <path
@@ -287,6 +300,7 @@ const hatCrownGold: ItemDef = {
   narrativeHint: 'a sparkling gold crown studded with gems',
   rarity: 'epic',
   priceCoins: 820,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-crown-gold">
       <path
@@ -310,6 +324,7 @@ const hatSunhat: ItemDef = {
   narrativeHint: 'a wide-brimmed straw sunhat',
   rarity: 'common',
   priceCoins: 100,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-sunhat">
       <ellipse cx="50" cy="35" rx="30" ry="5" fill="#e6c98a" stroke="#7a5a2a" strokeWidth="1" />
@@ -327,6 +342,7 @@ const hatBeanie: ItemDef = {
   narrativeHint: 'a cozy green knit beanie with a red pom',
   rarity: 'common',
   priceCoins: 90,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-beanie">
       <path
@@ -348,6 +364,7 @@ const hatEyepatchSkull: ItemDef = {
   narrativeHint: 'a black skull-and-crossbones cap',
   rarity: 'epic',
   priceCoins: 700,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-skull-cap">
       <path
@@ -373,6 +390,7 @@ const topPirateCoat: ItemDef = {
   narrativeHint: 'a long brown pirate coat with gold buttons',
   rarity: 'rare',
   priceCoins: 320,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-coat-pirate">
       <path
@@ -408,6 +426,7 @@ const topVest: ItemDef = {
   narrativeHint: 'a tan leather vest',
   rarity: 'common',
   priceCoins: 130,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-vest">
       <path
@@ -430,6 +449,7 @@ const topLifejacket: ItemDef = {
   narrativeHint: 'a bright orange lifejacket with reflective stripes',
   rarity: 'common',
   priceCoins: 150,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-lifejacket">
       <path
@@ -458,6 +478,7 @@ const topApronTreasure: ItemDef = {
   narrativeHint: 'a treasure-hunter apron with a gold coin pocket',
   rarity: 'rare',
   priceCoins: 280,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-apron-treasure">
       <path
@@ -490,6 +511,7 @@ const topEpaulettesGold: ItemDef = {
   narrativeHint: 'a navy admiral coat with gold epaulettes',
   rarity: 'epic',
   priceCoins: 720,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-epaulettes-gold">
       <path
@@ -532,6 +554,7 @@ const topCapeRed: ItemDef = {
   narrativeHint: 'a flowing crimson cape with gold clasps',
   rarity: 'rare',
   priceCoins: 340,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-cape-red">
       <path
@@ -556,6 +579,7 @@ const bgSunset: ItemDef = {
   narrativeHint: 'under a glowing orange sunset sky',
   rarity: 'rare',
   priceCoins: 260,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-bg-sunset">
       <circle cx="50" cy="50" r="50" fill="#f5852a" />
@@ -577,6 +601,7 @@ const bgPalmIsland: ItemDef = {
   narrativeHint: 'on a sandy palm-tree island',
   rarity: 'rare',
   priceCoins: 400,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-bg-palm-island">
       <circle cx="50" cy="50" r="50" fill="#7ec8e3" />
@@ -611,6 +636,7 @@ const bgTreasureCave: ItemDef = {
   narrativeHint: 'inside a glittering treasure cave',
   rarity: 'epic',
   priceCoins: 640,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-bg-treasure-cave">
       <circle cx="50" cy="50" r="50" fill="#2a1a3a" />
@@ -638,6 +664,7 @@ const bgStarryNight: ItemDef = {
   narrativeHint: 'beneath a starry midnight sky',
   rarity: 'common',
   priceCoins: 200,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-bg-starry-night">
       <circle cx="50" cy="50" r="50" fill="#13265a" />
