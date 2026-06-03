@@ -814,6 +814,221 @@ const decorShipMast: ItemDef = {
   ),
 };
 
+// ─── CARIBBEAN THEME ─────────────────────────────────────────────────────────
+
+const caribKidTan: ItemDef = {
+  unlockRef: 'carib-kid-tan',
+  slot: 'head',
+  displayName: '阳光男孩',
+  rarity: 'common',
+  priceCoins: 100,
+  narrativeHint: 'a sun-kissed island kid',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-kid-tan">
+      <circle cx="50" cy="46" r="22" fill="#d4965e" stroke="#7a4a2a" strokeWidth="1.5" />
+      <circle cx="42" cy="44" r="1.8" fill="#2a1a14" />
+      <circle cx="58" cy="44" r="1.8" fill="#2a1a14" />
+      <path d="M 43 53 Q 50 57 57 53" stroke="#7a4a2a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <circle cx="36" cy="50" r="2.5" fill="#c87850" opacity="0.6" />
+      <circle cx="64" cy="50" r="2.5" fill="#c87850" opacity="0.6" />
+    </g>
+  ),
+};
+
+const caribStrawhat: ItemDef = {
+  unlockRef: 'carib-strawhat',
+  slot: 'hat',
+  displayName: '草帽',
+  rarity: 'common',
+  priceCoins: 100,
+  narrativeHint: 'a wide-brimmed straw hat',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-strawhat">
+      <ellipse cx="50" cy="30" rx="26" ry="5" fill="#e2b366" stroke="#a07a30" strokeWidth="1" />
+      <path d="M 36 30 Q 50 18 64 30 L 60 26 Q 50 18 40 26 Z" fill="#d4a04e" stroke="#a07a30" strokeWidth="1" />
+      <path d="M 42 24 Q 50 22 58 24" stroke="#a07a30" strokeWidth="0.7" fill="none" />
+    </g>
+  ),
+};
+
+const caribHibiscusBand: ItemDef = {
+  unlockRef: 'carib-hibiscus-band',
+  slot: 'hat',
+  displayName: '芙蓉发带',
+  rarity: 'rare',
+  priceCoins: 290,
+  narrativeHint: 'a hibiscus flower hairband',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-hibiscus-band">
+      <path d="M 28 32 Q 50 26 72 32 L 72 36 Q 50 30 28 36 Z" fill="#7c2d12" />
+      <circle cx="68" cy="32" r="4" fill="#ec4899" />
+      <circle cx="65" cy="30" r="3" fill="#f472b6" />
+      <circle cx="70" cy="29" r="3" fill="#f472b6" />
+      <circle cx="71" cy="33" r="3" fill="#f472b6" />
+      <circle cx="68" cy="32" r="1" fill="#fde047" />
+    </g>
+  ),
+};
+
+const caribHairBraids: ItemDef = {
+  unlockRef: 'carib-hair-braids-blonde',
+  slot: 'hair',
+  displayName: '金色辫子',
+  rarity: 'rare',
+  priceCoins: 280,
+  narrativeHint: 'sun-bleached blonde braids',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-hair-braids-blonde">
+      <path d="M 30 32 Q 50 24 70 32 L 70 38 Q 50 32 30 38 Z" fill="#fde68a" stroke="#a07a30" strokeWidth="1" />
+      <path d="M 30 38 L 26 60 L 30 60 Z" fill="#fde68a" />
+      <path d="M 70 38 L 74 60 L 70 60 Z" fill="#fde68a" />
+      <circle cx="28" cy="62" r="1.5" fill="#ec4899" />
+      <circle cx="72" cy="62" r="1.5" fill="#ec4899" />
+    </g>
+  ),
+};
+
+const caribHairCurls: ItemDef = {
+  unlockRef: 'carib-hair-curls-honey',
+  slot: 'hair',
+  displayName: '蜂蜜色卷发',
+  rarity: 'common',
+  priceCoins: 140,
+  narrativeHint: 'honey-colored curls',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-hair-curls-honey">
+      <path
+        d="M 28 36 Q 30 26 40 24 Q 50 20 60 24 Q 70 26 72 36 Q 70 40 65 38 Q 60 36 55 38 Q 50 36 45 38 Q 40 36 35 38 Q 30 40 28 36 Z"
+        fill="#f59e0b"
+        stroke="#92400e"
+        strokeWidth="1"
+      />
+    </g>
+  ),
+};
+
+const caribShirtHibiscus: ItemDef = {
+  unlockRef: 'carib-shirt-hibiscus',
+  slot: 'top',
+  displayName: '芙蓉花衬衫',
+  rarity: 'rare',
+  priceCoins: 320,
+  narrativeHint: 'a Hawaiian shirt patterned with hibiscus flowers',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-shirt-hibiscus">
+      <path d="M 32 65 L 30 78 L 40 80 L 50 78 L 60 80 L 70 78 L 68 65 Q 50 62 32 65 Z" fill="#22d3ee" stroke="#0e7490" strokeWidth="1" />
+      <circle cx="38" cy="72" r="1.8" fill="#ec4899" />
+      <circle cx="48" cy="74" r="1.8" fill="#ec4899" />
+      <circle cx="58" cy="71" r="1.8" fill="#ec4899" />
+      <circle cx="44" cy="68" r="1.2" fill="#fde047" />
+      <circle cx="54" cy="69" r="1.2" fill="#fde047" />
+    </g>
+  ),
+};
+
+const caribTankCoral: ItemDef = {
+  unlockRef: 'carib-tank-coral',
+  slot: 'top',
+  displayName: '珊瑚色背心',
+  rarity: 'common',
+  priceCoins: 130,
+  narrativeHint: 'a coral-pink tank top',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-tank-coral">
+      <path d="M 36 65 L 34 78 L 50 80 L 66 78 L 64 65 Q 50 62 36 65 Z" fill="#fb7185" stroke="#9f1239" strokeWidth="1" />
+      <line x1="38" y1="65" x2="40" y2="60" stroke="#9f1239" strokeWidth="1.2" />
+      <line x1="62" y1="65" x2="60" y2="60" stroke="#9f1239" strokeWidth="1.2" />
+    </g>
+  ),
+};
+
+const caribShortsAqua: ItemDef = {
+  unlockRef: 'carib-shorts-aqua',
+  slot: 'pants',
+  displayName: '水蓝短裤',
+  rarity: 'common',
+  priceCoins: 110,
+  narrativeHint: 'aqua-blue swim shorts',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-shorts-aqua">
+      <rect x="38" y="76" width="10" height="12" rx="2" fill="#06b6d4" stroke="#0e7490" strokeWidth="1" />
+      <rect x="52" y="76" width="10" height="12" rx="2" fill="#06b6d4" stroke="#0e7490" strokeWidth="1" />
+      <rect x="38" y="74" width="24" height="4" fill="#0e7490" />
+      <path d="M 38 80 Q 41 79 44 80" stroke="#ffffff" strokeWidth="0.8" fill="none" opacity="0.5" />
+      <path d="M 52 80 Q 55 79 58 80" stroke="#ffffff" strokeWidth="0.8" fill="none" opacity="0.5" />
+    </g>
+  ),
+};
+
+const caribSkirtTropical: ItemDef = {
+  unlockRef: 'carib-skirt-tropical',
+  slot: 'pants',
+  displayName: '热带花裙',
+  rarity: 'rare',
+  priceCoins: 280,
+  narrativeHint: 'a tropical-print wrap skirt',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-skirt-tropical">
+      <path d="M 34 74 L 30 90 L 70 90 L 66 74 Z" fill="#10b981" stroke="#047857" strokeWidth="1" />
+      <circle cx="38" cy="80" r="1.5" fill="#fde047" />
+      <circle cx="50" cy="82" r="1.5" fill="#fde047" />
+      <circle cx="62" cy="80" r="1.5" fill="#fde047" />
+      <circle cx="44" cy="85" r="1.5" fill="#ec4899" />
+      <circle cx="56" cy="85" r="1.5" fill="#ec4899" />
+    </g>
+  ),
+};
+
+const decorCaribPalm: ItemDef = {
+  unlockRef: 'carib-palmtree',
+  slot: 'decor',
+  displayName: '棕榈树',
+  rarity: 'rare',
+  priceCoins: 330,
+  narrativeHint: 'with a palm tree swaying in the breeze',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-palmtree">
+      <path d="M 84 12 Q 82 40 80 56" stroke="#78350f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <path d="M 84 12 Q 70 8 64 14 Q 72 14 84 12 Z" fill="#22c55e" stroke="#15803d" strokeWidth="0.6" />
+      <path d="M 84 12 Q 98 8 96 18 Q 90 14 84 12 Z" fill="#22c55e" stroke="#15803d" strokeWidth="0.6" />
+      <path d="M 84 12 Q 76 4 82 4 Q 84 8 84 12 Z" fill="#22c55e" stroke="#15803d" strokeWidth="0.6" />
+      <path d="M 84 12 Q 92 4 90 4 Q 86 6 84 12 Z" fill="#22c55e" stroke="#15803d" strokeWidth="0.6" />
+    </g>
+  ),
+};
+
+const bgCaribSunset: ItemDef = {
+  unlockRef: 'carib-beach-sunset',
+  slot: 'background',
+  displayName: '加勒比日落',
+  rarity: 'epic',
+  priceCoins: 800,
+  narrativeHint: 'against a Caribbean sunset over a sandy beach',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-beach-sunset">
+      <rect x="0" y="0" width="100" height="60" fill="#fb923c" />
+      <rect x="0" y="40" width="100" height="20" fill="#fbbf24" opacity="0.7" />
+      <circle cx="50" cy="38" r="9" fill="#fde047" />
+      <rect x="0" y="60" width="100" height="6" fill="#06b6d4" />
+      <rect x="0" y="66" width="100" height="34" fill="#fef3c7" />
+      <path d="M 10 64 Q 14 62 18 64" stroke="#0e7490" strokeWidth="0.8" fill="none" />
+      <path d="M 30 64 Q 34 62 38 64" stroke="#0e7490" strokeWidth="0.8" fill="none" />
+      <path d="M 60 64 Q 64 62 68 64" stroke="#0e7490" strokeWidth="0.8" fill="none" />
+    </g>
+  ),
+};
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 const ALL_ITEMS: ItemDef[] = [
@@ -847,6 +1062,17 @@ const ALL_ITEMS: ItemDef[] = [
   piratePantsStripeNavy,
   decorPirateFlag,
   decorShipMast,
+  caribKidTan,
+  caribStrawhat,
+  caribHibiscusBand,
+  caribHairBraids,
+  caribHairCurls,
+  caribShirtHibiscus,
+  caribTankCoral,
+  caribShortsAqua,
+  caribSkirtTropical,
+  decorCaribPalm,
+  bgCaribSunset,
 ];
 
 export const ITEM_CATALOG: Record<string, ItemDef> = Object.fromEntries(
