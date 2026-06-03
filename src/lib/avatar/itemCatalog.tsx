@@ -686,6 +686,134 @@ const bgStarryNight: ItemDef = {
   ),
 };
 
+// ─── HAIR (2 shop items) ─────────────────────────────────────────────────────
+
+const pirateHairBlackLong: ItemDef = {
+  unlockRef: 'pirate-hair-black-long',
+  slot: 'hair',
+  displayName: '黑色长发',
+  rarity: 'rare',
+  priceCoins: 280,
+  narrativeHint: 'long flowing black hair',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="pirate-hair-black-long">
+      <path
+        d="M 28 32 Q 38 22 50 22 Q 62 22 72 32 L 74 60 Q 68 65 64 60 L 64 40 Q 50 35 36 40 L 36 60 Q 32 65 26 60 Z"
+        fill="#1a1a1a"
+        stroke="#000"
+        strokeWidth="1"
+      />
+    </g>
+  ),
+};
+
+const pirateHairDreads: ItemDef = {
+  unlockRef: 'pirate-hair-dreads-brown',
+  slot: 'hair',
+  displayName: '棕色脏辫',
+  rarity: 'rare',
+  priceCoins: 320,
+  narrativeHint: 'brown dreadlocks tied with beads',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="pirate-hair-dreads-brown">
+      <path
+        d="M 30 34 Q 50 20 70 34 L 70 38 Q 50 30 30 38 Z"
+        fill="#4a2f1a"
+      />
+      <rect x="32" y="38" width="3" height="22" fill="#4a2f1a" rx="1.5" />
+      <rect x="48" y="38" width="3" height="24" fill="#4a2f1a" rx="1.5" />
+      <rect x="65" y="38" width="3" height="22" fill="#4a2f1a" rx="1.5" />
+      <circle cx="33.5" cy="62" r="2" fill="#d4a017" />
+      <circle cx="49.5" cy="64" r="2" fill="#d4a017" />
+      <circle cx="66.5" cy="62" r="2" fill="#d4a017" />
+    </g>
+  ),
+};
+
+// ─── PANTS (2 shop items) ────────────────────────────────────────────────────
+
+const piratePantsRagged: ItemDef = {
+  unlockRef: 'pirate-pants-ragged-tan',
+  slot: 'pants',
+  displayName: '破旧棕裤',
+  rarity: 'common',
+  priceCoins: 120,
+  narrativeHint: 'tattered tan trousers',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="pirate-pants-ragged-tan">
+      <path
+        d="M 38 73 L 36 90 L 44 90 L 46 78 L 50 78 L 52 90 L 60 90 L 62 73 Z"
+        fill="#a87844"
+        stroke="#7a5530"
+        strokeWidth="1"
+      />
+      <path d="M 36 90 L 38 88 L 40 90 L 42 88 L 44 90" stroke="#7a5530" strokeWidth="0.8" fill="none" />
+      <path d="M 52 90 L 54 88 L 56 90 L 58 88 L 60 90" stroke="#7a5530" strokeWidth="0.8" fill="none" />
+    </g>
+  ),
+};
+
+const piratePantsStripeNavy: ItemDef = {
+  unlockRef: 'pirate-pants-stripe-navy',
+  slot: 'pants',
+  displayName: '海军条纹裤',
+  rarity: 'rare',
+  priceCoins: 280,
+  narrativeHint: 'navy striped trousers',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="pirate-pants-stripe-navy">
+      <rect x="38" y="73" width="10" height="17" fill="#1e3a8a" stroke="#0f172a" strokeWidth="1" />
+      <rect x="52" y="73" width="10" height="17" fill="#1e3a8a" stroke="#0f172a" strokeWidth="1" />
+      <line x1="42" y1="73" x2="42" y2="90" stroke="#dbeafe" strokeWidth="0.8" />
+      <line x1="46" y1="73" x2="46" y2="90" stroke="#dbeafe" strokeWidth="0.8" />
+      <line x1="56" y1="73" x2="56" y2="90" stroke="#dbeafe" strokeWidth="0.8" />
+      <line x1="60" y1="73" x2="60" y2="90" stroke="#dbeafe" strokeWidth="0.8" />
+    </g>
+  ),
+};
+
+// ─── DECOR (2 shop items) ────────────────────────────────────────────────────
+
+const decorPirateFlag: ItemDef = {
+  unlockRef: 'decor-pirate-flag',
+  slot: 'decor',
+  displayName: '海盗旗',
+  rarity: 'rare',
+  priceCoins: 350,
+  narrativeHint: 'with a Jolly Roger flag in the background',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="decor-pirate-flag">
+      <line x1="82" y1="14" x2="82" y2="40" stroke="#3a2515" strokeWidth="1.5" />
+      <rect x="82" y="14" width="14" height="10" fill="#1a1a1a" />
+      <circle cx="89" cy="18" r="2" fill="#fff" />
+      <rect x="88" y="20" width="2" height="2" fill="#fff" />
+    </g>
+  ),
+};
+
+const decorShipMast: ItemDef = {
+  unlockRef: 'decor-ship-mast',
+  slot: 'decor',
+  displayName: '船桅',
+  rarity: 'epic',
+  priceCoins: 700,
+  narrativeHint: 'with a tall ship mast and sail behind them',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="decor-ship-mast">
+      <line x1="14" y1="8" x2="14" y2="60" stroke="#5a3a1a" strokeWidth="2" />
+      <path d="M 14 12 Q 26 28 14 44 Z" fill="#f5e6c8" stroke="#a08660" strokeWidth="1" />
+      <line x1="14" y1="20" x2="22" y2="22" stroke="#a08660" strokeWidth="0.7" />
+      <line x1="14" y1="30" x2="22" y2="30" stroke="#a08660" strokeWidth="0.7" />
+    </g>
+  ),
+};
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 const ALL_ITEMS: ItemDef[] = [
@@ -713,6 +841,12 @@ const ALL_ITEMS: ItemDef[] = [
   bgPalmIsland,
   bgTreasureCave,
   bgStarryNight,
+  pirateHairBlackLong,
+  pirateHairDreads,
+  piratePantsRagged,
+  piratePantsStripeNavy,
+  decorPirateFlag,
+  decorShipMast,
 ];
 
 export const ITEM_CATALOG: Record<string, ItemDef> = Object.fromEntries(
