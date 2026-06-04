@@ -31,6 +31,7 @@ function listing(
       imageUrl: null,
       unlockVia: 'shop',
       unlockRef: slug,
+      theme: null,
       createdAt: new Date(),
     },
   };

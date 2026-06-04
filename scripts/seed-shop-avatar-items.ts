@@ -72,6 +72,7 @@ async function main() {
       name: item.displayName,
       unlockVia: 'default',
       unlockRef: item.unlockRef,
+      theme: item.theme,  // PR #58: theme field
     });
     defaultsInserted++;
   }
@@ -107,6 +108,7 @@ async function main() {
         name: item.displayName,
         unlockVia: 'shop',
         unlockRef: item.unlockRef,
+        theme: item.theme,  // PR #58: theme field
       });
       avatarRowsInserted++;
     }

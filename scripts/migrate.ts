@@ -45,6 +45,12 @@ async function main() {
         )
       `;
       console.log('Scene-type seed applied (pinyin_pick / translate_pick / sentence_cloze / image_word / lianliankan)');
+
+      // PR #58: Backfill avatar_items.theme on any pre-PR-#58 rows.
+      await sql`
+        UPDATE avatar_items SET theme = 'pirate' WHERE theme IS NULL
+      `;
+      console.log('Avatar items: theme backfilled to "pirate" on pre-PR-58 rows');
     } finally {
       await sql.end();
     }

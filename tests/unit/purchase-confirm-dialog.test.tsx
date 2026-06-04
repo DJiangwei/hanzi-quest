@@ -26,6 +26,7 @@ function makeListing(price: number, name = '红头巾'): AvatarShopListing {
       imageUrl: null,
       unlockVia: 'shop',
       unlockRef: 'avatar-hat-tricorn',
+      theme: null,
       createdAt: new Date(),
     },
   };

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AvatarRender } from '@/components/play/AvatarRender';
 import { ShopCategoryTabs, type ShopCategory } from '@/components/shop/ShopCategoryTabs';
 import { ShopGrid } from '@/components/shop/ShopGrid';
+import { ThemeChipStrip, type ThemeChipValue } from '@/components/shop/ThemeChipStrip';
 import { SoundsTabBody } from '@/components/shop/SoundsTabBody';
 import { PetsTabBody } from '@/components/shop/PetsTabBody';
 import { DecorTabBody } from '@/components/shop/DecorTabBody';
@@ -57,6 +58,7 @@ export function ShopBody({
     () => new Set(initialOwnedShopItemIds),
   );
   const [equipped, setEquipped] = useState<EquippedAvatar>(initialEquipped);
+  const [themeFilter, setThemeFilter] = useState<ThemeChipValue>('all');
   const [confirming, setConfirming] = useState<AvatarShopListing | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -64,6 +66,13 @@ export function ShopBody({
   const equippedAvatarItemIds = new Set(
     Object.values(equipped).map((s) => s.avatarItemId),
   );
+
+  const filteredAvatarListings = listings.filter((listing) => {
+    if (themeFilter === 'all') return true;
+    const meta = lookupItem(listing.avatarItem.unlockRef ?? '');
+    if (!meta) return true; // unknown items always visible (safe fallback)
+    return meta.theme === themeFilter;
+  });
 
   const equippedRefs: Partial<Record<string, string | null>> = {};
   for (const [slot, info] of Object.entries(equipped)) {
@@ -151,14 +160,17 @@ export function ShopBody({
       <ShopCategoryTabs active={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'avatar' && (
-        <ShopGrid
-          listings={listings}
-          ownedShopItemIds={ownedIds}
-          equippedAvatarItemIds={equippedAvatarItemIds}
-          coinBalance={coinBalance}
-          onPurchase={handlePurchase}
-          onEquip={handleEquip}
-        />
+        <>
+          <ThemeChipStrip selected={themeFilter} onSelect={setThemeFilter} />
+          <ShopGrid
+            listings={filteredAvatarListings}
+            ownedShopItemIds={ownedIds}
+            equippedAvatarItemIds={equippedAvatarItemIds}
+            coinBalance={coinBalance}
+            onPurchase={handlePurchase}
+            onEquip={handleEquip}
+          />
+        </>
       )}
       {activeTab === 'sound' && (
         <SoundsTabBody

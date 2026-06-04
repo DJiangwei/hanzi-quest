@@ -42,11 +42,15 @@ export const avatarItems = pgTable(
     imageUrl: text('image_url'),
     unlockVia: avatarUnlockVia('unlock_via').notNull().default('shop'),
     unlockRef: text('unlock_ref'),
+    theme: text('theme'),  // PR #58 — nullable text, validated in TS
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (t) => [index('avatar_items_slot_idx').on(t.slotId)],
+  (t) => [
+    index('avatar_items_slot_idx').on(t.slotId),
+    index('avatar_items_theme_idx').on(t.theme),
+  ],
 );
 
 export const childAvatarInventory = pgTable(

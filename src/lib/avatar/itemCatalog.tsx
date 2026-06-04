@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { AvatarSlotId } from './defaultLook';
+import type { AvatarTheme } from './themes';
 
 export type ItemRarity = 'common' | 'rare' | 'epic';
 
@@ -20,6 +21,8 @@ export interface ItemDef {
    * `'with wave-blue surroundings'`). Used by `resolveNarrativeHint`.
    */
   narrativeHint: string;
+  /** PR #58: cosmetic categorization. Required on every item. */
+  theme: AvatarTheme;
   /**
    * Inner SVG content for this item; rendered inside the AvatarRender's outer
    * `<svg viewBox="0 0 100 100">`. Must use only flat colours (no `<defs>` /
@@ -35,6 +38,7 @@ const defaultHead: ItemDef = {
   slot: 'head',
   displayName: '小水手',
   narrativeHint: 'a sun-tanned young pirate',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-kid-warm">
       <circle
@@ -65,6 +69,7 @@ const defaultBandana: ItemDef = {
   slot: 'hat',
   displayName: '红头巾',
   narrativeHint: 'a red bandana with white polka dots',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-bandana-red">
       <path
@@ -91,6 +96,7 @@ const defaultTee: ItemDef = {
   slot: 'top',
   displayName: '条纹衫',
   narrativeHint: 'a striped sailor shirt',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-tee-stripes">
       <path
@@ -111,6 +117,7 @@ const defaultOcean: ItemDef = {
   slot: 'background',
   displayName: '海洋',
   narrativeHint: 'with wave-blue ocean surroundings',
+  theme: 'pirate',
   renderSvg: () => (
     <g key="default-ocean">
       <circle cx="50" cy="50" r="50" fill="#5fb1d3" />
@@ -128,6 +135,50 @@ const defaultOcean: ItemDef = {
   ),
 };
 
+const defaultHair: ItemDef = {
+  unlockRef: 'default-hair-brown',
+  slot: 'hair',
+  displayName: '棕色短发',
+  narrativeHint: 'with short brown hair',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="default-hair-brown">
+      {/* Simple brown hair — drawn over the head, under the hat */}
+      <path
+        d="M 28 38 Q 28 22 50 22 Q 72 22 72 38 Q 68 30 50 30 Q 32 30 28 38 Z"
+        fill="#5a3214"
+      />
+      <path
+        d="M 28 38 Q 26 44 28 50 Q 26 40 28 38 Z"
+        fill="#4a2a10"
+      />
+      <path
+        d="M 72 38 Q 74 44 72 50 Q 74 40 72 38 Z"
+        fill="#4a2a10"
+      />
+    </g>
+  ),
+};
+
+const defaultPants: ItemDef = {
+  unlockRef: 'default-pants-blue',
+  slot: 'pants',
+  displayName: '蓝色长裤',
+  narrativeHint: 'wearing navy blue trousers',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="default-pants-blue">
+      {/* Simple blue pants — drawn below the torso line */}
+      <path
+        d="M 30 78 L 28 100 L 48 100 L 50 88 L 52 100 L 72 100 L 70 78 Z"
+        fill="#1a3a6a"
+        stroke="#0a1a3a"
+        strokeWidth="1"
+      />
+    </g>
+  ),
+};
+
 // ─── HATS (7 shop items) ─────────────────────────────────────────────────────
 
 const hatTricorn: ItemDef = {
@@ -137,6 +188,7 @@ const hatTricorn: ItemDef = {
   narrativeHint: 'a black tricorn pirate hat',
   rarity: 'common',
   priceCoins: 120,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-tricorn">
       <path
@@ -158,6 +210,7 @@ const hatCaptain: ItemDef = {
   narrativeHint: "a navy captain's hat with a gold trim",
   rarity: 'rare',
   priceCoins: 300,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-captain">
       <path
@@ -184,6 +237,7 @@ const hatBandanaBlue: ItemDef = {
   narrativeHint: 'a blue bandana with white waves',
   rarity: 'common',
   priceCoins: 80,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-bandana-blue">
       <path
@@ -216,6 +270,7 @@ const hatParrotPerch: ItemDef = {
   narrativeHint: 'a tiny red parrot perched on her shoulder',
   rarity: 'rare',
   priceCoins: 360,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-parrot-perch">
       <path
@@ -245,6 +300,7 @@ const hatCrownGold: ItemDef = {
   narrativeHint: 'a sparkling gold crown studded with gems',
   rarity: 'epic',
   priceCoins: 820,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-crown-gold">
       <path
@@ -268,6 +324,7 @@ const hatSunhat: ItemDef = {
   narrativeHint: 'a wide-brimmed straw sunhat',
   rarity: 'common',
   priceCoins: 100,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-sunhat">
       <ellipse cx="50" cy="35" rx="30" ry="5" fill="#e6c98a" stroke="#7a5a2a" strokeWidth="1" />
@@ -285,6 +342,7 @@ const hatBeanie: ItemDef = {
   narrativeHint: 'a cozy green knit beanie with a red pom',
   rarity: 'common',
   priceCoins: 90,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-beanie">
       <path
@@ -306,6 +364,7 @@ const hatEyepatchSkull: ItemDef = {
   narrativeHint: 'a black skull-and-crossbones cap',
   rarity: 'epic',
   priceCoins: 700,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-hat-skull-cap">
       <path
@@ -331,6 +390,7 @@ const topPirateCoat: ItemDef = {
   narrativeHint: 'a long brown pirate coat with gold buttons',
   rarity: 'rare',
   priceCoins: 320,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-coat-pirate">
       <path
@@ -366,6 +426,7 @@ const topVest: ItemDef = {
   narrativeHint: 'a tan leather vest',
   rarity: 'common',
   priceCoins: 130,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-vest">
       <path
@@ -388,6 +449,7 @@ const topLifejacket: ItemDef = {
   narrativeHint: 'a bright orange lifejacket with reflective stripes',
   rarity: 'common',
   priceCoins: 150,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-lifejacket">
       <path
@@ -416,6 +478,7 @@ const topApronTreasure: ItemDef = {
   narrativeHint: 'a treasure-hunter apron with a gold coin pocket',
   rarity: 'rare',
   priceCoins: 280,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-apron-treasure">
       <path
@@ -448,6 +511,7 @@ const topEpaulettesGold: ItemDef = {
   narrativeHint: 'a navy admiral coat with gold epaulettes',
   rarity: 'epic',
   priceCoins: 720,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-epaulettes-gold">
       <path
@@ -490,6 +554,7 @@ const topCapeRed: ItemDef = {
   narrativeHint: 'a flowing crimson cape with gold clasps',
   rarity: 'rare',
   priceCoins: 340,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-top-cape-red">
       <path
@@ -514,6 +579,7 @@ const bgSunset: ItemDef = {
   narrativeHint: 'under a glowing orange sunset sky',
   rarity: 'rare',
   priceCoins: 260,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-bg-sunset">
       <circle cx="50" cy="50" r="50" fill="#f5852a" />
@@ -535,6 +601,7 @@ const bgPalmIsland: ItemDef = {
   narrativeHint: 'on a sandy palm-tree island',
   rarity: 'rare',
   priceCoins: 400,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-bg-palm-island">
       <circle cx="50" cy="50" r="50" fill="#7ec8e3" />
@@ -569,6 +636,7 @@ const bgTreasureCave: ItemDef = {
   narrativeHint: 'inside a glittering treasure cave',
   rarity: 'epic',
   priceCoins: 640,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-bg-treasure-cave">
       <circle cx="50" cy="50" r="50" fill="#2a1a3a" />
@@ -596,6 +664,7 @@ const bgStarryNight: ItemDef = {
   narrativeHint: 'beneath a starry midnight sky',
   rarity: 'common',
   priceCoins: 200,
+  theme: 'pirate',
   renderSvg: () => (
     <g key="avatar-bg-starry-night">
       <circle cx="50" cy="50" r="50" fill="#13265a" />
@@ -617,6 +686,349 @@ const bgStarryNight: ItemDef = {
   ),
 };
 
+// ─── HAIR (2 shop items) ─────────────────────────────────────────────────────
+
+const pirateHairBlackLong: ItemDef = {
+  unlockRef: 'pirate-hair-black-long',
+  slot: 'hair',
+  displayName: '黑色长发',
+  rarity: 'rare',
+  priceCoins: 280,
+  narrativeHint: 'long flowing black hair',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="pirate-hair-black-long">
+      <path
+        d="M 28 32 Q 38 22 50 22 Q 62 22 72 32 L 74 60 Q 68 65 64 60 L 64 40 Q 50 35 36 40 L 36 60 Q 32 65 26 60 Z"
+        fill="#1a1a1a"
+        stroke="#000"
+        strokeWidth="1"
+      />
+    </g>
+  ),
+};
+
+const pirateHairDreads: ItemDef = {
+  unlockRef: 'pirate-hair-dreads-brown',
+  slot: 'hair',
+  displayName: '棕色脏辫',
+  rarity: 'rare',
+  priceCoins: 320,
+  narrativeHint: 'brown dreadlocks tied with beads',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="pirate-hair-dreads-brown">
+      <path
+        d="M 30 34 Q 50 20 70 34 L 70 38 Q 50 30 30 38 Z"
+        fill="#4a2f1a"
+      />
+      <rect x="32" y="38" width="3" height="22" fill="#4a2f1a" rx="1.5" />
+      <rect x="48" y="38" width="3" height="24" fill="#4a2f1a" rx="1.5" />
+      <rect x="65" y="38" width="3" height="22" fill="#4a2f1a" rx="1.5" />
+      <circle cx="33.5" cy="62" r="2" fill="#d4a017" />
+      <circle cx="49.5" cy="64" r="2" fill="#d4a017" />
+      <circle cx="66.5" cy="62" r="2" fill="#d4a017" />
+    </g>
+  ),
+};
+
+// ─── PANTS (2 shop items) ────────────────────────────────────────────────────
+
+const piratePantsRagged: ItemDef = {
+  unlockRef: 'pirate-pants-ragged-tan',
+  slot: 'pants',
+  displayName: '破旧棕裤',
+  rarity: 'common',
+  priceCoins: 120,
+  narrativeHint: 'tattered tan trousers',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="pirate-pants-ragged-tan">
+      <path
+        d="M 38 73 L 36 90 L 44 90 L 46 78 L 50 78 L 52 90 L 60 90 L 62 73 Z"
+        fill="#a87844"
+        stroke="#7a5530"
+        strokeWidth="1"
+      />
+      <path d="M 36 90 L 38 88 L 40 90 L 42 88 L 44 90" stroke="#7a5530" strokeWidth="0.8" fill="none" />
+      <path d="M 52 90 L 54 88 L 56 90 L 58 88 L 60 90" stroke="#7a5530" strokeWidth="0.8" fill="none" />
+    </g>
+  ),
+};
+
+const piratePantsStripeNavy: ItemDef = {
+  unlockRef: 'pirate-pants-stripe-navy',
+  slot: 'pants',
+  displayName: '海军条纹裤',
+  rarity: 'rare',
+  priceCoins: 280,
+  narrativeHint: 'navy striped trousers',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="pirate-pants-stripe-navy">
+      <rect x="38" y="73" width="10" height="17" fill="#1e3a8a" stroke="#0f172a" strokeWidth="1" />
+      <rect x="52" y="73" width="10" height="17" fill="#1e3a8a" stroke="#0f172a" strokeWidth="1" />
+      <line x1="42" y1="73" x2="42" y2="90" stroke="#dbeafe" strokeWidth="0.8" />
+      <line x1="46" y1="73" x2="46" y2="90" stroke="#dbeafe" strokeWidth="0.8" />
+      <line x1="56" y1="73" x2="56" y2="90" stroke="#dbeafe" strokeWidth="0.8" />
+      <line x1="60" y1="73" x2="60" y2="90" stroke="#dbeafe" strokeWidth="0.8" />
+    </g>
+  ),
+};
+
+// ─── DECOR (2 shop items) ────────────────────────────────────────────────────
+
+const decorPirateFlag: ItemDef = {
+  unlockRef: 'decor-pirate-flag',
+  slot: 'decor',
+  displayName: '海盗旗',
+  rarity: 'rare',
+  priceCoins: 350,
+  narrativeHint: 'with a Jolly Roger flag in the background',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="decor-pirate-flag">
+      <line x1="82" y1="14" x2="82" y2="40" stroke="#3a2515" strokeWidth="1.5" />
+      <rect x="82" y="14" width="14" height="10" fill="#1a1a1a" />
+      <circle cx="89" cy="18" r="2" fill="#fff" />
+      <rect x="88" y="20" width="2" height="2" fill="#fff" />
+    </g>
+  ),
+};
+
+const decorShipMast: ItemDef = {
+  unlockRef: 'decor-ship-mast',
+  slot: 'decor',
+  displayName: '船桅',
+  rarity: 'epic',
+  priceCoins: 700,
+  narrativeHint: 'with a tall ship mast and sail behind them',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="decor-ship-mast">
+      <line x1="14" y1="8" x2="14" y2="60" stroke="#5a3a1a" strokeWidth="2" />
+      <path d="M 14 12 Q 26 28 14 44 Z" fill="#f5e6c8" stroke="#a08660" strokeWidth="1" />
+      <line x1="14" y1="20" x2="22" y2="22" stroke="#a08660" strokeWidth="0.7" />
+      <line x1="14" y1="30" x2="22" y2="30" stroke="#a08660" strokeWidth="0.7" />
+    </g>
+  ),
+};
+
+// ─── CARIBBEAN THEME ─────────────────────────────────────────────────────────
+
+const caribKidTan: ItemDef = {
+  unlockRef: 'carib-kid-tan',
+  slot: 'head',
+  displayName: '阳光男孩',
+  rarity: 'common',
+  priceCoins: 100,
+  narrativeHint: 'a sun-kissed island kid',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-kid-tan">
+      <circle cx="50" cy="46" r="22" fill="#d4965e" stroke="#7a4a2a" strokeWidth="1.5" />
+      <circle cx="42" cy="44" r="1.8" fill="#2a1a14" />
+      <circle cx="58" cy="44" r="1.8" fill="#2a1a14" />
+      <path d="M 43 53 Q 50 57 57 53" stroke="#7a4a2a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <circle cx="36" cy="50" r="2.5" fill="#c87850" opacity="0.6" />
+      <circle cx="64" cy="50" r="2.5" fill="#c87850" opacity="0.6" />
+    </g>
+  ),
+};
+
+const caribStrawhat: ItemDef = {
+  unlockRef: 'carib-strawhat',
+  slot: 'hat',
+  displayName: '草帽',
+  rarity: 'common',
+  priceCoins: 100,
+  narrativeHint: 'a wide-brimmed straw hat',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-strawhat">
+      <ellipse cx="50" cy="30" rx="26" ry="5" fill="#e2b366" stroke="#a07a30" strokeWidth="1" />
+      <path d="M 36 30 Q 50 18 64 30 L 60 26 Q 50 18 40 26 Z" fill="#d4a04e" stroke="#a07a30" strokeWidth="1" />
+      <path d="M 42 24 Q 50 22 58 24" stroke="#a07a30" strokeWidth="0.7" fill="none" />
+    </g>
+  ),
+};
+
+const caribHibiscusBand: ItemDef = {
+  unlockRef: 'carib-hibiscus-band',
+  slot: 'hat',
+  displayName: '芙蓉发带',
+  rarity: 'rare',
+  priceCoins: 290,
+  narrativeHint: 'a hibiscus flower hairband',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-hibiscus-band">
+      <path d="M 28 32 Q 50 26 72 32 L 72 36 Q 50 30 28 36 Z" fill="#7c2d12" />
+      <circle cx="68" cy="32" r="4" fill="#ec4899" />
+      <circle cx="65" cy="30" r="3" fill="#f472b6" />
+      <circle cx="70" cy="29" r="3" fill="#f472b6" />
+      <circle cx="71" cy="33" r="3" fill="#f472b6" />
+      <circle cx="68" cy="32" r="1" fill="#fde047" />
+    </g>
+  ),
+};
+
+const caribHairBraids: ItemDef = {
+  unlockRef: 'carib-hair-braids-blonde',
+  slot: 'hair',
+  displayName: '金色辫子',
+  rarity: 'rare',
+  priceCoins: 280,
+  narrativeHint: 'sun-bleached blonde braids',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-hair-braids-blonde">
+      <path d="M 30 32 Q 50 24 70 32 L 70 38 Q 50 32 30 38 Z" fill="#fde68a" stroke="#a07a30" strokeWidth="1" />
+      <path d="M 30 38 L 26 60 L 30 60 Z" fill="#fde68a" />
+      <path d="M 70 38 L 74 60 L 70 60 Z" fill="#fde68a" />
+      <circle cx="28" cy="62" r="1.5" fill="#ec4899" />
+      <circle cx="72" cy="62" r="1.5" fill="#ec4899" />
+    </g>
+  ),
+};
+
+const caribHairCurls: ItemDef = {
+  unlockRef: 'carib-hair-curls-honey',
+  slot: 'hair',
+  displayName: '蜂蜜色卷发',
+  rarity: 'common',
+  priceCoins: 140,
+  narrativeHint: 'honey-colored curls',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-hair-curls-honey">
+      <path
+        d="M 28 36 Q 30 26 40 24 Q 50 20 60 24 Q 70 26 72 36 Q 70 40 65 38 Q 60 36 55 38 Q 50 36 45 38 Q 40 36 35 38 Q 30 40 28 36 Z"
+        fill="#f59e0b"
+        stroke="#92400e"
+        strokeWidth="1"
+      />
+    </g>
+  ),
+};
+
+const caribShirtHibiscus: ItemDef = {
+  unlockRef: 'carib-shirt-hibiscus',
+  slot: 'top',
+  displayName: '芙蓉花衬衫',
+  rarity: 'rare',
+  priceCoins: 320,
+  narrativeHint: 'a Hawaiian shirt patterned with hibiscus flowers',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-shirt-hibiscus">
+      <path d="M 32 65 L 30 78 L 40 80 L 50 78 L 60 80 L 70 78 L 68 65 Q 50 62 32 65 Z" fill="#22d3ee" stroke="#0e7490" strokeWidth="1" />
+      <circle cx="38" cy="72" r="1.8" fill="#ec4899" />
+      <circle cx="48" cy="74" r="1.8" fill="#ec4899" />
+      <circle cx="58" cy="71" r="1.8" fill="#ec4899" />
+      <circle cx="44" cy="68" r="1.2" fill="#fde047" />
+      <circle cx="54" cy="69" r="1.2" fill="#fde047" />
+    </g>
+  ),
+};
+
+const caribTankCoral: ItemDef = {
+  unlockRef: 'carib-tank-coral',
+  slot: 'top',
+  displayName: '珊瑚色背心',
+  rarity: 'common',
+  priceCoins: 130,
+  narrativeHint: 'a coral-pink tank top',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-tank-coral">
+      <path d="M 36 65 L 34 78 L 50 80 L 66 78 L 64 65 Q 50 62 36 65 Z" fill="#fb7185" stroke="#9f1239" strokeWidth="1" />
+      <line x1="38" y1="65" x2="40" y2="60" stroke="#9f1239" strokeWidth="1.2" />
+      <line x1="62" y1="65" x2="60" y2="60" stroke="#9f1239" strokeWidth="1.2" />
+    </g>
+  ),
+};
+
+const caribShortsAqua: ItemDef = {
+  unlockRef: 'carib-shorts-aqua',
+  slot: 'pants',
+  displayName: '水蓝短裤',
+  rarity: 'common',
+  priceCoins: 110,
+  narrativeHint: 'aqua-blue swim shorts',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-shorts-aqua">
+      <rect x="38" y="76" width="10" height="12" rx="2" fill="#06b6d4" stroke="#0e7490" strokeWidth="1" />
+      <rect x="52" y="76" width="10" height="12" rx="2" fill="#06b6d4" stroke="#0e7490" strokeWidth="1" />
+      <rect x="38" y="74" width="24" height="4" fill="#0e7490" />
+      <path d="M 38 80 Q 41 79 44 80" stroke="#ffffff" strokeWidth="0.8" fill="none" opacity="0.5" />
+      <path d="M 52 80 Q 55 79 58 80" stroke="#ffffff" strokeWidth="0.8" fill="none" opacity="0.5" />
+    </g>
+  ),
+};
+
+const caribSkirtTropical: ItemDef = {
+  unlockRef: 'carib-skirt-tropical',
+  slot: 'pants',
+  displayName: '热带花裙',
+  rarity: 'rare',
+  priceCoins: 280,
+  narrativeHint: 'a tropical-print wrap skirt',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-skirt-tropical">
+      <path d="M 34 74 L 30 90 L 70 90 L 66 74 Z" fill="#10b981" stroke="#047857" strokeWidth="1" />
+      <circle cx="38" cy="80" r="1.5" fill="#fde047" />
+      <circle cx="50" cy="82" r="1.5" fill="#fde047" />
+      <circle cx="62" cy="80" r="1.5" fill="#fde047" />
+      <circle cx="44" cy="85" r="1.5" fill="#ec4899" />
+      <circle cx="56" cy="85" r="1.5" fill="#ec4899" />
+    </g>
+  ),
+};
+
+const decorCaribPalm: ItemDef = {
+  unlockRef: 'carib-palmtree',
+  slot: 'decor',
+  displayName: '棕榈树',
+  rarity: 'rare',
+  priceCoins: 330,
+  narrativeHint: 'with a palm tree swaying in the breeze',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-palmtree">
+      <path d="M 84 12 Q 82 40 80 56" stroke="#78350f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <path d="M 84 12 Q 70 8 64 14 Q 72 14 84 12 Z" fill="#22c55e" stroke="#15803d" strokeWidth="0.6" />
+      <path d="M 84 12 Q 98 8 96 18 Q 90 14 84 12 Z" fill="#22c55e" stroke="#15803d" strokeWidth="0.6" />
+      <path d="M 84 12 Q 76 4 82 4 Q 84 8 84 12 Z" fill="#22c55e" stroke="#15803d" strokeWidth="0.6" />
+      <path d="M 84 12 Q 92 4 90 4 Q 86 6 84 12 Z" fill="#22c55e" stroke="#15803d" strokeWidth="0.6" />
+    </g>
+  ),
+};
+
+const bgCaribSunset: ItemDef = {
+  unlockRef: 'carib-beach-sunset',
+  slot: 'background',
+  displayName: '加勒比日落',
+  rarity: 'epic',
+  priceCoins: 800,
+  narrativeHint: 'against a Caribbean sunset over a sandy beach',
+  theme: 'caribbean',
+  renderSvg: () => (
+    <g key="carib-beach-sunset">
+      <rect x="0" y="0" width="100" height="60" fill="#fb923c" />
+      <rect x="0" y="40" width="100" height="20" fill="#fbbf24" opacity="0.7" />
+      <circle cx="50" cy="38" r="9" fill="#fde047" />
+      <rect x="0" y="60" width="100" height="6" fill="#06b6d4" />
+      <rect x="0" y="66" width="100" height="34" fill="#fef3c7" />
+      <path d="M 10 64 Q 14 62 18 64" stroke="#0e7490" strokeWidth="0.8" fill="none" />
+      <path d="M 30 64 Q 34 62 38 64" stroke="#0e7490" strokeWidth="0.8" fill="none" />
+      <path d="M 60 64 Q 64 62 68 64" stroke="#0e7490" strokeWidth="0.8" fill="none" />
+    </g>
+  ),
+};
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 const ALL_ITEMS: ItemDef[] = [
@@ -624,6 +1036,8 @@ const ALL_ITEMS: ItemDef[] = [
   defaultBandana,
   defaultTee,
   defaultOcean,
+  defaultHair,
+  defaultPants,
   hatTricorn,
   hatCaptain,
   hatBandanaBlue,
@@ -642,6 +1056,23 @@ const ALL_ITEMS: ItemDef[] = [
   bgPalmIsland,
   bgTreasureCave,
   bgStarryNight,
+  pirateHairBlackLong,
+  pirateHairDreads,
+  piratePantsRagged,
+  piratePantsStripeNavy,
+  decorPirateFlag,
+  decorShipMast,
+  caribKidTan,
+  caribStrawhat,
+  caribHibiscusBand,
+  caribHairBraids,
+  caribHairCurls,
+  caribShirtHibiscus,
+  caribTankCoral,
+  caribShortsAqua,
+  caribSkirtTropical,
+  decorCaribPalm,
+  bgCaribSunset,
 ];
 
 export const ITEM_CATALOG: Record<string, ItemDef> = Object.fromEntries(
