@@ -8,7 +8,8 @@
  * every deploy; only inserts what is missing.
  *
  * What it does:
- *   1. Upserts the four avatar_slots rows: head, hat, top, background.
+ *   1. Upserts the seven avatar_slots rows: background, decor, head, pants,
+ *      top, hair, hat (PR #58 expanded from 4 → 7).
  *   2. For each default item in the catalog (priceCoins undefined), upserts an
  *      avatar_items row with unlock_via='default'.
  *   3. For each shop item in the catalog (priceCoins defined), upserts:
@@ -35,11 +36,15 @@ async function main() {
   );
 
   // ── 1. avatar_slots ──────────────────────────────────────────────────────
+  // PR #58: 7 slots; displayOrder follows AVATAR_SLOT_IDS render order (back→front).
   const SLOTS = [
-    { id: 'head', displayOrder: 1 },
-    { id: 'background', displayOrder: 2 },
-    { id: 'top', displayOrder: 3 },
-    { id: 'hat', displayOrder: 4 },
+    { id: 'background', displayOrder: 1 },
+    { id: 'decor', displayOrder: 2 },
+    { id: 'head', displayOrder: 3 },
+    { id: 'pants', displayOrder: 4 },
+    { id: 'top', displayOrder: 5 },
+    { id: 'hair', displayOrder: 6 },
+    { id: 'hat', displayOrder: 7 },
   ];
   for (const slot of SLOTS) {
     await db
