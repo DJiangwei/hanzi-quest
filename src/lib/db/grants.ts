@@ -1,7 +1,7 @@
 // NEVER import this file from client code. It pulls in postgres.
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { childCardGrantsWeekly, cardGrantsLog } from '@/db/schema/gacha';
+import { childCardGrantsDaily, cardGrantsLog } from '@/db/schema/gacha';
 import {
   childCollections,
   collectibleItems,
@@ -9,7 +9,8 @@ import {
   shardBalances,
 } from '@/db/schema/collections';
 
-export const WEEKLY_CARD_CAP = 10;
+export const WEEKLY_CARD_CAP = 10; // dead since card-economy-v2 — daily cap replaced it
+export const DAILY_CARD_CAP = 10;
 export const SHARD_SWAP_COST = 3;
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -65,48 +66,48 @@ export interface CardGrantResult {
   packSlug: string;
   isDupe: boolean;
   shardsAfter: number;
-  cardsThisWeek: number;
+  cardsToday: number;
 }
 
 export interface CardGrantSkipped {
   granted: false;
-  reason: 'weekly_cap_reached' | 'already_granted';
-  cardsThisWeek: number;
+  reason: 'daily_cap_reached' | 'already_granted';
+  cardsToday: number;
 }
 
 /**
  * Inside a transaction:
- *  1. SELECT child_card_grants_weekly (FOR UPDATE).
+ *  1. SELECT child_card_grants_daily (FOR UPDATE).
  *  2. If count >= cap → return skipped.
  *  3. INSERT card_grants_log; if PK collision → already_granted.
  *  4. Pick weighted random item.
  *  5. Upsert child_collections (count++).
  *  6. If was dupe → shard_balances++.
- *  7. Increment/insert weekly counter.
+ *  7. Increment/insert daily counter.
  */
 export async function pullCardInTx(
   tx: Tx,
   childId: string,
   source: 'boss_clear' | 'perfect_week' | 'story_chapter',
   refId: string,
-  weekStartUtc: string,
+  dayUtc: string,
   rng: () => number = Math.random,
 ): Promise<CardGrantResult | CardGrantSkipped> {
-  // 1. Weekly counter with row lock.
-  const weeklyRows = await tx
-    .select({ count: childCardGrantsWeekly.count })
-    .from(childCardGrantsWeekly)
+  // 1. Daily counter with row lock.
+  const dailyRows = await tx
+    .select({ count: childCardGrantsDaily.count })
+    .from(childCardGrantsDaily)
     .where(
       and(
-        eq(childCardGrantsWeekly.childId, childId),
-        eq(childCardGrantsWeekly.weekStartUtc, weekStartUtc),
+        eq(childCardGrantsDaily.childId, childId),
+        eq(childCardGrantsDaily.dayUtc, dayUtc),
       ),
     )
     .for('update');
-  const currentCount = weeklyRows[0]?.count ?? 0;
+  const currentCount = dailyRows[0]?.count ?? 0;
 
-  if (currentCount >= WEEKLY_CARD_CAP) {
-    return { granted: false, reason: 'weekly_cap_reached', cardsThisWeek: currentCount };
+  if (currentCount >= DAILY_CARD_CAP) {
+    return { granted: false, reason: 'daily_cap_reached', cardsToday: currentCount };
   }
 
   // 2. Idempotency log — INSERT with PK collision → already granted.
@@ -120,7 +121,7 @@ export async function pullCardInTx(
       'code' in err &&
       (err as { code: string }).code === '23505'
     ) {
-      return { granted: false, reason: 'already_granted', cardsThisWeek: currentCount };
+      return { granted: false, reason: 'already_granted', cardsToday: currentCount };
     }
     throw err;
   }
@@ -175,13 +176,13 @@ export async function pullCardInTx(
     shardsAfter = shardRow?.shards ?? 1;
   }
 
-  // 6. Increment weekly counter (upsert — safe for first-of-week race)
+  // 6. Increment daily counter (upsert — safe for first-of-day race)
   await tx
-    .insert(childCardGrantsWeekly)
-    .values({ childId, weekStartUtc, count: 1 })
+    .insert(childCardGrantsDaily)
+    .values({ childId, dayUtc, count: 1 })
     .onConflictDoUpdate({
-      target: [childCardGrantsWeekly.childId, childCardGrantsWeekly.weekStartUtc],
-      set: { count: sql`${childCardGrantsWeekly.count} + 1` },
+      target: [childCardGrantsDaily.childId, childCardGrantsDaily.dayUtc],
+      set: { count: sql`${childCardGrantsDaily.count} + 1` },
     });
 
   return {
@@ -191,7 +192,7 @@ export async function pullCardInTx(
     packSlug: picked.packSlug,
     isDupe,
     shardsAfter,
-    cardsThisWeek: currentCount + 1,
+    cardsToday: currentCount + 1,
   };
 }
 

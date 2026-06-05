@@ -10,7 +10,6 @@ import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
 import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { checkAndGrantTrophies } from '@/lib/db/trophies';
-import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 import { todayUtcIso } from '@/lib/db/streaks';
 import { pullCardInTx, swapShardsInTx, type CardGrantResult, type CardGrantSkipped } from '@/lib/db/grants';
 
@@ -111,9 +110,9 @@ export async function pullCardForChild(
   source: CardGrantSource,
   refId: string,
 ): Promise<CardGrantResult | CardGrantSkipped> {
-  const weekStartUtc = mondayOfIsoWeek(todayUtcIso());
+  const dayUtc = todayUtcIso();
   const result = await db.transaction((tx) =>
-    pullCardInTx(tx, childId, source, refId, weekStartUtc, Math.random),
+    pullCardInTx(tx, childId, source, refId, dayUtc, Math.random),
   );
   if (result.granted) {
     revalidatePath(`/play/${childId}/collection/${result.packSlug}`);
