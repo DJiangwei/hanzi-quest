@@ -32,6 +32,12 @@ const PARCHMENT_BG =
 const SEA_WAVES =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 30 Q30 12 60 30 T120 30' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.12'/%3E%3Cpath d='M0 48 Q30 32 60 48 T120 48' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.10'/%3E%3C/svg%3E\")";
 
+/** Teal scalloped wave band — the signature treasure-map border (repeats along an edge). */
+const WAVE_BAND_H =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='26'%3E%3Crect width='48' height='26' fill='%232f8e96'/%3E%3Cpath d='M0 13 Q12 3 24 13 T48 13' fill='none' stroke='%23f3e4c0' stroke-width='3.5'/%3E%3Cpath d='M0 21 Q12 12 24 21 T48 21' fill='none' stroke='%23bfe3e6' stroke-width='2' opacity='0.7'/%3E%3C/svg%3E\")";
+const WAVE_BAND_V =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='48'%3E%3Crect width='26' height='48' fill='%232f8e96'/%3E%3Cpath d='M13 0 Q3 12 13 24 T13 48' fill='none' stroke='%23f3e4c0' stroke-width='3.5'/%3E%3Cpath d='M21 0 Q12 12 21 24 T21 48' fill='none' stroke='%23bfe3e6' stroke-width='2' opacity='0.7'/%3E%3C/svg%3E\")";
+
 export function VoyageBoard({ childId, packSlug, islands }: Props) {
   const map = getVoyageMap(packSlug);
   const reduced = useReducedMotion();
@@ -47,17 +53,25 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
       style={{ height: boardHeight, backgroundImage: PARCHMENT_BG }}
       className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[28px] border-[10px] border-[#caa24a] p-3 shadow-2xl ring-4 ring-[#7a4a14]/30"
     >
-      {/* Sea panel (inset on the parchment frame) */}
+      {/* Sea panel (inset inside the wave border) */}
       <div
-        className="absolute inset-3 rounded-2xl border-2 border-[#cdb27a] bg-[linear-gradient(180deg,#5cb3bb_0%,#2f8e96_50%,#1f6e76_100%)]"
+        className="absolute inset-[30px] rounded-xl border border-[#1f6e76]"
         style={{ backgroundImage: SEA_WAVES + ',linear-gradient(180deg,#5cb3bb_0%,#2f8e96_50%,#1f6e76_100%)' }}
       />
 
+      {/* Signature scalloped wave border, all four edges */}
+      <div className="pointer-events-none absolute inset-2 z-10 rounded-lg">
+        <div className="absolute left-0 right-0 top-0 h-[26px]" style={{ backgroundImage: WAVE_BAND_H, backgroundRepeat: 'repeat-x' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-[26px] rotate-180" style={{ backgroundImage: WAVE_BAND_H, backgroundRepeat: 'repeat-x' }} />
+        <div className="absolute bottom-0 left-0 top-0 w-[26px]" style={{ backgroundImage: WAVE_BAND_V, backgroundRepeat: 'repeat-y' }} />
+        <div className="absolute bottom-0 right-0 top-0 w-[26px] rotate-180" style={{ backgroundImage: WAVE_BAND_V, backgroundRepeat: 'repeat-y' }} />
+      </div>
+
       {/* Corner ornaments, treasure-map style */}
-      <div className="pointer-events-none absolute left-2 top-2 z-20 text-2xl opacity-90" aria-hidden="true">🐚</div>
-      <div className="pointer-events-none absolute right-2 top-2 z-20 text-3xl opacity-90" aria-hidden="true">🧭</div>
-      <div className="pointer-events-none absolute bottom-2 left-2 z-20 text-2xl opacity-90" aria-hidden="true">⚓</div>
-      <div className="pointer-events-none absolute bottom-2 right-2 z-20 text-2xl opacity-90" aria-hidden="true">⭐</div>
+      <div className="pointer-events-none absolute left-1 top-1 z-20 text-2xl opacity-95 drop-shadow" aria-hidden="true">🐚</div>
+      <div className="pointer-events-none absolute right-1 top-1 z-20 text-3xl opacity-95 drop-shadow" aria-hidden="true">🧭</div>
+      <div className="pointer-events-none absolute bottom-1 left-1 z-20 text-2xl opacity-95 drop-shadow" aria-hidden="true">⚓</div>
+      <div className="pointer-events-none absolute bottom-1 right-1 z-20 text-2xl opacity-95 drop-shadow" aria-hidden="true">⭐</div>
 
       {/* Title ribbon */}
       <div className="sticky top-3 z-30 mx-auto w-fit rounded-full border-2 border-[#caa24a] bg-[#f3e4c0] px-5 py-1.5 text-base font-extrabold text-[#7a4a14] shadow-md">
@@ -66,7 +80,7 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
 
       {/* Dotted route — stretched over the full tall board */}
       <svg
-        className="absolute inset-3 z-10 h-[calc(100%-1.5rem)] w-[calc(100%-1.5rem)]"
+        className="absolute inset-[30px] z-10 h-[calc(100%-60px)] w-[calc(100%-60px)]"
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
         aria-hidden="true"
