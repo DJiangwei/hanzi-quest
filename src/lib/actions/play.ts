@@ -27,7 +27,8 @@ import {
   getPlayableWeekForChild,
   listCharactersForWeek,
 } from '@/lib/db/weeks';
-import { pullCardForChild } from './gacha';
+import { pullCardForChild, claimWeeklyGiftIfDue } from './gacha';
+import type { GiftCard } from '@/lib/db/grants';
 
 const SCENE_COMPLETE_AWARD = 50;
 const SCENE_REPLAY_AWARD = 5;
@@ -95,6 +96,7 @@ export async function finishAttemptAction(
   perfect: boolean;
   bonuses: EconomyBonus[];
   trophies: GrantedTrophy[];
+  giftPack: { cards: GiftCard[] } | null;
 }> {
   const parsed = FinishAttemptSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
@@ -142,6 +144,7 @@ export async function finishAttemptAction(
   // Economy: tick the streak and award any due first-of-day / milestone
   // bonuses. Both helpers are idempotent so retries are safe.
   const bonuses: EconomyBonus[] = [];
+  let giftPack: { cards: GiftCard[] } | null = null;
   const today = todayUtcIso();
   const tick = await tickStreak(child.id, today);
   if (tick.ticked) {
@@ -153,6 +156,8 @@ export async function finishAttemptAction(
         labelZh: '今日首战！',
         labelEn: "First play of the day!",
       });
+      // Fresh check-in today → maybe the 5-of-7 weekly gift is now due.
+      giftPack = await claimWeeklyGiftIfDue(child.id);
     }
     const milestone = await awardStreakMilestoneIfDue(
       child.id,
@@ -203,7 +208,7 @@ export async function finishAttemptAction(
     );
   }
 
-  return { coinsAwarded, perfect, bonuses, trophies: collectedTrophies };
+  return { coinsAwarded, perfect, bonuses, trophies: collectedTrophies, giftPack };
 }
 
 const FinishLevelSchema = z.object({
