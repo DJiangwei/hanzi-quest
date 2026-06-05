@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { voyageLayout } from '@/lib/play/voyage-layout';
 
-describe('voyageLayout', () => {
+describe('voyageLayout (vertical zigzag)', () => {
   it('returns one position per stop, all in 0–100', () => {
     const pts = voyageLayout(10);
     expect(pts).toHaveLength(10);
@@ -13,30 +13,29 @@ describe('voyageLayout', () => {
     }
   });
 
-  it('uses at most 5 stops per row (two rows for 10)', () => {
+  it('steps straight down: yPct strictly increases with index', () => {
     const pts = voyageLayout(10);
-    const rows = new Set(pts.map((p) => p.yPct));
-    expect(rows.size).toBe(2);
+    for (let i = 1; i < pts.length; i++) {
+      expect(pts[i].yPct).toBeGreaterThan(pts[i - 1].yPct);
+    }
   });
 
-  it('runs row 0 left→right and row 1 right→left (serpentine)', () => {
-    const pts = voyageLayout(10);
-    // row 0 = first 5 ascending x; row 1 = next 5 descending x
-    expect(pts[0].xPct).toBeLessThan(pts[4].xPct);
-    expect(pts[5].xPct).toBeGreaterThan(pts[9].xPct);
-    // the transition stop (index 5) sits under the end of row 0 (similar x to index 4)
-    expect(Math.abs(pts[5].xPct - pts[4].xPct)).toBeLessThan(15);
-  });
-
-  it('centers a single row vertically', () => {
-    const pts = voyageLayout(4);
-    expect(new Set(pts.map((p) => p.yPct)).size).toBe(1);
-    expect(pts[0].yPct).toBeGreaterThan(40);
-    expect(pts[0].yPct).toBeLessThan(60);
+  it('alternates left / right of centre (zigzag)', () => {
+    const pts = voyageLayout(6);
+    expect(pts[0].xPct).toBeLessThan(50);
+    expect(pts[1].xPct).toBeGreaterThan(50);
+    expect(pts[2].xPct).toBeLessThan(50);
+    expect(pts[3].xPct).toBeGreaterThan(50);
+    expect(pts[0].xPct).toBe(pts[2].xPct);
+    expect(pts[1].xPct).toBe(pts[3].xPct);
   });
 
   it('handles 1 and 9 stops without throwing', () => {
     expect(voyageLayout(1)).toHaveLength(1);
     expect(voyageLayout(9)).toHaveLength(9);
+  });
+
+  it('returns empty for 0', () => {
+    expect(voyageLayout(0)).toEqual([]);
   });
 });
