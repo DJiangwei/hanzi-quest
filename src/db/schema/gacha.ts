@@ -26,6 +26,24 @@ export const childCardGrantsWeekly = pgTable(
 );
 
 /**
+ * Per-child DAILY card-grant counter (PR card-economy-v2). Replaces the
+ * weekly cap. Resets every UTC midnight. Used by `pullCardInTx` to enforce
+ * DAILY_CARD_CAP. The older `childCardGrantsWeekly` table is now dead (kept
+ * per the append-only migration rule).
+ */
+export const childCardGrantsDaily = pgTable(
+  'child_card_grants_daily',
+  {
+    childId: uuid('child_id')
+      .notNull()
+      .references(() => childProfiles.id, { onDelete: 'cascade' }),
+    dayUtc: text('day_utc').notNull(), // ISO YYYY-MM-DD (UTC)
+    count: integer('count').notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.childId, t.dayUtc] })],
+);
+
+/**
  * Idempotency log for card grants. Every (child, source, refId) can grant
  * at most once. Source values: 'boss_clear' | 'perfect_week' | 'story_chapter'.
  * refId: sessionId for boss_clear; weekId for perfect_week; chapterId for story_chapter.
