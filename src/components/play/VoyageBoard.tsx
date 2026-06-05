@@ -21,6 +21,17 @@ interface Props {
 /** Vertical room per stop, in px. Board height = stops × this → big, scrollable. */
 const STOP_GAP_PX = 210;
 
+/** Aged-parchment paper texture (subtle speckles) as a CSS background. */
+const PARCHMENT_BG =
+  'radial-gradient(circle at 20% 30%, rgba(120,80,30,0.05) 0 2px, transparent 2px),' +
+  'radial-gradient(circle at 70% 60%, rgba(120,80,30,0.05) 0 2px, transparent 2px),' +
+  'radial-gradient(circle at 45% 85%, rgba(120,80,30,0.04) 0 2px, transparent 2px),' +
+  'linear-gradient(160deg, #f3e4c0 0%, #e9d3a3 100%)';
+
+/** Faint white wave linework over the sea (treasure-chart style). */
+const SEA_WAVES =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 30 Q30 12 60 30 T120 30' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.12'/%3E%3Cpath d='M0 48 Q30 32 60 48 T120 48' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.10'/%3E%3C/svg%3E\")";
+
 export function VoyageBoard({ childId, packSlug, islands }: Props) {
   const map = getVoyageMap(packSlug);
   const reduced = useReducedMotion();
@@ -33,20 +44,29 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
   return (
     <div
       data-testid="voyage-board"
-      style={{ height: boardHeight }}
-      className="relative mx-auto w-full max-w-xl overflow-hidden rounded-3xl border-[6px] border-[#b8895a] bg-[linear-gradient(180deg,#4aa6ae_0%,#2a7e86_45%,#1c6068_100%)] shadow-xl"
+      style={{ height: boardHeight, backgroundImage: PARCHMENT_BG }}
+      className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[28px] border-[10px] border-[#caa24a] p-3 shadow-2xl ring-4 ring-[#7a4a14]/30"
     >
-      {/* Parchment inner trim */}
-      <div className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-[#e8d6a8]/40" />
+      {/* Sea panel (inset on the parchment frame) */}
+      <div
+        className="absolute inset-3 rounded-2xl border-2 border-[#cdb27a] bg-[linear-gradient(180deg,#5cb3bb_0%,#2f8e96_50%,#1f6e76_100%)]"
+        style={{ backgroundImage: SEA_WAVES + ',linear-gradient(180deg,#5cb3bb_0%,#2f8e96_50%,#1f6e76_100%)' }}
+      />
 
-      {/* Title banner */}
-      <div className="sticky top-2 z-20 mx-auto w-fit rounded-full bg-[#e8d6a8] px-5 py-1.5 text-base font-extrabold text-[#7a4a14] shadow-md">
-        🧭 {map.nameZh} · {map.nameEn}
+      {/* Corner ornaments, treasure-map style */}
+      <div className="pointer-events-none absolute left-2 top-2 z-20 text-2xl opacity-90" aria-hidden="true">🐚</div>
+      <div className="pointer-events-none absolute right-2 top-2 z-20 text-3xl opacity-90" aria-hidden="true">🧭</div>
+      <div className="pointer-events-none absolute bottom-2 left-2 z-20 text-2xl opacity-90" aria-hidden="true">⚓</div>
+      <div className="pointer-events-none absolute bottom-2 right-2 z-20 text-2xl opacity-90" aria-hidden="true">⭐</div>
+
+      {/* Title ribbon */}
+      <div className="sticky top-3 z-30 mx-auto w-fit rounded-full border-2 border-[#caa24a] bg-[#f3e4c0] px-5 py-1.5 text-base font-extrabold text-[#7a4a14] shadow-md">
+        {map.nameZh} · {map.nameEn}
       </div>
 
       {/* Dotted route — stretched over the full tall board */}
       <svg
-        className="absolute inset-0 h-full w-full"
+        className="absolute inset-3 z-10 h-[calc(100%-1.5rem)] w-[calc(100%-1.5rem)]"
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
         aria-hidden="true"
@@ -62,11 +82,11 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
               y1={a.yPct}
               x2={b.xPct}
               y2={b.yPct}
-              stroke={done ? '#f0c14b' : '#e8d6a8'}
+              stroke={done ? '#f0c14b' : '#f3e4c0'}
               strokeWidth="0.7"
               strokeDasharray="1.4 2.2"
               strokeLinecap="round"
-              opacity={done ? 0.95 : 0.7}
+              opacity={done ? 0.95 : 0.8}
               vectorEffect="non-scaling-stroke"
             />
           );
@@ -85,7 +105,7 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
             <div
               key={i}
               data-testid="voyage-stop-locked"
-              className="absolute flex w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center"
+              className="absolute z-10 flex w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center"
               style={style}
               aria-label={`${stop.labelEn} — locked`}
             >
@@ -110,7 +130,7 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
             href={`/play/${childId}/week/${island.weekId}`}
             aria-label={`${stop.labelEn} — week ${num}${cleared ? ' cleared' : isCurrent ? ' current' : ''}`}
             style={{ ...style, viewTransitionName: `island-${island.weekId}` }}
-            className="absolute flex w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+            className="absolute z-10 flex w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
           >
             <span className="relative flex aspect-square w-full items-center justify-center rounded-full border-[5px] border-[#caa24a] bg-gradient-to-b from-[#fbeec3] to-[#e9c877] text-[clamp(2.2rem,13vw,4.5rem)] shadow-xl">
               {stop.emoji}
