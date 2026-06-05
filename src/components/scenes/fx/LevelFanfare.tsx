@@ -2,15 +2,10 @@
 'use client';
 
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useEffect, useState, useTransition } from 'react';
-import { pullFreeFromBoss } from '@/lib/actions/gacha';
-import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
+import { useEffect } from 'react';
 import { playSound } from '@/lib/audio/play';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
-import type { PullResult } from '@/lib/db/gacha';
-import type { ZodiacSlug } from '@/components/play/zodiac-icons';
-import { TreasureChestReveal } from './TreasureChestReveal';
 
 interface CardGrantSummary {
   granted: boolean;
@@ -32,57 +27,17 @@ interface Props {
 export function LevelFanfare({
   weekLabel,
   coinsThisSession,
-  childId,
-  weekId,
+  // childId and weekId are kept in Props for API stability (callers pass them)
+  // but not needed in this component after the legacy chest button was removed
   chestAvailable,
   cardGrant,
   onContinue,
 }: Props) {
   const reduced = useReducedMotion();
-  const [pullResult, setPullResult] = useState<PullResult | null>(null);
-  const [pullError, setPullError] = useState<string | null>(null);
-  const [pulling, startPullTransition] = useTransition();
 
   useEffect(() => {
     if (!reduced) playSound('fanfare');
   }, [reduced]);
-
-  const openChest = () => {
-    startPullTransition(async () => {
-      try {
-        const result = await pullFreeFromBoss(weekId, { childId });
-        setPullResult(result);
-      } catch (e) {
-        if (e instanceof AlreadyClaimedError) {
-          setPullError('宝箱已经开过啦');
-        } else {
-          setPullError('开宝箱失败，回地图再试');
-        }
-      }
-    });
-  };
-
-  if (pullResult) {
-    return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-8">
-        <TreasureChestReveal
-          item={{
-            id: pullResult.item.id,
-            slug: pullResult.item.slug as ZodiacSlug,
-            nameZh: pullResult.item.nameZh,
-            nameEn: pullResult.item.nameEn,
-            loreZh: pullResult.item.loreZh,
-            loreEn: pullResult.item.loreEn,
-          }}
-          wasDuplicate={pullResult.wasDuplicate}
-          shardsAfter={pullResult.shardsAfter}
-        />
-        <WoodSignButton size="lg" onClick={onContinue}>
-          回地图
-        </WoodSignButton>
-      </main>
-    );
-  }
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
@@ -112,21 +67,9 @@ export function LevelFanfare({
           🪙 +{coinsThisSession}
         </span>
       </p>
-      <div className="flex flex-col gap-3">
-        {chestAvailable && (
-          <WoodSignButton size="lg" onClick={openChest} disabled={pulling}>
-            {pulling ? '开启中…' : '开启宝箱 🎁'}
-          </WoodSignButton>
-        )}
-        <WoodSignButton
-          size={chestAvailable ? 'md' : 'lg'}
-          variant={chestAvailable ? 'ghost' : 'primary'}
-          onClick={onContinue}
-        >
-          回地图
-        </WoodSignButton>
-      </div>
-      {pullError && <p className="text-sm text-[var(--color-bad)]">{pullError}</p>}
+      <WoodSignButton size="lg" variant="primary" onClick={onContinue}>
+        回地图
+      </WoodSignButton>
       {cardGrant?.granted ? (
         <div className="mt-4 rounded-2xl bg-amber-100 px-4 py-3 text-center text-amber-900">
           <p className="text-sm font-semibold">
