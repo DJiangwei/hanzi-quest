@@ -9,6 +9,13 @@ import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { swapShardsForItem } from '@/lib/actions/gacha';
 
+/**
+ * Shards needed to swap for one card. Mirrors `SHARD_SWAP_COST` in
+ * `@/lib/db/grants` (which is server-only — can't be imported into this
+ * client component). Keep the two in sync.
+ */
+const SWAP_COST = 3;
+
 interface Props {
   childId: string;
   /**
@@ -133,13 +140,13 @@ export function PackPageBody({
                   <button
                     type="button"
                     data-testid="swap-chip"
-                    disabled={shardCount < 3}
+                    disabled={shardCount < SWAP_COST}
                     onClick={() => setSwapItem(item)}
                     className={`absolute inset-x-1 bottom-1 z-10 min-h-6 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                      shardCount >= 3 ? 'bg-sky-500 text-white' : 'bg-stone-300 text-stone-600'
+                      shardCount >= SWAP_COST ? 'bg-sky-500 text-white' : 'bg-stone-300 text-stone-600'
                     }`}
                   >
-                    {shardCount >= 3 ? '🔹换卡 / Trade' : '需 3🔹'}
+                    {shardCount >= SWAP_COST ? '🔹换卡 / Trade' : `需 ${SWAP_COST}🔹`}
                   </button>
                 )}
               </div>
@@ -154,7 +161,7 @@ export function PackPageBody({
           onClose={() => setSwapItem(null)}
           itemNameZh={swapItem.nameZh}
           itemNameEn={swapItem.nameEn}
-          shardCost={3}
+          shardCost={SWAP_COST}
           shardBalance={shardCount}
           onConfirm={async () => {
             const result = await swapShardsForItem(childId, swapItem.id);

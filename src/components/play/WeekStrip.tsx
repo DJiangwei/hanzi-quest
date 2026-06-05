@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import type { ActivityDay } from '@/lib/db/activity';
+// checkins.ts is client-safe — its only import is a type (erased at build).
+import { WEEKLY_CHECKIN_THRESHOLD } from '@/lib/db/checkins';
 
 interface Props {
   /** Exactly 7 days, oldest first. */
@@ -62,9 +64,9 @@ export function WeekStrip({ activity, todayIso, childId, checkInDays }: Props) {
           data-testid="gift-progress"
           className="text-center text-[11px] font-semibold text-[var(--color-treasure-700)]"
         >
-          {checkInDays >= 5
+          {checkInDays >= WEEKLY_CHECKIN_THRESHOLD
             ? '🎁 大礼包已达成 / Weekly gift unlocked'
-            : `🎁 本周签到 ${Math.min(checkInDays, 5)}/5`}
+            : `🎁 本周签到 ${Math.min(checkInDays, WEEKLY_CHECKIN_THRESHOLD)}/${WEEKLY_CHECKIN_THRESHOLD}`}
         </p>
       )}
     </div>
