@@ -96,6 +96,12 @@ export function PackPageBody({
         </p>
       </header>
 
+      {items.some((i) => !ownedSet.has(i.id)) && (
+        <p className="text-center text-xs font-medium text-[var(--color-treasure-700)]">
+          用 🔹 碎片换卡片 / Trade shards for any card
+        </p>
+      )}
+
       <div className="rounded-2xl border border-[#c89f5e] bg-[linear-gradient(180deg,#f5ead0_0%,#ead7a8_100%)] p-4">
         <div
           data-testid="pack-grid-with-badges"
@@ -111,16 +117,6 @@ export function PackPageBody({
               <div
                 key={item.id}
                 className="relative"
-                onClick={isOwned ? undefined : () => setSwapItem(item)}
-                role={isOwned ? undefined : 'button'}
-                tabIndex={isOwned ? undefined : 0}
-                onKeyDown={
-                  isOwned
-                    ? undefined
-                    : (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') setSwapItem(item);
-                      }
-                }
               >
                 <Card
                   item={item}
@@ -132,6 +128,19 @@ export function PackPageBody({
                   <span className="absolute right-0.5 top-0.5 z-10 rounded-full bg-sky-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white">
                     ×{count}
                   </span>
+                )}
+                {!isOwned && (
+                  <button
+                    type="button"
+                    data-testid="swap-chip"
+                    disabled={shardCount < 3}
+                    onClick={() => setSwapItem(item)}
+                    className={`absolute inset-x-1 bottom-1 z-10 min-h-6 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                      shardCount >= 3 ? 'bg-sky-500 text-white' : 'bg-stone-300 text-stone-600'
+                    }`}
+                  >
+                    {shardCount >= 3 ? '🔹换卡 / Trade' : '需 3🔹'}
+                  </button>
                 )}
               </div>
             );

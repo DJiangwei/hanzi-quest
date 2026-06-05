@@ -101,7 +101,8 @@ describe('PackPageBody PR #52 surface', () => {
       />,
     );
     expect(screen.getByText(/7/)).toBeInTheDocument();
-    expect(screen.getByText(/🔹/)).toBeInTheDocument();
+    // Use aria-label to target ShardPill specifically; our new chip + hint also contain 🔹
+    expect(screen.getByLabelText(/7 shards/i)).toBeInTheDocument();
   });
 
   it('renders ×N badge for items where count > 1', () => {
