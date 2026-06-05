@@ -73,6 +73,7 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
   const [phase, setPhase] = useState<Phase>('intro');
   const [anim, setAnim] = useState<BossAnimState>('intro');
   const damageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const winTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Intro effect: transitions from 'intro' → 'fighting' after INTRO_MS.
   // Re-arms on reset (which sets phase back to 'intro').
@@ -85,15 +86,17 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
     return () => clearTimeout(t);
   }, [phase]);
 
-  // Cleanup damage timer on unmount.
+  // Cleanup pending timers on unmount (so onComplete can't fire for an
+  // abandoned fight if the kid leaves during the defeat animation).
   useEffect(() => () => {
     if (damageTimer.current) clearTimeout(damageTimer.current);
+    if (winTimer.current) clearTimeout(winTimer.current);
   }, []);
 
   const win = () => {
     setPhase('defeating');
     setAnim('defeat');
-    setTimeout(() => onComplete(true), DEFEAT_MS);
+    winTimer.current = setTimeout(() => onComplete(true), DEFEAT_MS);
   };
 
   const flinch = () => {
