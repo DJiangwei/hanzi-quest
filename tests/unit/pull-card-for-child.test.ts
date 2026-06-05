@@ -47,28 +47,28 @@ describe('pullCardForChild', () => {
       packSlug: 'flags',
       isDupe: false,
       shardsAfter: 0,
-      cardsThisWeek: 1,
+      cardsToday: 1,
     });
 
     const result = await pullCardForChild('child-1', 'boss_clear', 'sess-1');
 
     expect(result.granted).toBe(true);
     if (result.granted) expect(result.itemId).toBe('item-1');
-    expect(spy).toHaveBeenCalledWith({}, 'child-1', 'boss_clear', 'sess-1', '2026-05-25', Math.random);
+    expect(spy).toHaveBeenCalledWith({}, 'child-1', 'boss_clear', 'sess-1', '2026-05-31', Math.random);
   });
 
-  it('returns weekly_cap_reached when DB layer returns it', async () => {
+  it('returns daily_cap_reached when DB layer returns it', async () => {
     transactionMock.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
       fn({}),
     );
     const grantsModule = await import('@/lib/db/grants');
     vi.spyOn(grantsModule, 'pullCardInTx').mockResolvedValue({
       granted: false,
-      reason: 'weekly_cap_reached',
-      cardsThisWeek: 10,
+      reason: 'daily_cap_reached',
+      cardsToday: 10,
     });
     const result = await pullCardForChild('child-1', 'boss_clear', 'sess-2');
     expect(result.granted).toBe(false);
-    if (!result.granted) expect(result.reason).toBe('weekly_cap_reached');
+    if (!result.granted) expect(result.reason).toBe('daily_cap_reached');
   });
 });

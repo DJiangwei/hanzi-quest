@@ -27,9 +27,9 @@ export class WeeklyCapReachedError extends Error {
   constructor(
     public readonly childId: string,
     public readonly cap: number,
-    public readonly cardsThisWeek: number,
+    public readonly cardsToday: number,
   ) {
-    super(`Child ${childId} reached the weekly card cap (${cardsThisWeek}/${cap})`);
+    super(`Child ${childId} reached the daily card cap (${cardsToday}/${cap})`);
     this.name = 'WeeklyCapReachedError';
   }
 }

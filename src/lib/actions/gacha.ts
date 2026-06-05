@@ -10,9 +10,11 @@ import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
 import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { checkAndGrantTrophies } from '@/lib/db/trophies';
-import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 import { todayUtcIso } from '@/lib/db/streaks';
-import { pullCardInTx, swapShardsInTx, type CardGrantResult, type CardGrantSkipped } from '@/lib/db/grants';
+import { pullCardInTx, swapShardsInTx, grantGiftPackInTx, type CardGrantResult, type CardGrantSkipped, type GiftCard } from '@/lib/db/grants';
+import { getActivityForRange } from '@/lib/db/activity';
+import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
+import { countCheckInDays, WEEKLY_CHECKIN_THRESHOLD } from '@/lib/db/checkins';
 
 // AlreadyClaimedError is NOT re-exported here — 'use server' files may only
 // export async functions. Client components import it directly from
@@ -111,9 +113,9 @@ export async function pullCardForChild(
   source: CardGrantSource,
   refId: string,
 ): Promise<CardGrantResult | CardGrantSkipped> {
-  const weekStartUtc = mondayOfIsoWeek(todayUtcIso());
+  const dayUtc = todayUtcIso();
   const result = await db.transaction((tx) =>
-    pullCardInTx(tx, childId, source, refId, weekStartUtc, Math.random),
+    pullCardInTx(tx, childId, source, refId, dayUtc, Math.random),
   );
   if (result.granted) {
     revalidatePath(`/play/${childId}/collection/${result.packSlug}`);
@@ -134,4 +136,35 @@ export async function swapShardsForItem(
     revalidatePath(`/play/${child.id}/collection`);
   }
   return result;
+}
+
+/**
+ * Trust-caller (NO requireChild) — invoked from finishAttemptAction which is
+ * already auth-gated. Grants the weekly check-in gift pack iff the child has
+ * >= WEEKLY_CHECKIN_THRESHOLD distinct check-in days this UTC week and hasn't
+ * claimed yet this week. Bypasses the daily cap. Returns the gift cards or null.
+ */
+export async function claimWeeklyGiftIfDue(
+  childId: string,
+): Promise<{ cards: GiftCard[] } | null> {
+  const today = todayUtcIso();
+  const monday = mondayOfIsoWeek(today);
+  const sunday = addDaysUtc(monday, 6);
+  const activity = await getActivityForRange(childId, monday, sunday);
+  if (countCheckInDays(activity) < WEEKLY_CHECKIN_THRESHOLD) return null;
+
+  const result = await db.transaction((tx) => grantGiftPackInTx(tx, childId, monday, Math.random));
+  if (!result.granted) return null;
+
+  revalidatePath(`/play/${childId}`);
+  for (const c of result.cards) {
+    revalidatePath(`/play/${childId}/collection/${c.packSlug}`);
+  }
+  return { cards: result.cards };
+}
+
+function addDaysUtc(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }

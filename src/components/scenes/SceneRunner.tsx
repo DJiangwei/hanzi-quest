@@ -34,6 +34,11 @@ const LevelFanfare = dynamic(
   { ssr: false },
 );
 
+const GiftPackReveal = dynamic(
+  () => import('@/components/play/GiftPackReveal').then((m) => m.GiftPackReveal),
+  { ssr: false },
+);
+
 interface CharacterWord {
   id: string;
   text: string;
@@ -115,6 +120,9 @@ export function SceneRunner({
     packSlug?: string;
     isDupe?: boolean;
   } | null>(null);
+  const [giftCards, setGiftCards] = useState<
+    { itemId: string; packSlug: string; isDupe: boolean; shardsAfter: number }[] | null
+  >(null);
   const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
   const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
   const [pending, startTransition] = useTransition();
@@ -189,6 +197,7 @@ export function SceneRunner({
         hintsUsed: 0,
       });
       setCoinsThisSession((c) => c + result.coinsAwarded);
+      if (result.giftPack) setGiftCards(result.giftPack.cards);
       const collectedBonuses: EconomyBonus[] = [...result.bonuses];
       const collectedTrophies: GrantedTrophy[] = [...result.trophies];
 
@@ -520,6 +529,9 @@ export function SceneRunner({
             </div>
           </div>
         )}
+        {giftCards ? (
+          <GiftPackReveal cards={giftCards} onClose={() => setGiftCards(null)} />
+        ) : null}
         <BonusToast
           bonuses={activeBonuses}
           onDone={() => setActiveBonuses([])}
