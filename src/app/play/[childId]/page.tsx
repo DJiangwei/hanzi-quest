@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { IslandMap } from '@/components/play/IslandMap';
-import { MapBoard } from '@/components/play/MapBoard';
-import { getMapBoard } from '@/lib/play/map-boards';
+import { VoyageBoard } from '@/components/play/VoyageBoard';
+import { getVoyageMap } from '@/lib/play/map-boards';
 import { AvatarRender } from '@/components/play/AvatarRender';
 import { LatestChapterPill } from '@/components/play/LatestChapterPill';
 import { WeekStrip } from '@/components/play/WeekStrip';
@@ -67,7 +67,7 @@ export default async function PlayHomePage({ params }: PageProps) {
   ]);
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
-  const mapBoard = currentMap ? getMapBoard(currentMap.slug) : null;
+  const voyage = currentMap ? getVoyageMap(currentMap.slug) : null;
 
   const equippedRefs: Partial<Record<string, string | null>> = {};
   for (const [slot, info] of Object.entries(equipped)) {
@@ -167,8 +167,8 @@ export default async function PlayHomePage({ params }: PageProps) {
             .
           </p>
         </div>
-      ) : mapBoard ? (
-        <MapBoard
+      ) : voyage ? (
+        <VoyageBoard
           childId={childId}
           packSlug={currentMap!.slug}
           islands={islands.map((i) => ({ weekId: i.weekId, completionPercent: i.completionPercent }))}
