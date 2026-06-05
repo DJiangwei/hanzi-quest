@@ -22,6 +22,7 @@ import { todayUtcIso } from '@/lib/db/streaks';
 import { MapHeaderPill } from '@/components/play/MapHeaderPill';
 import { listMapsForChild } from '@/lib/db/maps';
 import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
+import { countCheckInDays } from '@/lib/db/checkins';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -145,7 +146,7 @@ export default async function PlayHomePage({ params }: PageProps) {
         }
       />
 
-      <WeekStrip activity={weekActivity} todayIso={todayIso} childId={childId} />
+      <WeekStrip activity={weekActivity} todayIso={todayIso} childId={childId} checkInDays={countCheckInDays(weekActivity)} />
 
       <LatestChapterPill childId={child.id} />
 
