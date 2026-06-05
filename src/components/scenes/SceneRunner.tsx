@@ -84,6 +84,8 @@ interface Props {
   childId: string;
   weekId: string;
   weekLabel: string;
+  /** 1-based week number used for boss creature selection. Defaults to 1. */
+  weekNumber?: number;
   levels: CompiledLevel[];
   charactersById: Record<string, CharacterDetail>;
   pool: CharacterDetail[];
@@ -99,6 +101,7 @@ export function SceneRunner({
   childId,
   weekId,
   weekLabel,
+  weekNumber = 1,
   levels,
   charactersById,
   pool,
@@ -335,6 +338,7 @@ export function SceneRunner({
       body = (
         <BossScene
           key={currentLevel.id}
+          weekNumber={weekNumber}
           characterIds={characterIds}
           questionTypes={questionTypes}
           pool={pool}

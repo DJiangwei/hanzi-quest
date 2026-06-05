@@ -11,13 +11,6 @@ vi.mock('@/lib/audio/play', () => ({
 vi.mock('@lottiefiles/dotlottie-react', () => ({
   DotLottieReact: () => <div data-testid="lottie" />,
 }));
-vi.mock('@/lib/actions/gacha', () => ({
-  pullFreeFromBoss: vi.fn(),
-  AlreadyClaimedError: class extends Error {},
-}));
-vi.mock('./TreasureChestReveal', () => ({
-  TreasureChestReveal: () => <div data-testid="treasure-chest-reveal" />,
-}));
 
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { playSound } from '@/lib/audio/play';
@@ -77,7 +70,7 @@ describe('LevelFanfare', () => {
     expect(playSound).toHaveBeenCalledWith('fanfare');
   });
 
-  it('renders "开启宝箱" button when chestAvailable=true', () => {
+  it('shows "Boss defeated!" heading when chestAvailable=true', () => {
     vi.mocked(useReducedMotion).mockReturnValue(false);
     render(
       <LevelFanfare
@@ -89,11 +82,11 @@ describe('LevelFanfare', () => {
         onContinue={() => undefined}
       />,
     );
-    expect(screen.getByRole('button', { name: /开启宝箱/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Boss defeated/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /回地图/ })).toBeInTheDocument();
   });
 
-  it('does NOT render chest button when chestAvailable=false', () => {
+  it('does NOT render "开启宝箱" button regardless of chestAvailable', () => {
     vi.mocked(useReducedMotion).mockReturnValue(false);
     render(
       <LevelFanfare
@@ -101,10 +94,75 @@ describe('LevelFanfare', () => {
         coinsThisSession={300}
         childId="c1"
         weekId="w1"
-        chestAvailable={false}
+        chestAvailable
         onContinue={() => undefined}
       />,
     );
     expect(screen.queryByRole('button', { name: /开启宝箱/ })).not.toBeInTheDocument();
+  });
+
+  it('shows new-card banner when cardGrant.granted=true and not a dupe', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(false);
+    render(
+      <LevelFanfare
+        weekLabel="Lesson 5"
+        coinsThisSession={300}
+        childId="c1"
+        weekId="w1"
+        chestAvailable
+        cardGrant={{ granted: true, isDupe: false }}
+        onContinue={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/新卡片/)).toBeInTheDocument();
+  });
+
+  it('shows shard banner when cardGrant.granted=true and isDupe=true', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(false);
+    render(
+      <LevelFanfare
+        weekLabel="Lesson 5"
+        coinsThisSession={300}
+        childId="c1"
+        weekId="w1"
+        chestAvailable
+        cardGrant={{ granted: true, isDupe: true }}
+        onContinue={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/\+1 碎片/)).toBeInTheDocument();
+  });
+
+  it('shows card-limit message when chestAvailable=true and cardGrant.granted=false', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(false);
+    render(
+      <LevelFanfare
+        weekLabel="Lesson 5"
+        coinsThisSession={300}
+        childId="c1"
+        weekId="w1"
+        chestAvailable
+        cardGrant={{ granted: false }}
+        onContinue={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/今天的卡片满了/)).toBeInTheDocument();
+  });
+
+  it('calls onContinue when 回地图 button is clicked', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(false);
+    const onContinue = vi.fn();
+    render(
+      <LevelFanfare
+        weekLabel="Lesson 5"
+        coinsThisSession={50}
+        childId="c1"
+        weekId="w1"
+        chestAvailable={false}
+        onContinue={onContinue}
+      />,
+    );
+    screen.getByRole('button', { name: /回地图/ }).click();
+    expect(onContinue).toHaveBeenCalledOnce();
   });
 });
