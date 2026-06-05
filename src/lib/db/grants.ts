@@ -196,6 +196,103 @@ export async function pullCardInTx(
   };
 }
 
+export const WEEKLY_GIFT_SOURCE = 'weekly_checkin';
+
+export interface GiftCard {
+  itemId: string;
+  packId: string;
+  packSlug: string;
+  isDupe: boolean;
+  shardsAfter: number;
+}
+export type GiftPackResult =
+  | { granted: true; cards: GiftCard[] }
+  | { granted: false; reason: 'already_granted' };
+
+/**
+ * Weekly check-in gift pack: ONE card per ACTIVE pack, BYPASSING the daily
+ * cap (never reads/writes child_card_grants_daily). Idempotent per
+ * (child, weekStartUtc) via cardGrantsLog. Each pick uses weightedRandomPick
+ * scoped to a single pack; a dupe pick grants 1 shard.
+ */
+export async function grantGiftPackInTx(
+  tx: Tx,
+  childId: string,
+  weekStartUtc: string,
+  rng: () => number = Math.random,
+): Promise<GiftPackResult> {
+  // 1. Idempotency guard — once per week.
+  try {
+    await tx.insert(cardGrantsLog).values({ childId, source: WEEKLY_GIFT_SOURCE, refId: weekStartUtc });
+  } catch (err) {
+    if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === '23505') {
+      return { granted: false, reason: 'already_granted' };
+    }
+    throw err;
+  }
+
+  // 2. Active packs.
+  const packs = await tx
+    .select({ id: collectionPacks.id, slug: collectionPacks.slug })
+    .from(collectionPacks)
+    .where(eq(collectionPacks.isActive, true));
+
+  // 3. Owned set (once, shared across all pack iterations).
+  const owned = await tx
+    .select({ itemId: childCollections.itemId })
+    .from(childCollections)
+    .where(eq(childCollections.childId, childId));
+  const ownedSet = new Set(owned.map((o) => o.itemId));
+
+  const cards: GiftCard[] = [];
+  for (const pack of packs) {
+    // 4. Catalog for this pack.
+    const catalog = await tx
+      .select({
+        id: collectibleItems.id,
+        packId: collectibleItems.packId,
+        packSlug: collectionPacks.slug,
+        dropWeight: collectibleItems.dropWeight,
+      })
+      .from(collectibleItems)
+      .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
+      .where(eq(collectibleItems.packId, pack.id));
+    if (catalog.length === 0) continue;
+
+    const picked = weightedRandomPick(catalog, ownedSet, rng);
+    const isDupe = ownedSet.has(picked.id);
+
+    // 5. Upsert child_collections.
+    if (isDupe) {
+      await tx
+        .update(childCollections)
+        .set({ count: sql`${childCollections.count} + 1` })
+        .where(and(eq(childCollections.childId, childId), eq(childCollections.itemId, picked.id)));
+    } else {
+      await tx.insert(childCollections).values({ childId, itemId: picked.id, count: 1 });
+      ownedSet.add(picked.id);
+    }
+
+    // 6. Shard grant on dupe.
+    let shardsAfter = 0;
+    if (isDupe) {
+      const [shardRow] = await tx
+        .insert(shardBalances)
+        .values({ childId, packId: picked.packId, shards: 1 })
+        .onConflictDoUpdate({
+          target: [shardBalances.childId, shardBalances.packId],
+          set: { shards: sql`${shardBalances.shards} + 1` },
+        })
+        .returning({ shards: shardBalances.shards });
+      shardsAfter = shardRow?.shards ?? 1;
+    }
+
+    cards.push({ itemId: picked.id, packId: picked.packId, packSlug: picked.packSlug, isDupe, shardsAfter });
+  }
+
+  return { granted: true, cards };
+}
+
 /**
  * Trade SHARD_SWAP_COST shards for a chosen unowned item.
  */
