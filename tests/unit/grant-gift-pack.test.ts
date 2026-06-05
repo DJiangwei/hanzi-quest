@@ -21,7 +21,6 @@ describe('grantGiftPackInTx', () => {
   });
 
   it('grants one card per active pack and never touches the daily counter', async () => {
-    const insertedTables: string[] = [];
     const tx = {
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
