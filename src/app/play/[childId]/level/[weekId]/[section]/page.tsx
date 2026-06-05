@@ -94,6 +94,7 @@ export default async function SectionPage({ params }: PageProps) {
         childId={child.id}
         weekId={week.id}
         weekLabel={week.label}
+        weekNumber={week.weekNumber}
         levels={compiledLevels}
         charactersById={charactersById}
         pool={pool}
