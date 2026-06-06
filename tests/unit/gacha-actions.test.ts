@@ -53,6 +53,9 @@ vi.mock('next/cache', () => ({
 vi.mock('@/lib/db/trophies', () => ({
   checkAndGrantTrophies: mocks.checkAndGrantTrophies,
 }));
+vi.mock('@/lib/db/quests', () => ({
+  tickQuestProgressSafe: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { pullFreeFromBoss, pullPaid } from '@/lib/actions/gacha';
 import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';

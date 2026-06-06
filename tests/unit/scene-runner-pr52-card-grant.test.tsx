@@ -42,6 +42,7 @@ vi.mock('@/lib/actions/play', () => ({
     perfect: false,
     bonuses: [],
     trophies: [],
+    xp: { gained: 10, level: 1, leveledUp: false },
   }),
   finishLevelAction: vi.fn(),
 }));
@@ -148,6 +149,7 @@ describe('SceneRunner card grant (card-reveal polish)', () => {
       cardGrants: [revealCard],
       bonuses: [],
       trophies: [],
+      xp: { gained: 50, level: 1, leveledUp: false },
     });
 
     render(
@@ -175,6 +177,7 @@ describe('SceneRunner card grant (card-reveal polish)', () => {
       cardGrants: [],
       bonuses: [],
       trophies: [],
+      xp: { gained: 50, level: 1, leveledUp: false },
     });
 
     render(
@@ -203,6 +206,7 @@ describe('SceneRunner card grant (card-reveal polish)', () => {
       cardGrants: [],
       bonuses: [],
       trophies: [],
+      xp: { gained: 50, level: 1, leveledUp: false },
     });
 
     render(
@@ -237,6 +241,7 @@ describe('SceneRunner card grant (card-reveal polish)', () => {
       cardGrants: [],
       bonuses: [],
       trophies: [],
+      xp: { gained: 0, level: 1, leveledUp: false },
     });
 
     render(

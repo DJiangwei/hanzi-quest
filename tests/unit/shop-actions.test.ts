@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   equipAvatarItem: vi.fn(),
   checkAndGrantTrophies: vi.fn(),
   dbSelect: vi.fn(),
+  tickQuestProgressSafe: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/lib/auth/guards', () => ({
@@ -32,6 +33,9 @@ vi.mock('@/db/schema', () => ({
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
+vi.mock('@/lib/db/quests', () => ({
+  tickQuestProgressSafe: mocks.tickQuestProgressSafe,
+}));
 
 import {
   equipAvatarItemAction,
@@ -44,11 +48,13 @@ beforeEach(() => {
   mocks.equipAvatarItem.mockReset();
   mocks.checkAndGrantTrophies.mockReset();
   mocks.dbSelect.mockReset();
-  // Default: item kind is 'avatar' (no trophy check)
+  mocks.tickQuestProgressSafe.mockReset();
+  mocks.tickQuestProgressSafe.mockResolvedValue(undefined);
+  // Default: item kind is 'avatar', priceCoins=300 (no trophy check)
   mocks.dbSelect.mockReturnValue({
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue([{ kind: 'avatar' }]),
+        limit: vi.fn().mockResolvedValue([{ kind: 'avatar', priceCoins: 300 }]),
       }),
     }),
   });
@@ -84,6 +90,57 @@ describe('purchaseShopItemAction', () => {
       purchaseShopItemAction('s1', { childId: 'evil' }),
     ).rejects.toThrow('Forbidden');
     expect(mocks.purchaseShopItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('purchaseShopItemAction spend_coins quest tick (Task 9)', () => {
+  it('fires tickQuestProgressSafe for spend_coins by the item price', async () => {
+    mocks.requireChild.mockResolvedValue({ child: { id: 'c1' } });
+    mocks.purchaseShopItem.mockResolvedValue({
+      shopItemId: 's1',
+      coinsAfter: 700,
+      avatarItemId: 'a1',
+    });
+    // item has priceCoins=300
+    mocks.dbSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([{ kind: 'avatar', priceCoins: 300 }]),
+        }),
+      }),
+    });
+
+    await purchaseShopItemAction('s1', { childId: 'c1' });
+
+    // Allow void microtasks to settle
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(mocks.tickQuestProgressSafe).toHaveBeenCalledWith(
+      'c1',
+      'spend_coins',
+      300,
+    );
+  });
+
+  it('does NOT fire tickQuestProgressSafe when priceCoins is 0', async () => {
+    mocks.requireChild.mockResolvedValue({ child: { id: 'c1' } });
+    mocks.purchaseShopItem.mockResolvedValue({
+      shopItemId: 's1',
+      coinsAfter: 1000,
+      avatarItemId: null,
+    });
+    mocks.dbSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([{ kind: 'powerup', priceCoins: 0 }]),
+        }),
+      }),
+    });
+
+    await purchaseShopItemAction('s1', { childId: 'c1' });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(mocks.tickQuestProgressSafe).not.toHaveBeenCalled();
   });
 });
 

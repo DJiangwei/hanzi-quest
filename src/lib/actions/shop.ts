@@ -11,6 +11,7 @@ import {
   type PurchaseResult,
 } from '@/lib/db/shop';
 import { checkAndGrantTrophies } from '@/lib/db/trophies';
+import { tickQuestProgressSafe } from '@/lib/db/quests';
 
 // Error classes are NOT re-exported here — 'use server' files may only export
 // async functions. Client components import from '@/lib/errors/shop-errors'.
@@ -26,11 +27,11 @@ export async function purchaseShopItemAction(
   const { child } = await requireChild(args.childId);
   const result = await purchaseShopItem(child.id, shopItemId);
 
-  // Post-commit: read the purchased item's kind to dispatch trophy grants.
+  // Post-commit: read the purchased item's kind + priceCoins.
   // Reading from db here (instead of threading through the tx) keeps the
   // purchase tx focused and avoids a circular import (db/shop ↔ db/trophies).
   const [item] = await db
-    .select({ kind: shopItems.kind })
+    .select({ kind: shopItems.kind, priceCoins: shopItems.priceCoins })
     .from(shopItems)
     .where(eq(shopItems.id, shopItemId))
     .limit(1);
@@ -38,6 +39,12 @@ export async function purchaseShopItemAction(
     result.trophies = await checkAndGrantTrophies(child.id, {
       kind: 'decor-purchase',
     });
+  }
+
+  // Additive, guarded, fire-and-forget: tick spend_coins quest by amount spent.
+  // A failure here must never break the purchase response.
+  if (item?.priceCoins && item.priceCoins > 0) {
+    void tickQuestProgressSafe(child.id, 'spend_coins', item.priceCoins);
   }
 
   revalidatePath(`/play/${child.id}`);

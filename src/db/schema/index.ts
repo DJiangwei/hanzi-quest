@@ -11,3 +11,5 @@ export * from './trophies';
 export * from './decorations';
 export * from './story';
 export * from './gacha';
+export * from './xp';
+export * from './quests';

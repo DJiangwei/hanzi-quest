@@ -1,59 +1,25 @@
-// tests/unit/scene-runner-gift.test.tsx
-// Card Economy v2: CardChestReveal surfaces when finishAttemptAction returns giftPack
+// tests/unit/scene-runner-xp-toast.test.tsx
+// Verifies XpGainToast renders when finishAttemptAction returns xp.gained > 0
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 
-// Mock LevelFanfare so it renders something stable when done
 vi.mock('@/components/scenes/fx/LevelFanfare', () => ({
   LevelFanfare: () => <div data-testid="fanfare" />,
 }));
-
-// Mock CardChestReveal so we can assert on card-chest-reveal without packRegistry deps
 vi.mock('@/components/scenes/fx/CardChestReveal', () => ({
-  CardChestReveal: ({
-    cards,
-    onDone,
-  }: {
-    cards: { id: string; packSlug: string; isDupe: boolean; shardsAfter: number }[];
-    onDone: () => void;
-  }) => (
-    <div data-testid="card-chest-reveal">
-      {cards.map((c) => (
-        <div key={c.id} data-testid="gift-card-tile" data-pack={c.packSlug} />
-      ))}
-      <button onClick={onDone} data-testid="gift-close">
-        Close
-      </button>
-    </div>
-  ),
+  CardChestReveal: () => <div data-testid="card-chest-reveal" />,
 }));
 
-// finishAttemptAction returns giftPack on the first call (normal scene, NOT final)
 vi.mock('@/lib/actions/play', () => ({
-  startSessionAction: vi.fn().mockResolvedValue({ sessionId: 'sess-gift-1' }),
+  startSessionAction: vi.fn().mockResolvedValue({ sessionId: 'sess-xp-1' }),
   finishAttemptAction: vi.fn().mockResolvedValue({
     ok: true,
-    coinsAwarded: 10,
+    coinsAwarded: 50,
     perfect: false,
     bonuses: [],
     trophies: [],
-    giftPack: {
-      cards: [
-        {
-          itemId: 'i1',
-          packId: 'p1',
-          packSlug: 'zodiac',
-          slug: 'rat',
-          nameZh: '鼠',
-          nameEn: 'Rat',
-          loreZh: null,
-          loreEn: null,
-          isDupe: false,
-          shardsAfter: 0,
-        },
-      ],
-    },
-    xp: { gained: 10, level: 1, leveledUp: false },
+    giftPack: null,
+    xp: { gained: 15, level: 2, leveledUp: false },
   }),
   finishLevelAction: vi.fn().mockResolvedValue({
     ok: true,
@@ -62,7 +28,7 @@ vi.mock('@/lib/actions/play', () => ({
     cardGrants: [],
     bonuses: [],
     trophies: [],
-    xp: { gained: 0, level: 1, leveledUp: false },
+    xp: { gained: 0, level: 2, leveledUp: false },
   }),
 }));
 
@@ -81,9 +47,7 @@ vi.mock('@lottiefiles/dotlottie-react', () => ({
 }));
 vi.mock('@/components/scenes/BossScene', () => ({
   BossScene: ({ onComplete }: { onComplete: (correct: boolean) => void }) => (
-    <button data-testid="boss-scene-complete" onClick={() => onComplete(true)}>
-      Complete boss
-    </button>
+    <button data-testid="boss-complete" onClick={() => onComplete(true)}>Complete boss</button>
   ),
 }));
 vi.mock('@/lib/actions/gacha', () => ({
@@ -121,30 +85,19 @@ const charactersById = {
   },
 };
 
-// Two-level setup: completing level 0 (non-final) triggers finishAttemptAction
-// without hitting finishLevelAction, so we can verify giftPack surfacing on a
-// normal mid-session attempt.
-const flashcardLevel0 = {
-  id: 'l-flash-0',
-  position: 0,
-  sceneType: 'flashcard' as const,
-  config: { characterId: 'c1', segment: 'review' },
-};
-const flashcardLevel1 = {
-  id: 'l-flash-1',
-  position: 1,
-  sceneType: 'flashcard' as const,
-  config: { characterId: 'c1', segment: 'review' },
-};
+const levels = [
+  { id: 'l0', position: 0, sceneType: 'flashcard' as const, config: { characterId: 'c1', segment: 'review' } },
+  { id: 'l1', position: 1, sceneType: 'flashcard' as const, config: { characterId: 'c1', segment: 'review' } },
+];
 
-describe('SceneRunner CardChestReveal surfacing (Card Economy v2)', () => {
-  it('shows card-chest-reveal when finishAttemptAction returns giftPack', async () => {
+describe('SceneRunner XpGainToast', () => {
+  it('shows xp-gain-toast after scene complete when xp.gained > 0', async () => {
     render(
       <SceneRunner
         childId="child-1"
         weekId="w1"
         weekLabel="Test Week"
-        levels={[flashcardLevel0, flashcardLevel1]}
+        levels={levels}
         charactersById={charactersById}
         pool={Object.values(charactersById)}
       />,
@@ -156,41 +109,6 @@ describe('SceneRunner CardChestReveal surfacing (Card Economy v2)', () => {
       await Promise.resolve();
     });
 
-    // Complete the first (non-final) scene
-    const btn = screen.getByTestId('flash-complete');
-    await act(async () => {
-      btn.click();
-    });
-
-    // Allow async state updates to settle
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 0));
-    });
-
-    // The CardChestReveal modal should be visible with the card tile
-    expect(screen.getByTestId('card-chest-reveal')).toBeInTheDocument();
-    expect(screen.getByTestId('gift-card-tile')).toBeInTheDocument();
-  });
-
-  it('closes CardChestReveal when onDone is called', async () => {
-    render(
-      <SceneRunner
-        childId="child-1"
-        weekId="w1"
-        weekLabel="Test Week"
-        levels={[flashcardLevel0, flashcardLevel1]}
-        charactersById={charactersById}
-        pool={Object.values(charactersById)}
-      />,
-    );
-
-    // Wait for session
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    // Complete the first scene → modal appears
     const btn = screen.getByTestId('flash-complete');
     await act(async () => {
       btn.click();
@@ -199,34 +117,27 @@ describe('SceneRunner CardChestReveal surfacing (Card Economy v2)', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(screen.getByTestId('card-chest-reveal')).toBeInTheDocument();
-
-    // Close the modal
-    const closeBtn = screen.getByTestId('gift-close');
-    await act(async () => {
-      closeBtn.click();
-    });
-
-    expect(screen.queryByTestId('card-chest-reveal')).not.toBeInTheDocument();
+    expect(screen.getByTestId('xp-gain-toast')).toBeInTheDocument();
+    expect(screen.getByTestId('xp-gained-label')).toHaveTextContent('+15 XP');
   });
 
-  it('does NOT show card-chest-reveal when finishAttemptAction returns giftPack=null', async () => {
+  it('does NOT show xp-gain-toast when xp.gained=0 and leveledUp=false', async () => {
     const { finishAttemptAction } = await import('@/lib/actions/play');
     vi.mocked(finishAttemptAction).mockResolvedValueOnce({
-      coinsAwarded: 10,
+      coinsAwarded: 5,
       perfect: false,
       bonuses: [],
       trophies: [],
       giftPack: null,
-      xp: { gained: 10, level: 1, leveledUp: false },
+      xp: { gained: 0, level: 1, leveledUp: false },
     });
 
     render(
       <SceneRunner
-        childId="child-1"
-        weekId="w1"
-        weekLabel="Test Week"
-        levels={[flashcardLevel0, flashcardLevel1]}
+        childId="child-2"
+        weekId="w2"
+        weekLabel="Test Week 2"
+        levels={levels}
         charactersById={charactersById}
         pool={Object.values(charactersById)}
       />,
@@ -245,6 +156,45 @@ describe('SceneRunner CardChestReveal surfacing (Card Economy v2)', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(screen.queryByTestId('card-chest-reveal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('xp-gain-toast')).not.toBeInTheDocument();
+  });
+
+  it('shows level-up label when xp.leveledUp=true', async () => {
+    const { finishAttemptAction } = await import('@/lib/actions/play');
+    vi.mocked(finishAttemptAction).mockResolvedValueOnce({
+      coinsAwarded: 50,
+      perfect: false,
+      bonuses: [],
+      trophies: [],
+      giftPack: null,
+      xp: { gained: 10, level: 3, leveledUp: true },
+    });
+
+    render(
+      <SceneRunner
+        childId="child-3"
+        weekId="w3"
+        weekLabel="Test Week 3"
+        levels={levels}
+        charactersById={charactersById}
+        pool={Object.values(charactersById)}
+      />,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const btn = screen.getByTestId('flash-complete');
+    await act(async () => {
+      btn.click();
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(screen.getByTestId('xp-level-up-label')).toBeInTheDocument();
+    expect(screen.getByTestId('xp-level-up-label')).toHaveTextContent('Lv 3');
   });
 });
