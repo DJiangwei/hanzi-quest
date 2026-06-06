@@ -46,6 +46,26 @@ function toRevealCard(g: Awaited<ReturnType<typeof pullCardForChild>>): RevealCa
   };
 }
 
+/**
+ * Pull a card and map it to a RevealCard, degrading to null on ANY failure.
+ * A gacha error (DB hiccup, empty-catalog throw) must never break boss-clear —
+ * the kid still finishes the level, just without a card to reveal. Both the
+ * boss-clear and perfect-week pulls are awaited (so they can surface in the
+ * reveal), so both go through this guard.
+ */
+async function safePullRevealCard(
+  childId: string,
+  source: 'boss_clear' | 'perfect_week',
+  refId: string,
+): Promise<RevealCard | null> {
+  try {
+    return toRevealCard(await pullCardForChild(childId, source, refId));
+  } catch (err) {
+    console.error(`[finishLevelAction] ${source} pullCardForChild failed:`, err);
+    return null;
+  }
+}
+
 const SCENE_COMPLETE_AWARD = 50;
 const SCENE_REPLAY_AWARD = 5;
 const PERFECT_BONUS = 25;
@@ -302,9 +322,9 @@ export async function finishLevelAction(
           labelZh: '完美一周！',
           labelEn: 'Perfect week!',
         });
-        // Await so the card surfaces in the reveal queue.
-        const pc = await pullCardForChild(child.id, 'perfect_week', parsed.weekId);
-        perfectCard = toRevealCard(pc);
+        // Await so the card surfaces in the reveal queue; guarded so a gacha
+        // failure can't break boss-clear (kid still finishes the level).
+        perfectCard = await safePullRevealCard(child.id, 'perfect_week', parsed.weekId);
       }
     }
   }
@@ -335,8 +355,7 @@ export async function finishLevelAction(
 
   let bossCard: RevealCard | null = null;
   if (bossCleared) {
-    const cardGrant = await pullCardForChild(child.id, 'boss_clear', parsed.sessionId);
-    bossCard = toRevealCard(cardGrant);
+    bossCard = await safePullRevealCard(child.id, 'boss_clear', parsed.sessionId);
   }
 
   const cardGrants: RevealCard[] = [bossCard, perfectCard].filter(
