@@ -38,16 +38,6 @@ function mockSelectMulti(...rows: unknown[]) {
   });
 }
 
-function mockInsertEvent() {
-  mocks.insertFn.mockImplementation(() => ({
-    values: vi.fn().mockResolvedValue(undefined),
-    // for the upsert / onConflictDoUpdate path
-    onConflictDoUpdate: vi.fn().mockReturnValue({
-      returning: vi.fn().mockResolvedValue([{ totalXp: 10 }]),
-    }),
-  }));
-}
-
 function mockInsertWithReturning(returnedRow: unknown) {
   // insert is called twice: once for xpEvents (values only), once for childXp (values + onConflictDoUpdate + returning)
   let callIdx = 0;

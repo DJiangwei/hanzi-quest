@@ -26,17 +26,6 @@ function makeSelectReturning(rows: unknown[]) {
   };
 }
 
-// Helper: make a chainable select mock with an `and` + `eq` chain
-function makeSelectWithLimit(rows: unknown[]) {
-  return {
-    from: vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue(rows),
-      }),
-    }),
-  };
-}
-
 function mockInsertOnConflictOk(insertedRows: unknown[]) {
   mocks.insertFn.mockReturnValue({
     values: vi.fn().mockReturnValue({
