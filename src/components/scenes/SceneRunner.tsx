@@ -16,6 +16,7 @@ import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { BonusToast } from '@/components/play/BonusToast';
 import { PowerupTray } from '@/components/play/PowerupTray';
 import { TrophyToast } from '@/components/play/TrophyToast';
+import { XpGainToast } from '@/components/play/XpGainToast';
 import { AudioPickScene } from './AudioPickScene';
 import { BossScene } from './BossScene';
 import { ImageWordScene } from './ImageWordScene';
@@ -121,6 +122,7 @@ export function SceneRunner({
   const [revealCards, setRevealCards] = useState<RevealCard[]>([]);
   const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
   const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
+  const [activeXp, setActiveXp] = useState<{ gained: number; level: number; leveledUp: boolean } | null>(null);
   const [pending, startTransition] = useTransition();
   const [hintCount, setHintCount] = useState(initialPowerupCounts.hint);
   const [skipCount, setSkipCount] = useState(initialPowerupCounts.skip);
@@ -215,6 +217,7 @@ export function SceneRunner({
       }
       const collectedBonuses: EconomyBonus[] = [...result.bonuses];
       const collectedTrophies: GrantedTrophy[] = [...result.trophies];
+      let collectedXp = result.xp.gained > 0 || result.xp.leveledUp ? result.xp : null;
 
       setLastSceneType(currentLevel.sceneType);
       const nextIndex = index + 1;
@@ -235,6 +238,15 @@ export function SceneRunner({
         if (levelResult.cardGrants.length) {
           setRevealCards((q) => [...q, ...levelResult.cardGrants]);
         }
+        // Accumulate level XP — prefer the level-up signal from finishLevelAction
+        if (levelResult.xp.gained > 0 || levelResult.xp.leveledUp) {
+          const gained = (collectedXp?.gained ?? 0) + levelResult.xp.gained;
+          collectedXp = {
+            gained,
+            level: levelResult.xp.leveledUp ? levelResult.xp.level : (collectedXp?.level ?? levelResult.xp.level),
+            leveledUp: (collectedXp?.leveledUp ?? false) || levelResult.xp.leveledUp,
+          };
+        }
         setDone(true);
       } else {
         setIndex(nextIndex);
@@ -244,6 +256,9 @@ export function SceneRunner({
       }
       if (collectedTrophies.length > 0) {
         setActiveTrophies(collectedTrophies);
+      }
+      if (collectedXp) {
+        setActiveXp(collectedXp);
       }
     });
   };
@@ -547,6 +562,14 @@ export function SceneRunner({
           trophies={activeTrophies}
           onDone={() => setActiveTrophies([])}
         />
+        {activeXp && (
+          <XpGainToast
+            gained={activeXp.gained}
+            leveledUp={activeXp.leveledUp}
+            level={activeXp.level}
+            onDone={() => setActiveXp(null)}
+          />
+        )}
       </main>
     </CoinHudContext.Provider>
   );
