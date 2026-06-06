@@ -1,12 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { allItems } from '@/lib/avatar/itemCatalog';
 import { AVATAR_SLOT_IDS, DEFAULT_AVATAR } from '@/lib/avatar/defaultLook';
+import { AVATAR_THEMES } from '@/lib/avatar/themes';
 
 describe('item catalog theme coverage (PR #58)', () => {
-  it('every item has a theme field', () => {
+  it('every item has a valid theme field', () => {
     for (const item of allItems()) {
       expect(item.theme).toBeDefined();
-      expect(['pirate', 'caribbean']).toContain(item.theme);
+      expect(AVATAR_THEMES).toContain(item.theme);
+    }
+  });
+
+  it('space + unicorn each have 11 items (new themes)', () => {
+    const items = allItems();
+    expect(items.filter((i) => i.theme === 'space')).toHaveLength(11);
+    expect(items.filter((i) => i.theme === 'unicorn')).toHaveLength(11);
+  });
+
+  it('space + unicorn each cover all 7 slots', () => {
+    const items = allItems();
+    for (const theme of ['space', 'unicorn'] as const) {
+      for (const slot of AVATAR_SLOT_IDS) {
+        const found = items.find((i) => i.slot === slot && i.theme === theme);
+        expect(found, `theme=${theme} slot=${slot} missing`).toBeDefined();
+      }
+    }
+  });
+
+  it('every shop item has a rarity + price; every renderSvg returns an element', () => {
+    for (const item of allItems()) {
+      if (item.priceCoins !== undefined) expect(item.rarity).toBeDefined();
+      expect(item.renderSvg()).toBeTruthy();
     }
   });
 
