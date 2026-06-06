@@ -1029,6 +1029,306 @@ const bgCaribSunset: ItemDef = {
   ),
 };
 
+// ─── SPACE (太空) ────────────────────────────────────────────────────────────
+
+const spaceFaceCool: ItemDef = {
+  unlockRef: 'space-face-cool', slot: 'head', displayName: '太空脸', rarity: 'common', priceCoins: 120,
+  narrativeHint: 'with a cool space-explorer face', theme: 'space',
+  renderSvg: () => (
+    <g key="space-face-cool">
+      <circle cx="50" cy="46" r="22" fill="#e8c9a0" stroke="#7a4a2a" strokeWidth="1.5" />
+      <circle cx="42" cy="44" r="1.8" fill="#2a1a14" />
+      <circle cx="58" cy="44" r="1.8" fill="#2a1a14" />
+      <path d="M 43 53 Q 50 56 57 53" stroke="#7a4a2a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+    </g>
+  ),
+};
+
+const spaceHairSilver: ItemDef = {
+  unlockRef: 'space-hair-silver', slot: 'hair', displayName: '银色短发', rarity: 'common', priceCoins: 140,
+  narrativeHint: 'with short silver hair', theme: 'space',
+  renderSvg: () => (
+    <g key="space-hair-silver">
+      <path d="M 28 42 Q 28 22 50 22 Q 72 22 72 42 Q 64 31 50 31 Q 36 31 28 42 Z" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
+    </g>
+  ),
+};
+
+const astronautHelmet: ItemDef = {
+  unlockRef: 'space-astronaut-helmet', slot: 'hat', displayName: '宇航头盔', rarity: 'rare', priceCoins: 320,
+  narrativeHint: 'wearing a white astronaut helmet', theme: 'space',
+  renderSvg: () => (
+    <g key="space-astronaut-helmet">
+      <circle cx="50" cy="42" r="26" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="2" />
+      <path d="M 32 44 Q 50 60 68 44 Q 64 34 50 34 Q 36 34 32 44 Z" fill="#60a5fa" opacity="0.55" />
+      <rect x="44" y="15" width="12" height="5" rx="2" fill="#cbd5e1" />
+    </g>
+  ),
+};
+
+const spaceVisor: ItemDef = {
+  unlockRef: 'space-visor', slot: 'hat', displayName: '太空护目镜', rarity: 'common', priceCoins: 150,
+  narrativeHint: 'wearing a sleek space visor', theme: 'space',
+  renderSvg: () => (
+    <g key="space-visor">
+      <rect x="28" y="33" width="44" height="10" rx="5" fill="#1e293b" />
+      <rect x="32" y="35" width="36" height="5" rx="2.5" fill="#38bdf8" opacity="0.85" />
+    </g>
+  ),
+};
+
+const spacesuitTop: ItemDef = {
+  unlockRef: 'space-suit-top', slot: 'top', displayName: '宇航服上衣', rarity: 'rare', priceCoins: 300,
+  narrativeHint: 'in a white spacesuit', theme: 'space',
+  renderSvg: () => (
+    <g key="space-suit-top">
+      <path d="M 30 70 Q 50 64 70 70 L 72 100 L 28 100 Z" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+      <rect x="44" y="78" width="12" height="9" rx="2" fill="#475569" />
+      <circle cx="47" cy="82" r="1.4" fill="#22c55e" />
+      <circle cx="53" cy="82" r="1.4" fill="#ef4444" />
+      <rect x="30" y="72" width="6" height="3" rx="1.5" fill="#3b82f6" />
+    </g>
+  ),
+};
+
+const alienTee: ItemDef = {
+  unlockRef: 'space-alien-tee', slot: 'top', displayName: '外星人T恤', rarity: 'common', priceCoins: 130,
+  narrativeHint: 'in a green alien T-shirt', theme: 'space',
+  renderSvg: () => (
+    <g key="space-alien-tee">
+      <path d="M 30 70 Q 50 64 70 70 L 72 100 L 28 100 Z" fill="#4ade80" stroke="#16a34a" strokeWidth="1.5" />
+      <ellipse cx="50" cy="84" rx="6" ry="7" fill="#bbf7d0" />
+      <circle cx="47" cy="83" r="1.4" fill="#064e3b" />
+      <circle cx="53" cy="83" r="1.4" fill="#064e3b" />
+    </g>
+  ),
+};
+
+const spacesuitPants: ItemDef = {
+  unlockRef: 'space-suit-pants', slot: 'pants', displayName: '宇航服裤子', rarity: 'common', priceCoins: 140,
+  narrativeHint: 'with white spacesuit trousers and moon boots', theme: 'space',
+  renderSvg: () => (
+    <g key="space-suit-pants">
+      <rect x="36" y="84" width="11" height="16" rx="3" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1" />
+      <rect x="53" y="84" width="11" height="16" rx="3" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1" />
+      <rect x="35" y="96" width="13" height="4" rx="2" fill="#64748b" />
+      <rect x="52" y="96" width="13" height="4" rx="2" fill="#64748b" />
+    </g>
+  ),
+};
+
+const jetpackDecor: ItemDef = {
+  unlockRef: 'space-jetpack', slot: 'decor', displayName: '喷气背包', rarity: 'rare', priceCoins: 360,
+  narrativeHint: 'with a jetpack', theme: 'space',
+  renderSvg: () => (
+    <g key="space-jetpack">
+      <rect x="20" y="62" width="8" height="20" rx="3" fill="#94a3b8" stroke="#475569" strokeWidth="1" />
+      <rect x="72" y="62" width="8" height="20" rx="3" fill="#94a3b8" stroke="#475569" strokeWidth="1" />
+      <path d="M 22 82 Q 24 90 26 82 Z" fill="#fb923c" />
+      <path d="M 74 82 Q 76 90 78 82 Z" fill="#fb923c" />
+    </g>
+  ),
+};
+
+const rocketDecor: ItemDef = {
+  unlockRef: 'space-rocket', slot: 'decor', displayName: '小火箭', rarity: 'rare', priceCoins: 340,
+  narrativeHint: 'with a little rocket alongside', theme: 'space',
+  renderSvg: () => (
+    <g key="space-rocket">
+      <path d="M 84 60 Q 90 64 84 78 Q 78 64 84 60 Z" fill="#f8fafc" stroke="#94a3b8" strokeWidth="1" />
+      <circle cx="84" cy="68" r="2.2" fill="#38bdf8" />
+      <path d="M 80 76 L 78 82 L 82 78 Z" fill="#ef4444" />
+      <path d="M 88 76 L 90 82 L 86 78 Z" fill="#ef4444" />
+      <path d="M 82 80 Q 84 88 86 80 Z" fill="#fb923c" />
+    </g>
+  ),
+};
+
+const bgStarfield: ItemDef = {
+  unlockRef: 'space-starfield', slot: 'background', displayName: '星空', rarity: 'common', priceCoins: 120,
+  narrativeHint: 'against a starfield', theme: 'space',
+  renderSvg: () => (
+    <g key="space-starfield">
+      <rect x="0" y="0" width="100" height="100" fill="#0f172a" />
+      <circle cx="20" cy="20" r="1.5" fill="#fde047" />
+      <circle cx="76" cy="16" r="1.2" fill="#ffffff" />
+      <circle cx="40" cy="34" r="1" fill="#ffffff" />
+      <circle cx="84" cy="44" r="1.4" fill="#fde047" />
+      <circle cx="14" cy="60" r="1.2" fill="#ffffff" />
+      <circle cx="60" cy="74" r="1" fill="#ffffff" />
+      <circle cx="88" cy="82" r="1.4" fill="#fde047" />
+      <circle cx="30" cy="86" r="1.2" fill="#ffffff" />
+    </g>
+  ),
+};
+
+const bgNebula: ItemDef = {
+  unlockRef: 'space-nebula', slot: 'background', displayName: '星云', rarity: 'epic', priceCoins: 600,
+  narrativeHint: 'against a glowing purple nebula', theme: 'space',
+  renderSvg: () => (
+    <g key="space-nebula">
+      <rect x="0" y="0" width="100" height="100" fill="#1e1b4b" />
+      <ellipse cx="40" cy="40" rx="40" ry="28" fill="#7c3aed" opacity="0.45" />
+      <ellipse cx="68" cy="64" rx="34" ry="24" fill="#db2777" opacity="0.4" />
+      <circle cx="24" cy="22" r="1.4" fill="#ffffff" />
+      <circle cx="80" cy="30" r="1.2" fill="#fde047" />
+      <circle cx="56" cy="80" r="1.3" fill="#ffffff" />
+      <circle cx="14" cy="74" r="1.1" fill="#ffffff" />
+    </g>
+  ),
+};
+
+// ─── UNICORN & RAINBOW (独角兽彩虹) ───────────────────────────────────────────
+
+const unicornFace: ItemDef = {
+  unlockRef: 'unicorn-face', slot: 'head', displayName: '独角兽脸', rarity: 'common', priceCoins: 120,
+  narrativeHint: 'with a sweet pastel unicorn face', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-face">
+      <circle cx="50" cy="46" r="22" fill="#fde7f3" stroke="#db2777" strokeWidth="1.2" />
+      <circle cx="42" cy="44" r="2" fill="#7e22ce" />
+      <circle cx="58" cy="44" r="2" fill="#7e22ce" />
+      <path d="M 44 53 Q 50 57 56 53" stroke="#db2777" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <circle cx="37" cy="50" r="2.5" fill="#f9a8d4" opacity="0.7" />
+      <circle cx="63" cy="50" r="2.5" fill="#f9a8d4" opacity="0.7" />
+    </g>
+  ),
+};
+
+const rainbowHair: ItemDef = {
+  unlockRef: 'unicorn-rainbow-hair', slot: 'hair', displayName: '彩虹长发', rarity: 'rare', priceCoins: 320,
+  narrativeHint: 'with flowing rainbow hair', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-rainbow-hair">
+      <path d="M 28 42 Q 28 22 50 22 Q 72 22 72 42 L 72 76 L 64 76 L 64 42 Q 50 31 36 42 L 36 76 L 28 76 Z" fill="#f472b6" stroke="#db2777" strokeWidth="0.8" />
+      <rect x="28" y="48" width="8" height="28" fill="#fca5a5" />
+      <rect x="28" y="56" width="8" height="20" fill="#fcd34d" />
+      <rect x="28" y="64" width="8" height="12" fill="#86efac" />
+      <rect x="64" y="48" width="8" height="28" fill="#93c5fd" />
+      <rect x="64" y="58" width="8" height="18" fill="#c4b5fd" />
+    </g>
+  ),
+};
+
+const pastelBraids: ItemDef = {
+  unlockRef: 'unicorn-pastel-braids', slot: 'hair', displayName: '粉彩辫子', rarity: 'common', priceCoins: 140,
+  narrativeHint: 'with two pastel braids', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-pastel-braids">
+      <path d="M 30 40 Q 30 24 50 24 Q 70 24 70 40 Q 60 32 50 32 Q 40 32 30 40 Z" fill="#f0abfc" stroke="#c026d3" strokeWidth="0.8" />
+      <circle cx="30" cy="52" r="4" fill="#f0abfc" />
+      <circle cx="30" cy="60" r="4" fill="#a5b4fc" />
+      <circle cx="30" cy="68" r="4" fill="#f0abfc" />
+      <circle cx="70" cy="52" r="4" fill="#f0abfc" />
+      <circle cx="70" cy="60" r="4" fill="#a5b4fc" />
+      <circle cx="70" cy="68" r="4" fill="#f0abfc" />
+    </g>
+  ),
+};
+
+const unicornHornband: ItemDef = {
+  unlockRef: 'unicorn-hornband', slot: 'hat', displayName: '独角兽角', rarity: 'rare', priceCoins: 340,
+  narrativeHint: 'wearing a golden unicorn horn', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-hornband">
+      <path d="M 50 8 L 46 30 L 54 30 Z" fill="#fde047" stroke="#d97706" strokeWidth="0.8" />
+      <path d="M 47 14 L 53 16 M 46.5 20 L 53.5 22 M 46 26 L 54 28" stroke="#d97706" strokeWidth="0.7" />
+      <rect x="34" y="30" width="32" height="5" rx="2.5" fill="#f9a8d4" />
+    </g>
+  ),
+};
+
+const starCrown: ItemDef = {
+  unlockRef: 'unicorn-star-crown', slot: 'hat', displayName: '星星王冠', rarity: 'epic', priceCoins: 650,
+  narrativeHint: 'wearing a star-jewelled crown', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-star-crown">
+      <path d="M 32 34 L 36 20 L 44 30 L 50 18 L 56 30 L 64 20 L 68 34 Z" fill="#fde047" stroke="#d97706" strokeWidth="1" />
+      <circle cx="40" cy="30" r="1.8" fill="#ec4899" />
+      <circle cx="50" cy="27" r="2" fill="#a855f7" />
+      <circle cx="60" cy="30" r="1.8" fill="#38bdf8" />
+    </g>
+  ),
+};
+
+const rainbowTee: ItemDef = {
+  unlockRef: 'unicorn-rainbow-tee', slot: 'top', displayName: '彩虹上衣', rarity: 'common', priceCoins: 130,
+  narrativeHint: 'in a rainbow-striped top', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-rainbow-tee">
+      <path d="M 30 70 Q 50 64 70 70 L 72 100 L 28 100 Z" fill="#fca5a5" />
+      <path d="M 29 78 L 71 78 L 71.5 84 L 28.5 84 Z" fill="#fcd34d" />
+      <path d="M 28.5 84 L 71.5 84 L 72 90 L 28 90 Z" fill="#86efac" />
+      <path d="M 28 90 L 72 90 L 72 100 L 28 100 Z" fill="#93c5fd" />
+    </g>
+  ),
+};
+
+const sparkleTop: ItemDef = {
+  unlockRef: 'unicorn-sparkle-top', slot: 'top', displayName: '闪亮上衣', rarity: 'rare', priceCoins: 300,
+  narrativeHint: 'in a sparkly pastel top', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-sparkle-top">
+      <path d="M 30 70 Q 50 64 70 70 L 72 100 L 28 100 Z" fill="#d8b4fe" stroke="#9333ea" strokeWidth="1" />
+      <path d="M 42 80 l 1.5 3 l 3 1.5 l -3 1.5 l -1.5 3 l -1.5 -3 l -3 -1.5 l 3 -1.5 Z" fill="#fef9c3" />
+      <path d="M 58 88 l 1 2 l 2 1 l -2 1 l -1 2 l -1 -2 l -2 -1 l 2 -1 Z" fill="#fef9c3" />
+    </g>
+  ),
+};
+
+const rainbowSkirt: ItemDef = {
+  unlockRef: 'unicorn-rainbow-skirt', slot: 'pants', displayName: '彩虹裙', rarity: 'common', priceCoins: 150,
+  narrativeHint: 'with a rainbow skirt', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-rainbow-skirt">
+      <path d="M 40 84 L 60 84 L 70 100 L 30 100 Z" fill="#fca5a5" />
+      <path d="M 36 92 L 64 92 L 67 96 L 33 96 Z" fill="#fcd34d" opacity="0.9" />
+      <path d="M 33 96 L 67 96 L 70 100 L 30 100 Z" fill="#93c5fd" opacity="0.9" />
+    </g>
+  ),
+};
+
+const starWandDecor: ItemDef = {
+  unlockRef: 'unicorn-star-wand', slot: 'decor', displayName: '星星魔棒', rarity: 'rare', priceCoins: 340,
+  narrativeHint: 'holding a star wand', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-star-wand">
+      <rect x="80" y="60" width="2.5" height="26" rx="1" fill="#a855f7" transform="rotate(12 81 73)" />
+      <path d="M 84 54 l 2 4 l 4.5 0.6 l -3.2 3.2 l 0.8 4.4 l -4.1 -2.1 l -4.1 2.1 l 0.8 -4.4 l -3.2 -3.2 l 4.5 -0.6 Z" fill="#fde047" stroke="#d97706" strokeWidth="0.6" />
+    </g>
+  ),
+};
+
+const bgRainbowSky: ItemDef = {
+  unlockRef: 'unicorn-rainbow-sky', slot: 'background', displayName: '彩虹天空', rarity: 'common', priceCoins: 120,
+  narrativeHint: 'against a rainbow sky', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-rainbow-sky">
+      <rect x="0" y="0" width="100" height="100" fill="#bae6fd" />
+      <path d="M 10 100 A 40 40 0 0 1 90 100" fill="none" stroke="#f87171" strokeWidth="5" />
+      <path d="M 16 100 A 34 34 0 0 1 84 100" fill="none" stroke="#fbbf24" strokeWidth="5" />
+      <path d="M 22 100 A 28 28 0 0 1 78 100" fill="none" stroke="#4ade80" strokeWidth="5" />
+      <path d="M 28 100 A 22 22 0 0 1 72 100" fill="none" stroke="#60a5fa" strokeWidth="5" />
+      <circle cx="20" cy="22" r="7" fill="#fef9c3" />
+    </g>
+  ),
+};
+
+const bgPastelClouds: ItemDef = {
+  unlockRef: 'unicorn-pastel-clouds', slot: 'background', displayName: '粉彩云朵', rarity: 'common', priceCoins: 130,
+  narrativeHint: 'among soft pastel clouds', theme: 'unicorn',
+  renderSvg: () => (
+    <g key="unicorn-pastel-clouds">
+      <rect x="0" y="0" width="100" height="100" fill="#fce7f3" />
+      <ellipse cx="24" cy="26" rx="14" ry="8" fill="#f5d0fe" />
+      <ellipse cx="76" cy="34" rx="16" ry="9" fill="#e9d5ff" />
+      <ellipse cx="40" cy="74" rx="15" ry="8" fill="#fbcfe8" />
+      <circle cx="84" cy="78" r="2" fill="#fef9c3" />
+      <circle cx="14" cy="60" r="1.6" fill="#fef9c3" />
+    </g>
+  ),
+};
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 const ALL_ITEMS: ItemDef[] = [
@@ -1073,6 +1373,28 @@ const ALL_ITEMS: ItemDef[] = [
   caribSkirtTropical,
   decorCaribPalm,
   bgCaribSunset,
+  spaceFaceCool,
+  spaceHairSilver,
+  astronautHelmet,
+  spaceVisor,
+  spacesuitTop,
+  alienTee,
+  spacesuitPants,
+  jetpackDecor,
+  rocketDecor,
+  bgStarfield,
+  bgNebula,
+  unicornFace,
+  rainbowHair,
+  pastelBraids,
+  unicornHornband,
+  starCrown,
+  rainbowTee,
+  sparkleTop,
+  rainbowSkirt,
+  starWandDecor,
+  bgRainbowSky,
+  bgPastelClouds,
 ];
 
 export const ITEM_CATALOG: Record<string, ItemDef> = Object.fromEntries(
