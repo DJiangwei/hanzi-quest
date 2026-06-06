@@ -1,5 +1,5 @@
 // tests/unit/scene-runner-gift.test.tsx
-// Card Economy v2: GiftPackReveal surfaces when finishAttemptAction returns giftPack
+// Card Economy v2: CardChestReveal surfaces when finishAttemptAction returns giftPack
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 
@@ -8,20 +8,20 @@ vi.mock('@/components/scenes/fx/LevelFanfare', () => ({
   LevelFanfare: () => <div data-testid="fanfare" />,
 }));
 
-// Mock GiftPackReveal so we can assert on gift-card-tile without packRegistry deps
-vi.mock('@/components/play/GiftPackReveal', () => ({
-  GiftPackReveal: ({
+// Mock CardChestReveal so we can assert on card-chest-reveal without packRegistry deps
+vi.mock('@/components/scenes/fx/CardChestReveal', () => ({
+  CardChestReveal: ({
     cards,
-    onClose,
+    onDone,
   }: {
-    cards: { itemId: string; packSlug: string; isDupe: boolean; shardsAfter: number }[];
-    onClose: () => void;
+    cards: { id: string; packSlug: string; isDupe: boolean; shardsAfter: number }[];
+    onDone: () => void;
   }) => (
-    <div data-testid="gift-pack-reveal">
+    <div data-testid="card-chest-reveal">
       {cards.map((c) => (
-        <div key={c.itemId} data-testid="gift-card-tile" data-pack={c.packSlug} />
+        <div key={c.id} data-testid="gift-card-tile" data-pack={c.packSlug} />
       ))}
-      <button onClick={onClose} data-testid="gift-close">
+      <button onClick={onDone} data-testid="gift-close">
         Close
       </button>
     </div>
@@ -43,6 +43,11 @@ vi.mock('@/lib/actions/play', () => ({
           itemId: 'i1',
           packId: 'p1',
           packSlug: 'zodiac',
+          slug: 'rat',
+          nameZh: '鼠',
+          nameEn: 'Rat',
+          loreZh: null,
+          loreEn: null,
           isDupe: false,
           shardsAfter: 0,
         },
@@ -53,7 +58,7 @@ vi.mock('@/lib/actions/play', () => ({
     ok: true,
     bossCleared: false,
     freePullClaimed: false,
-    cardGrant: null,
+    cardGrants: [],
     bonuses: [],
     trophies: [],
   }),
@@ -130,8 +135,8 @@ const flashcardLevel1 = {
   config: { characterId: 'c1', segment: 'review' },
 };
 
-describe('SceneRunner GiftPackReveal surfacing (Card Economy v2)', () => {
-  it('shows GiftPackReveal with gift-card-tile when finishAttemptAction returns giftPack', async () => {
+describe('SceneRunner CardChestReveal surfacing (Card Economy v2)', () => {
+  it('shows card-chest-reveal when finishAttemptAction returns giftPack', async () => {
     render(
       <SceneRunner
         childId="child-1"
@@ -160,11 +165,12 @@ describe('SceneRunner GiftPackReveal surfacing (Card Economy v2)', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    // The GiftPackReveal modal should be visible with the card tile
+    // The CardChestReveal modal should be visible with the card tile
+    expect(screen.getByTestId('card-chest-reveal')).toBeInTheDocument();
     expect(screen.getByTestId('gift-card-tile')).toBeInTheDocument();
   });
 
-  it('closes GiftPackReveal when onClose is called', async () => {
+  it('closes CardChestReveal when onDone is called', async () => {
     render(
       <SceneRunner
         childId="child-1"
@@ -191,7 +197,7 @@ describe('SceneRunner GiftPackReveal surfacing (Card Economy v2)', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(screen.getByTestId('gift-card-tile')).toBeInTheDocument();
+    expect(screen.getByTestId('card-chest-reveal')).toBeInTheDocument();
 
     // Close the modal
     const closeBtn = screen.getByTestId('gift-close');
@@ -199,10 +205,10 @@ describe('SceneRunner GiftPackReveal surfacing (Card Economy v2)', () => {
       closeBtn.click();
     });
 
-    expect(screen.queryByTestId('gift-card-tile')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('card-chest-reveal')).not.toBeInTheDocument();
   });
 
-  it('does NOT show GiftPackReveal when finishAttemptAction returns giftPack=null', async () => {
+  it('does NOT show card-chest-reveal when finishAttemptAction returns giftPack=null', async () => {
     const { finishAttemptAction } = await import('@/lib/actions/play');
     vi.mocked(finishAttemptAction).mockResolvedValueOnce({
       coinsAwarded: 10,
@@ -236,6 +242,6 @@ describe('SceneRunner GiftPackReveal surfacing (Card Economy v2)', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(screen.queryByTestId('gift-card-tile')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('card-chest-reveal')).not.toBeInTheDocument();
   });
 });

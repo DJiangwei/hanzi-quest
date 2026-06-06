@@ -28,14 +28,15 @@ import { VisualPickScene } from './VisualPickScene';
 import { WordMatchScene } from './WordMatchScene';
 import { LianliankanScene } from './LianliankanScene';
 import type { BossQuestionType, Segment, TranslateDirection } from '@/lib/scenes/configs';
+import type { RevealCard } from '@/lib/play/reveal-card';
 
 const LevelFanfare = dynamic(
   () => import('./fx/LevelFanfare').then((m) => m.LevelFanfare),
   { ssr: false },
 );
 
-const GiftPackReveal = dynamic(
-  () => import('@/components/play/GiftPackReveal').then((m) => m.GiftPackReveal),
+const CardChestReveal = dynamic(
+  () => import('./fx/CardChestReveal').then((m) => m.CardChestReveal),
   { ssr: false },
 );
 
@@ -117,15 +118,7 @@ export function SceneRunner({
   const [coinsThisSession, setCoinsThisSession] = useState(0);
   const [done, setDone] = useState(false);
   const [lastSceneType, setLastSceneType] = useState<SceneType | null>(null);
-  const [cardGrant, setCardGrant] = useState<{
-    granted: boolean;
-    itemId?: string;
-    packSlug?: string;
-    isDupe?: boolean;
-  } | null>(null);
-  const [giftCards, setGiftCards] = useState<
-    { itemId: string; packSlug: string; isDupe: boolean; shardsAfter: number }[] | null
-  >(null);
+  const [revealCards, setRevealCards] = useState<RevealCard[]>([]);
   const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
   const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
   const [pending, startTransition] = useTransition();
@@ -175,15 +168,19 @@ export function SceneRunner({
 
   if (done || !currentLevel) {
     return (
-      <LevelFanfare
-        weekLabel={weekLabel}
-        coinsThisSession={coinsThisSession}
-        childId={childId}
-        weekId={weekId}
-        chestAvailable={lastSceneType === 'boss'}
-        cardGrant={cardGrant}
-        onContinue={() => router.push(resolvedExitHref)}
-      />
+      <>
+        <LevelFanfare
+          weekLabel={weekLabel}
+          coinsThisSession={coinsThisSession}
+          childId={childId}
+          weekId={weekId}
+          chestAvailable={lastSceneType === 'boss'}
+          onContinue={() => router.push(resolvedExitHref)}
+        />
+        {revealCards.length > 0 ? (
+          <CardChestReveal cards={revealCards} onDone={() => setRevealCards([])} />
+        ) : null}
+      </>
     );
   }
 
@@ -200,7 +197,22 @@ export function SceneRunner({
         hintsUsed: 0,
       });
       setCoinsThisSession((c) => c + result.coinsAwarded);
-      if (result.giftPack) setGiftCards(result.giftPack.cards);
+      if (result.giftPack?.cards?.length) {
+        setRevealCards((q) => [
+          ...q,
+          ...result.giftPack!.cards.map((c) => ({
+            id: c.itemId,
+            slug: c.slug,
+            packSlug: c.packSlug,
+            nameZh: c.nameZh,
+            nameEn: c.nameEn,
+            loreZh: c.loreZh,
+            loreEn: c.loreEn,
+            isDupe: c.isDupe,
+            shardsAfter: c.shardsAfter,
+          })),
+        ]);
+      }
       const collectedBonuses: EconomyBonus[] = [...result.bonuses];
       const collectedTrophies: GrantedTrophy[] = [...result.trophies];
 
@@ -220,17 +232,8 @@ export function SceneRunner({
         });
         collectedBonuses.push(...levelResult.bonuses);
         collectedTrophies.push(...levelResult.trophies);
-        if (levelResult.cardGrant) {
-          setCardGrant({
-            granted: levelResult.cardGrant.granted,
-            ...(levelResult.cardGrant.granted
-              ? {
-                  itemId: levelResult.cardGrant.itemId,
-                  packSlug: levelResult.cardGrant.packSlug,
-                  isDupe: levelResult.cardGrant.isDupe,
-                }
-              : {}),
-          });
+        if (levelResult.cardGrants.length) {
+          setRevealCards((q) => [...q, ...levelResult.cardGrants]);
         }
         setDone(true);
       } else {
@@ -533,8 +536,8 @@ export function SceneRunner({
             </div>
           </div>
         )}
-        {giftCards ? (
-          <GiftPackReveal cards={giftCards} onClose={() => setGiftCards(null)} />
+        {revealCards.length > 0 ? (
+          <CardChestReveal cards={revealCards} onDone={() => setRevealCards([])} />
         ) : null}
         <BonusToast
           bonuses={activeBonuses}
