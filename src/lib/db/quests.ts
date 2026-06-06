@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { dailyQuests } from '@/db/schema';
+import { dailyQuests, dailyQuestChests } from '@/db/schema';
 import { todayUtcIso } from '@/lib/db/streaks';
 import { QUEST_DEFS, getQuestDef, type QuestContext, type QuestDef } from '@/lib/quests/definitions';
 import { awardXp } from '@/lib/db/xp';
@@ -150,6 +150,20 @@ export async function tickQuestProgress(
   }
 
   return { ticked: true, completed: done, def };
+}
+
+// ─── getDailyChestClaimed ─────────────────────────────────────────────────────
+
+/**
+ * Returns whether today's daily quest chest has been claimed for the child.
+ */
+export async function getDailyChestClaimed(childId: string): Promise<boolean> {
+  const today = todayUtc();
+  const [row] = await db
+    .select()
+    .from(dailyQuestChests)
+    .where(and(eq(dailyQuestChests.childId, childId), eq(dailyQuestChests.date, today)));
+  return row !== undefined;
 }
 
 /**

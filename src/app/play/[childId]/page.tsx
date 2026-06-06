@@ -5,6 +5,8 @@ import { getVoyageMap } from '@/lib/play/map-boards';
 import { AvatarRender } from '@/components/play/AvatarRender';
 import { LatestChapterPill } from '@/components/play/LatestChapterPill';
 import { WeekStrip } from '@/components/play/WeekStrip';
+import { LevelBadge } from '@/components/play/LevelBadge';
+import { DailyQuestsPanel } from '@/components/play/DailyQuestsPanel';
 import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
 import {
@@ -25,6 +27,10 @@ import { MapHeaderPill } from '@/components/play/MapHeaderPill';
 import { listMapsForChild } from '@/lib/db/maps';
 import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 import { countCheckInDays } from '@/lib/db/checkins';
+import { generateDailyQuests, getTodayQuests, getDailyChestClaimed } from '@/lib/db/quests';
+import { getChildXp } from '@/lib/db/xp';
+import { titleForLevel } from '@/lib/xp/levels';
+import { getQuestDef } from '@/lib/quests/definitions';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -54,6 +60,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     ownedDecorations,
     weekActivity,
     maps,
+    xpData,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -64,6 +71,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     listOwnedDecorationsForChild(child.id),
     getActivityForRange(child.id, monday, sunday),
     listMapsForChild(child.id),
+    getChildXp(child.id),
   ]);
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
@@ -101,6 +109,38 @@ export default async function PlayHomePage({ params }: PageProps) {
 
   const clearedCount = islands.filter((i) => i.completionPercent >= 100).length;
 
+  // Derive bossUnlocked: true if the child has ever cleared a boss (proxy for
+  // "boss is currently reachable in their play history"). Defaults to false when
+  // no progress rows exist — worst case the boss_clear quest won't be assigned.
+  const bossUnlocked = progressRows.some((p) => p.bossCleared);
+  const questCtx = { bossUnlocked };
+
+  // Generate today's quests (idempotent: no-ops when rows exist for today).
+  await generateDailyQuests(child.id, questCtx);
+  const [todayQuests, chestClaimed] = await Promise.all([
+    getTodayQuests(child.id),
+    getDailyChestClaimed(child.id),
+  ]);
+
+  const allDone =
+    todayQuests.length >= 3 && todayQuests.every((q) => q.completed);
+
+  // Map DB rows → card props (def carries emoji/labelZh; fall back to row fields)
+  const questCardProps = todayQuests.map((q) => {
+    const def = getQuestDef(q.questId);
+    return {
+      emoji: def?.emoji ?? '🧭',
+      labelZh: def?.labelZh ?? q.questId,
+      progress: q.progress,
+      target: q.target,
+      completed: q.completed,
+    };
+  });
+
+  // Level badge
+  const { level } = xpData;
+  const levelTitle = titleForLevel(level);
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
       <section className="flex items-center justify-between gap-3">
@@ -132,6 +172,7 @@ export default async function PlayHomePage({ params }: PageProps) {
               {clearedCount}/{islands.length} island
               {islands.length === 1 ? '' : 's'} cleared
             </p>
+            <LevelBadge level={level} title={levelTitle} />
           </div>
         </div>
         <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-treasure-400)] px-3 py-1.5 text-base font-bold text-[var(--color-treasure-700)] shadow-md">
@@ -150,6 +191,15 @@ export default async function PlayHomePage({ params }: PageProps) {
       />
 
       <WeekStrip activity={weekActivity} todayIso={todayIso} childId={childId} checkInDays={countCheckInDays(weekActivity)} />
+
+      {questCardProps.length > 0 && (
+        <DailyQuestsPanel
+          childId={child.id}
+          quests={questCardProps}
+          allDone={allDone}
+          initialChestClaimed={chestClaimed}
+        />
+      )}
 
       <LatestChapterPill childId={child.id} />
 
