@@ -33,8 +33,8 @@ describe('grantGiftPackInTx', () => {
       select: selectYielding([
         [{ id: 'p1', slug: 'zodiac' }, { id: 'p2', slug: 'flags' }], // active packs
         [],                                                          // owned (none)
-        [{ id: 'i1', packId: 'p1', packSlug: 'zodiac', dropWeight: 1 }], // p1 catalog
-        [{ id: 'i2', packId: 'p2', packSlug: 'flags', dropWeight: 1 }],  // p2 catalog
+        [{ id: 'i1', packId: 'p1', packSlug: 'zodiac', slug: 'rat', nameZh: '鼠', nameEn: 'Rat', loreZh: null, loreEn: null, dropWeight: 1 }], // p1 catalog
+        [{ id: 'i2', packId: 'p2', packSlug: 'flags', slug: 'flag-cn', nameZh: '中国', nameEn: 'China', loreZh: null, loreEn: null, dropWeight: 1 }],  // p2 catalog
       ]),
     } as never;
 
@@ -43,6 +43,11 @@ describe('grantGiftPackInTx', () => {
     if (result.granted) {
       expect(result.cards).toHaveLength(2);
       expect(result.cards.map((c) => c.packSlug).sort()).toEqual(['flags', 'zodiac']);
+      // Display fields must be present on each card
+      const zodiacCard = result.cards.find((c) => c.packSlug === 'zodiac');
+      expect(zodiacCard?.nameZh).toBe('鼠');
+      expect(zodiacCard?.nameEn).toBe('Rat');
+      expect(zodiacCard?.slug).toBe('rat');
     }
   });
 

@@ -1,19 +1,36 @@
 // tests/unit/scene-runner-pr52-card-grant.test.tsx
-// PR #52: chest is unconditional on boss clear; cardGrant threads through to LevelFanfare
+// Card reveal polish: cardGrants[] threads through to CardChestReveal
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
+import type { RevealCard } from '@/lib/play/reveal-card';
 
 // Mock LevelFanfare with data attributes to verify props
 vi.mock('@/components/scenes/fx/LevelFanfare', () => ({
   LevelFanfare: (props: {
     chestAvailable: boolean;
-    cardGrant?: { granted: boolean } | null;
   }) => (
     <div
       data-testid="fanfare"
       data-chest={String(props.chestAvailable)}
-      data-card-granted={props.cardGrant == null ? '' : String(props.cardGrant.granted)}
     />
+  ),
+}));
+
+// Mock CardChestReveal to surface the cards
+vi.mock('@/components/scenes/fx/CardChestReveal', () => ({
+  CardChestReveal: ({
+    cards,
+    onDone,
+  }: {
+    cards: RevealCard[];
+    onDone: () => void;
+  }) => (
+    <div data-testid="card-chest-reveal">
+      {cards.map((c) => (
+        <div key={c.id} data-testid="reveal-card-name">{c.nameEn}</div>
+      ))}
+      <button onClick={onDone} data-testid="reveal-done">Done</button>
+    </div>
   ),
 }));
 
@@ -91,6 +108,18 @@ const bossLevel = {
   config: { characterIds: ['c1'], questionTypes: ['audio_pick'] },
 };
 
+const revealCard: RevealCard = {
+  id: 'item-x',
+  slug: 'flag-cn',
+  packSlug: 'flags',
+  nameZh: '中国',
+  nameEn: 'China',
+  loreZh: null,
+  loreEn: null,
+  isDupe: false,
+  shardsAfter: 0,
+};
+
 async function driveToFanfare() {
   // Wait for session to start
   await act(async () => {
@@ -108,52 +137,15 @@ async function driveToFanfare() {
   await act(async () => {
     await new Promise((r) => setTimeout(r, 0));
   });
-
-  return screen.findByTestId('fanfare');
 }
 
-describe('SceneRunner card grant (PR #52)', () => {
-  it('shows chest unconditionally on boss clear (chest=true regardless of freePullClaimed)', async () => {
-    vi.mocked(finishLevelAction).mockResolvedValueOnce({
-      ok: true,
-      bossCleared: true,
-      freePullClaimed: true, // PR #51 would have hidden chest; PR #52 ignores this
-      cardGrant: null,
-      bonuses: [],
-      trophies: [],
-    });
-
-    render(
-      <SceneRunner
-        childId="c1"
-        weekId="w1"
-        weekLabel="Test"
-        levels={[bossLevel]}
-        charactersById={charactersById}
-        pool={Object.values(charactersById)}
-      />,
-    );
-
-    const fanfare = await driveToFanfare();
-    expect(fanfare).toHaveAttribute('data-chest', 'true');
-    // No cardGrant → data-card-granted should be empty string
-    expect(fanfare).toHaveAttribute('data-card-granted', '');
-  });
-
-  it('passes cardGrant.granted=true to LevelFanfare when card was granted', async () => {
+describe('SceneRunner card grant (card-reveal polish)', () => {
+  it('shows card-chest-reveal with card name when finishLevelAction returns cardGrants', async () => {
     vi.mocked(finishLevelAction).mockResolvedValueOnce({
       ok: true,
       bossCleared: true,
       freePullClaimed: true,
-      cardGrant: {
-        granted: true,
-        itemId: 'item-x',
-        packId: 'pack-x',
-        packSlug: 'flags',
-        isDupe: false,
-        shardsAfter: 0,
-        cardsToday: 1,
-      },
+      cardGrants: [revealCard],
       bonuses: [],
       trophies: [],
     });
@@ -169,21 +161,18 @@ describe('SceneRunner card grant (PR #52)', () => {
       />,
     );
 
-    const fanfare = await driveToFanfare();
-    expect(fanfare).toHaveAttribute('data-chest', 'true');
-    expect(fanfare).toHaveAttribute('data-card-granted', 'true');
+    await driveToFanfare();
+
+    expect(screen.getByTestId('card-chest-reveal')).toBeInTheDocument();
+    expect(screen.getByText('China')).toBeInTheDocument();
   });
 
-  it('passes cardGrant.granted=false to LevelFanfare when cap is reached', async () => {
+  it('does not show card-chest-reveal when cardGrants is empty (cap reached)', async () => {
     vi.mocked(finishLevelAction).mockResolvedValueOnce({
       ok: true,
       bossCleared: true,
       freePullClaimed: true,
-      cardGrant: {
-        granted: false,
-        reason: 'daily_cap_reached',
-        cardsToday: 3,
-      },
+      cardGrants: [],
       bonuses: [],
       trophies: [],
     });
@@ -199,28 +188,56 @@ describe('SceneRunner card grant (PR #52)', () => {
       />,
     );
 
-    const fanfare = await driveToFanfare();
-    expect(fanfare).toHaveAttribute('data-chest', 'true');
-    expect(fanfare).toHaveAttribute('data-card-granted', 'false');
+    await driveToFanfare();
+
+    // LevelFanfare renders, but no card reveal
+    expect(await screen.findByTestId('fanfare')).toBeInTheDocument();
+    expect(screen.queryByTestId('card-chest-reveal')).not.toBeInTheDocument();
   });
 
-  it('does not set cardGrant when finishLevelAction returns cardGrant=null (non-boss)', async () => {
-    // Non-boss level — finishLevelAction returns null cardGrant
+  it('shows chest=true on fanfare when boss cleared', async () => {
     vi.mocked(finishLevelAction).mockResolvedValueOnce({
       ok: true,
-      bossCleared: false,
-      freePullClaimed: false,
-      cardGrant: null,
+      bossCleared: true,
+      freePullClaimed: true,
+      cardGrants: [],
       bonuses: [],
       trophies: [],
     });
 
+    render(
+      <SceneRunner
+        childId="c1"
+        weekId="w1"
+        weekLabel="Test"
+        levels={[bossLevel]}
+        charactersById={charactersById}
+        pool={Object.values(charactersById)}
+      />,
+    );
+
+    await driveToFanfare();
+
+    const fanfare = await screen.findByTestId('fanfare');
+    expect(fanfare).toHaveAttribute('data-chest', 'true');
+  });
+
+  it('does not show card-chest-reveal when cardGrants=[] on non-boss', async () => {
     const flashcardLevel = {
       id: 'l-flash',
       position: 0,
       sceneType: 'flashcard' as const,
       config: { characterId: 'c1', segment: 'review' },
     };
+
+    vi.mocked(finishLevelAction).mockResolvedValueOnce({
+      ok: true,
+      bossCleared: false,
+      freePullClaimed: false,
+      cardGrants: [],
+      bonuses: [],
+      trophies: [],
+    });
 
     render(
       <SceneRunner
@@ -248,8 +265,8 @@ describe('SceneRunner card grant (PR #52)', () => {
     });
 
     const fanfare = await screen.findByTestId('fanfare');
-    // Non-boss → chest=false, no cardGrant
+    // Non-boss → chest=false
     expect(fanfare).toHaveAttribute('data-chest', 'false');
-    expect(fanfare).toHaveAttribute('data-card-granted', '');
+    expect(screen.queryByTestId('card-chest-reveal')).not.toBeInTheDocument();
   });
 });
