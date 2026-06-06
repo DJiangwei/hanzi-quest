@@ -15,6 +15,7 @@ import { pullCardInTx, swapShardsInTx, grantGiftPackInTx, type CardGrantResult, 
 import { getActivityForRange } from '@/lib/db/activity';
 import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 import { countCheckInDays, WEEKLY_CHECKIN_THRESHOLD } from '@/lib/db/checkins';
+import { tickQuestProgressSafe } from '@/lib/db/quests';
 
 // AlreadyClaimedError is NOT re-exported here — 'use server' files may only
 // export async functions. Client components import it directly from
@@ -155,6 +156,11 @@ export async function claimWeeklyGiftIfDue(
 
   const result = await db.transaction((tx) => grantGiftPackInTx(tx, childId, monday, Math.random));
   if (!result.granted) return null;
+
+  // Additive, guarded, fire-and-forget: tick earn_card quest by number of cards granted.
+  if (result.cards.length > 0) {
+    void tickQuestProgressSafe(childId, 'earn_card', result.cards.length);
+  }
 
   revalidatePath(`/play/${childId}`);
   for (const c of result.cards) {

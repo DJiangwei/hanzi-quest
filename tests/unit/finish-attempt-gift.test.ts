@@ -60,6 +60,12 @@ vi.mock('@/lib/actions/gacha', () => ({
   pullCardForChild: mocks.pullCardForChild,
   claimWeeklyGiftIfDue: mocks.claimWeeklyGiftIfDue,
 }));
+vi.mock('@/lib/db/xp', () => ({
+  awardXp: vi.fn().mockResolvedValue({ totalXp: 10, level: 1, leveledUp: false }),
+}));
+vi.mock('@/lib/db/quests', () => ({
+  tickQuestProgressSafe: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { finishAttemptAction } from '@/lib/actions/play';
 

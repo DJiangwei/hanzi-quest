@@ -30,6 +30,25 @@ import {
 import { pullCardForChild, claimWeeklyGiftIfDue } from './gacha';
 import type { GiftCard } from '@/lib/db/grants';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import { awardXp, type AwardXpResult } from '@/lib/db/xp';
+import { tickQuestProgressSafe } from '@/lib/db/quests';
+
+// ─── XP helpers ──────────────────────────────────────────────────────────────
+
+/** Guarded awardXp — logs on error and returns a zero result so callers can accumulate totals. */
+async function safeAwardXp(
+  childId: string,
+  amount: number,
+  source: Parameters<typeof awardXp>[2],
+  refId?: string,
+): Promise<AwardXpResult> {
+  try {
+    return await awardXp(childId, amount, source, refId);
+  } catch (err) {
+    console.error('[play] safeAwardXp error:', err);
+    return { totalXp: 0, level: 1, leveledUp: false };
+  }
+}
 
 function toRevealCard(g: Awaited<ReturnType<typeof pullCardForChild>>): RevealCard | null {
   if (!g.granted) return null;
@@ -133,6 +152,7 @@ export async function finishAttemptAction(
   bonuses: EconomyBonus[];
   trophies: GrantedTrophy[];
   giftPack: { cards: GiftCard[] } | null;
+  xp: { gained: number; level: number; leveledUp: boolean };
 }> {
   const parsed = FinishAttemptSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
@@ -207,6 +227,8 @@ export async function finishAttemptAction(
         labelEn: `${milestone.milestone}-day streak!`,
         meta: { milestone: milestone.milestone },
       });
+      // Streak milestone XP — guarded, fire-and-forget
+      void safeAwardXp(child.id, 100, 'streak_milestone', String(milestone.milestone));
     }
     if (tick.freezeBurned) {
       bonuses.push({
@@ -244,7 +266,45 @@ export async function finishAttemptAction(
     );
   }
 
-  return { coinsAwarded, perfect, bonuses, trophies: collectedTrophies, giftPack };
+  // ─── XP + Quest ticks (additive, guarded, fire-and-forget) ──────────────
+  // These run AFTER all primary DB writes. A failure here must never break
+  // the action — each group is wrapped so throws cannot escape.
+  let xpGained = 0;
+  let lastXpResult: AwardXpResult = { totalXp: 0, level: 1, leveledUp: false };
+
+  try {
+    // Always on a successful attempt: scene_complete XP + quest tick
+    const r1 = await safeAwardXp(child.id, 10, 'scene_complete', attempt.id);
+    xpGained += 10;
+    lastXpResult = r1;
+
+    // Segment-specific quest ticks
+    if (levelRow?.sceneType === 'flashcard') {
+      void tickQuestProgressSafe(child.id, 'review_flashcards', 1);
+    } else if (levelRow && levelRow.sceneType !== 'boss') {
+      void tickQuestProgressSafe(child.id, 'practice_scenes', 1);
+    }
+    void tickQuestProgressSafe(child.id, 'complete_scenes', 1);
+
+    // Perfect score bonus
+    if (perfect) {
+      const r2 = await safeAwardXp(child.id, 5, 'scene_perfect', attempt.id);
+      xpGained += 5;
+      lastXpResult = r2;
+      void tickQuestProgressSafe(child.id, 'perfect_scores', 1);
+    }
+  } catch (err) {
+    console.error('[finishAttemptAction] XP/quest tick error:', err);
+  }
+
+  return {
+    coinsAwarded,
+    perfect,
+    bonuses,
+    trophies: collectedTrophies,
+    giftPack,
+    xp: { gained: xpGained, level: lastXpResult.level, leveledUp: lastXpResult.leveledUp },
+  };
 }
 
 const FinishLevelSchema = z.object({
@@ -265,6 +325,7 @@ export async function finishLevelAction(
   cardGrants: RevealCard[];
   bonuses: EconomyBonus[];
   trophies: GrantedTrophy[];
+  xp: { gained: number; level: number; leveledUp: boolean };
 }> {
   const parsed = FinishLevelSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
@@ -362,6 +423,27 @@ export async function finishLevelAction(
     (c): c is RevealCard => c !== null,
   );
 
+  // ─── XP + Quest ticks (additive, guarded, fire-and-forget) ──────────────
+  // Run AFTER all primary DB writes. A failure here must never break the action.
+  let levelXpGained = 0;
+  let levelLastXpResult: AwardXpResult = { totalXp: 0, level: 1, leveledUp: false };
+
+  try {
+    if (bossCleared) {
+      const r = await safeAwardXp(child.id, 50, 'boss_clear', parsed.sessionId);
+      levelXpGained += 50;
+      levelLastXpResult = r;
+      void tickQuestProgressSafe(child.id, 'boss_clear', 1);
+      // Boss clear = completing the week's final level
+      void tickQuestProgressSafe(child.id, 'full_level', 1);
+    }
+    if (cardGrants.length > 0) {
+      void tickQuestProgressSafe(child.id, 'earn_card', cardGrants.length);
+    }
+  } catch (err) {
+    console.error('[finishLevelAction] XP/quest tick error:', err);
+  }
+
   revalidatePath(`/play/${child.id}`);
   return {
     ok: true,
@@ -370,6 +452,7 @@ export async function finishLevelAction(
     cardGrants,
     bonuses,
     trophies: collectedTrophies,
+    xp: { gained: levelXpGained, level: levelLastXpResult.level, leveledUp: levelLastXpResult.leveledUp },
   };
 }
 

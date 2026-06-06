@@ -53,6 +53,7 @@ vi.mock('@/lib/actions/play', () => ({
         },
       ],
     },
+    xp: { gained: 10, level: 1, leveledUp: false },
   }),
   finishLevelAction: vi.fn().mockResolvedValue({
     ok: true,
@@ -61,6 +62,7 @@ vi.mock('@/lib/actions/play', () => ({
     cardGrants: [],
     bonuses: [],
     trophies: [],
+    xp: { gained: 0, level: 1, leveledUp: false },
   }),
 }));
 
@@ -216,6 +218,7 @@ describe('SceneRunner CardChestReveal surfacing (Card Economy v2)', () => {
       bonuses: [],
       trophies: [],
       giftPack: null,
+      xp: { gained: 10, level: 1, leveledUp: false },
     });
 
     render(

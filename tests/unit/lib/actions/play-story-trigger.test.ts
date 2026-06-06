@@ -45,6 +45,12 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/actions/gacha', () => ({
   pullCardForChild: vi.fn().mockResolvedValue({ granted: false, reason: 'already_granted_this_week' }),
 }));
+vi.mock('@/lib/db/xp', () => ({
+  awardXp: vi.fn().mockResolvedValue({ totalXp: 0, level: 1, leveledUp: false }),
+}));
+vi.mock('@/lib/db/quests', () => ({
+  tickQuestProgressSafe: vi.fn().mockResolvedValue(undefined),
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();
