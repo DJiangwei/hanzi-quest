@@ -64,6 +64,11 @@ export interface CardGrantResult {
   itemId: string;
   packId: string;
   packSlug: string;
+  slug: string;
+  nameZh: string;
+  nameEn: string;
+  loreZh: string | null;
+  loreEn: string | null;
   isDupe: boolean;
   shardsAfter: number;
   cardsToday: number;
@@ -132,6 +137,11 @@ export async function pullCardInTx(
       id: collectibleItems.id,
       packId: collectibleItems.packId,
       packSlug: collectionPacks.slug,
+      slug: collectibleItems.slug,
+      nameZh: collectibleItems.nameZh,
+      nameEn: collectibleItems.nameEn,
+      loreZh: collectibleItems.loreZh,
+      loreEn: collectibleItems.loreEn,
       dropWeight: collectibleItems.dropWeight,
     })
     .from(collectibleItems)
@@ -190,6 +200,11 @@ export async function pullCardInTx(
     itemId: picked.id,
     packId: picked.packId,
     packSlug: picked.packSlug,
+    slug: picked.slug,
+    nameZh: picked.nameZh,
+    nameEn: picked.nameEn,
+    loreZh: picked.loreZh,
+    loreEn: picked.loreEn,
     isDupe,
     shardsAfter,
     cardsToday: currentCount + 1,
@@ -202,6 +217,11 @@ export interface GiftCard {
   itemId: string;
   packId: string;
   packSlug: string;
+  slug: string;
+  nameZh: string;
+  nameEn: string;
+  loreZh: string | null;
+  loreEn: string | null;
   isDupe: boolean;
   shardsAfter: number;
 }
@@ -252,6 +272,11 @@ export async function grantGiftPackInTx(
         id: collectibleItems.id,
         packId: collectibleItems.packId,
         packSlug: collectionPacks.slug,
+        slug: collectibleItems.slug,
+        nameZh: collectibleItems.nameZh,
+        nameEn: collectibleItems.nameEn,
+        loreZh: collectibleItems.loreZh,
+        loreEn: collectibleItems.loreEn,
         dropWeight: collectibleItems.dropWeight,
       })
       .from(collectibleItems)
@@ -287,7 +312,7 @@ export async function grantGiftPackInTx(
       shardsAfter = shardRow?.shards ?? 1;
     }
 
-    cards.push({ itemId: picked.id, packId: picked.packId, packSlug: picked.packSlug, isDupe, shardsAfter });
+    cards.push({ itemId: picked.id, packId: picked.packId, packSlug: picked.packSlug, slug: picked.slug, nameZh: picked.nameZh, nameEn: picked.nameEn, loreZh: picked.loreZh, loreEn: picked.loreEn, isDupe, shardsAfter });
   }
 
   return { granted: true, cards };
