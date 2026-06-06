@@ -18,7 +18,8 @@ export type AwardCoinReason =
   | 'admin_adjust'
   | 'daily_login'
   | 'streak_milestone'
-  | 'perfect_week';
+  | 'perfect_week'
+  | 'daily_chest';
 
 export const DAILY_LOGIN_AWARD = 20;
 export const STREAK_MILESTONE_AWARD = 100;
