@@ -211,14 +211,29 @@ describe('finishLevelAction return shape (PR #51)', () => {
   });
 });
 
-describe('finishLevelAction card grant (PR #52)', () => {
+describe('finishLevelAction card grant (cardGrants array)', () => {
   const BOSS_SESSION_ID = '11111111-2222-4333-a444-555555555555';
   const CHILD_ID = '22222222-3333-4444-a555-666666666666';
   const WEEK_ID = '33333333-4444-4555-a666-777777777777';
 
+  const grantedResult = {
+    granted: true as const,
+    itemId: 'item-1',
+    packId: 'pack-1',
+    packSlug: 'flags',
+    slug: 'flag-cn',
+    nameZh: '中国',
+    nameEn: 'China',
+    loreZh: null as null,
+    loreEn: null as null,
+    isDupe: false,
+    shardsAfter: 0,
+    cardsToday: 1,
+  };
+
   beforeEach(() => vi.clearAllMocks());
 
-  it('calls pullCardForChild on boss clear and returns cardGrant', async () => {
+  it('calls pullCardForChild on boss clear and returns cardGrants with one entry', async () => {
     mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
     mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
     mocks.listLevelsForWeek.mockResolvedValue([
@@ -226,13 +241,7 @@ describe('finishLevelAction card grant (PR #52)', () => {
       { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
     ]);
     mocks.getWeekProgress.mockResolvedValue(null);
-    mocks.pullCardForChild.mockResolvedValue({
-      granted: true,
-      packSlug: 'zodiac-v1',
-      item: { id: 'item-1', nameZh: '鼠', nameEn: 'Rat', emoji: '🐭', rarity: 'common' },
-      isNew: true,
-      shardsDelta: 0,
-    });
+    mocks.pullCardForChild.mockResolvedValue(grantedResult);
 
     const result = await finishLevelAction({
       sessionId: BOSS_SESSION_ID,
@@ -243,7 +252,8 @@ describe('finishLevelAction card grant (PR #52)', () => {
       durationSeconds: 120,
     });
 
-    expect(result.cardGrant).toEqual(expect.objectContaining({ granted: true }));
+    expect(result.cardGrants).toHaveLength(1);
+    expect(result.cardGrants[0]).toEqual(expect.objectContaining({ slug: 'flag-cn', nameEn: 'China' }));
     expect(mocks.pullCardForChild).toHaveBeenCalledWith(
       'c1',
       'boss_clear',
@@ -251,7 +261,7 @@ describe('finishLevelAction card grant (PR #52)', () => {
     );
   });
 
-  it('returns cardGrant=null when boss was NOT cleared (non-boss last scene)', async () => {
+  it('returns cardGrants=[] when boss was NOT cleared (non-boss last scene)', async () => {
     mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
     mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
     mocks.listLevelsForWeek.mockResolvedValue([
@@ -269,11 +279,11 @@ describe('finishLevelAction card grant (PR #52)', () => {
       durationSeconds: 120,
     });
 
-    expect(result.cardGrant).toBeNull();
+    expect(result.cardGrants).toEqual([]);
     expect(mocks.pullCardForChild).not.toHaveBeenCalled();
   });
 
-  it('returns cardGrant=null when scenes < total (boss not passed)', async () => {
+  it('returns cardGrants=[] when scenes < total (boss not passed)', async () => {
     mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
     mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
     mocks.listLevelsForWeek.mockResolvedValue([
@@ -291,11 +301,11 @@ describe('finishLevelAction card grant (PR #52)', () => {
       durationSeconds: 120,
     });
 
-    expect(result.cardGrant).toBeNull();
+    expect(result.cardGrants).toEqual([]);
     expect(mocks.pullCardForChild).not.toHaveBeenCalled();
   });
 
-  it('calls pullCardForChild even on repeat boss clears (cardGrant may be skipped)', async () => {
+  it('calls pullCardForChild even on repeat boss clears (skipped grant → cardGrants=[])', async () => {
     mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
     mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
     mocks.listLevelsForWeek.mockResolvedValue([
@@ -319,12 +329,38 @@ describe('finishLevelAction card grant (PR #52)', () => {
       durationSeconds: 120,
     });
 
-    expect(result.cardGrant).toEqual(expect.objectContaining({ granted: false }));
+    // Skipped grant → not included in the array
+    expect(result.cardGrants).toEqual([]);
     expect(mocks.pullCardForChild).toHaveBeenCalledWith(
       'c1',
       'boss_clear',
       BOSS_SESSION_ID,
     );
+  });
+
+  it('returns cardGrants with length 2 when boss AND perfect-week both grant', async () => {
+    mocks.requireChild.mockResolvedValue({ parent: { id: 'p1' }, child: { id: 'c1' } });
+    mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
+    mocks.listLevelsForWeek.mockResolvedValue([
+      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
+      { id: 'l2', position: 1, sceneType: 'boss', sceneConfig: {} },
+    ]);
+    mocks.getWeekProgress.mockResolvedValue(null);
+    mocks.isPerfectWeekForChild.mockResolvedValue(true);
+    mocks.awardPerfectWeekIfDue.mockResolvedValue({ awarded: true, delta: 200 });
+    // Both boss and perfect_week grant a card
+    mocks.pullCardForChild.mockResolvedValue(grantedResult);
+
+    const result = await finishLevelAction({
+      sessionId: BOSS_SESSION_ID,
+      childId: CHILD_ID,
+      weekId: WEEK_ID,
+      totalScenesPassed: 2,
+      totalScenesInWeek: 2,
+      durationSeconds: 120,
+    });
+
+    expect(result.cardGrants).toHaveLength(2);
   });
 });
 

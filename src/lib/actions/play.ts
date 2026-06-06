@@ -29,6 +29,22 @@ import {
 } from '@/lib/db/weeks';
 import { pullCardForChild, claimWeeklyGiftIfDue } from './gacha';
 import type { GiftCard } from '@/lib/db/grants';
+import type { RevealCard } from '@/lib/play/reveal-card';
+
+function toRevealCard(g: Awaited<ReturnType<typeof pullCardForChild>>): RevealCard | null {
+  if (!g.granted) return null;
+  return {
+    id: g.itemId,
+    slug: g.slug,
+    packSlug: g.packSlug,
+    nameZh: g.nameZh,
+    nameEn: g.nameEn,
+    loreZh: g.loreZh,
+    loreEn: g.loreEn,
+    isDupe: g.isDupe,
+    shardsAfter: g.shardsAfter,
+  };
+}
 
 const SCENE_COMPLETE_AWARD = 50;
 const SCENE_REPLAY_AWARD = 5;
@@ -226,7 +242,7 @@ export async function finishLevelAction(
   ok: true;
   bossCleared: boolean;
   freePullClaimed: boolean;
-  cardGrant: Awaited<ReturnType<typeof pullCardForChild>> | null;
+  cardGrants: RevealCard[];
   bonuses: EconomyBonus[];
   trophies: GrantedTrophy[];
 }> {
@@ -263,6 +279,7 @@ export async function finishLevelAction(
   });
 
   const bonuses: EconomyBonus[] = [];
+  let perfectCard: RevealCard | null = null;
   if (bossCleared && !alreadyAwarded) {
     await awardCoins({
       childId: child.id,
@@ -285,13 +302,9 @@ export async function finishLevelAction(
           labelZh: '完美一周！',
           labelEn: 'Perfect week!',
         });
-        // First-time perfect_week: grant a card as a bonus reward.
-        // Fire independently of the boss-clear cardGrant (a single boss run
-        // can trigger both; each has a distinct source so deduplication in
-        // pullCardForChild handles re-runs correctly).
-        pullCardForChild(child.id, 'perfect_week', parsed.weekId).catch((err) => {
-          console.error('[finishLevelAction] perfect_week pullCardForChild failed:', err);
-        });
+        // Await so the card surfaces in the reveal queue.
+        const pc = await pullCardForChild(child.id, 'perfect_week', parsed.weekId);
+        perfectCard = toRevealCard(pc);
       }
     }
   }
@@ -320,17 +333,22 @@ export async function finishLevelAction(
     ...(await checkAndGrantTrophies(child.id, { kind: 'level-complete' })),
   );
 
-  let cardGrant: Awaited<ReturnType<typeof pullCardForChild>> | null = null;
+  let bossCard: RevealCard | null = null;
   if (bossCleared) {
-    cardGrant = await pullCardForChild(child.id, 'boss_clear', parsed.sessionId);
+    const cardGrant = await pullCardForChild(child.id, 'boss_clear', parsed.sessionId);
+    bossCard = toRevealCard(cardGrant);
   }
+
+  const cardGrants: RevealCard[] = [bossCard, perfectCard].filter(
+    (c): c is RevealCard => c !== null,
+  );
 
   revalidatePath(`/play/${child.id}`);
   return {
     ok: true,
     bossCleared,
     freePullClaimed: existing?.freePullClaimed ?? false,
-    cardGrant,
+    cardGrants,
     bonuses,
     trophies: collectedTrophies,
   };
