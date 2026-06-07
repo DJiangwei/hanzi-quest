@@ -64,6 +64,17 @@ describe('FlagCard', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders a bilingual continent badge in non-compact mode', () => {
+    render(<FlagCard item={makeItem()} owned />); // china → asia
+    expect(screen.getByText('亚洲')).toBeInTheDocument();
+    expect(screen.getByText('Asia')).toBeInTheDocument();
+  });
+
+  it('hides the continent badge when compact=true', () => {
+    render(<FlagCard item={makeItem()} owned compact />);
+    expect(screen.queryByText('亚洲')).not.toBeInTheDocument();
+  });
+
   it('falls back to a placeholder emoji when item.slug is unknown', () => {
     const item = makeItem({
       slug: 'made-up',

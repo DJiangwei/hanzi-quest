@@ -6,15 +6,33 @@ import { SeaCreatureCard } from '@/components/play/items/SeaCreatureCard';
 import { SolarBodyCard } from '@/components/play/items/SolarBodyCard';
 import { ZodiacGridItem } from '@/components/play/items/ZodiacGridItem';
 import { DINOSAURS_BY_SLUG } from '@/lib/collections/dinosaursData';
-import { FLAGS_BY_SLUG } from '@/lib/collections/flagsData';
+import {
+  FLAGS_BY_SLUG,
+  CONTINENT_LABELS,
+  CONTINENT_ORDER,
+} from '@/lib/collections/flagsData';
 import { SEA_CREATURES_BY_SLUG } from '@/lib/collections/seaCreaturesData';
-import { SOLAR_BODIES_BY_SLUG } from '@/lib/collections/solarSystemData';
+import {
+  SOLAR_BODIES_BY_SLUG,
+  SOLAR_TYPE_ORDER,
+  TYPE_LABELS,
+  TYPE_EMOJI,
+} from '@/lib/collections/solarSystemData';
 
 export interface ItemCardProps {
   item: CollectibleItem;
   owned: boolean;
   size?: 'sm' | 'md' | 'lg';
   compact?: boolean;
+}
+
+export interface PackGrouping {
+  /** item slug → group key (null = ungrouped; rendered in a trailing bucket). */
+  resolveGroup: (slug: string) => string | null;
+  /** Fixed section order, top → bottom. */
+  order: string[];
+  /** Bilingual + emoji header label per group key. */
+  labels: Record<string, { zh: string; en: string; emoji: string }>;
 }
 
 export interface PackUiMeta {
@@ -41,6 +59,8 @@ export interface PackUiMeta {
    * these so the reveal animation has a visual to show.
    */
   resolveRevealEmoji?: (slug: string) => string | null;
+  /** When present, the pack page renders section headers per group. */
+  grouping?: PackGrouping;
 }
 
 export const PACK_REGISTRY: Record<string, PackUiMeta> = {
@@ -70,6 +90,11 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: FlagCard,
     resolveRevealEmoji: (slug) => FLAGS_BY_SLUG[slug]?.emoji ?? null,
+    grouping: {
+      resolveGroup: (slug) => FLAGS_BY_SLUG[slug]?.continent ?? null,
+      order: CONTINENT_ORDER,
+      labels: CONTINENT_LABELS,
+    },
   },
   'sea-creatures-v1': {
     displayNameZh: '海洋生物',
@@ -112,6 +137,16 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: SolarBodyCard,
     resolveRevealEmoji: (slug) => SOLAR_BODIES_BY_SLUG[slug]?.emoji ?? null,
+    grouping: {
+      resolveGroup: (slug) => SOLAR_BODIES_BY_SLUG[slug]?.type ?? null,
+      order: SOLAR_TYPE_ORDER,
+      labels: Object.fromEntries(
+        SOLAR_TYPE_ORDER.map((t) => [
+          t,
+          { zh: TYPE_LABELS[t].zh, en: TYPE_LABELS[t].en, emoji: TYPE_EMOJI[t] },
+        ]),
+      ),
+    },
   },
 };
 

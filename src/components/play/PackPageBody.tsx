@@ -65,6 +65,43 @@ export function PackPageBody({
 
   const [swapItem, setSwapItem] = useState<CollectibleItem | null>(null);
 
+  const gridStyle = {
+    gridTemplateColumns: `repeat(${meta.gridColumns ?? 3}, minmax(0, 1fr))`,
+  };
+
+  // One tile = card + ×N dupe badge + swap chip. Identical in the flat and
+  // grouped layouts — closes over meta/countById/ownedSet/shardCount/setSwapItem.
+  function PackTile({ item }: { item: CollectibleItem }) {
+    const Card = meta!.ItemCard;
+    const count = countById.get(item.id) ?? 0;
+    const isOwned = ownedSet.has(item.id);
+    return (
+      <div className="relative">
+        <Card item={item} owned={isOwned} size="md" compact={false} />
+        {count > 1 && (
+          <span className="absolute right-0.5 top-0.5 z-10 rounded-full bg-sky-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white">
+            ×{count}
+          </span>
+        )}
+        {!isOwned && (
+          <button
+            type="button"
+            data-testid="swap-chip"
+            disabled={shardCount < SWAP_COST}
+            onClick={() => setSwapItem(item)}
+            className={`absolute inset-x-1 bottom-1 z-10 min-h-6 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+              shardCount >= SWAP_COST
+                ? 'bg-sky-500 text-white'
+                : 'bg-stone-300 text-stone-600'
+            }`}
+          >
+            {shardCount >= SWAP_COST ? '🔹换卡 / Trade' : `需 ${SWAP_COST}🔹`}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full max-w-md flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -110,49 +147,53 @@ export function PackPageBody({
       )}
 
       <div className="rounded-2xl border border-[#c89f5e] bg-[linear-gradient(180deg,#f5ead0_0%,#ead7a8_100%)] p-4">
-        <div
-          data-testid="pack-grid-with-badges"
-          className={`grid grid-cols-${meta.gridColumns ?? 3} gap-2.5`}
-          style={{ gridTemplateColumns: `repeat(${meta.gridColumns ?? 3}, minmax(0, 1fr))` }}
-        >
-          {items.map((item) => {
-            const Card = meta.ItemCard;
-            const count = countById.get(item.id) ?? 0;
-            const showDupe = count > 1;
-            const isOwned = ownedSet.has(item.id);
-            return (
-              <div
-                key={item.id}
-                className="relative"
-              >
-                <Card
-                  item={item}
-                  owned={isOwned}
-                  size="md"
-                  compact={false}
-                />
-                {showDupe && (
-                  <span className="absolute right-0.5 top-0.5 z-10 rounded-full bg-sky-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white">
-                    ×{count}
-                  </span>
-                )}
-                {!isOwned && (
-                  <button
-                    type="button"
-                    data-testid="swap-chip"
-                    disabled={shardCount < SWAP_COST}
-                    onClick={() => setSwapItem(item)}
-                    className={`absolute inset-x-1 bottom-1 z-10 min-h-6 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                      shardCount >= SWAP_COST ? 'bg-sky-500 text-white' : 'bg-stone-300 text-stone-600'
-                    }`}
-                  >
-                    {shardCount >= SWAP_COST ? '🔹换卡 / Trade' : `需 ${SWAP_COST}🔹`}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {meta.grouping ? (
+          <div className="flex flex-col gap-4">
+            {meta.grouping.order.map((key) => {
+              const groupItems = items.filter(
+                (i) => meta.grouping!.resolveGroup(i.slug) === key,
+              );
+              if (groupItems.length === 0) return null;
+              const label = meta.grouping!.labels[key];
+              const ownedInGroup = groupItems.filter((i) =>
+                ownedSet.has(i.id),
+              ).length;
+              return (
+                <section key={key} data-testid={`pack-section-${key}`}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-xl" aria-hidden="true">
+                      {label.emoji}
+                    </span>
+                    <h2 className="font-hanzi text-lg font-bold text-[var(--color-treasure-800)]">
+                      {label.zh}
+                    </h2>
+                    <span className="text-sm text-[var(--color-treasure-700)]">
+                      {label.en}
+                    </span>
+                    <span className="ml-auto text-xs font-semibold text-[var(--color-treasure-600)]">
+                      {ownedInGroup}/{groupItems.length}
+                    </span>
+                  </div>
+                  <div className="grid gap-2.5" style={gridStyle}>
+                    {groupItems.map((item) => (
+                      <PackTile key={item.id} item={item} />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            data-testid="pack-grid-with-badges"
+            className="grid gap-2.5"
+            style={gridStyle}
+          >
+            {items.map((item) => (
+              <PackTile key={item.id} item={item} />
+            ))}
+          </div>
+        )}
       </div>
 
       {swapItem ? (
