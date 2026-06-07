@@ -1,5 +1,5 @@
 import type { CollectibleItem } from '@/lib/db/collections';
-import { FLAGS_BY_SLUG } from '@/lib/collections/flagsData';
+import { FLAGS_BY_SLUG, CONTINENT_LABELS } from '@/lib/collections/flagsData';
 
 export interface FlagCardProps {
   item: CollectibleItem;
@@ -38,6 +38,8 @@ export function FlagCard({
   const emoji = flagMeta?.emoji ?? item.imageUrl ?? '🏳️';
   const capitalZh = flagMeta?.capitalZh ?? '';
   const capitalEn = flagMeta?.capitalEn ?? '';
+  const continent = flagMeta?.continent;
+  const continentLabel = continent ? CONTINENT_LABELS[continent] : null;
 
   return (
     <div
@@ -93,6 +95,20 @@ export function FlagCard({
           {item.nameEn}
         </div>
       </div>
+      {!compact && continentLabel && (
+        <div
+          className={[
+            'mt-1 flex items-center gap-1 rounded-full px-2 py-0.5',
+            size === 'lg' ? 'text-xs' : 'text-[9px]',
+            owned ? 'bg-sky-200 text-sky-900' : 'bg-stone-200 text-stone-500',
+          ].join(' ')}
+        >
+          <span aria-hidden="true">{continentLabel.emoji}</span>
+          <span className="font-hanzi">{continentLabel.zh}</span>
+          <span aria-hidden="true">·</span>
+          <span>{continentLabel.en}</span>
+        </div>
+      )}
       {!compact && capitalZh && (
         <div
           className={[

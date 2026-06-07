@@ -25,6 +25,24 @@ export const TYPE_LABELS: Record<SolarBodyType, { zh: string; en: string }> = {
   moon: { zh: '卫星', en: 'Moon' },
 };
 
+/** Display order for the grouped Solar System render (Backpack sections). */
+export const SOLAR_TYPE_ORDER: SolarBodyType[] = [
+  'star',
+  'rocky',
+  'gas',
+  'ice',
+  'moon',
+];
+
+/** Header emoji per body type (grouped-section headers). */
+export const TYPE_EMOJI: Record<SolarBodyType, string> = {
+  rocky: '🪨',
+  gas: '🌀',
+  ice: '❄️',
+  star: '☀️',
+  moon: '🌙',
+};
+
 export interface SolarBodyItem {
   slug: string;
   emoji: string;
