@@ -5,7 +5,6 @@ import {
   getRoom,
   cellZone,
   type HomeRoomId,
-  type RoomDef,
 } from '@/lib/home/rooms';
 
 describe('HOME_ROOMS structure', () => {
