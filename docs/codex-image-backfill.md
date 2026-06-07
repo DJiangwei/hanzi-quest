@@ -1,17 +1,36 @@
 # Codex handoff — image backfill for `hanzi-quest`
 
 **Repo:** `/Users/jiangwei/Claude/Chinese`  (production at `hanzi-adventure.vercel.app`)
-**Last refreshed:** 2026-06-04
+**Last refreshed:** 2026-06-07
 
 ---
 
 ## ⚡ Quick start (read this, then go)
 
-You're resuming an in-progress backfill. **283 of 426 words are already done; 143 remain.** Generate one cartoon image per remaining word, upload to Vercel Blob, write the URL back to Postgres.
+**Current status: COMPLETE.** Codex finished the image backfill on 2026-06-07. **426 of 426** words with `image_hook` now have `image_url`; no further generation, upload, database update, or week recompile is needed before Claude Code continues with the next development task.
+
+Final verification:
+
+```text
+words.image_url column: ✅ exists (query succeeded)
+total words:               426
+words with image_url NULL: 0
+  …of those, with imageHook set (eligible for backfill): 0
+```
+
+Blob URL integrity was also checked with HTTP `HEAD`: `426 / 426` URLs reachable, `0` failures.
+
+Codex used the built-in image generation model for the remaining images, following David's updated direction: high-recognition cartoon art, clear word meaning, slightly more mature for 7-9yo children, and no labels/text in the images. Local audit artifacts are retained in `tmp/codex-image-backfill/` (raw generated PNGs, resized 512x512 PNGs, capture manifest, helper scripts). This directory is untracked and can be reviewed or removed later, but it is not required for runtime.
+
+The old operational loop below is kept as historical/reference material only. Do not re-run it unless intentionally regenerating images.
+
+---
+
+## Historical quick start
 
 The minimal loop, per word:
 
-1. **Fetch** the 143 eligible rows (`image_url IS NULL AND image_hook IS NOT NULL`) — query in §1.
+1. **Fetch** the eligible rows (`image_url IS NULL AND image_hook IS NOT NULL`) — query in §1. Historically this was 143 rows on 2026-06-04; it is now 0.
 2. **Prompt** = the fixed preamble + the row's `image_hook`, verbatim — §2.
 3. **Generate** a 512×512 PNG with any provider you have working — §6.
 4. **Upload** to Blob at `words/{id}.png` (`addRandomSuffix:false, allowOverwrite:true, access:'public'`) — §4.
@@ -19,7 +38,7 @@ The minimal loop, per word:
 
 Env (`.env.local`, already populated, gitignored): `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `BLOB_STORE_ID`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`.
 
-**Fastest path if you keep the prior session's provider/script:** just re-run your driver — the SQL filter (`image_url IS NULL`) means it auto-skips the 283 already done and only does the remaining 143. No state to reset.
+**Fastest path if you keep the prior session's provider/script:** no longer applicable; the live SQL filter returns 0 eligible rows.
 
 **Done when:** `SELECT COUNT(*) FROM words WHERE image_url IS NULL AND image_hook IS NOT NULL` returns **0**. Verify with `pnpm tsx scripts/verify-image-url-column.ts` (§7).
 
@@ -33,6 +52,7 @@ The rest of this doc is the full contract (unchanged from prior runs) — skim o
 |---|---|---|---|---|
 | 2026-05-28 | 426 | 422 | 4 | Pollinations proof-of-life only; free tier blocked batch |
 | **2026-06-04** | **426** | **143** | **283** | Prior provider run cleared 283; 143 left |
+| **2026-06-07** | **426** | **0** | **426** | Codex built-in image generation completed the remaining words; DB and Blob URLs verified |
 
 If the NULL count above is stale when you start, trust the live query in §1 — that's ground truth.
 
@@ -130,11 +150,13 @@ What we've learned:
 
 **Pollinations.ai (free, key-less) — broken for batch.** Free tier enforces "1 request queued per IP", and the server-side queue holds a slot indefinitely if your first request hangs past your client timeout. Measured 0 successes across multiple concurrency=1 attempts. **Do not** use the free tier for batch. Paid sub ($5/mo at `enter.pollinations.ai`) lifts the queue limit.
 
-**Gemini API.** `GEMINI_API_KEY` is in `.env.local`. The free tier returns 429 RESOURCE_EXHAUSTED for `gemini-2.5-flash-image` — but the 283 already done suggest a working paid/billing-enabled path may already be set up. **Try this key first** — if it generates, you're done fastest. Pay-as-you-go is ~$0.039/image (≈ $5.60 for the remaining 143). Check billing at `aistudio.google.com/usage` if it 429s.
+**Gemini API (historical option, no longer needed for this backfill).** `GEMINI_API_KEY` is in `.env.local`. The free tier returns 429 RESOURCE_EXHAUSTED for `gemini-2.5-flash-image`. This was considered before Codex completed the remaining rows directly.
 
 **Other viable providers** (untested by us): OpenAI `gpt-image-1` (~$0.011 low / $0.042 medium per image, needs API credits separate from ChatGPT Plus); Vertex AI Imagen (~$0.02/image, GCP billing + service account); Replicate / fal.ai / Together (often $0.003–$0.01/image).
 
 Pick what works in your environment. The contract (prompt format, Blob path, DB column) is what matters — the provider is swappable.
+
+**Codex built-in image generation — used for final completion.** On 2026-06-04 through 2026-06-07, Codex generated the remaining images directly in-session, copied them into `tmp/codex-image-backfill/raw/`, resized to 512x512, uploaded to Vercel Blob at stable `words/{wordId}.png` paths, and guarded DB writes with `WHERE id = $id AND image_url IS NULL`.
 
 ---
 
@@ -183,7 +205,7 @@ The backfill driver at `scripts/backfill-word-images.ts` (`pnpm tsx scripts/back
 4. Prints `.` per success and `FAIL {text}: {error}` per failure
 5. Exits with final tally
 
-Reuse this driver as-is — only the imported `fetchAndUploadImage` needs to change for a new provider. Because of the `image_url IS NULL` filter, re-running automatically skips the 283 done and only processes the 143 remaining.
+Reuse this driver as-is only for future intentional regeneration/provider work. Because of the `image_url IS NULL` filter, re-running it now should find 0 eligible rows.
 
 ---
 
@@ -219,4 +241,4 @@ If you add a new provider key (e.g. `OPENAI_API_KEY`), add it to `.env.local` on
 - Spot-check 3 random `words.image_url` URLs in a browser — each renders a cartoon-kid 512×512 PNG consistent with the existing anchors
 - `pnpm typecheck && pnpm lint && pnpm test && pnpm build` are green (only if you committed code changes; pure DB writes don't trigger this)
 
-When done, drop a one-line summary back in the parent's chat (final count succeeded/failed + provider used). Then he returns here for next steps.
+Done as of 2026-06-07. Pure DB/Blob work only; no app code changes were required for this backfill.
