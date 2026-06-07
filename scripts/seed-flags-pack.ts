@@ -9,8 +9,11 @@
  *
  * What it does:
  *   1. Upserts the `flags-v1` row in `collection_packs` (slug-unique).
- *   2. Upserts 30 country rows in `collectible_items`, bilingual labels +
- *      capital info embedded in the lore lines.
+ *   2. Upserts all 193 UN member-state rows in `collectible_items`, bilingual
+ *      labels + capital info embedded in the lore lines. Re-running inserts
+ *      only the slugs not yet present (e.g. the ~163 added since the original
+ *      30). The `continent` grouping is render-derived from flagsData.ts — it
+ *      is NOT stored, so no re-seed is needed to populate it.
  *   3. The emoji flag is stored verbatim in `image_url` (the renderer uses it
  *      as a text glyph, not a URL).
  */
