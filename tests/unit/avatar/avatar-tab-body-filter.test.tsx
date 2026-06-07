@@ -94,6 +94,7 @@ const baseProps = {
   decorListings: [] as never[],
   powerupListings: [] as never[],
   powerupCounts: { hint: 0, skip: 0, streak_freeze: 0 },
+  homeShopItems: [] as never[],
 };
 
 describe('ShopBody avatar tab filter (PR #58)', () => {

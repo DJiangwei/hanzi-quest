@@ -2,7 +2,7 @@
 
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 
-export type ShopCategory = 'avatar' | 'sound' | 'pet' | 'decor' | 'powerup';
+export type ShopCategory = 'avatar' | 'sound' | 'pet' | 'decor' | 'powerup' | 'home';
 
 interface TabDef {
   id: ShopCategory;
@@ -17,6 +17,7 @@ const TABS: TabDef[] = [
   { id: 'pet', emoji: '🐦', label: '伙伴', disabled: false },
   { id: 'decor', emoji: '🏝️', label: '装饰', disabled: false },
   { id: 'powerup', emoji: '💡', label: '道具', disabled: false },
+  { id: 'home', emoji: '🏠', label: '家具', disabled: false },
 ];
 
 interface Props {

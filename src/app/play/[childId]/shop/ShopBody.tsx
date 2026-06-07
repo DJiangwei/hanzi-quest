@@ -10,9 +10,10 @@ import { ThemeChipStrip, type ThemeChipValue } from '@/components/shop/ThemeChip
 import { SoundsTabBody } from '@/components/shop/SoundsTabBody';
 import { PetsTabBody } from '@/components/shop/PetsTabBody';
 import { DecorTabBody } from '@/components/shop/DecorTabBody';
+import { HomeTabBody } from '@/components/shop/HomeTabBody';
 import { PowerupsTabBody } from '@/components/shop/PowerupsTabBody';
 import { PurchaseConfirmDialog } from '@/components/shop/PurchaseConfirmDialog';
-import type { AvatarShopListing, EquippedAvatar, SoundThemeListing } from '@/lib/db/shop';
+import type { AvatarShopListing, EquippedAvatar, SoundThemeListing, ShopItemRow } from '@/lib/db/shop';
 import type { PetShopListing } from '@/lib/db/pets';
 import type { DecorShopListing } from '@/lib/db/decor';
 import type { PowerupShopListing, PowerupCounts } from '@/lib/db/powerups';
@@ -35,6 +36,7 @@ interface Props {
   decorListings: DecorShopListing[];
   powerupListings: PowerupShopListing[];
   powerupCounts: PowerupCounts;
+  homeShopItems: ShopItemRow[];
 }
 
 export function ShopBody({
@@ -50,6 +52,7 @@ export function ShopBody({
   decorListings,
   powerupListings,
   powerupCounts,
+  homeShopItems,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ShopCategory>('avatar');
@@ -203,6 +206,14 @@ export function ShopBody({
           childId={childId}
           listings={powerupListings}
           powerupCounts={powerupCounts}
+          coinBalance={coinBalance}
+        />
+      )}
+      {activeTab === 'home' && (
+        <HomeTabBody
+          childId={childId}
+          homeShopItems={homeShopItems}
+          ownedShopItemIds={ownedIds}
           coinBalance={coinBalance}
         />
       )}

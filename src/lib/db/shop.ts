@@ -178,6 +178,7 @@ export async function purchaseShopItemInTx(
     case 'sound_theme':
     case 'pet':
     case 'decor':
+    case 'home':
       return purchaseGenericInTx(tx, childId, shopItem);
     case 'powerup':
       return purchasePowerupInTx(tx, childId, shopItem);
@@ -241,7 +242,7 @@ async function purchaseGenericInTx(
   childId: string,
   shopItem: ShopItemRow,
 ): Promise<PurchaseResult> {
-  // Ownership for sound_theme / pet / decor = presence of a shop_purchases row.
+  // Ownership for sound_theme / pet / decor / home = presence of a shop_purchases row.
   // No per-kind inventory side-effect (unlike avatar).
   const [existing] = await tx
     .select()
