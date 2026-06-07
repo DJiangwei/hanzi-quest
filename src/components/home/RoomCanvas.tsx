@@ -40,15 +40,14 @@ export function RoomCanvas({
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const room = getRoom(activeRoom);
-  if (!room) return null;
-
-  const { Backdrop } = room;
 
   // Placements for the active room only
   const roomPlacements = placements.filter((p) => p.room === activeRoom);
 
   // Build the occupied cell set (for valid-cell computation)
+  // Hooks must be called unconditionally — `room` is checked inside the memo
   const occupiedCells = useMemo(() => {
+    if (!room) return new Set<string>();
     const set = new Set<string>();
     for (const p of roomPlacements) {
       if (p.slug === liftedSlug) continue; // being moved — treat as unoccupied
@@ -59,16 +58,20 @@ export function RoomCanvas({
       }
     }
     return set;
-  }, [roomPlacements, liftedSlug]);
+  }, [room, roomPlacements, liftedSlug]);
 
   // Valid target cells for the selected item
   const validCellSet = useMemo(() => {
-    if (!selectedSlug) return new Set<string>();
+    if (!selectedSlug || !room) return new Set<string>();
     const def = getFurniture(selectedSlug);
     if (!def) return new Set<string>();
     const cells = validCells(room, def.footprint, def.surface, occupiedCells);
     return new Set(cells.map((c) => cellKey(c.x, c.y)));
   }, [selectedSlug, room, occupiedCells]);
+
+  if (!room) return null;
+
+  const { Backdrop } = room;
 
   // Handle click/tap on SVG surface to derive grid cell
   function handleSvgClick(e: React.MouseEvent<SVGSVGElement>) {
