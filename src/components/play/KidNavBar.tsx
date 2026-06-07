@@ -50,6 +50,13 @@ export function KidNavBar({ childId }: Props) {
       isActive: (p) => p.startsWith(`/play/${childId}/calendar`),
     },
     {
+      key: 'home',
+      href: `/play/${childId}/home`,
+      icon: '🏠',
+      label: '家',
+      isActive: (p) => p.startsWith(`/play/${childId}/home`),
+    },
+    {
       key: 'shop',
       href: `/play/${childId}/shop`,
       icon: '🛒',
