@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import {
-  useHintAction as hintAction,
-  useSkipAction as skipAction,
-} from '@/lib/actions/powerups';
+import { useSkipAction as skipAction } from '@/lib/actions/powerups';
 
 interface Props {
   childId: string;
-  hintCount: number;
+  /** Whether the (free) hint is already active on the current scene. */
+  hintActive: boolean;
   skipCount: number;
   sceneSupportsHint: boolean;
   weekLevelId: string;
@@ -19,7 +17,7 @@ interface Props {
 
 export function PowerupTray({
   childId,
-  hintCount,
+  hintActive,
   skipCount,
   sceneSupportsHint,
   weekLevelId,
@@ -28,12 +26,8 @@ export function PowerupTray({
   onSkipped,
 }: Props) {
   const [pending, startTransition] = useTransition();
-  const [confirming, setConfirming] = useState<'hint' | 'skip' | null>(null);
+  const [confirming, setConfirming] = useState<'skip' | null>(null);
 
-  const requestHint = () => {
-    if (hintCount === 0) return;
-    setConfirming('hint');
-  };
   const requestSkip = () => {
     if (skipCount === 0) return;
     setConfirming('skip');
@@ -41,16 +35,10 @@ export function PowerupTray({
 
   const confirm = () => {
     if (!confirming) return;
-    const kind = confirming;
     setConfirming(null);
     startTransition(async () => {
-      if (kind === 'hint') {
-        const r = await hintAction(childId);
-        if (r.ok) onHintActivated();
-      } else {
-        const r = await skipAction(childId, weekLevelId, sessionId);
-        if (r.ok) onSkipped();
-      }
+      const r = await skipAction(childId, weekLevelId, sessionId);
+      if (r.ok) onSkipped();
     });
   };
 
@@ -60,15 +48,12 @@ export function PowerupTray({
         {sceneSupportsHint && (
           <button
             type="button"
-            disabled={hintCount === 0 || pending}
-            onClick={requestHint}
-            aria-label="使用提示 / Use hint"
+            disabled={hintActive}
+            onClick={onHintActivated}
+            aria-label="使用提示 / Use hint (free)"
             className="relative flex h-14 w-14 items-center justify-center rounded-full border-4 border-amber-800/40 bg-amber-100 text-2xl shadow-lg disabled:opacity-40"
           >
             💡
-            <span className="absolute -bottom-1 -right-1 rounded-full border-2 border-amber-800/40 bg-white px-1.5 text-xs font-extrabold text-amber-900">
-              {hintCount}
-            </span>
           </button>
         )}
         <button
@@ -94,11 +79,9 @@ export function PowerupTray({
             className="rounded-2xl border-4 border-amber-800/40 bg-amber-50 p-6 text-center shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-4xl">{confirming === 'hint' ? '💡' : '⏭️'}</div>
+            <div className="text-4xl">⏭️</div>
             <p className="mt-3 text-base font-bold text-amber-950">
-              {confirming === 'hint'
-                ? '使用提示？/ Use hint?'
-                : '跳过这一关？/ Skip this scene?'}
+              跳过这一关？/ Skip this scene?
             </p>
             <div className="mt-4 flex gap-3">
               <button

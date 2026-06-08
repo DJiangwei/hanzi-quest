@@ -46,6 +46,16 @@ export class InsufficientShardsError extends Error {
   }
 }
 
+export class NoDuplicateToConvertError extends Error {
+  constructor(
+    public readonly childId: string,
+    public readonly itemId: string,
+  ) {
+    super(`Child ${childId} has no spare duplicate of item ${itemId} to convert`);
+    this.name = 'NoDuplicateToConvertError';
+  }
+}
+
 export class CardGrantAlreadyExistsError extends Error {
   constructor(
     public readonly childId: string,

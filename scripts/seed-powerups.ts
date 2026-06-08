@@ -28,17 +28,9 @@ interface PowerupSeed {
   powerupKind: 'hint' | 'skip' | 'streak_freeze';
 }
 
+// Note: 'pw-hint' was retired 2026-06-07 — hints are now free in practice, so
+// the shop no longer sells them. See scripts/retire-hint-powerup.ts.
 const POWERUPS: PowerupSeed[] = [
-  {
-    slug: 'pw-hint',
-    emoji: '💡',
-    nameZh: '提示',
-    nameEn: 'Hint',
-    descZh: '在多选题中划掉一个错答案。',
-    descEn: 'Cross out one wrong answer in multiple-choice scenes.',
-    priceCoins: 30,
-    powerupKind: 'hint',
-  },
   {
     slug: 'pw-skip',
     emoji: '⏭️',

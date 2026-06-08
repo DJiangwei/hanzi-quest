@@ -4,10 +4,10 @@ import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
 import {
   getPackBySlug,
-  getShardBalance,
   listChildCollection,
   listPackItems,
 } from '@/lib/db/collections';
+import { getGlobalShards } from '@/lib/db/grants';
 import { PackPageBody } from '@/components/play/PackPageBody';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 
@@ -32,7 +32,7 @@ export default async function PackPage({ params }: PageProps) {
     listPackItems(pack.id),
     listChildCollection(childId, pack.id),
     getCoinBalance(childId),
-    getShardBalance(childId, pack.id),
+    getGlobalShards(childId),
   ]);
 
   const ownedItemIds = owned.map((o) => o.id);

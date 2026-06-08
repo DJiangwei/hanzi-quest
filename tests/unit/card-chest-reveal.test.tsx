@@ -31,10 +31,10 @@ describe('CardChestReveal', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
-  it('shows a shard note for a duplicate', () => {
+  it('shows a duplicate→shard note for a duplicate', () => {
     render(<CardChestReveal cards={[card({ isDupe: true, shardsAfter: 3 })]} onDone={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /开启|open/i }));
-    expect(screen.getByText(/碎片|卡屑|shard/i)).toBeInTheDocument();
+    expect(screen.getByText(/重复卡/)).toBeInTheDocument();
   });
 
   it('renders nothing for an empty queue', () => {

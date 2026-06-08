@@ -124,9 +124,9 @@ export function SceneRunner({
   const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
   const [activeXp, setActiveXp] = useState<{ gained: number; level: number; leveledUp: boolean } | null>(null);
   const [pending, startTransition] = useTransition();
-  const [hintCount, setHintCount] = useState(initialPowerupCounts.hint);
   const [skipCount, setSkipCount] = useState(initialPowerupCounts.skip);
-  // Track which level index the hint was activated for, so it auto-clears on level change.
+  // Hint is FREE in practice (2026-06-07): no token, no server call. Track which
+  // level index it was activated for, so it auto-clears on level change.
   const [hintActivatedAtIndex, setHintActivatedAtIndex] = useState<number | null>(null);
   const hintRequested = hintActivatedAtIndex === index;
   const [starterDismissed, setStarterDismissed] = useState(false);
@@ -273,8 +273,11 @@ export function SceneRunner({
   const segment = currentLevel.config.segment as Segment | undefined;
   const segmentChip = segment ? segmentLabels[segment] : null;
 
+  // Hint is free in practice but NOT offered during the boss (David, 2026-06-07).
   const sceneSupportsHint =
-    currentLevel.sceneType !== 'flashcard' && currentLevel.sceneType !== 'word_match';
+    currentLevel.sceneType !== 'flashcard' &&
+    currentLevel.sceneType !== 'word_match' &&
+    currentLevel.sceneType !== 'boss';
 
   let body: React.ReactNode;
   switch (currentLevel.sceneType) {
@@ -521,13 +524,12 @@ export function SceneRunner({
         {sessionId && (
           <PowerupTray
             childId={childId}
-            hintCount={hintCount}
+            hintActive={hintRequested}
             skipCount={skipCount}
             sceneSupportsHint={sceneSupportsHint}
             weekLevelId={currentLevel.id}
             sessionId={sessionId}
             onHintActivated={() => {
-              setHintCount((n) => n - 1);
               setHintActivatedAtIndex(index);
             }}
             onSkipped={() => {
@@ -547,7 +549,7 @@ export function SceneRunner({
           <div className="fixed left-1/2 top-20 z-40 -translate-x-1/2 rounded-2xl border-4 border-amber-800/40 bg-amber-100 px-4 py-3 text-center text-sm font-bold text-amber-950 shadow-2xl">
             🎁 礼物! / Starter pack!
             <div className="mt-1 text-xs font-semibold text-amber-900">
-              💡 + ⏭️ 在你的工具栏 / in your tray
+              ⏭️ 跳过道具在工具栏 · 💡 提示免费 / Skip in your tray · hints are free
             </div>
           </div>
         )}

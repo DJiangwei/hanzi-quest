@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { weekProgress } from '@/db/schema';
+import { collectibleItems, collectionPacks } from '@/db/schema/collections';
 import { requireChild } from '@/lib/auth/guards';
 import { getPackBySlug } from '@/lib/db/collections';
 import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
@@ -11,7 +12,7 @@ import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { checkAndGrantTrophies } from '@/lib/db/trophies';
 import { todayUtcIso } from '@/lib/db/streaks';
-import { pullCardInTx, swapShardsInTx, grantGiftPackInTx, type CardGrantResult, type CardGrantSkipped, type GiftCard } from '@/lib/db/grants';
+import { pullCardInTx, swapShardsInTx, convertDuplicateInTx, grantGiftPackInTx, type CardGrantResult, type CardGrantSkipped, type GiftCard } from '@/lib/db/grants';
 import { getActivityForRange } from '@/lib/db/activity';
 import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 import { countCheckInDays, WEEKLY_CHECKIN_THRESHOLD } from '@/lib/db/checkins';
@@ -120,8 +121,20 @@ export async function pullCardForChild(
   );
   if (result.granted) {
     revalidatePath(`/play/${childId}/collection/${result.packSlug}`);
+    // A grant may have completed a pack — record the trophy (idempotent).
+    // Guarded + fire-and-forget: a trophy failure must never break the grant.
+    void safePackCompleteTrophy(childId, result.packSlug);
   }
   return result;
+}
+
+/** Guarded pack-complete trophy check. Never throws. */
+async function safePackCompleteTrophy(childId: string, packSlug: string): Promise<void> {
+  try {
+    await checkAndGrantTrophies(childId, { kind: 'pack-complete', packSlug });
+  } catch (err) {
+    console.error('[gacha] pack-complete trophy check failed:', err);
+  }
 }
 
 export async function swapShardsForItem(
@@ -133,6 +146,38 @@ export async function swapShardsForItem(
 > {
   const { child } = await requireChild(childId);
   const result = await db.transaction((tx) => swapShardsInTx(tx, child.id, itemId));
+  if (result.ok) {
+    revalidatePath(`/play/${child.id}/collection`);
+    // Resolve the swapped item's pack and check pack-completion. Guarded — a
+    // secondary-lookup failure must never break a successful swap.
+    try {
+      const item = await db
+        .select({ packSlug: collectionPacks.slug })
+        .from(collectibleItems)
+        .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
+        .where(eq(collectibleItems.id, itemId));
+      const packSlug = item[0]?.packSlug;
+      if (packSlug) {
+        revalidatePath(`/play/${child.id}/collection/${packSlug}`);
+        void safePackCompleteTrophy(child.id, packSlug);
+      }
+    } catch (err) {
+      console.error('[gacha] swap pack-complete check failed:', err);
+    }
+  }
+  return result;
+}
+
+/**
+ * Convert one spare DUPLICATE of `itemId` into 1 universal shard. User-tappable
+ * → requires auth (requireChild). Rejects when the child has no spare copy.
+ */
+export async function convertDuplicateToShard(
+  childId: string,
+  itemId: string,
+): Promise<{ ok: true; count: number; shards: number } | { ok: false; reason: 'no_duplicate' }> {
+  const { child } = await requireChild(childId);
+  const result = await db.transaction((tx) => convertDuplicateInTx(tx, child.id, itemId));
   if (result.ok) {
     revalidatePath(`/play/${child.id}/collection`);
   }
@@ -163,8 +208,9 @@ export async function claimWeeklyGiftIfDue(
   }
 
   revalidatePath(`/play/${childId}`);
-  for (const c of result.cards) {
-    revalidatePath(`/play/${childId}/collection/${c.packSlug}`);
+  for (const slug of new Set(result.cards.map((c) => c.packSlug))) {
+    revalidatePath(`/play/${childId}/collection/${slug}`);
+    void safePackCompleteTrophy(childId, slug);
   }
   return { cards: result.cards };
 }

@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShardPill } from './ShardPill';
 import { SwapDialog } from './SwapDialog';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 import { getPackMeta } from '@/lib/collections/packRegistry';
-import { swapShardsForItem } from '@/lib/actions/gacha';
+import { swapShardsForItem, convertDuplicateToShard } from '@/lib/actions/gacha';
 
 /**
  * Shards needed to swap for one card. Mirrors `SHARD_SWAP_COST` in
@@ -30,7 +30,7 @@ interface Props {
   /** Full owned records with count — used for ×N dupe badges. */
   ownedItems: OwnedCollectibleItem[];
   balance: number;
-  /** Shard balance for this child × pack pair. */
+  /** Universal (global) shard wallet for this child — spendable on any pack. */
   shardCount: number;
 }
 
@@ -64,13 +64,23 @@ export function PackPageBody({
   );
 
   const [swapItem, setSwapItem] = useState<CollectibleItem | null>(null);
+  const [, startConvert] = useTransition();
+
+  const convert = (itemId: string) => {
+    startConvert(async () => {
+      await convertDuplicateToShard(childId, itemId);
+      // revalidatePath in the action refreshes the server data; re-render to
+      // reflect the new ×N count + shard pill.
+      router.refresh();
+    });
+  };
 
   const gridStyle = {
     gridTemplateColumns: `repeat(${meta.gridColumns ?? 3}, minmax(0, 1fr))`,
   };
 
-  // One tile = card + ×N dupe badge + swap chip. Identical in the flat and
-  // grouped layouts — closes over meta/countById/ownedSet/shardCount/setSwapItem.
+  // One tile = card + ×N dupe badge + (owned dupe → convert chip | unowned →
+  // swap chip). Identical in the flat and grouped layouts.
   function PackTile({ item }: { item: CollectibleItem }) {
     const Card = meta!.ItemCard;
     const count = countById.get(item.id) ?? 0;
@@ -82,6 +92,16 @@ export function PackPageBody({
           <span className="absolute right-0.5 top-0.5 z-10 rounded-full bg-sky-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white">
             ×{count}
           </span>
+        )}
+        {isOwned && count > 1 && (
+          <button
+            type="button"
+            data-testid="convert-chip"
+            onClick={() => convert(item.id)}
+            className="absolute inset-x-1 bottom-1 z-10 min-h-6 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold text-white"
+          >
+            ♻️ 换碎片 / To shard
+          </button>
         )}
         {!isOwned && (
           <button
@@ -140,11 +160,12 @@ export function PackPageBody({
         </p>
       </header>
 
-      {items.some((i) => !ownedSet.has(i.id)) && (
-        <p className="text-center text-xs font-medium text-[var(--color-treasure-700)]">
-          用 🔹 碎片换卡片 / Trade shards for any card
+      <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-center text-[11px] font-medium leading-snug text-amber-900">
+        <p>重复的卡可以换成 🔹 碎片，{SWAP_COST} 个碎片换一张你想要的新卡。</p>
+        <p className="italic opacity-80">
+          Turn duplicate cards into 🔹 shards — {SWAP_COST} shards trade for any new card you want.
         </p>
-      )}
+      </div>
 
       <div className="rounded-2xl border border-[#c89f5e] bg-[linear-gradient(180deg,#f5ead0_0%,#ead7a8_100%)] p-4">
         {meta.grouping ? (

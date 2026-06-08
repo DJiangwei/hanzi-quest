@@ -80,3 +80,17 @@ export const shardBalances = pgTable(
   },
   (t) => [primaryKey({ columns: [t.childId, t.packId] })],
 );
+
+/**
+ * Universal (global) shard wallet — one row per child (2026-06-07 economy
+ * redesign). Replaces the per-pack `shard_balances` as the live balance:
+ * duplicates are manually converted to shards (1 dupe = 1 shard) and 3 shards
+ * trade for ANY unowned card from ANY pack. `shard_balances` is now dead but
+ * retained (append-only); its balances were summed into here at migration time.
+ */
+export const childShards = pgTable('child_shards', {
+  childId: uuid('child_id')
+    .primaryKey()
+    .references(() => childProfiles.id, { onDelete: 'cascade' }),
+  shards: integer('shards').notNull().default(0),
+});

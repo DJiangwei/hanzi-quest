@@ -19,6 +19,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/actions/gacha', () => ({
   swapShardsForItem: vi.fn().mockResolvedValue({ ok: true, shardsRemaining: 2 }),
+  convertDuplicateToShard: vi.fn().mockResolvedValue({ ok: true, count: 1, shards: 1 }),
 }));
 
 import { PackPageBody } from '@/components/play/PackPageBody';
@@ -118,8 +119,41 @@ describe('swap-chip: owned card', () => {
   });
 });
 
-describe('swap-chip: header hint', () => {
-  it('shows the bilingual hint when there is at least one unowned item', () => {
+describe('convert-chip: owned duplicates', () => {
+  it('shows a 换碎片 chip on an owned card with count > 1', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['item-owned']}
+        ownedItems={[{ ...items[0], count: 2, firstObtainedAt: new Date() }]}
+        balance={0}
+        shardCount={0}
+      />,
+    );
+    const chips = screen.getAllByTestId('convert-chip');
+    expect(chips).toHaveLength(1);
+  });
+
+  it('does NOT show a convert chip when every owned card is a single copy', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['item-owned']}
+        ownedItems={ownedItems} // count: 1
+        balance={0}
+        shardCount={0}
+      />,
+    );
+    expect(screen.queryByTestId('convert-chip')).toBeNull();
+  });
+});
+
+describe('shard help text', () => {
+  it('shows the bilingual convert/swap explainer', () => {
     render(
       <PackPageBody
         childId="c1"
@@ -131,12 +165,11 @@ describe('swap-chip: header hint', () => {
         shardCount={0}
       />,
     );
-    expect(
-      screen.getByText(/碎片换卡片|Trade shards/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/重复的卡可以换成/)).toBeInTheDocument();
+    expect(screen.getByText(/Turn duplicate cards into/)).toBeInTheDocument();
   });
 
-  it('does NOT show the hint when all items are owned', () => {
+  it('still shows the explainer when all items are owned (shards are universal)', () => {
     render(
       <PackPageBody
         childId="c1"
@@ -151,6 +184,6 @@ describe('swap-chip: header hint', () => {
         shardCount={5}
       />,
     );
-    expect(screen.queryByText(/碎片换卡片|Trade shards/)).toBeNull();
+    expect(screen.getByText(/重复的卡可以换成/)).toBeInTheDocument();
   });
 });

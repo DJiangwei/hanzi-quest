@@ -66,7 +66,10 @@ export async function grantPowerup(
     });
 }
 
-/** If inventory is empty for this child, grant 1 hint + 1 skip. Returns true if granted. */
+/**
+ * If inventory is empty for this child, grant 1 skip. Returns true if granted.
+ * (Hint is free in practice as of 2026-06-07, so it's no longer granted here.)
+ */
 export async function grantStarterPowerupsIfNeeded(childId: string): Promise<boolean> {
   return db.transaction(async (tx) => {
     const existing = await tx
@@ -74,7 +77,6 @@ export async function grantStarterPowerupsIfNeeded(childId: string): Promise<boo
       .from(powerupInventory)
       .where(eq(powerupInventory.childId, childId));
     if (existing.length > 0) return false;
-    await grantPowerup(tx, childId, 'hint');
     await grantPowerup(tx, childId, 'skip');
     return true;
   });
