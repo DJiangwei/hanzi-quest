@@ -423,6 +423,14 @@ export async function finishLevelAction(
     (c): c is RevealCard => c !== null,
   );
 
+  // A boss/perfect-week card may have completed a pack — surface the trophy in
+  // this response so the toast fires the moment the pack is finished.
+  for (const slug of new Set(cardGrants.map((c) => c.packSlug))) {
+    collectedTrophies.push(
+      ...(await checkAndGrantTrophies(child.id, { kind: 'pack-complete', packSlug: slug })),
+    );
+  }
+
   // ─── XP + Quest ticks (additive, guarded, fire-and-forget) ──────────────
   // Run AFTER all primary DB writes. A failure here must never break the action.
   let levelXpGained = 0;

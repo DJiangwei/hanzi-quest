@@ -4,9 +4,9 @@ import { db } from '@/db';
 import { childCardGrantsDaily, cardGrantsLog } from '@/db/schema/gacha';
 import {
   childCollections,
+  childShards,
   collectibleItems,
   collectionPacks,
-  shardBalances,
 } from '@/db/schema/collections';
 
 export const WEEKLY_CARD_CAP = 10; // dead since card-economy-v2 — daily cap replaced it
@@ -157,7 +157,9 @@ export async function pullCardInTx(
   const picked = weightedRandomPick(catalog, ownedSet, rng);
   const isDupe = ownedSet.has(picked.id);
 
-  // 4. Upsert child_collections.
+  // 4. Upsert child_collections. Duplicates only bump the ×N count — shards are
+  //    no longer auto-granted (2026-06-07 economy redesign: the kid manually
+  //    converts spare duplicates to shards via convertDuplicateInTx).
   if (isDupe) {
     await tx
       .update(childCollections)
@@ -170,20 +172,6 @@ export async function pullCardInTx(
       );
   } else {
     await tx.insert(childCollections).values({ childId, itemId: picked.id, count: 1 });
-  }
-
-  // 5. Shard grant on dupe.
-  let shardsAfter = 0;
-  if (isDupe) {
-    const [shardRow] = await tx
-      .insert(shardBalances)
-      .values({ childId, packId: picked.packId, shards: 1 })
-      .onConflictDoUpdate({
-        target: [shardBalances.childId, shardBalances.packId],
-        set: { shards: sql`${shardBalances.shards} + 1` },
-      })
-      .returning({ shards: shardBalances.shards });
-    shardsAfter = shardRow?.shards ?? 1;
   }
 
   // 6. Increment daily counter (upsert — safe for first-of-day race)
@@ -206,7 +194,7 @@ export async function pullCardInTx(
     loreZh: picked.loreZh,
     loreEn: picked.loreEn,
     isDupe,
-    shardsAfter,
+    shardsAfter: 0, // shards are no longer auto-granted on dupe — see redesign note
     cardsToday: currentCount + 1,
   };
 }
@@ -287,7 +275,7 @@ export async function grantGiftPackInTx(
     const picked = weightedRandomPick(catalog, ownedSet, rng);
     const isDupe = ownedSet.has(picked.id);
 
-    // 5. Upsert child_collections.
+    // 5. Upsert child_collections. Duplicates only bump ×N — no auto shards.
     if (isDupe) {
       await tx
         .update(childCollections)
@@ -298,28 +286,71 @@ export async function grantGiftPackInTx(
       ownedSet.add(picked.id);
     }
 
-    // 6. Shard grant on dupe.
-    let shardsAfter = 0;
-    if (isDupe) {
-      const [shardRow] = await tx
-        .insert(shardBalances)
-        .values({ childId, packId: picked.packId, shards: 1 })
-        .onConflictDoUpdate({
-          target: [shardBalances.childId, shardBalances.packId],
-          set: { shards: sql`${shardBalances.shards} + 1` },
-        })
-        .returning({ shards: shardBalances.shards });
-      shardsAfter = shardRow?.shards ?? 1;
-    }
-
-    cards.push({ itemId: picked.id, packId: picked.packId, packSlug: picked.packSlug, slug: picked.slug, nameZh: picked.nameZh, nameEn: picked.nameEn, loreZh: picked.loreZh, loreEn: picked.loreEn, isDupe, shardsAfter });
+    cards.push({ itemId: picked.id, packId: picked.packId, packSlug: picked.packSlug, slug: picked.slug, nameZh: picked.nameZh, nameEn: picked.nameEn, loreZh: picked.loreZh, loreEn: picked.loreEn, isDupe, shardsAfter: 0 });
   }
 
   return { granted: true, cards };
 }
 
+/** Read a child's universal shard wallet (0 if no row yet). */
+export async function getGlobalShards(childId: string): Promise<number> {
+  const rows = await db
+    .select({ shards: childShards.shards })
+    .from(childShards)
+    .where(eq(childShards.childId, childId));
+  return rows[0]?.shards ?? 0;
+}
+
 /**
- * Trade SHARD_SWAP_COST shards for a chosen unowned item.
+ * Convert one spare DUPLICATE of `itemId` into 1 universal shard.
+ * Requires the child to own the item with count >= 2 (can't scrap the last
+ * copy). Decrements the ×N count by 1 and adds +1 to the global wallet.
+ */
+export async function convertDuplicateInTx(
+  tx: Tx,
+  childId: string,
+  itemId: string,
+): Promise<
+  | { ok: true; count: number; shards: number }
+  | { ok: false; reason: 'no_duplicate' }
+> {
+  const owned = await tx
+    .select({ count: childCollections.count })
+    .from(childCollections)
+    .where(
+      and(
+        eq(childCollections.childId, childId),
+        eq(childCollections.itemId, itemId),
+      ),
+    )
+    .for('update');
+  const count = owned[0]?.count ?? 0;
+  if (count < 2) return { ok: false, reason: 'no_duplicate' };
+
+  await tx
+    .update(childCollections)
+    .set({ count: sql`${childCollections.count} - 1` })
+    .where(
+      and(
+        eq(childCollections.childId, childId),
+        eq(childCollections.itemId, itemId),
+      ),
+    );
+
+  const [walletRow] = await tx
+    .insert(childShards)
+    .values({ childId, shards: 1 })
+    .onConflictDoUpdate({
+      target: childShards.childId,
+      set: { shards: sql`${childShards.shards} + 1` },
+    })
+    .returning({ shards: childShards.shards });
+
+  return { ok: true, count: count - 1, shards: walletRow?.shards ?? 1 };
+}
+
+/**
+ * Trade SHARD_SWAP_COST universal shards for a chosen unowned item (any pack).
  */
 export async function swapShardsInTx(
   tx: Tx,
@@ -330,11 +361,10 @@ export async function swapShardsInTx(
   | { ok: false; reason: 'insufficient_shards' | 'already_owned' | 'item_not_found' }
 > {
   const items = await tx
-    .select({ id: collectibleItems.id, packId: collectibleItems.packId })
+    .select({ id: collectibleItems.id })
     .from(collectibleItems)
     .where(eq(collectibleItems.id, itemId));
   if (items.length === 0) return { ok: false, reason: 'item_not_found' };
-  const packId = items[0].packId;
 
   const owned = await tx
     .select({ itemId: childCollections.itemId })
@@ -348,21 +378,17 @@ export async function swapShardsInTx(
   if (owned.length > 0) return { ok: false, reason: 'already_owned' };
 
   const balRows = await tx
-    .select({ shards: shardBalances.shards })
-    .from(shardBalances)
-    .where(
-      and(eq(shardBalances.childId, childId), eq(shardBalances.packId, packId)),
-    )
+    .select({ shards: childShards.shards })
+    .from(childShards)
+    .where(eq(childShards.childId, childId))
     .for('update');
   const shards = balRows[0]?.shards ?? 0;
   if (shards < SHARD_SWAP_COST) return { ok: false, reason: 'insufficient_shards' };
 
   await tx
-    .update(shardBalances)
+    .update(childShards)
     .set({ shards: shards - SHARD_SWAP_COST })
-    .where(
-      and(eq(shardBalances.childId, childId), eq(shardBalances.packId, packId)),
-    );
+    .where(eq(childShards.childId, childId));
   await tx.insert(childCollections).values({ childId, itemId, count: 1 });
 
   return { ok: true, shardsRemaining: shards - SHARD_SWAP_COST };

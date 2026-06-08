@@ -32,7 +32,9 @@ const ZODIAC_SLUG_SET = new Set<string>(ZODIAC_SLUGS);
 
 type Phase = 'shake' | 'open' | 'reveal';
 
-export function TreasureChestReveal({ item, wasDuplicate, shardsAfter }: Props) {
+// `shardsAfter` is accepted for back-compat but no longer shown — shards are
+// earned by manual duplicate conversion, not at grant time (2026-06-07).
+export function TreasureChestReveal({ item, wasDuplicate }: Props) {
   const reduced = useReducedMotion();
   const [phase, setPhase] = useState<Phase>(reduced ? 'reveal' : 'shake');
 
@@ -104,7 +106,10 @@ export function TreasureChestReveal({ item, wasDuplicate, shardsAfter }: Props) 
 
             {wasDuplicate && (
               <div className="mt-3 text-center text-sm font-semibold text-[#d05a1c]">
-                +1 卡屑{shardsAfter !== null ? ` · ${shardsAfter}/100` : ''}
+                重复卡 · 可在背包换 🔹 碎片
+                <span className="mt-0.5 block text-[11px] font-medium italic opacity-80">
+                  Duplicate — convert to a 🔹 shard in your Backpack
+                </span>
               </div>
             )}
           </m.div>

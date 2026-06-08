@@ -42,7 +42,7 @@ describe('TreasureChestReveal', () => {
     expect(screen.getByText(/Rabbit/i)).toBeInTheDocument();
   });
 
-  it('shows "+1 卡屑" overlay when wasDuplicate=true', () => {
+  it('shows the duplicate→shard note when wasDuplicate=true', () => {
     vi.mocked(useReducedMotion).mockReturnValue(false);
     render(
       <>
@@ -51,7 +51,7 @@ describe('TreasureChestReveal', () => {
       </>,
     );
     act(() => { vi.advanceTimersByTime(1500); });
-    expect(screen.getByText(/\+1 卡屑/)).toBeInTheDocument();
+    expect(screen.getByText(/重复卡/)).toBeInTheDocument();
   });
 
   it('reduced-motion path renders the reveal immediately (no entrance animation gating)', () => {
