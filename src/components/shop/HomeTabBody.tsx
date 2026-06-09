@@ -51,7 +51,7 @@ export function HomeTabBody({
         await purchaseShopItemAction(shopItemId, { childId });
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : '购买失败');
+        setError(e instanceof Error ? e.message : '购买失败 / Purchase failed');
       }
     });
   };
@@ -87,7 +87,7 @@ export function HomeTabBody({
 
               if (!shopItem) {
                 // seed not yet run — show placeholder
-                actionLabel = '即将上线';
+                actionLabel = '即将上线 / Coming soon';
                 actionDisabled = true;
               } else if (isOwned) {
                 actionLabel = '已购买 / Owned';
@@ -144,7 +144,7 @@ export function HomeTabBody({
                         {furniture.nameEn}
                       </div>
                       <div className="text-xs text-amber-700">
-                        {w > 1 || h > 1 ? `${w}×${h} 格` : '1×1 格'}
+                        {w > 1 || h > 1 ? `${w}×${h} 格 / cells` : '1×1 格 / cell'}
                       </div>
                     </div>
                   </div>

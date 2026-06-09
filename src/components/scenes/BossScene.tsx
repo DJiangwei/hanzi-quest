@@ -154,12 +154,18 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
         <Creature state="idle" size={200} />
         <h2 className="font-hanzi text-3xl font-bold text-[var(--color-bad)]">
           海怪赢了这局！
+          <span className="mt-1 block text-base font-semibold opacity-80">
+            The sea beast won this round!
+          </span>
         </h2>
         <p className="text-base text-[var(--color-sand-900)]">
           你的勇气未变，重新再战吧。
+          <span className="mt-0.5 block text-sm opacity-75">
+            Your courage is unshaken — fight again.
+          </span>
         </p>
         <WoodSignButton size="lg" onClick={reset}>
-          ⚓ 再战 (免费)
+          ⚓ 再战 (免费) / Fight again (free)
         </WoodSignButton>
       </main>
     );

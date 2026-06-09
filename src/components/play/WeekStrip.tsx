@@ -66,7 +66,7 @@ export function WeekStrip({ activity, todayIso, childId, checkInDays }: Props) {
         >
           {checkInDays >= WEEKLY_CHECKIN_THRESHOLD
             ? '🎁 大礼包已达成 / Weekly gift unlocked'
-            : `🎁 本周签到 ${Math.min(checkInDays, WEEKLY_CHECKIN_THRESHOLD)}/${WEEKLY_CHECKIN_THRESHOLD}`}
+            : `🎁 本周签到 / Weekly check-in ${Math.min(checkInDays, WEEKLY_CHECKIN_THRESHOLD)}/${WEEKLY_CHECKIN_THRESHOLD}`}
         </p>
       )}
     </div>

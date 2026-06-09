@@ -28,7 +28,7 @@ export function KidNavBar({ childId }: Props) {
       key: 'map',
       href: `/play/${childId}`,
       icon: '🏝️',
-      label: 'Map',
+      label: '地图 / Map',
       isActive: (p) =>
         p === `/play/${childId}` ||
         p.startsWith(`/play/${childId}/week`) ||
@@ -39,28 +39,28 @@ export function KidNavBar({ childId }: Props) {
       key: 'backpack',
       href: `/play/${childId}/collection`,
       icon: '🎒',
-      label: '背包',
+      label: '背包 / Bag',
       isActive: (p) => p.startsWith(`/play/${childId}/collection`),
     },
     {
       key: 'calendar',
       href: `/play/${childId}/calendar`,
       icon: '📅',
-      label: '日历',
+      label: '日历 / Calendar',
       isActive: (p) => p.startsWith(`/play/${childId}/calendar`),
     },
     {
       key: 'home',
       href: `/play/${childId}/home`,
       icon: '🏠',
-      label: '家',
+      label: '家 / Home',
       isActive: (p) => p.startsWith(`/play/${childId}/home`),
     },
     {
       key: 'shop',
       href: `/play/${childId}/shop`,
       icon: '🛒',
-      label: '商店',
+      label: '商店 / Shop',
       isActive: (p) => p.startsWith(`/play/${childId}/shop`),
     },
   ];
@@ -88,14 +88,14 @@ export function KidNavBar({ childId }: Props) {
               prefetch
               aria-current={active ? 'page' : undefined}
               onClick={(e) => onTabClick(e, tab.href, active)}
-              className="flex min-w-14 flex-col items-center gap-0.5 px-2 py-1 transition-colors"
+              className="flex min-w-[52px] flex-col items-center gap-0.5 px-1 py-1 transition-colors"
             >
               <span className="text-2xl leading-none">{tab.icon}</span>
               <span
                 className={
                   active
-                    ? 'text-xs font-bold text-[var(--color-ocean-700)]'
-                    : 'text-xs font-medium text-[var(--color-sand-600)]'
+                    ? 'whitespace-nowrap text-[10px] font-bold leading-tight text-[var(--color-ocean-700)]'
+                    : 'whitespace-nowrap text-[10px] font-medium leading-tight text-[var(--color-sand-600)]'
                 }
               >
                 {tab.label}
@@ -112,7 +112,7 @@ export function KidNavBar({ childId }: Props) {
         })}
         <Link
           href="/parent"
-          aria-label="parent gear"
+          aria-label="设置 / Settings"
           className="ml-1 flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-sand-500)] transition-colors hover:text-[var(--color-sand-700)]"
         >
           <span className="text-lg">⚙️</span>

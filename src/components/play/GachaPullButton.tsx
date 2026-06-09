@@ -28,7 +28,7 @@ export function GachaPullButton({ balance, cost, packSlug, childId, onResult }: 
         const result = await pullPaid(packSlug, { childId });
         onResult(result);
       } catch (e) {
-        setError(e instanceof Error ? e.message : '抽卡失败');
+        setError(e instanceof Error ? e.message : '抽卡失败 / Draw failed');
       }
     });
   };
@@ -40,7 +40,7 @@ export function GachaPullButton({ balance, cost, packSlug, childId, onResult }: 
         onClick={handleClick}
         disabled={insufficient || pending}
       >
-        {pending ? '抽卡中…' : `抽卡 ${cost} 🪙`}
+        {pending ? '抽卡中… / Drawing…' : `抽卡 / Draw ${cost} 🪙`}
       </WoodSignButton>
       {error && <span className="text-xs text-[var(--color-bad)]">{error}</span>}
     </div>

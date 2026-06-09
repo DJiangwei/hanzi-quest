@@ -59,7 +59,7 @@ export function LevelFanfare({
         </span>
       </p>
       <WoodSignButton size="lg" variant="primary" onClick={onContinue}>
-        回地图
+        回地图 / Back to map
       </WoodSignButton>
     </main>
   );

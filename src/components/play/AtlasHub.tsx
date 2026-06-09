@@ -79,7 +79,7 @@ export function AtlasHub({ childId, halls, recentItems = [], nowMs = 0 }: Props)
             <div className="rounded-b-[1.4rem] bg-white/90 px-5 py-3">
               <div className="flex items-center justify-end gap-3">
                 <span className="text-sm font-bold text-amber-900 transition group-hover:translate-x-0.5">
-                  进入 →
+                  进入 / Open →
                 </span>
               </div>
             </div>

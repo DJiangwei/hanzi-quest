@@ -5,7 +5,7 @@ export default function StoryLoading() {
       <p className="text-lg font-medium text-amber-900">
         Captain Yinuo&apos;s Log is being written…
       </p>
-      <p className="text-sm text-stone-600">⏳ 故事正在写...</p>
+      <p className="text-sm text-stone-600">⏳ 故事正在写... / Writing your story…</p>
     </div>
   );
 }

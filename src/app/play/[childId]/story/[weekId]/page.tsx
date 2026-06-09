@@ -46,7 +46,7 @@ export default async function StoryChapterPage({ params }: PageProps) {
           href={`/play/${child.id}`}
           className="self-start text-sm text-stone-600 hover:text-stone-900"
         >
-          ← 回家
+          ← 回家 / Home
         </Link>
         <div className="rounded-3xl bg-rose-50 px-6 py-6">
           <p className="text-lg font-medium text-rose-800">
@@ -102,7 +102,7 @@ export default async function StoryChapterPage({ params }: PageProps) {
         href={`/play/${child.id}`}
         className="self-start text-sm text-stone-600 hover:text-stone-900"
       >
-        ← 回家
+        ← 回家 / Home
       </Link>
       <ChapterCard
         equippedAvatar={equippedAvatar}
@@ -115,7 +115,7 @@ export default async function StoryChapterPage({ params }: PageProps) {
         href={`/play/${child.id}`}
         className="self-center rounded-full bg-amber-600 px-6 py-2 text-white shadow"
       >
-        回家
+        回家 / Home
       </Link>
       <MarkChapterReadOnMount
         chapterId={chapter.id}

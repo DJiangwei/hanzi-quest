@@ -65,7 +65,7 @@ export function WordMatchScene({ pairs, onComplete }: Props) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-6">
-      <p className="text-base text-zinc-600">把字和词组配对</p>
+      <p className="text-base text-zinc-600">把字和词组配对 / Match characters to words</p>
       <div className="flex w-full max-w-md flex-col gap-3">
         {orderedHanzi.map((h, rowIdx) => {
           const matchedColor = colorFor(h.id);

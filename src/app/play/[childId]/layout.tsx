@@ -35,7 +35,7 @@ export default async function PlayLayout({ children, params }: LayoutProps) {
         {/* Transparent placeholder keeps flex layout balanced now that ← Parent is removed */}
         <span className="w-16" aria-hidden />
         <span className="font-hanzi text-base font-bold tracking-wide text-[var(--color-ocean-900)]">
-          汉字探险
+          汉字探险 / Hanzi Quest
         </span>
         <ShopHudButton childId={childId} />
       </header>

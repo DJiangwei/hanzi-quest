@@ -79,7 +79,7 @@ describe('PurchaseConfirmDialog', () => {
     );
     const confirm = screen.getByRole('button', { name: /买/i });
     expect(confirm).toBeDisabled();
-    expect(screen.getByText('再赚 500 个金币就能买啦！')).toBeInTheDocument();
+    expect(screen.getByText(/再赚 500 个金币就能买啦/)).toBeInTheDocument();
   });
 
   it('calls onConfirm when the confirm button is pressed', () => {
@@ -95,7 +95,7 @@ describe('PurchaseConfirmDialog', () => {
         onCancel={() => {}}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /买 🪙 80/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Buy 🪙 80/i }));
     expect(onConfirm).toHaveBeenCalledOnce();
   });
 
@@ -113,8 +113,8 @@ describe('PurchaseConfirmDialog', () => {
         onCancel={onCancel}
       />,
     );
-    expect(screen.getByText('...买中')).toBeInTheDocument();
-    const cancel = screen.getByRole('button', { name: '再想想' });
+    expect(screen.getByText(/买中/)).toBeInTheDocument();
+    const cancel = screen.getByRole('button', { name: /再想想/ });
     fireEvent.click(cancel);
     expect(onCancel).not.toHaveBeenCalled();
   });

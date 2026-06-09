@@ -22,7 +22,7 @@ export function AvatarRender({
   equipped,
   size = 72,
   className,
-  label = '我的形象',
+  label = '我的形象 / My avatar',
 }: AvatarRenderProps) {
   const clipId = `avatar-clip-${useId().replace(/:/g, '')}`;
 

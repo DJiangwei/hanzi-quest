@@ -12,12 +12,12 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-  { id: 'avatar', emoji: '👒', label: '装扮', disabled: false },
-  { id: 'sound', emoji: '🎵', label: '音效', disabled: false },
-  { id: 'pet', emoji: '🐦', label: '伙伴', disabled: false },
-  { id: 'decor', emoji: '🏝️', label: '装饰', disabled: false },
-  { id: 'powerup', emoji: '💡', label: '道具', disabled: false },
-  { id: 'home', emoji: '🏠', label: '家具', disabled: false },
+  { id: 'avatar', emoji: '👒', label: '装扮 / Looks', disabled: false },
+  { id: 'sound', emoji: '🎵', label: '音效 / Sounds', disabled: false },
+  { id: 'pet', emoji: '🐦', label: '伙伴 / Pets', disabled: false },
+  { id: 'decor', emoji: '🏝️', label: '装饰 / Decor', disabled: false },
+  { id: 'powerup', emoji: '💡', label: '道具 / Items', disabled: false },
+  { id: 'home', emoji: '🏠', label: '家具 / Furniture', disabled: false },
 ];
 
 interface Props {
@@ -31,7 +31,7 @@ export function ShopCategoryTabs({ active, onChange }: Props) {
   return (
     <nav
       className="flex w-full justify-around overflow-x-auto border-b-2 border-amber-800/30 bg-amber-50/95 px-2 py-2 backdrop-blur"
-      aria-label="商店分类"
+      aria-label="商店分类 / Shop categories"
     >
       {TABS.map((tab) => {
         const isActive = tab.id === active && !tab.disabled;
@@ -54,10 +54,10 @@ export function ShopCategoryTabs({ active, onChange }: Props) {
             ].join(' ')}
           >
             <span className="text-2xl leading-none">{tab.emoji}</span>
-            <span>{tab.label}</span>
+            <span className="whitespace-nowrap text-[11px] leading-tight">{tab.label}</span>
             {tab.disabled && (
               <span className="text-[10px] font-normal text-amber-900/50">
-                即将上线
+                即将上线 / Coming soon
               </span>
             )}
           </button>
