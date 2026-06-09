@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShardPill } from './ShardPill';
 import { SwapDialog } from './SwapDialog';
+import { CardDetailDialog } from './CardDetailDialog';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 import { getPackMeta } from '@/lib/collections/packRegistry';
@@ -64,6 +65,7 @@ export function PackPageBody({
   );
 
   const [swapItem, setSwapItem] = useState<CollectibleItem | null>(null);
+  const [detailItem, setDetailItem] = useState<CollectibleItem | null>(null);
   const [, startConvert] = useTransition();
 
   const convert = (itemId: string) => {
@@ -86,7 +88,20 @@ export function PackPageBody({
     const count = countById.get(item.id) ?? 0;
     const isOwned = ownedSet.has(item.id);
     return (
-      <div className="relative">
+      <div
+        className="relative cursor-pointer rounded-xl focus-within:outline focus-within:outline-2 focus-within:outline-amber-400"
+        role="button"
+        tabIndex={0}
+        data-testid="card-tap"
+        aria-label={`${item.nameZh} / ${item.nameEn}`}
+        onClick={() => setDetailItem(item)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setDetailItem(item);
+          }
+        }}
+      >
         <Card item={item} owned={isOwned} size="md" compact={false} />
         {count > 1 && (
           <span className="absolute right-0.5 top-0.5 z-10 rounded-full bg-sky-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white">
@@ -97,7 +112,10 @@ export function PackPageBody({
           <button
             type="button"
             data-testid="convert-chip"
-            onClick={() => convert(item.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              convert(item.id);
+            }}
             className="absolute inset-x-1 bottom-1 z-10 min-h-6 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold text-white"
           >
             ♻️ 换碎片 / To shard
@@ -108,7 +126,10 @@ export function PackPageBody({
             type="button"
             data-testid="swap-chip"
             disabled={shardCount < SWAP_COST}
-            onClick={() => setSwapItem(item)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSwapItem(item);
+            }}
             className={`absolute inset-x-1 bottom-1 z-10 min-h-6 rounded-full px-2 py-0.5 text-[11px] font-bold ${
               shardCount >= SWAP_COST
                 ? 'bg-sky-500 text-white'
@@ -235,6 +256,15 @@ export function PackPageBody({
               setSwapItem(null);
             }
           }}
+        />
+      ) : null}
+
+      {detailItem ? (
+        <CardDetailDialog
+          packSlug={packSlug}
+          item={detailItem}
+          owned={ownedSet.has(detailItem.id)}
+          onClose={() => setDetailItem(null)}
         />
       ) : null}
     </div>
