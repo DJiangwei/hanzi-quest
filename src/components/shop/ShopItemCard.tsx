@@ -11,9 +11,9 @@ export type ItemCardState =
   | 'unaffordable';
 
 const RARITY_LABEL: Record<string, string> = {
-  common: '普通',
-  rare: '稀有',
-  epic: '史诗',
+  common: '普通 / Common',
+  rare: '稀有 / Rare',
+  epic: '史诗 / Epic',
 };
 
 const RARITY_RING: Record<string, string> = {
@@ -45,13 +45,13 @@ export function ShopItemCard({ listing, state, onClick }: Props) {
       case 'equipped':
         return (
           <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[11px] font-bold text-emerald-900">
-            ✓ 已装备
+            ✓ 已装备 / Equipped
           </span>
         );
       case 'owned':
         return (
           <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-bold text-amber-900">
-            点击装备
+            点击装备 / Tap to equip
           </span>
         );
       case 'affordable':
@@ -76,7 +76,7 @@ export function ShopItemCard({ listing, state, onClick }: Props) {
       type="button"
       onClick={onClick}
       disabled={state === 'equipped'}
-      aria-label={`${shopItem.name}${state === 'affordable' ? `，价格 ${shopItem.priceCoins} 金币` : ''}`}
+      aria-label={`${shopItem.name}${state === 'affordable' ? `，价格 ${shopItem.priceCoins} 金币 / ${shopItem.priceCoins} coins` : ''}`}
       className={[
         'group relative flex flex-col items-center gap-1 rounded-2xl bg-amber-50 p-3 ring-2 transition',
         RARITY_RING[rarity] ?? RARITY_RING.common,
@@ -94,7 +94,7 @@ export function ShopItemCard({ listing, state, onClick }: Props) {
         {shopItem.name}
       </div>
       <div className="flex items-center gap-1 text-[10px] text-amber-900/60">
-        <span>{RARITY_LABEL[rarity] ?? '普通'}</span>
+        <span>{RARITY_LABEL[rarity] ?? '普通 / Common'}</span>
       </div>
       <div className="mt-0.5">{stateBadge}</div>
     </button>

@@ -150,13 +150,13 @@ export function SoundsTabBody({
         emoji="🎵"
         nameZh="默认"
         nameEn="Default"
-        description="经典的探险音效。"
+        description="经典的探险音效。/ Classic adventure sound effects."
         priceCoins={null}
         isEquipped={defaultEquipped}
         pending={pending}
         onPreview={() => { void preview('default'); }}
         onAction={() => equip(null)}
-        actionLabel={defaultEquipped ? '已装备' : '装备 / Equip'}
+        actionLabel={defaultEquipped ? '已装备 / Equipped' : '装备 / Equip'}
         actionDisabled={defaultEquipped}
       />
 
@@ -170,7 +170,7 @@ export function SoundsTabBody({
         let actionDisabled = false;
         let onAction: () => void;
         if (isEquipped) {
-          actionLabel = '已装备';
+          actionLabel = '已装备 / Equipped';
           actionDisabled = true;
           onAction = () => {};
         } else if (isOwned) {

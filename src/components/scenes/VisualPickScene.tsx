@@ -39,7 +39,7 @@ export function VisualPickScene({ target, pool, onComplete, hintRequested }: Pro
 
   return (
     <MultipleChoiceQuiz
-      prompt="它怎么读？"
+      prompt="它怎么读？/ How is it read?"
       stimulus={
         <span className="text-[10rem] leading-none">{target.hanzi}</span>
       }

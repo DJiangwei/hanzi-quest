@@ -117,14 +117,14 @@ export function HomeRoomView({ childId, ownedSlugs, placements: initialPlacement
       {/* Edit / Done toggle */}
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-hanzi text-lg font-bold text-[var(--color-ocean-900)]">
-          {activeRoom === 'bedroom' ? '🛏️ 卧室' : activeRoom === 'living' ? '🛋️ 客厅' : '🎮 游戏室'}
+          {activeRoom === 'bedroom' ? '🛏️ 卧室 / Bedroom' : activeRoom === 'living' ? '🛋️ 客厅 / Living room' : '🎮 游戏室 / Playroom'}
         </h2>
         <button
           onClick={mode === 'edit' ? exitEdit : enterEdit}
           className="flex min-h-[44px] min-w-[44px] items-center gap-1 rounded-xl bg-white/80 px-3 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-white"
           aria-label={mode === 'edit' ? 'Done editing' : 'Edit room'}
         >
-          {mode === 'edit' ? '✅ 完成' : '✏️ 布置'}
+          {mode === 'edit' ? '✅ 完成 / Done' : '✏️ 布置 / Edit'}
         </button>
       </div>
 

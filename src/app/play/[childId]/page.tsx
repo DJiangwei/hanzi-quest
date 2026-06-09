@@ -148,7 +148,7 @@ export default async function PlayHomePage({ params }: PageProps) {
           <AvatarRender
             equipped={equippedRefs}
             size={64}
-            label={`${child.displayName} 的形象`}
+            label={`${child.displayName} 的形象 / ${child.displayName}'s avatar`}
             className="shrink-0"
           />
           <PetCompanion
@@ -166,7 +166,7 @@ export default async function PlayHomePage({ params }: PageProps) {
           />
           <div>
             <h1 className="font-hanzi text-2xl font-bold tracking-tight text-[var(--color-ocean-900)]">
-              {child.displayName} 的航海图
+              {child.displayName} 的航海图 / chart
             </h1>
             <p className="text-sm text-[var(--color-sand-700)]">
               {clearedCount}/{islands.length} island

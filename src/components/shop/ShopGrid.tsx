@@ -23,7 +23,7 @@ export function ShopGrid({
   if (listings.length === 0) {
     return (
       <div className="px-6 py-12 text-center text-amber-900/70">
-        商店还没有上新，请稍后再来。
+        商店还没有上新，请稍后再来。/ Nothing new yet — check back soon.
       </div>
     );
   }

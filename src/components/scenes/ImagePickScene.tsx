@@ -35,10 +35,10 @@ export function ImagePickScene({ target, pool, onComplete, hintRequested }: Prop
 
   return (
     <MultipleChoiceQuiz
-      prompt="看图找字"
+      prompt="看图找字 / Find the character"
       stimulus={
         <div className="flex h-44 w-72 items-center justify-center rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 text-center text-base text-amber-900 shadow-sm">
-          {target.imageHook ?? '（暂无图像描述）'}
+          {target.imageHook ?? '（暂无图像描述）/ (no image yet)'}
         </div>
       }
       choices={choices}

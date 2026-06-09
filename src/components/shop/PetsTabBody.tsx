@@ -73,7 +73,7 @@ export function PetsTabBody({
         let actionDisabled = false;
         let onAction: () => void;
         if (isEquipped) {
-          actionLabel = '已装备';
+          actionLabel = '已装备 / Equipped';
           actionDisabled = true;
           onAction = () => {};
         } else if (isOwned) {

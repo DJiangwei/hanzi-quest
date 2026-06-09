@@ -108,7 +108,7 @@ export function ShopBody({
         router.refresh();
       } catch (err) {
         setEquipped(previousEquipped);
-        setErrorMessage(err instanceof Error ? err.message : '装备失败');
+        setErrorMessage(err instanceof Error ? err.message : '装备失败 / Equip failed');
       }
     });
   };
@@ -127,7 +127,7 @@ export function ShopBody({
         setConfirming(null);
         router.refresh();
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : '购买失败');
+        setErrorMessage(err instanceof Error ? err.message : '购买失败 / Purchase failed');
       }
     });
   };
@@ -139,19 +139,19 @@ export function ShopBody({
           href={`/play/${childId}`}
           className="rounded-lg border-2 border-amber-800/40 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-900 hover:bg-amber-100"
         >
-          ← 地图
+          ← 地图 / Map
         </Link>
         <div className="flex items-center gap-2">
           <AvatarRender
             equipped={equippedRefs}
             size={48}
-            label="我的形象"
+            label="我的形象 / My avatar"
           />
           <div className="flex flex-col">
             <span className="text-[10px] uppercase tracking-widest text-amber-900/70">
               船长
             </span>
-            <span className="text-sm font-extrabold text-amber-950">海盗商店</span>
+            <span className="text-sm font-extrabold text-amber-950">海盗商店 / Pirate Shop</span>
           </div>
         </div>
         <span className="flex items-center gap-1 rounded-full bg-amber-300 px-3 py-1 text-base font-bold text-amber-900 shadow-sm">

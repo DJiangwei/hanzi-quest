@@ -70,7 +70,7 @@ describe('ShopGrid', () => {
       />,
     );
     expect(screen.getByText('🪙 120')).toBeInTheDocument();
-    expect(screen.getByText('点击装备')).toBeInTheDocument();
+    expect(screen.getByText(/点击装备/)).toBeInTheDocument();
     expect(screen.getByText('🪙 800')).toBeInTheDocument();
   });
 
@@ -85,7 +85,7 @@ describe('ShopGrid', () => {
         onEquip={vi.fn()}
       />,
     );
-    expect(screen.getByText('✓ 已装备')).toBeInTheDocument();
+    expect(screen.getByText(/已装备/)).toBeInTheDocument();
     const equipped = screen.getByRole('button', {
       name: /海盗三角帽/,
     });

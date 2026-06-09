@@ -116,7 +116,7 @@ describe('SoundsTabBody', () => {
       />,
     );
     // The Nautical card should have an Equip button (not Buy, not Equipped).
-    const equipButton = screen.getByRole('button', { name: /装备 \/ Equip/i });
+    const equipButton = screen.getByRole('button', { name: /^装备 \/ Equip/ });
     fireEvent.click(equipButton);
     await new Promise((r) => setTimeout(r, 0));
     expect(mocks.equipSoundThemeAction).toHaveBeenCalledWith('c1', 'theme-nautical');

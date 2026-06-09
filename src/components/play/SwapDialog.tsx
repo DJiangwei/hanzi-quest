@@ -29,14 +29,14 @@ export function SwapDialog({
         </h2>
         <div className="mt-2 text-sm text-stone-700">
           <p>
-            需要{' '}
+            需要 / Need {' '}
             <strong>
               <span>{shardCost}</span> 🔹
             </strong>{' '}
             碎片 / shards
           </p>
           <p>
-            你现在有{' '}
+            你现在有 / You have {' '}
             <strong>
               <span>{shardBalance}</span> 🔹
             </strong>{' '}

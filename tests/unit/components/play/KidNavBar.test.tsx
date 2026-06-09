@@ -25,9 +25,9 @@ describe('KidNavBar', () => {
     expect(screen.getByRole('link', { name: /Map/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /背包/ })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /日历/ })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /家$/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /家/ })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /商店/ })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /parent/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /设置|Settings/i })).toBeInTheDocument();
   });
 
   it('marks Map tab active on /play/[childId]', () => {

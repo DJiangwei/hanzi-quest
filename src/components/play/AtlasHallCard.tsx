@@ -70,7 +70,7 @@ export function AtlasHallCard({
           <span
             className={`text-sm font-bold ${meta.themeAccentClass} transition group-hover:translate-x-0.5`}
           >
-            进入 →
+            进入 / Open →
           </span>
         </div>
       </div>

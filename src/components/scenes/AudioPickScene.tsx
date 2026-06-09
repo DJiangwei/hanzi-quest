@@ -37,7 +37,7 @@ export function AudioPickScene({ target, pool, onComplete, hintRequested }: Prop
 
   return (
     <MultipleChoiceQuiz
-      prompt="听一听，选出对的字"
+      prompt="听一听，选出对的字 / Listen and pick the character"
       stimulus={
         <button
           type="button"

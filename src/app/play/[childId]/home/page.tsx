@@ -30,7 +30,7 @@ export default async function HomePage({ params }: PageProps) {
             href={`/play/${childId}/shop`}
             className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-ocean-700)] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[var(--color-ocean-800)]"
           >
-            🛒 去商店
+            🛒 去商店 / To shop
           </Link>
         </div>
       ) : (

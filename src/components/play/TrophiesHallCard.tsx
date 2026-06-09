@@ -32,7 +32,7 @@ export function TrophiesHallCard({ childId, earnedCount, totalCount }: Props) {
               aria-valuenow={pct}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label={`荣誉殿堂 进度 ${pct}%`}
+              aria-label={`荣誉殿堂 / Trophy Hall 进度 ${pct}%`}
             >
               <div className="h-full bg-amber-400" style={{ width: `${pct}%` }} />
             </div>
@@ -42,7 +42,7 @@ export function TrophiesHallCard({ childId, earnedCount, totalCount }: Props) {
             </div>
           </div>
           <span className="text-sm font-bold text-amber-900 transition group-hover:translate-x-0.5">
-            进入 →
+            进入 / Open →
           </span>
         </div>
       </div>
