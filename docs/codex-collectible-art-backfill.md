@@ -1,0 +1,281 @@
+# Codex handoff — collectible-card art backfill for `hanzi-quest`
+
+**Repo:** `/Users/jiangwei/Claude/Chinese`  (production at `hanzi-adventure.vercel.app`)
+**Created:** 2026-06-09
+**Author of handoff:** Claude Code (Opus)
+
+---
+
+## ⚡ Quick start (read this, then go)
+
+There are **62 collectible cards** across 4 packs that currently show a generic
+**emoji** instead of real art. Your job: generate one **cartoon illustration per
+card**, upload it to Vercel Blob, and write the URL into
+`collectible_items.image_url`. The cards already know how to render a real image
+(a shared `<CardArt>` component shipped in the same PR that produced this doc) —
+so the moment a row's `image_url` becomes an `http(s)` URL, that card lights up
+with art. No further code change is needed on your side.
+
+The minimal loop, per card:
+
+1. **Fetch** the eligible rows — query in §1. (62 rows today.)
+2. **Build the prompt** = fixed style preamble + a per-pack subject line — §2.
+3. **Generate** a 512×512 PNG with any working image provider — §3.
+4. **Upload** to Blob at `collectibles/{itemId}.png`
+   (`addRandomSuffix:false, allowOverwrite:true, access:'public'`) — §4.
+5. **UPDATE** `collectible_items.image_url = <blob url> WHERE id = <id>` — §5.
+
+**Done when:** `pnpm tsx scripts/verify-collectible-images.ts` reports
+`TOTAL: 62/62 real images, 0 remaining.` (§6)
+
+Env (`.env.local`, already populated, gitignored):
+`DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `BLOB_STORE_ID`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`.
+
+This is the **same shape** as the word-image backfill you completed on 2026-06-07
+(`docs/codex-image-backfill.md`) — different table (`collectible_items` not
+`words`), different Blob folder (`collectibles/` not `words/`), and the prompt
+subject comes from `name_en` (+ a pack hint) instead of a precomputed
+`image_hook` column.
+
+---
+
+## 0. Scope — which cards (and which NOT)
+
+**IN scope (62 cards, all 4 packs):**
+
+| Pack slug | Count | Subject domain |
+|---|---|---|
+| `sea-creatures-v1` | 20 | ocean animals |
+| `dinosaurs-v1` | 15 | dinosaurs |
+| `solar-system-v1` | 10 | planets / Sun / Moon |
+| `landmarks-v1` | 17 | world landmarks |
+
+**OUT of scope — do not touch:**
+- `flags-v1` (193) — already renders real flag emoji (🇨🇳 …). Good as-is.
+- `zodiac-v1` (12) — renders bespoke procedural SVG via `ZodiacIcon`. No raster image wanted.
+
+The query in §1 already filters to exactly the 62 in-scope rows. Don't widen it.
+
+---
+
+## 1. Inputs — what to generate
+
+Read from the production Neon Postgres. Each row is one `collectible_items`
+record in an in-scope pack whose `image_url` is **not** already an http URL
+(today: all 62 hold an emoji glyph).
+
+```sql
+SELECT ci.id, ci.slug, ci.name_en, ci.name_zh, ci.lore_en, cp.slug AS pack_slug
+FROM collectible_items ci
+JOIN collection_packs cp ON cp.id = ci.pack_id
+WHERE cp.slug IN ('sea-creatures-v1','dinosaurs-v1','solar-system-v1','landmarks-v1')
+  AND (ci.image_url IS NULL OR ci.image_url NOT LIKE 'http%');
+```
+
+- `id` (uuid string) — Blob path key + the row to UPDATE.
+- `slug` (string) — stable identifier, e.g. `t-rex`, `eiffel-tower`. For logging/triage.
+- `name_en` (string) — the **primary subject** of the prompt (e.g. `Tyrannosaurus Rex`, `Saturn`).
+- `name_zh` (string) — Chinese name, for your own triage only. **Do not** put it in the prompt.
+- `lore_en` (string) — a one-line kid fact; **optional** extra context for the prompt (see §2). For landmarks it begins with `Location: <city, country>.`.
+- `pack_slug` (string) — selects the per-pack subject template in §2.
+
+Connection string lives in `.env.local` as `DATABASE_URL`. Pooled URL works fine.
+
+The full enumerated roster is in the Appendix so you can sanity-check counts.
+
+---
+
+## 2. Prompt construction — preamble + per-pack subject
+
+Every prompt = the **fixed style preamble** (verbatim, including the trailing
+colon + space) followed by a **subject line** chosen by `pack_slug`:
+
+**Style preamble (identical to the word-image corpus — keeps the app visually consistent):**
+
+```
+cartoon illustration for children, bright colors, simple, single subject, no text:
+```
+
+**Per-pack subject line:**
+
+| pack_slug | Subject template | Example (`name_en` → full subject) |
+|---|---|---|
+| `sea-creatures-v1` | `a {name_en}, a friendly sea creature` | `Octopus` → `an Octopus, a friendly sea creature` |
+| `dinosaurs-v1` | `a {name_en} dinosaur` | `T-Rex` → `a T-Rex dinosaur` |
+| `solar-system-v1` | `{name_en}, viewed in outer space` (for `Sun`/`Moon`, keep as-is; for the 8 planets, append `the planet `) | `Saturn` → `the planet Saturn, viewed in outer space, with its rings` · `Sun` → `the Sun, viewed in outer space` |
+| `landmarks-v1` | `the {name_en}, a famous landmark in {location}` where `{location}` is parsed from the `Location: …` prefix of `lore_en` | `Eiffel Tower` → `the Eiffel Tower, a famous landmark in Paris, France` |
+
+Guidelines:
+- Keep it **single subject, centered, no text/labels, no signpost captions** — these tiles render as small as 48px, so clutter reads as mush.
+- For `solar-system-v1`, recognizability matters most: include a defining trait when obvious (Saturn's rings, Jupiter's bands, Mars red, Earth blue-green with continents, Moon craters, Sun a glowing star). The `lore_en` often names the trait — feel free to fold one short phrase in.
+- For `landmarks-v1`, render the **structure itself** clearly (the actual silhouette of the Eiffel Tower, Great Wall, Pyramids, etc.), not a generic city. The location phrase anchors it.
+- **Do not** add extra style words ("Pixar", "watercolor", "3D render", "high detail") — they clash with the existing 426 word images and the other cards.
+
+If you change the preamble, update the source-of-truth constant
+`POLLINATIONS_STYLE_PREAMBLE` in `src/lib/ai/pollinations.ts` too — but then the
+word corpus would look inconsistent, so prefer not to.
+
+---
+
+## 3. Image specs
+
+- **Format:** PNG.
+- **Size:** 512×512 (UI renders at 48–112px; 512 is plenty of headroom).
+- **Aspect:** square (cards crop with `object-cover`, so square in = no distortion).
+- **No watermark / provider logo** (Pollinations: `nologo=true`; other providers: their equivalent).
+- **Background:** simple / solid-ish is ideal — the tile has its own colored frame.
+
+**Provider note:** Pollinations free tier was rate-limited/soft-banned during the
+word backfill (1 concurrent req/IP, plus a daily quota). You ultimately used your
+built-in image model for the word corpus — that's fine here too. Use whatever
+provider works; the contract below (Blob path + DB column) is provider-agnostic.
+
+---
+
+## 4. Output contract — Vercel Blob
+
+Upload each PNG to a deterministic path:
+
+```
+collectibles/{itemId}.png
+```
+
+```ts
+import { put } from '@vercel/blob';
+
+const blob = await put(`collectibles/${itemId}.png`, pngBytes, {
+  access: 'public',
+  contentType: 'image/png',
+  addRandomSuffix: false,
+  allowOverwrite: true,
+});
+// blob.url is the stable public URL to store in the DB.
+```
+
+`addRandomSuffix:false` + `allowOverwrite:true` → re-runs overwrite in place and
+the URL never changes. The current prod store is public
+(`mfl7ap4djy0w98ey.public.blob.vercel-storage.com`); `BLOB_READ_WRITE_TOKEN` in
+`.env.local` is already scoped to it.
+
+---
+
+## 5. Database update
+
+```sql
+UPDATE collectible_items
+SET image_url = $1   -- the blob.url from §4
+WHERE id = $2;       -- the row id
+```
+
+It's safe to overwrite the existing emoji value — the emoji still lives in the TS
+data files (`src/lib/collections/{seaCreatures,dinosaurs,solarSystem,landmarks}Data.ts`)
+and remains the render fallback if a URL is ever cleared. Only set `image_url`
+when the upload in §4 succeeded.
+
+No migration, no week recompile — `collectible_items.image_url` is read at request
+time, exactly like `words.image_url`.
+
+---
+
+## 6. Verification (done criteria)
+
+```bash
+pnpm tsx scripts/verify-collectible-images.ts
+```
+
+Expected on completion:
+
+```
+✅ sea-creatures-v1     20/ 20 real images, 0 remaining
+✅ dinosaurs-v1         15/ 15 real images, 0 remaining
+✅ solar-system-v1      10/ 10 real images, 0 remaining
+✅ landmarks-v1         17/ 17 real images, 0 remaining
+
+TOTAL: 62/62 real images, 0 remaining.
+```
+
+Optionally HTTP-`HEAD`-sweep the 62 URLs to confirm Blob reachability (you did
+this for words). When the count hits 62/62, hand back to Claude Code — nothing
+else is required before the next dev task.
+
+---
+
+## 7. Progress log
+
+| Date | Total | Real images | Remaining | Note |
+|---|---|---|---|---|
+| 2026-06-09 | 62 | 0 | 62 | Handoff created; `<CardArt>` rendering shipped. All 62 still emoji. |
+
+---
+
+## Appendix — the 62 cards (slug · name_en · name_zh)
+
+### sea-creatures-v1 (20)
+blue-whale · Blue Whale · 蓝鲸
+coral · Coral · 珊瑚
+crab · Crab · 螃蟹
+dolphin · Dolphin · 海豚
+fish · Fish · 鱼
+jellyfish · Jellyfish · 水母
+lobster · Lobster · 龙虾
+octopus · Octopus · 章鱼
+oyster · Oyster · 牡蛎
+pufferfish · Pufferfish · 河豚
+sea-dragon · Sea Dragon · 海龙
+sea-otter · Sea Otter · 海獭
+sea-turtle · Sea Turtle · 海龟
+seal · Seal · 海豹
+seashell · Seashell · 贝壳
+shark · Shark · 鲨鱼
+shrimp · Shrimp · 虾
+squid · Squid · 鱿鱼
+tropical-fish · Tropical Fish · 热带鱼
+whale · Whale · 鲸鱼
+
+### dinosaurs-v1 (15)
+allosaurus · Allosaurus · 异特龙
+ankylosaurus · Ankylosaurus · 甲龙
+argentinosaurus · Argentinosaurus · 阿根廷龙
+brachiosaurus · Brachiosaurus · 腕龙
+diplodocus · Diplodocus · 梁龙
+giganotosaurus · Giganotosaurus · 南方巨兽龙
+iguanodon · Iguanodon · 禽龙
+parasaurolophus · Parasaurolophus · 副栉龙
+plesiosaurus · Plesiosaurus · 蛇颈龙
+pterodactyl · Pterodactyl · 翼龙
+spinosaurus · Spinosaurus · 棘龙
+stegosaurus · Stegosaurus · 剑龙
+t-rex · T-Rex · 霸王龙
+triceratops · Triceratops · 三角龙
+velociraptor · Velociraptor · 迅猛龙
+
+### solar-system-v1 (10)
+earth · Earth · 地球
+jupiter · Jupiter · 木星
+mars · Mars · 火星
+mercury · Mercury · 水星
+moon · Moon · 月球
+neptune · Neptune · 海王星
+saturn · Saturn · 土星
+sun · Sun · 太阳
+uranus · Uranus · 天王星
+venus · Venus · 金星
+
+### landmarks-v1 (17)
+angkor-wat · Angkor Wat · 吴哥窟
+big-ben · Big Ben · 大本钟
+burj-khalifa · Burj Khalifa · 哈利法塔
+chichen-itza · Chichén Itzá · 奇琴伊察
+christ-redeemer · Christ the Redeemer · 救世基督像
+colosseum · Colosseum · 罗马斗兽场
+eiffel-tower · Eiffel Tower · 埃菲尔铁塔
+giza-pyramids · Pyramids of Giza · 吉萨金字塔
+golden-gate · Golden Gate Bridge · 金门大桥
+great-wall · Great Wall · 长城
+kilimanjaro · Mount Kilimanjaro · 乞力马扎罗山
+machu-picchu · Machu Picchu · 马丘比丘
+mount-fuji · Mount Fuji · 富士山
+sagrada-familia · Sagrada Família · 圣家堂
+statue-of-liberty · Statue of Liberty · 自由女神像
+sydney-opera · Sydney Opera House · 悉尼歌剧院
+taj-mahal · Taj Mahal · 泰姬陵
