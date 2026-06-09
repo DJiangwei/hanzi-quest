@@ -1,6 +1,7 @@
 import type { CollectibleItem } from '@/lib/db/collections';
 import { CONTINENT_LABELS } from '@/lib/collections/flagsData';
 import { LANDMARKS_BY_SLUG } from '@/lib/collections/landmarksData';
+import { CardArt } from './CardArt';
 
 export interface LandmarkCardProps {
   item: CollectibleItem;
@@ -16,12 +17,6 @@ const sizeClasses: Record<NonNullable<LandmarkCardProps['size']>, string> = {
   lg: 'p-6 gap-2',
 };
 
-const emojiSize: Record<NonNullable<LandmarkCardProps['size']>, string> = {
-  sm: 'text-3xl',
-  md: 'text-4xl',
-  lg: 'text-7xl',
-};
-
 /**
  * One landmark tile. Renders the emoji, bilingual name, location (city·country),
  * a continent badge, and — at `lg` + owned — a bilingual fun fact.
@@ -35,7 +30,7 @@ export function LandmarkCard({
   compact = false,
 }: LandmarkCardProps) {
   const meta = LANDMARKS_BY_SLUG[item.slug];
-  const emoji = meta?.emoji ?? item.imageUrl ?? '📍';
+  const emoji = meta?.emoji ?? '📍';
   const locationZh = meta?.locationZh ?? '';
   const locationEn = meta?.locationEn ?? '';
   const continent = meta?.continent;
@@ -54,16 +49,13 @@ export function LandmarkCard({
           : 'border-stone-300 bg-stone-100',
       ].join(' ')}
     >
-      <div
-        className={[
-          emojiSize[size],
-          'leading-none',
-          owned ? '' : 'opacity-40 grayscale',
-        ].join(' ')}
-        aria-label={`${meta?.nameEn ?? item.nameEn}`}
-      >
-        {emoji}
-      </div>
+      <CardArt
+        imageUrl={item.imageUrl}
+        emoji={emoji}
+        owned={owned}
+        size={size}
+        alt={meta?.nameEn ?? item.nameEn}
+      />
       <div
         className={[
           'mt-0.5 flex flex-col items-center gap-0',

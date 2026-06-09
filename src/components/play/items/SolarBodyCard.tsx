@@ -4,6 +4,7 @@ import {
   TYPE_LABELS,
   type SolarBodyType,
 } from '@/lib/collections/solarSystemData';
+import { CardArt } from './CardArt';
 
 export interface SolarBodyCardProps {
   item: CollectibleItem;
@@ -19,11 +20,6 @@ const sizeClasses: Record<NonNullable<SolarBodyCardProps['size']>, string> = {
   lg: 'p-6 gap-2',
 };
 
-const emojiSize: Record<NonNullable<SolarBodyCardProps['size']>, string> = {
-  sm: 'text-3xl',
-  md: 'text-4xl',
-  lg: 'text-7xl',
-};
 
 /**
  * Type → owned-state card classes. Helps the card distinguish stars from gas
@@ -63,7 +59,7 @@ export function SolarBodyCard({
   compact = false,
 }: SolarBodyCardProps) {
   const meta = SOLAR_BODIES_BY_SLUG[item.slug];
-  const emoji = meta?.emoji ?? item.imageUrl ?? '✨';
+  const emoji = meta?.emoji ?? '✨';
   const type = meta?.type;
   const typeLabel = type ? TYPE_LABELS[type] : null;
 
@@ -83,16 +79,13 @@ export function SolarBodyCard({
           : 'border-stone-300 bg-stone-100',
       ].join(' ')}
     >
-      <div
-        className={[
-          emojiSize[size],
-          'leading-none',
-          owned ? '' : 'opacity-40 grayscale',
-        ].join(' ')}
-        aria-label={`${meta?.nameEn ?? item.nameEn}`}
-      >
-        {emoji}
-      </div>
+      <CardArt
+        imageUrl={item.imageUrl}
+        emoji={emoji}
+        owned={owned}
+        size={size}
+        alt={meta?.nameEn ?? item.nameEn}
+      />
       <div
         className={[
           'mt-0.5 flex flex-col items-center gap-0',

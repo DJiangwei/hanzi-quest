@@ -4,6 +4,7 @@ import {
   ERA_LABELS,
   type DinosaurEra,
 } from '@/lib/collections/dinosaursData';
+import { CardArt } from './CardArt';
 
 export interface DinosaurCardProps {
   item: CollectibleItem;
@@ -17,12 +18,6 @@ const sizeClasses: Record<NonNullable<DinosaurCardProps['size']>, string> = {
   sm: 'p-2 gap-1',
   md: 'p-3 gap-1.5',
   lg: 'p-6 gap-2',
-};
-
-const emojiSize: Record<NonNullable<DinosaurCardProps['size']>, string> = {
-  sm: 'text-3xl',
-  md: 'text-4xl',
-  lg: 'text-7xl',
 };
 
 /**
@@ -57,7 +52,7 @@ export function DinosaurCard({
   compact = false,
 }: DinosaurCardProps) {
   const meta = DINOSAURS_BY_SLUG[item.slug];
-  const emoji = meta?.emoji ?? item.imageUrl ?? '🦴';
+  const emoji = meta?.emoji ?? '🦴';
   const era = meta?.era;
   const eraLabel = era ? ERA_LABELS[era] : null;
 
@@ -77,16 +72,13 @@ export function DinosaurCard({
           : 'border-stone-300 bg-stone-100',
       ].join(' ')}
     >
-      <div
-        className={[
-          emojiSize[size],
-          'leading-none',
-          owned ? '' : 'opacity-40 grayscale',
-        ].join(' ')}
-        aria-label={`${meta?.nameEn ?? item.nameEn}`}
-      >
-        {emoji}
-      </div>
+      <CardArt
+        imageUrl={item.imageUrl}
+        emoji={emoji}
+        owned={owned}
+        size={size}
+        alt={meta?.nameEn ?? item.nameEn}
+      />
       <div
         className={[
           'mt-0.5 flex flex-col items-center gap-0',
