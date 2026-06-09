@@ -25,10 +25,12 @@ const RARITY_RING: Record<string, string> = {
 interface Props {
   listing: AvatarShopListing;
   state: ItemCardState;
+  /** Whether this item is the one currently being tried on. */
+  trying?: boolean;
   onClick: () => void;
 }
 
-export function ShopItemCard({ listing, state, onClick }: Props) {
+export function ShopItemCard({ listing, state, trying = false, onClick }: Props) {
   const { shopItem, avatarItem } = listing;
   const catalogItem = lookupItem(avatarItem.unlockRef);
   const rarity =
@@ -79,11 +81,19 @@ export function ShopItemCard({ listing, state, onClick }: Props) {
       aria-label={`${shopItem.name}${state === 'affordable' ? `，价格 ${shopItem.priceCoins} 金币 / ${shopItem.priceCoins} coins` : ''}`}
       className={[
         'group relative flex flex-col items-center gap-1 rounded-2xl bg-amber-50 p-3 ring-2 transition',
-        RARITY_RING[rarity] ?? RARITY_RING.common,
+        trying ? 'ring-4 ring-emerald-400' : RARITY_RING[rarity] ?? RARITY_RING.common,
         isInactive ? 'opacity-90' : 'hover:-translate-y-0.5 hover:shadow-md',
         state === 'equipped' ? 'cursor-default' : 'cursor-pointer',
       ].join(' ')}
     >
+      {trying && (
+        <span
+          data-testid="trying-badge"
+          className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white shadow"
+        >
+          试穿中 / Trying
+        </span>
+      )}
       <AvatarRender
         equipped={previewEquipped}
         size={88}

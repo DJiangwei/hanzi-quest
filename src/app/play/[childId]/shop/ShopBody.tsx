@@ -12,7 +12,7 @@ import { PetsTabBody } from '@/components/shop/PetsTabBody';
 import { DecorTabBody } from '@/components/shop/DecorTabBody';
 import { HomeTabBody } from '@/components/shop/HomeTabBody';
 import { PowerupsTabBody } from '@/components/shop/PowerupsTabBody';
-import { PurchaseConfirmDialog } from '@/components/shop/PurchaseConfirmDialog';
+import { AvatarTryOnPreview, type TryOnState } from '@/components/shop/AvatarTryOnPreview';
 import type { AvatarShopListing, EquippedAvatar, SoundThemeListing, ShopItemRow } from '@/lib/db/shop';
 import type { PetShopListing } from '@/lib/db/pets';
 import type { DecorShopListing } from '@/lib/db/decor';
@@ -62,9 +62,15 @@ export function ShopBody({
   );
   const [equipped, setEquipped] = useState<EquippedAvatar>(initialEquipped);
   const [themeFilter, setThemeFilter] = useState<ThemeChipValue>('all');
-  const [confirming, setConfirming] = useState<AvatarShopListing | null>(null);
+  const [tryOn, setTryOn] = useState<TryOnState | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // Switching category tabs discards any ephemeral try-on.
+  const changeTab = (t: ShopCategory) => {
+    setTryOn(null);
+    setActiveTab(t);
+  };
 
   const equippedAvatarItemIds = new Set(
     Object.values(equipped).map((s) => s.avatarItemId),
@@ -82,9 +88,13 @@ export function ShopBody({
     equippedRefs[slot] = info.unlockRef;
   }
 
-  const handlePurchase = (listing: AvatarShopListing) => {
+  // Tapping an UNOWNED item tries it on (no server call). Free even when the
+  // kid can't afford it yet — the Buy bar handles affordability.
+  const handleTryOn = (listing: AvatarShopListing) => {
+    const catalogItem = lookupItem(listing.avatarItem.unlockRef);
+    if (!catalogItem) return;
     setErrorMessage(null);
-    setConfirming(listing);
+    setTryOn({ slot: catalogItem.slot, listing });
   };
 
   const handleEquip = (listing: AvatarShopListing) => {
@@ -103,6 +113,7 @@ export function ShopBody({
           },
         });
       }
+      setTryOn(null); // equipping an owned item ends the try-on
       try {
         await equipAvatarItemAction(listing.avatarItem.id, { childId });
         router.refresh();
@@ -113,18 +124,30 @@ export function ShopBody({
     });
   };
 
-  const confirmPurchase = () => {
-    if (!confirming) return;
+  // Buy the currently-tried item, then equip it (try-on → owned + worn).
+  const handleBuyTryOn = () => {
+    if (!tryOn) return;
+    const listing = tryOn.listing;
     setErrorMessage(null);
-    const listing = confirming;
     startTransition(async () => {
       try {
-        const result = await purchaseShopItemAction(listing.shopItem.id, {
-          childId,
-        });
+        const result = await purchaseShopItemAction(listing.shopItem.id, { childId });
         setOwnedIds(new Set([...ownedIds, listing.shopItem.id]));
         setCoinBalance(result.coinsAfter);
-        setConfirming(null);
+        const catalogItem = lookupItem(listing.avatarItem.unlockRef);
+        if (catalogItem) {
+          setEquipped((prev) => ({
+            ...prev,
+            [catalogItem.slot]: {
+              avatarItemId: listing.avatarItem.id,
+              unlockRef: listing.avatarItem.unlockRef,
+              slotId: listing.avatarItem.slotId,
+              isDefault: false,
+            },
+          }));
+        }
+        await equipAvatarItemAction(listing.avatarItem.id, { childId });
+        setTryOn(null);
         router.refresh();
       } catch (err) {
         setErrorMessage(err instanceof Error ? err.message : '购买失败 / Purchase failed');
@@ -160,17 +183,32 @@ export function ShopBody({
         </span>
       </header>
 
-      <ShopCategoryTabs active={activeTab} onChange={setActiveTab} />
+      <ShopCategoryTabs active={activeTab} onChange={changeTab} />
 
       {activeTab === 'avatar' && (
         <>
+          <AvatarTryOnPreview
+            equippedRefs={equippedRefs}
+            tryOn={tryOn}
+            owned={tryOn ? ownedIds.has(tryOn.listing.shopItem.id) : false}
+            coinBalance={coinBalance}
+            pending={pending}
+            onBuy={handleBuyTryOn}
+            onClearTryOn={() => setTryOn(null)}
+          />
+          {errorMessage && (
+            <div className="px-4 pt-2 text-center text-sm font-semibold text-red-700">
+              {errorMessage}
+            </div>
+          )}
           <ThemeChipStrip selected={themeFilter} onSelect={setThemeFilter} />
           <ShopGrid
             listings={filteredAvatarListings}
             ownedShopItemIds={ownedIds}
             equippedAvatarItemIds={equippedAvatarItemIds}
             coinBalance={coinBalance}
-            onPurchase={handlePurchase}
+            tryingShopItemId={tryOn?.listing.shopItem.id ?? null}
+            onPurchase={handleTryOn}
             onEquip={handleEquip}
           />
         </>
@@ -217,19 +255,6 @@ export function ShopBody({
           coinBalance={coinBalance}
         />
       )}
-
-      <PurchaseConfirmDialog
-        open={!!confirming}
-        listing={confirming}
-        coinBalance={coinBalance}
-        pending={pending}
-        errorMessage={errorMessage}
-        onConfirm={confirmPurchase}
-        onCancel={() => {
-          setConfirming(null);
-          setErrorMessage(null);
-        }}
-      />
     </div>
   );
 }
