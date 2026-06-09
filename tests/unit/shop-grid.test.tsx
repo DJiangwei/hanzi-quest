@@ -128,4 +128,22 @@ describe('ShopGrid', () => {
     fireEvent.click(screen.getByRole('button', { name: /蓝头巾/ }));
     expect(onEquip).toHaveBeenCalledOnce();
   });
+
+  it('shows a 试穿中 badge on the item being tried on', () => {
+    render(
+      <ShopGrid
+        listings={listings}
+        ownedShopItemIds={new Set()}
+        equippedAvatarItemIds={new Set()}
+        coinBalance={200}
+        tryingShopItemId="shop-tricorn"
+        onPurchase={vi.fn()}
+        onEquip={vi.fn()}
+      />,
+    );
+    const badges = screen.getAllByTestId('trying-badge');
+    expect(badges).toHaveLength(1);
+    expect(badges[0]).toHaveTextContent(/试穿中/);
+  });
+
 });
