@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import type { CollectibleItem } from '@/lib/db/collections';
 import { DinosaurCard } from '@/components/play/items/DinosaurCard';
 import { FlagCard } from '@/components/play/items/FlagCard';
+import { LandmarkCard } from '@/components/play/items/LandmarkCard';
 import { SeaCreatureCard } from '@/components/play/items/SeaCreatureCard';
 import { SolarBodyCard } from '@/components/play/items/SolarBodyCard';
 import { ZodiacGridItem } from '@/components/play/items/ZodiacGridItem';
@@ -11,6 +12,7 @@ import {
   CONTINENT_LABELS,
   CONTINENT_ORDER,
 } from '@/lib/collections/flagsData';
+import { LANDMARKS_BY_SLUG } from '@/lib/collections/landmarksData';
 import { SEA_CREATURES_BY_SLUG } from '@/lib/collections/seaCreaturesData';
 import {
   SOLAR_BODIES_BY_SLUG,
@@ -146,6 +148,25 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
           { zh: TYPE_LABELS[t].zh, en: TYPE_LABELS[t].en, emoji: TYPE_EMOJI[t] },
         ]),
       ),
+    },
+  },
+  'landmarks-v1': {
+    displayNameZh: '世界地标',
+    displayNameEn: 'World Landmarks',
+    sloganZh: '世界各地的著名地标。',
+    sloganEn: 'Famous landmarks from around the world.',
+    themeEmoji: '🗽',
+    themeBannerClass:
+      'bg-gradient-to-br from-amber-200 via-orange-300 to-rose-400',
+    themeAccentClass: 'text-amber-900',
+    paidPullCost: 300,
+    gridColumns: 3,
+    ItemCard: LandmarkCard,
+    resolveRevealEmoji: (slug) => LANDMARKS_BY_SLUG[slug]?.emoji ?? null,
+    grouping: {
+      resolveGroup: (slug) => LANDMARKS_BY_SLUG[slug]?.continent ?? null,
+      order: CONTINENT_ORDER,
+      labels: CONTINENT_LABELS,
     },
   },
 };

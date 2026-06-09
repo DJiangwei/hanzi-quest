@@ -2,7 +2,7 @@
  * Tests for the visible 换卡 / Trade chip on unowned cards (Card Economy v2).
  * Uses packSlug 'flags-v1' which is registered in PACK_REGISTRY.
  */
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -185,5 +185,41 @@ describe('shard help text', () => {
       />,
     );
     expect(screen.getByText(/重复的卡可以换成/)).toBeInTheDocument();
+  });
+});
+
+describe('card detail tap', () => {
+  it('tapping a card opens the detail dialog; tapping the swap chip does not', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['item-owned']}
+        ownedItems={ownedItems}
+        balance={0}
+        shardCount={5}
+      />,
+    );
+    // Tap the owned card → detail dialog opens.
+    const taps = screen.getAllByTestId('card-tap');
+    fireEvent.click(taps[0]);
+    expect(screen.getByTestId('card-detail-dialog')).toBeInTheDocument();
+  });
+
+  it('tapping the swap chip opens the swap flow, not the detail dialog', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={['item-owned']}
+        ownedItems={ownedItems}
+        balance={0}
+        shardCount={5}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('swap-chip'));
+    expect(screen.queryByTestId('card-detail-dialog')).not.toBeInTheDocument();
   });
 });
