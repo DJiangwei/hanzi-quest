@@ -24,6 +24,13 @@ export interface ItemDef {
   /** PR #58: cosmetic categorization. Required on every item. */
   theme: AvatarTheme;
   /**
+   * Reward-only items (festival cosmetics) are NOT sold in the shop and NOT
+   * auto-granted as defaults — they're earned via the monthly festival
+   * challenge (seeded `unlock_via='achievement'`). No `priceCoins`. Excluded
+   * from `defaultItems()` and the shop chip filter; surfaced in the wardrobe.
+   */
+  rewardOnly?: boolean;
+  /**
    * Inner SVG content for this item; rendered inside the AvatarRender's outer
    * `<svg viewBox="0 0 100 100">`. Must use only flat colours (no `<defs>` /
    * gradients) so multiple slots can share one `<svg>` without id collisions.
@@ -1329,6 +1336,171 @@ const bgPastelClouds: ItemDef = {
   ),
 };
 
+// ─── FESTIVAL THEME (reward-only — earned via the monthly challenge) ─────────
+
+const festivalNewyear: ItemDef = {
+  unlockRef: 'festival-newyear', slot: 'hat', displayName: '派对帽', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'a colorful party hat', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-newyear">
+      <path d="M 50 8 L 40 34 L 60 34 Z" fill="#f59e0b" stroke="#b45309" strokeWidth="1.2" />
+      <circle cx="50" cy="8" r="3" fill="#ef4444" />
+      <line x1="42" y1="28" x2="58" y2="28" stroke="#fde047" strokeWidth="1.5" />
+      <circle cx="45" cy="22" r="1.5" fill="#34d399" />
+      <circle cx="55" cy="20" r="1.5" fill="#60a5fa" />
+    </g>
+  ),
+};
+
+const festivalSpring: ItemDef = {
+  unlockRef: 'festival-spring', slot: 'hat', displayName: '春节喜帽', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'a red Spring Festival cap with gold trim', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-spring">
+      <path d="M 30 34 Q 30 16 50 16 Q 70 16 70 34 Z" fill="#dc2626" stroke="#7f1d1d" strokeWidth="1.2" />
+      <rect x="30" y="32" width="40" height="5" fill="#fbbf24" stroke="#7f1d1d" strokeWidth="0.8" />
+      <circle cx="50" cy="13" r="3" fill="#fbbf24" />
+      <circle cx="50" cy="26" r="3" fill="#fbbf24" />
+    </g>
+  ),
+};
+
+const festivalLantern: ItemDef = {
+  unlockRef: 'festival-lantern', slot: 'decor', displayName: '元宵灯笼', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'with a glowing red lantern beside them', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-lantern">
+      <line x1="84" y1="8" x2="84" y2="14" stroke="#7f1d1d" strokeWidth="1" />
+      <ellipse cx="84" cy="22" rx="8" ry="10" fill="#ef4444" stroke="#7f1d1d" strokeWidth="1" />
+      <rect x="80" y="12" width="8" height="2.5" fill="#fbbf24" />
+      <rect x="80" y="31" width="8" height="2.5" fill="#fbbf24" />
+      <line x1="84" y1="33.5" x2="84" y2="39" stroke="#fbbf24" strokeWidth="1.5" />
+    </g>
+  ),
+};
+
+const festivalQingming: ItemDef = {
+  unlockRef: 'festival-qingming', slot: 'hat', displayName: '柳枝环', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'a green willow wreath', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-qingming">
+      <path d="M 28 30 Q 50 14 72 30" fill="none" stroke="#4d7c0f" strokeWidth="3" />
+      <path d="M 34 24 q 2 4 0 8" stroke="#65a30d" strokeWidth="1.2" fill="none" />
+      <path d="M 50 18 q 2 4 0 8" stroke="#65a30d" strokeWidth="1.2" fill="none" />
+      <path d="M 66 24 q -2 4 0 8" stroke="#65a30d" strokeWidth="1.2" fill="none" />
+      <circle cx="50" cy="17" r="2" fill="#fde68a" />
+    </g>
+  ),
+};
+
+const festivalSummer: ItemDef = {
+  unlockRef: 'festival-summer', slot: 'decor', displayName: '夏叶', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'with a fresh green summer leaf', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-summer">
+      <path d="M 14 86 q 8 -16 18 -18 q -2 12 -18 18 Z" fill="#22c55e" stroke="#15803d" strokeWidth="1" />
+      <line x1="16" y1="84" x2="30" y2="70" stroke="#15803d" strokeWidth="1" />
+    </g>
+  ),
+};
+
+const festivalDragon: ItemDef = {
+  unlockRef: 'festival-dragon', slot: 'hat', displayName: '龙舟头饰', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'a green dragon-boat headband with horns', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-dragon">
+      <rect x="30" y="28" width="40" height="6" rx="3" fill="#16a34a" stroke="#14532d" strokeWidth="1" />
+      <path d="M 36 28 l -4 -12 l 8 6 Z" fill="#22c55e" stroke="#14532d" strokeWidth="1" />
+      <path d="M 64 28 l 4 -12 l -8 6 Z" fill="#22c55e" stroke="#14532d" strokeWidth="1" />
+      <circle cx="50" cy="31" r="2.5" fill="#fbbf24" />
+    </g>
+  ),
+};
+
+const festivalSun: ItemDef = {
+  unlockRef: 'festival-sun', slot: 'decor', displayName: '夏至骄阳', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'with a bright summer sun', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-sun">
+      <circle cx="82" cy="18" r="8" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1" />
+      <g stroke="#f59e0b" strokeWidth="1.5">
+        <line x1="82" y1="4" x2="82" y2="8" />
+        <line x1="82" y1="28" x2="82" y2="32" />
+        <line x1="68" y1="18" x2="72" y2="18" />
+        <line x1="92" y1="18" x2="96" y2="18" />
+      </g>
+    </g>
+  ),
+};
+
+const festivalQixi: ItemDef = {
+  unlockRef: 'festival-qixi', slot: 'decor', displayName: '七夕喜鹊', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'with a magpie and stars', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-qixi">
+      <ellipse cx="80" cy="20" rx="7" ry="4" fill="#1e293b" />
+      <circle cx="86" cy="18" r="3" fill="#1e293b" />
+      <path d="M 73 20 l -6 2 l 6 1 Z" fill="#1e293b" />
+      <circle cx="87" cy="17" r="0.8" fill="#ffffff" />
+      <path d="M 16 14 l 1 3 l 3 0 l -2.4 2 l 1 3 l -2.6 -1.8 l -2.6 1.8 l 1 -3 l -2.4 -2 l 3 0 Z" fill="#fde047" />
+    </g>
+  ),
+};
+
+const festivalRabbit: ItemDef = {
+  unlockRef: 'festival-rabbit', slot: 'hat', displayName: '中秋兔耳', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'cute white rabbit ears', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-rabbit">
+      <ellipse cx="42" cy="18" rx="4" ry="13" fill="#fafafa" stroke="#d4d4d8" strokeWidth="1" transform="rotate(-12 42 18)" />
+      <ellipse cx="58" cy="18" rx="4" ry="13" fill="#fafafa" stroke="#d4d4d8" strokeWidth="1" transform="rotate(12 58 18)" />
+      <ellipse cx="42" cy="18" rx="1.8" ry="8" fill="#fbcfe8" transform="rotate(-12 42 18)" />
+      <ellipse cx="58" cy="18" rx="1.8" ry="8" fill="#fbcfe8" transform="rotate(12 58 18)" />
+    </g>
+  ),
+};
+
+const festivalChrys: ItemDef = {
+  unlockRef: 'festival-chrys', slot: 'hat', displayName: '重阳菊花', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'a golden chrysanthemum flower', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-chrys">
+      <g fill="#f59e0b">
+        <ellipse cx="60" cy="28" rx="3" ry="1.6" />
+        <ellipse cx="72" cy="28" rx="3" ry="1.6" />
+        <ellipse cx="66" cy="23" rx="1.6" ry="3" />
+        <ellipse cx="66" cy="33" rx="1.6" ry="3" />
+      </g>
+      <circle cx="66" cy="28" r="2" fill="#b45309" />
+    </g>
+  ),
+};
+
+const festivalWinter: ItemDef = {
+  unlockRef: 'festival-winter', slot: 'hat', displayName: '立冬暖帽', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'a cozy blue earflap winter hat', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-winter">
+      <path d="M 30 32 Q 30 14 50 14 Q 70 14 70 32 Z" fill="#2563eb" stroke="#1e3a8a" strokeWidth="1.2" />
+      <rect x="28" y="30" width="44" height="5" rx="2" fill="#e0f2fe" stroke="#1e3a8a" strokeWidth="0.8" />
+      <circle cx="30" cy="38" r="4" fill="#e0f2fe" stroke="#1e3a8a" strokeWidth="0.8" />
+      <circle cx="70" cy="38" r="4" fill="#e0f2fe" stroke="#1e3a8a" strokeWidth="0.8" />
+      <circle cx="50" cy="11" r="3" fill="#e0f2fe" />
+    </g>
+  ),
+};
+
+const festivalDumpling: ItemDef = {
+  unlockRef: 'festival-dumpling', slot: 'decor', displayName: '冬至饺子', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'with a plump winter dumpling', theme: 'festival',
+  renderSvg: () => (
+    <g key="festival-dumpling">
+      <path d="M 74 84 Q 84 74 94 84 Q 90 90 84 90 Q 78 90 74 84 Z" fill="#fde9c8" stroke="#d4a373" strokeWidth="1" />
+      <path d="M 76 83 q 4 -4 8 0 q 4 -4 8 0" fill="none" stroke="#d4a373" strokeWidth="0.8" />
+    </g>
+  ),
+};
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 const ALL_ITEMS: ItemDef[] = [
@@ -1395,6 +1567,18 @@ const ALL_ITEMS: ItemDef[] = [
   starWandDecor,
   bgRainbowSky,
   bgPastelClouds,
+  festivalNewyear,
+  festivalSpring,
+  festivalLantern,
+  festivalQingming,
+  festivalSummer,
+  festivalDragon,
+  festivalSun,
+  festivalQixi,
+  festivalRabbit,
+  festivalChrys,
+  festivalWinter,
+  festivalDumpling,
 ];
 
 export const ITEM_CATALOG: Record<string, ItemDef> = Object.fromEntries(
@@ -1408,12 +1592,21 @@ export function allItems(): ItemDef[] {
 
 /** Items that should be auto-granted (unlock_via='default') on seed. */
 export function defaultItems(): ItemDef[] {
-  return ALL_ITEMS.filter((i) => i.priceCoins === undefined);
+  return ALL_ITEMS.filter((i) => i.priceCoins === undefined && !i.rewardOnly);
 }
 
 /** Items that should appear in shop_items (unlock_via='shop'). */
 export function shopItemsCatalog(): ItemDef[] {
   return ALL_ITEMS.filter((i) => i.priceCoins !== undefined);
+}
+
+/**
+ * Reward-only items (festival cosmetics) — earned via the monthly challenge.
+ * Seeded into `avatar_items` with `unlock_via='achievement'`; never sold,
+ * never auto-granted.
+ */
+export function rewardItems(): ItemDef[] {
+  return ALL_ITEMS.filter((i) => i.rewardOnly === true);
 }
 
 export function lookupItem(unlockRef: string | null | undefined): ItemDef | undefined {
