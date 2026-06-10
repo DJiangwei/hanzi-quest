@@ -142,7 +142,9 @@ export default async function PlayHomePage({ params }: PageProps) {
   const levelTitle = titleForLevel(level);
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6 lg:grid lg:max-w-none lg:grid-cols-[minmax(300px,360px)_1fr] lg:items-start lg:gap-6">
+      {/* HUD column — left on lg, top of the stack on phones */}
+      <div className="flex flex-col gap-5">
       <section className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <AvatarRender
@@ -202,7 +204,10 @@ export default async function PlayHomePage({ params }: PageProps) {
       )}
 
       <LatestChapterPill childId={child.id} />
+      </div>
 
+      {/* Map pane — right on lg, below the HUD on phones */}
+      <div className="flex flex-col">
       {islands.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--color-sunset-400)] bg-white/70 p-8 text-center text-sm text-[var(--color-sand-900)]">
           <p className="font-semibold">No islands yet, captain.</p>
@@ -232,6 +237,7 @@ export default async function PlayHomePage({ params }: PageProps) {
           decorations={ownedDecorations.map((d) => ({ slug: d.slug }))}
         />
       )}
+      </div>
     </main>
   );
 }

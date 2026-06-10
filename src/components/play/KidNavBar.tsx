@@ -73,50 +73,59 @@ export function KidNavBar({ childId }: Props) {
     }
   }
 
+  function renderTab(tab: TabDef) {
+    const active = tab.isActive(path);
+    return (
+      <Link
+        key={tab.key}
+        href={tab.href}
+        prefetch
+        aria-current={active ? 'page' : undefined}
+        onClick={(e) => onTabClick(e, tab.href, active)}
+        className="flex min-w-[52px] flex-col items-center gap-0.5 px-1 py-1 transition-colors"
+      >
+        <span className="text-2xl leading-none">{tab.icon}</span>
+        <span
+          className={
+            active
+              ? 'whitespace-nowrap text-[10px] font-bold leading-tight text-[var(--color-ocean-700)]'
+              : 'whitespace-nowrap text-[10px] font-medium leading-tight text-[var(--color-sand-600)]'
+          }
+        >
+          {tab.label}
+        </span>
+        <span
+          className={
+            active
+              ? 'h-1 w-1 rounded-full bg-[var(--color-ocean-700)]'
+              : 'h-1 w-1 rounded-full bg-transparent'
+          }
+        />
+      </Link>
+    );
+  }
+
+  const gearLink = (
+    <Link
+      href="/parent"
+      aria-label="设置 / Settings"
+      className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-sand-500)] transition-colors hover:text-[var(--color-sand-700)]"
+    >
+      <span className="text-lg">⚙️</span>
+    </Link>
+  );
+
   return (
     <>
+      {/* One nav that morphs: bottom tab bar on phones, left rail on landscape (lg+).
+          Single DOM tree (no duplicate links) — the bar↔rail switch is pure CSS. */}
       <nav
-        className="sticky bottom-0 z-30 flex items-center justify-around border-t border-[var(--color-sand-200)] bg-white/85 px-2 pb-[max(env(safe-area-inset-bottom),0px)] pt-2 backdrop-blur-md"
+        data-testid="kid-nav"
+        className="sticky bottom-0 z-30 flex items-center justify-around border-t border-[var(--color-sand-200)] bg-white/85 px-2 pb-[max(env(safe-area-inset-bottom),0px)] pt-2 backdrop-blur-md lg:fixed lg:bottom-0 lg:left-0 lg:top-0 lg:w-20 lg:flex-col lg:justify-start lg:gap-1 lg:border-r lg:border-t-0 lg:px-0 lg:pb-3 lg:pt-3"
         aria-label="Kid navigation"
       >
-        {tabs.map((tab) => {
-          const active = tab.isActive(path);
-          return (
-            <Link
-              key={tab.key}
-              href={tab.href}
-              prefetch
-              aria-current={active ? 'page' : undefined}
-              onClick={(e) => onTabClick(e, tab.href, active)}
-              className="flex min-w-[52px] flex-col items-center gap-0.5 px-1 py-1 transition-colors"
-            >
-              <span className="text-2xl leading-none">{tab.icon}</span>
-              <span
-                className={
-                  active
-                    ? 'whitespace-nowrap text-[10px] font-bold leading-tight text-[var(--color-ocean-700)]'
-                    : 'whitespace-nowrap text-[10px] font-medium leading-tight text-[var(--color-sand-600)]'
-                }
-              >
-                {tab.label}
-              </span>
-              <span
-                className={
-                  active
-                    ? 'h-1 w-1 rounded-full bg-[var(--color-ocean-700)]'
-                    : 'h-1 w-1 rounded-full bg-transparent'
-                }
-              />
-            </Link>
-          );
-        })}
-        <Link
-          href="/parent"
-          aria-label="设置 / Settings"
-          className="ml-1 flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-sand-500)] transition-colors hover:text-[var(--color-sand-700)]"
-        >
-          <span className="text-lg">⚙️</span>
-        </Link>
+        {tabs.map((tab) => renderTab(tab))}
+        <span className="ml-1 lg:ml-0 lg:mt-auto">{gearLink}</span>
       </nav>
       {confirmTarget && (
         <QuitConfirmDialog
