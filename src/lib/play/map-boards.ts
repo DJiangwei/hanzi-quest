@@ -10,6 +10,12 @@ export interface VoyageMap {
   nameEn: string;
   /** Ordered to match weekNumber: stops[0] = week 1. */
   stops: VoyageStop[];
+  /**
+   * Generated illustrated sea-chart backdrop (Vercel Blob URL). Optional — when
+   * absent the board draws a procedural sea-chart instead. Populate by running
+   * `scripts/generate-voyage-map-art.ts` and pasting the printed URL here.
+   */
+  imageUrl?: string;
 }
 
 /** Keyed by curriculum pack slug. Packs absent here fall back to <IslandMap>. */
