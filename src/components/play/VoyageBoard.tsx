@@ -1,9 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { getVoyageMap } from '@/lib/play/map-boards';
-import { voyageLayout } from '@/lib/play/voyage-layout';
+import { getVoyageMap, type VoyageStop } from '@/lib/play/map-boards';
+import {
+  voyageLayout,
+  voyageLayoutHorizontal,
+  type VoyagePoint,
+} from '@/lib/play/voyage-layout';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
+import { useIsWide } from '@/lib/hooks/use-is-wide';
+import { PARCHMENT_BG, WAVE_BAND_H, WAVE_BAND_V } from '@/lib/play/voyage-textures';
+import { VoyageBackdrop } from './VoyageBackdrop';
+import { SailingShip } from './SailingShip';
 
 export interface VoyageBoardIsland {
   weekId: string;
@@ -18,46 +26,37 @@ interface Props {
   islands: VoyageBoardIsland[];
 }
 
-/** Vertical room per stop, in px. Board height = stops × this → big, scrollable. */
+/** Vertical room per stop, in px, for the tall phone board. */
 const STOP_GAP_PX = 210;
-
-/** Aged-parchment paper texture (subtle speckles) as a CSS background. */
-const PARCHMENT_BG =
-  'radial-gradient(circle at 20% 30%, rgba(120,80,30,0.05) 0 2px, transparent 2px),' +
-  'radial-gradient(circle at 70% 60%, rgba(120,80,30,0.05) 0 2px, transparent 2px),' +
-  'radial-gradient(circle at 45% 85%, rgba(120,80,30,0.04) 0 2px, transparent 2px),' +
-  'linear-gradient(160deg, #f3e4c0 0%, #e9d3a3 100%)';
-
-/** Faint white wave linework over the sea (treasure-chart style). */
-const SEA_WAVES =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 30 Q30 12 60 30 T120 30' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.12'/%3E%3Cpath d='M0 48 Q30 32 60 48 T120 48' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.10'/%3E%3C/svg%3E\")";
-
-/** Teal scalloped wave band — the signature treasure-map border (repeats along an edge). */
-const WAVE_BAND_H =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='26'%3E%3Crect width='48' height='26' fill='%232f8e96'/%3E%3Cpath d='M0 13 Q12 3 24 13 T48 13' fill='none' stroke='%23f3e4c0' stroke-width='3.5'/%3E%3Cpath d='M0 21 Q12 12 24 21 T48 21' fill='none' stroke='%23bfe3e6' stroke-width='2' opacity='0.7'/%3E%3C/svg%3E\")";
-const WAVE_BAND_V =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='48'%3E%3Crect width='26' height='48' fill='%232f8e96'/%3E%3Cpath d='M13 0 Q3 12 13 24 T13 48' fill='none' stroke='%23f3e4c0' stroke-width='3.5'/%3E%3Cpath d='M21 0 Q12 12 21 24 T21 48' fill='none' stroke='%23bfe3e6' stroke-width='2' opacity='0.7'/%3E%3C/svg%3E\")";
 
 export function VoyageBoard({ childId, packSlug, islands }: Props) {
   const map = getVoyageMap(packSlug);
   const reduced = useReducedMotion();
+  const wide = useIsWide();
   if (!map) return null;
 
-  const pos = voyageLayout(map.stops.length);
+  const n = map.stops.length;
+  const pos = wide ? voyageLayoutHorizontal(n) : voyageLayout(n);
   const firstActive = islands.findIndex((i) => i.completionPercent < 100);
-  const boardHeight = map.stops.length * STOP_GAP_PX;
+  const currentIndex = firstActive < 0 ? Math.max(n - 1, 0) : firstActive;
 
   return (
     <div
       data-testid="voyage-board"
-      style={{ height: boardHeight, backgroundImage: PARCHMENT_BG }}
-      className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[28px] border-[10px] border-[#caa24a] p-3 shadow-2xl ring-4 ring-[#7a4a14]/30"
+      data-layout={wide ? 'landscape' : 'vertical'}
+      style={{
+        backgroundImage: PARCHMENT_BG,
+        ...(wide ? {} : { height: n * STOP_GAP_PX }),
+      }}
+      className={[
+        'relative mx-auto w-full overflow-hidden rounded-[28px] border-[10px] border-[#caa24a] p-3 shadow-2xl ring-4 ring-[#7a4a14]/30',
+        wide ? 'aspect-[16/10] max-w-5xl' : 'max-w-xl',
+      ].join(' ')}
     >
-      {/* Sea panel (inset inside the wave border) */}
-      <div
-        className="absolute inset-[30px] rounded-xl border border-[#1f6e76]"
-        style={{ backgroundImage: SEA_WAVES + ',linear-gradient(180deg,#5cb3bb_0%,#2f8e96_50%,#1f6e76_100%)' }}
-      />
+      {/* Sea panel (inset inside the wave border) — holds the backdrop */}
+      <div className="absolute inset-[30px] overflow-hidden rounded-xl border border-[#1f6e76]">
+        <VoyageBackdrop imageUrl={map.imageUrl} />
+      </div>
 
       {/* Signature scalloped wave border, all four edges */}
       <div className="pointer-events-none absolute inset-2 z-10 rounded-lg">
@@ -73,12 +72,17 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
       <div className="pointer-events-none absolute bottom-1 left-1 z-20 text-2xl opacity-95 drop-shadow" aria-hidden="true">⚓</div>
       <div className="pointer-events-none absolute bottom-1 right-1 z-20 text-2xl opacity-95 drop-shadow" aria-hidden="true">⭐</div>
 
-      {/* Title ribbon */}
-      <div className="sticky top-3 z-30 mx-auto w-fit rounded-full border-2 border-[#caa24a] bg-[#f3e4c0] px-5 py-1.5 text-base font-extrabold text-[#7a4a14] shadow-md">
+      {/* Title ribbon — sticky on the tall phone board, pinned on the landscape board */}
+      <div
+        className={[
+          'z-30 mx-auto w-fit rounded-full border-2 border-[#caa24a] bg-[#f3e4c0] px-5 py-1.5 text-base font-extrabold text-[#7a4a14] shadow-md',
+          wide ? 'absolute left-1/2 top-4 -translate-x-1/2' : 'sticky top-3',
+        ].join(' ')}
+      >
         {map.nameZh} · {map.nameEn}
       </div>
 
-      {/* Dotted route — stretched over the full tall board */}
+      {/* Dotted route */}
       <svg
         className="absolute inset-[30px] z-10 h-[calc(100%-60px)] w-[calc(100%-60px)]"
         viewBox="0 0 100 100"
@@ -108,75 +112,104 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
       </svg>
 
       {/* Stops */}
-      {map.stops.map((stop, i) => {
-        const island = islands[i];
-        const p = pos[i];
-        const style = { left: `${p.xPct}%`, top: `${p.yPct}%` } as const;
-        const num = i + 1;
+      {map.stops.map((stop, i) => (
+        <StopNode
+          key={i}
+          stop={stop}
+          num={i + 1}
+          pos={pos[i]}
+          island={islands[i]}
+          isCurrent={i === firstActive}
+          childId={childId}
+          reduced={reduced}
+          compact={wide}
+        />
+      ))}
 
-        if (!island) {
-          return (
-            <div
-              key={i}
-              data-testid="voyage-stop-locked"
-              className="absolute z-10 flex w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-              style={style}
-              aria-label={`${stop.labelEn} — locked`}
-            >
-              <span className="relative flex aspect-square w-full items-center justify-center rounded-full border-[5px] border-[#8a6a3a] bg-[#cdbb95] text-[clamp(2.2rem,13vw,4.5rem)] opacity-60 shadow-lg">
-                {stop.emoji}
-                <span className="absolute bottom-1 right-1 text-2xl">🔒</span>
-              </span>
-              <span className="mt-1 rounded-md bg-black/40 px-2 py-0.5 text-center text-xs font-semibold leading-tight text-white">
-                {stop.labelZh}
-                <span className="block text-[10px] opacity-80">{stop.labelEn}</span>
-              </span>
-            </div>
-          );
-        }
-
-        const cleared = island.completionPercent >= 100;
-        const isCurrent = i === firstActive;
-        return (
-          <Link
-            key={i}
-            data-testid="voyage-stop-link"
-            href={`/play/${childId}/week/${island.weekId}`}
-            aria-label={`${stop.labelEn} — week ${num}${cleared ? ' cleared' : isCurrent ? ' current' : ''}`}
-            style={{ ...style, viewTransitionName: `island-${island.weekId}` }}
-            className="absolute z-10 flex w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-          >
-            <span className="relative flex aspect-square w-full items-center justify-center rounded-full border-[5px] border-[#caa24a] bg-gradient-to-b from-[#fbeec3] to-[#e9c877] text-[clamp(2.2rem,13vw,4.5rem)] shadow-xl">
-              {stop.emoji}
-              {/* Gold number badge */}
-              <span className="absolute -left-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#fbeec3] bg-[#b8232a] text-base font-extrabold text-white shadow-md">
-                {num}
-              </span>
-              {cleared && (
-                <span
-                  data-testid="voyage-stop-cleared"
-                  className="absolute bottom-0 right-0 text-3xl drop-shadow"
-                  aria-hidden="true"
-                >
-                  🏴
-                </span>
-              )}
-              {isCurrent && (
-                <span className="absolute bottom-0 right-0 text-3xl drop-shadow" aria-hidden="true">
-                  ⛵
-                </span>
-              )}
-              {isCurrent && !reduced && (
-                <span className="absolute inset-0 animate-ping rounded-full bg-[#caa24a]/40" />
-              )}
-            </span>
-            <span className="mt-1 rounded-md bg-black/45 px-2 py-0.5 text-center text-xs font-bold leading-tight text-white">
-              {stop.labelZh}
-              <span className="block text-[10px] font-medium opacity-85">{stop.labelEn}</span>
-            </span>
-          </Link>
-        );
-      })}
+      {/* Sailing ship overlay (matches the medallion coordinate space) */}
+      <SailingShip points={pos} currentIndex={currentIndex} />
     </div>
+  );
+}
+
+function StopNode({
+  stop,
+  num,
+  pos,
+  island,
+  isCurrent,
+  childId,
+  reduced,
+  compact,
+}: {
+  stop: VoyageStop;
+  num: number;
+  pos: VoyagePoint;
+  island: VoyageBoardIsland | undefined;
+  isCurrent: boolean;
+  childId: string;
+  reduced: boolean;
+  compact: boolean;
+}) {
+  const style = { left: `${pos.xPct}%`, top: `${pos.yPct}%` } as const;
+  // Landscape packs many stops across the width, so medallions are smaller.
+  const widthClass = compact ? 'w-[13%]' : 'w-[42%]';
+  const emojiClass = compact
+    ? 'text-[clamp(1.4rem,4.5vw,3rem)]'
+    : 'text-[clamp(2.2rem,13vw,4.5rem)]';
+
+  if (!island) {
+    return (
+      <div
+        data-testid="voyage-stop-locked"
+        className={`absolute z-10 flex ${widthClass} -translate-x-1/2 -translate-y-1/2 flex-col items-center`}
+        style={style}
+        aria-label={`${stop.labelEn} — locked`}
+      >
+        <span className={`relative flex aspect-square w-full items-center justify-center rounded-full border-[5px] border-[#8a6a3a] bg-[#cdbb95] ${emojiClass} opacity-60 shadow-lg`}>
+          {stop.emoji}
+          <span className="absolute bottom-1 right-1 text-xl">🔒</span>
+        </span>
+        <span className="mt-1 rounded-md bg-black/40 px-2 py-0.5 text-center text-[11px] font-semibold leading-tight text-white">
+          {stop.labelZh}
+          <span className="block text-[9px] opacity-80">{stop.labelEn}</span>
+        </span>
+      </div>
+    );
+  }
+
+  const cleared = island.completionPercent >= 100;
+  return (
+    <Link
+      data-testid="voyage-stop-link"
+      href={`/play/${childId}/week/${island.weekId}`}
+      aria-label={`${stop.labelEn} — week ${num}${cleared ? ' cleared' : isCurrent ? ' current' : ''}`}
+      style={{ ...style, viewTransitionName: `island-${island.weekId}` }}
+      className={`absolute z-10 flex ${widthClass} -translate-x-1/2 -translate-y-1/2 flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-white`}
+    >
+      <span className={`relative flex aspect-square w-full items-center justify-center rounded-full border-[5px] border-[#caa24a] bg-gradient-to-b from-[#fbeec3] to-[#e9c877] ${emojiClass} shadow-xl`}>
+        {stop.emoji}
+        <span className="absolute -left-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#fbeec3] bg-[#b8232a] text-base font-extrabold text-white shadow-md">
+          {num}
+        </span>
+        {cleared && (
+          <span data-testid="voyage-stop-cleared" className="absolute bottom-0 right-0 text-2xl drop-shadow" aria-hidden="true">
+            🏴
+          </span>
+        )}
+        {isCurrent && (
+          <span className="absolute bottom-0 right-0 text-2xl drop-shadow" aria-hidden="true">
+            ⛵
+          </span>
+        )}
+        {isCurrent && !reduced && (
+          <span className="absolute inset-0 animate-ping rounded-full bg-[#caa24a]/40" />
+        )}
+      </span>
+      <span className="mt-1 rounded-md bg-black/45 px-2 py-0.5 text-center text-[11px] font-bold leading-tight text-white">
+        {stop.labelZh}
+        <span className="block text-[9px] font-medium opacity-85">{stop.labelEn}</span>
+      </span>
+    </Link>
   );
 }
