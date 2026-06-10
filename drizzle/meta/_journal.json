@@ -176,6 +176,13 @@
       "when": 1780870349549,
       "tag": "0024_rich_norrin_radd",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1781109083719,
+      "tag": "0025_motionless_firebrand",
+      "breakpoints": true
     }
   ]
 }

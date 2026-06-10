@@ -146,7 +146,12 @@ export async function pullCardInTx(
     })
     .from(collectibleItems)
     .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
-    .where(eq(collectionPacks.isActive, true));
+    .where(
+      and(
+        eq(collectionPacks.isActive, true),
+        eq(collectionPacks.gachaEligible, true),
+      ),
+    );
 
   const owned = await tx
     .select({ itemId: childCollections.itemId })
@@ -239,11 +244,16 @@ export async function grantGiftPackInTx(
     throw err;
   }
 
-  // 2. Active packs.
+  // 2. Active, gacha-eligible packs (reward-only packs like festivals are excluded).
   const packs = await tx
     .select({ id: collectionPacks.id, slug: collectionPacks.slug })
     .from(collectionPacks)
-    .where(eq(collectionPacks.isActive, true));
+    .where(
+      and(
+        eq(collectionPacks.isActive, true),
+        eq(collectionPacks.gachaEligible, true),
+      ),
+    );
 
   // 3. Owned set (once, shared across all pack iterations).
   const owned = await tx
