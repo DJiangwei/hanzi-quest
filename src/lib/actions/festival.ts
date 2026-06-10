@@ -21,6 +21,9 @@ export async function claimFestivalRewardAction(
   if (result.granted) {
     revalidatePath(`/play/${childId}/calendar`);
     revalidatePath(`/play/${childId}/collection`);
+    // The cosmetic is auto-equipped — refresh the surfaces that render the avatar.
+    revalidatePath(`/play/${childId}`);
+    revalidatePath(`/play/${childId}/shop`);
   }
   return result;
 }

@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { claimFestivalRewardAction } from '@/lib/actions/festival';
 import { CardChestReveal } from '@/components/scenes/fx/CardChestReveal';
+import { AvatarRender } from '@/components/play/AvatarRender';
+import { lookupItem } from '@/lib/avatar/itemCatalog';
+import type { AvatarSlotId } from '@/lib/avatar/defaultLook';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import type { FestivalCosmetic } from '@/lib/db/festival-challenge';
 
 interface Props {
   childId: string;
@@ -40,6 +44,7 @@ export function FestivalChallengePanel({
   const [claimed, setClaimed] = useState(claimedInitial);
   const [busy, setBusy] = useState(false);
   const [reveal, setReveal] = useState<RevealCard[]>([]);
+  const [cosmetic, setCosmetic] = useState<FestivalCosmetic | null>(null);
 
   const pct = Math.min(100, Math.round((activeDays / threshold) * 100));
   const remaining = Math.max(0, threshold - activeDays);
@@ -52,6 +57,7 @@ export function FestivalChallengePanel({
       if (res.granted) {
         setClaimed(true);
         setReveal([res.card]);
+        setCosmetic(res.cosmetic);
       } else if (res.reason === 'already_claimed') {
         setClaimed(true);
       }
@@ -59,6 +65,10 @@ export function FestivalChallengePanel({
       setBusy(false);
     }
   }
+
+  const cosmeticName = cosmetic
+    ? lookupItem(cosmetic.unlockRef)?.displayName ?? '节日装扮'
+    : null;
 
   return (
     <div className="rounded-2xl border-2 border-rose-300 bg-gradient-to-b from-rose-50 to-amber-50 p-4 shadow-sm">
@@ -121,6 +131,27 @@ export function FestivalChallengePanel({
           </span>
         )}
       </div>
+
+      {cosmetic && cosmeticName && (
+        <div
+          data-testid="festival-cosmetic-banner"
+          className="mt-3 flex items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-2"
+        >
+          <AvatarRender
+            equipped={{ [cosmetic.slotId as AvatarSlotId]: cosmetic.unlockRef }}
+            size={56}
+            label={`${cosmeticName} 预览 / preview`}
+          />
+          <div className="min-w-0 text-sm">
+            <div className="font-hanzi font-bold text-amber-900">
+              🎀 新装扮：{cosmeticName}
+            </div>
+            <div className="text-xs text-amber-700">
+              New outfit unlocked &amp; equipped!
+            </div>
+          </div>
+        </div>
+      )}
 
       {reveal.length > 0 && (
         <CardChestReveal cards={reveal} onDone={() => setReveal([])} />

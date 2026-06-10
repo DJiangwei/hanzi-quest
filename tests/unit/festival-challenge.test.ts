@@ -36,14 +36,24 @@ function makeTx(opts: {
   claimThrows?: boolean;
   itemRows: unknown[];
   ownedRows: unknown[];
+  avatarRows?: unknown[];
 }) {
   let insertCalls = 0;
-  const selectQueue = [opts.itemRows, opts.ownedRows];
+  // Query order: card item → owned collection → avatar cosmetic item.
+  const selectQueue = [opts.itemRows, opts.ownedRows, opts.avatarRows ?? []];
   let si = 0;
   const makeSelect = (): unknown => ({
     from: () => makeSelect(),
     innerJoin: () => makeSelect(),
-    where: () => Promise.resolve(selectQueue[si++] ?? []),
+    // `.where()` is awaited directly (card query) AND can chain `.limit()`
+    // (cosmetic query) — return a thenable that also exposes limit().
+    where: () => {
+      const rows = selectQueue[si++] ?? [];
+      return {
+        limit: () => Promise.resolve(rows),
+        then: (resolve: (v: unknown) => unknown) => Promise.resolve(rows).then(resolve),
+      };
+    },
   });
   return {
     insert: vi.fn(() => ({
@@ -52,7 +62,13 @@ function makeTx(opts: {
         if (insertCalls === 1 && opts.claimThrows) {
           throw { code: '23505' };
         }
-        return Promise.resolve(undefined);
+        // Awaitable, and chainable for onConflictDo*.
+        return {
+          onConflictDoNothing: () => Promise.resolve(undefined),
+          onConflictDoUpdate: () => Promise.resolve(undefined),
+          then: (resolve: (v: unknown) => unknown) =>
+            Promise.resolve(undefined).then(resolve),
+        };
       }),
     })),
     update: vi.fn(() => ({
@@ -104,7 +120,7 @@ describe('claimFestivalReward', () => {
     if (!r.granted) expect(r.reason).toBe('not_eligible');
   });
 
-  it('grants the festival card when eligible', async () => {
+  it('grants the festival card + auto-equips the cosmetic when eligible', async () => {
     h.activity = playedDays(15);
     h.tx = makeTx({
       itemRows: [
@@ -118,6 +134,7 @@ describe('claimFestivalReward', () => {
         },
       ],
       ownedRows: [],
+      avatarRows: [{ id: 'av1', slotId: 'hat' }],
     });
     const r = await claimFestivalReward('c1', '2026-06');
     expect(r.granted).toBe(true);
@@ -125,7 +142,30 @@ describe('claimFestivalReward', () => {
       expect(r.card.slug).toBe('dragon-boat');
       expect(r.card.packSlug).toBe('festivals-v1');
       expect(r.card.isDupe).toBe(false);
+      // June theme cosmetic = festival-dragon on the hat slot.
+      expect(r.cosmetic).toEqual({ unlockRef: 'festival-dragon', slotId: 'hat' });
     }
+  });
+
+  it('still grants the card when the cosmetic item is not seeded (cosmetic=null)', async () => {
+    h.activity = playedDays(15);
+    h.tx = makeTx({
+      itemRows: [
+        {
+          id: 'fi1',
+          slug: 'dragon-boat',
+          nameZh: '端午节',
+          nameEn: 'Dragon Boat Festival',
+          loreZh: null,
+          loreEn: null,
+        },
+      ],
+      ownedRows: [],
+      avatarRows: [], // no avatar item row → cosmetic skipped
+    });
+    const r = await claimFestivalReward('c1', '2026-06');
+    expect(r.granted).toBe(true);
+    if (r.granted) expect(r.cosmetic).toBeNull();
   });
 
   it('returns already_claimed on a PK collision (23505)', async () => {

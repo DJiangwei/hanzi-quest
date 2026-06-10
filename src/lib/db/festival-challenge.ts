@@ -5,6 +5,9 @@ import {
   collectibleItems,
   childCollections,
   festivalChallengeClaims,
+  avatarItems,
+  childAvatarInventory,
+  childAvatarEquipped,
 } from '@/db/schema';
 import { getActivityForRange } from './activity';
 import {
@@ -12,6 +15,7 @@ import {
   type FestivalTheme,
 } from '@/lib/calendar/festivals';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import type { Tx } from './grants';
 
 export const FESTIVALS_PACK_SLUG = 'festivals-v1';
 
@@ -23,9 +27,50 @@ export interface MonthlyChallengeState {
   eligible: boolean;
 }
 
+/** The festival avatar cosmetic granted + auto-equipped on claim. */
+export interface FestivalCosmetic {
+  unlockRef: string;
+  slotId: string;
+}
+
 export type FestivalClaimResult =
-  | { granted: true; card: RevealCard }
+  | { granted: true; card: RevealCard; cosmetic: FestivalCosmetic | null }
   | { granted: false; reason: 'not_eligible' | 'already_claimed' };
+
+/**
+ * Grant + auto-equip the festival avatar cosmetic for `avatarItemRef`. Best
+ * effort: if the avatar item isn't seeded yet, returns null (the card grant must
+ * not fail because a cosmetic is missing). Idempotent — inventory insert ignores
+ * a re-grant; equip upserts the slot.
+ */
+async function grantFestivalCosmeticInTx(
+  tx: Tx,
+  childId: string,
+  avatarItemRef: string,
+): Promise<FestivalCosmetic | null> {
+  const rows = await tx
+    .select({ id: avatarItems.id, slotId: avatarItems.slotId })
+    .from(avatarItems)
+    .where(eq(avatarItems.unlockRef, avatarItemRef))
+    .limit(1);
+  const item = rows[0];
+  if (!item) return null;
+
+  await tx
+    .insert(childAvatarInventory)
+    .values({ childId, avatarItemId: item.id })
+    .onConflictDoNothing();
+
+  await tx
+    .insert(childAvatarEquipped)
+    .values({ childId, slotId: item.slotId, avatarItemId: item.id })
+    .onConflictDoUpdate({
+      target: [childAvatarEquipped.childId, childAvatarEquipped.slotId],
+      set: { avatarItemId: item.id },
+    });
+
+  return { unlockRef: avatarItemRef, slotId: item.slotId };
+}
 
 function monthRange(yyyymm: string): { startIso: string; endIso: string } {
   const [y, m] = yyyymm.split('-').map(Number);
@@ -165,6 +210,13 @@ export async function claimFestivalReward(
         .values({ childId, itemId: item.id, count: 1 });
     }
 
+    // 4. Grant + auto-equip the festival avatar cosmetic (best effort).
+    const cosmetic = await grantFestivalCosmeticInTx(
+      tx,
+      childId,
+      theme.avatarItemRef,
+    );
+
     return {
       granted: true,
       card: {
@@ -178,6 +230,7 @@ export async function claimFestivalReward(
         isDupe,
         shardsAfter: 0,
       },
+      cosmetic,
     };
   });
 }
