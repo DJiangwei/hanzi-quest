@@ -24,6 +24,7 @@
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.38.0",
+    "lunar-typescript": "^1.8.6",
     "next": "16.2.6",
     "next-intl": "^4.11.1",
     "postgres": "^3.4.9",

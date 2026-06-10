@@ -15,6 +15,32 @@ vi.mock('@/lib/db/streaks', () => ({
   }),
   todayUtcIso: vi.fn(() => '2026-05-15'),
 }));
+vi.mock('@/lib/db/festival-challenge', () => ({
+  getMonthlyChallengeState: vi.fn().mockResolvedValue({
+    theme: {
+      month: 5,
+      cardSlug: 'start-summer',
+      nameZh: '立夏',
+      nameEn: 'Start of Summer',
+      emoji: '🍃',
+      thresholdDays: 12,
+      blurbZh: '夏天来了',
+      blurbEn: 'Summer begins',
+    },
+    activeDays: 0,
+    threshold: 12,
+    claimed: false,
+    eligible: false,
+  }),
+}));
+// FestivalChallengePanel (rendered by MonthCalendar) pulls the action + reveal;
+// mock them so the page's module graph doesn't load the real @/db chain.
+vi.mock('@/lib/actions/festival', () => ({
+  claimFestivalRewardAction: vi.fn(),
+}));
+vi.mock('@/components/scenes/fx/CardChestReveal', () => ({
+  CardChestReveal: () => null,
+}));
 
 import CalendarPage from '@/app/play/[childId]/calendar/page';
 

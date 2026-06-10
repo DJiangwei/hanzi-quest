@@ -21,6 +21,12 @@ export const collectionPacks = pgTable('collection_packs', {
   description: text('description'),
   themeColor: text('theme_color'),
   isActive: boolean('is_active').notNull().default(true),
+  /**
+   * Whether this pack participates in gacha (boss/perfect/story pulls) + the
+   * weekly 大礼包. Reward-only packs (e.g. festivals-v1, earned solely via the
+   * monthly challenge) set this false so their cards never drop from gacha.
+   */
+  gachaEligible: boolean('gacha_eligible').notNull().default(true),
   availableFrom: timestamp('available_from', { withTimezone: true }),
   availableTo: timestamp('available_to', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true })
@@ -94,3 +100,25 @@ export const childShards = pgTable('child_shards', {
     .references(() => childProfiles.id, { onDelete: 'cascade' }),
   shards: integer('shards').notNull().default(0),
 });
+
+/**
+ * Idempotency ledger for the festival Monthly Challenge reward. One row per
+ * (child, UTC month) once the active-days goal is met and the festival card is
+ * granted. The PK guarantees a child can claim each month's reward only once.
+ */
+export const festivalChallengeClaims = pgTable(
+  'festival_challenge_claims',
+  {
+    childId: uuid('child_id')
+      .notNull()
+      .references(() => childProfiles.id, { onDelete: 'cascade' }),
+    /** `yyyy-mm` of the claimed month. */
+    monthKey: text('month_key').notNull(),
+    /** The festival card slug granted for that month. */
+    cardSlug: text('card_slug').notNull(),
+    claimedAt: timestamp('claimed_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.childId, t.monthKey] })],
+);

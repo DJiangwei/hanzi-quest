@@ -6,6 +6,8 @@ import { LandmarkCard } from '@/components/play/items/LandmarkCard';
 import { SeaCreatureCard } from '@/components/play/items/SeaCreatureCard';
 import { SolarBodyCard } from '@/components/play/items/SolarBodyCard';
 import { ZodiacGridItem } from '@/components/play/items/ZodiacGridItem';
+import { FestivalCard } from '@/components/play/items/FestivalCard';
+import { FESTIVALS_BY_SLUG } from '@/lib/collections/festivalsData';
 import { DINOSAURS_BY_SLUG } from '@/lib/collections/dinosaursData';
 import {
   FLAGS_BY_SLUG,
@@ -168,6 +170,20 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
       order: CONTINENT_ORDER,
       labels: CONTINENT_LABELS,
     },
+  },
+  'festivals-v1': {
+    displayNameZh: '节日',
+    displayNameEn: 'Festivals',
+    sloganZh: '完成每月挑战，集齐中国传统节日！',
+    sloganEn: 'Complete the monthly challenge to collect Chinese festivals!',
+    themeEmoji: '🎏',
+    themeBannerClass:
+      'bg-gradient-to-br from-rose-200 via-amber-200 to-red-300',
+    themeAccentClass: 'text-rose-900',
+    paidPullCost: 0, // reward-only — never sold / pulled via gacha
+    gridColumns: 3,
+    ItemCard: FestivalCard,
+    resolveRevealEmoji: (slug) => FESTIVALS_BY_SLUG[slug]?.emoji ?? null,
   },
 };
 

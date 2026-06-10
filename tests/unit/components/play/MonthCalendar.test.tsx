@@ -1,7 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MonthCalendar } from '@/components/play/MonthCalendar';
+import { MonthCalendar, type ChallengeProps, type LunarCell } from '@/components/play/MonthCalendar';
 import type { ActivityDay } from '@/lib/db/activity';
+
+vi.mock('@/lib/actions/festival', () => ({
+  claimFestivalRewardAction: vi.fn(),
+}));
+vi.mock('@/components/scenes/fx/CardChestReveal', () => ({
+  CardChestReveal: () => <div data-testid="card-chest-reveal" />,
+}));
 
 function day(dateIso: string, overrides: Partial<ActivityDay> = {}): ActivityDay {
   return {
@@ -13,6 +20,18 @@ function day(dateIso: string, overrides: Partial<ActivityDay> = {}): ActivityDay
     ...overrides,
   };
 }
+
+const challenge: ChallengeProps = {
+  nameZh: '立夏',
+  nameEn: 'Start of Summer',
+  emoji: '🍃',
+  blurbZh: '夏天来了',
+  blurbEn: 'Summer begins',
+  activeDays: 3,
+  threshold: 12,
+  claimed: false,
+  eligible: false,
+};
 
 describe('MonthCalendar', () => {
   it('renders correct number of day cells for May 2026 (31 days)', () => {
@@ -26,6 +45,8 @@ describe('MonthCalendar', () => {
         todayIso="2026-05-15"
         streakDays={0}
         childId="c1"
+        lunar={{}}
+        challenge={challenge}
       />,
     );
     expect(screen.getAllByTestId(/^cal-cell-/)).toHaveLength(31);
@@ -40,9 +61,31 @@ describe('MonthCalendar', () => {
         todayIso="2026-05-15"
         streakDays={0}
         childId="c1"
+        lunar={{}}
+        challenge={challenge}
       />,
     );
     expect(screen.getByTestId('cal-cell-2026-05-01').textContent).toContain('⭐');
+  });
+
+  it('renders the 农历 day + festival badge from lunar data', () => {
+    const lunar: Record<string, LunarCell> = {
+      '2026-05-01': { dayZh: '初五', emoji: '🐲', label: '端午节' },
+    };
+    render(
+      <MonthCalendar
+        yyyymm="2026-05"
+        activity={[]}
+        todayIso="2026-05-15"
+        streakDays={0}
+        childId="c1"
+        lunar={lunar}
+        challenge={challenge}
+      />,
+    );
+    const cell = screen.getByTestId('cal-cell-2026-05-01');
+    expect(cell.textContent).toContain('初五');
+    expect(screen.getByTestId('cal-badge-2026-05-01').textContent).toContain('🐲');
   });
 
   it('renders prev/next month nav', () => {
@@ -53,6 +96,8 @@ describe('MonthCalendar', () => {
         todayIso="2026-05-15"
         streakDays={0}
         childId="c1"
+        lunar={{}}
+        challenge={challenge}
       />,
     );
     expect(screen.getByRole('link', { name: /prev|前/i })).toHaveAttribute(
