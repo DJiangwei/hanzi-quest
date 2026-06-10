@@ -31,7 +31,7 @@ export default async function PlayLayout({ children, params }: LayoutProps) {
           'linear-gradient(to bottom, var(--color-ocean-100) 0%, var(--color-sand-50) 60%, var(--color-treasure-100) 100%)',
       }}
     >
-      <header className="flex items-center justify-between gap-2 border-b border-white/60 bg-white/50 px-4 py-2 backdrop-blur">
+      <header className="flex items-center justify-between gap-2 border-b border-white/60 bg-white/50 px-4 py-2 backdrop-blur lg:pl-24">
         {/* Transparent placeholder keeps flex layout balanced now that ← Parent is removed */}
         <span className="w-16" aria-hidden />
         <span className="font-hanzi text-base font-bold tracking-wide text-[var(--color-ocean-900)]">
@@ -45,7 +45,7 @@ export default async function PlayLayout({ children, params }: LayoutProps) {
       <ZodiacIconDefs />
       <SoundThemeBootstrap themeSlug={themeSlug} />
       <MidSceneProvider>
-        <div className="flex flex-1 flex-col pb-20">{children}</div>
+        <div className="flex flex-1 flex-col pb-20 lg:pb-0 lg:pl-20">{children}</div>
         <KidNavBar childId={childId} />
       </MidSceneProvider>
     </div>

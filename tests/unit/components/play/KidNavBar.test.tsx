@@ -54,6 +54,18 @@ describe('KidNavBar', () => {
     expect(screen.getByRole('link', { name: /背包/ })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('morphs to a left rail on landscape (lg:) — single nav, no duplicate links', () => {
+    pathnameMock.mockReturnValue('/play/child_1');
+    render(<KidNavBar childId="child_1" />);
+    // Exactly one Map link (single DOM tree, CSS-toggled bar↔rail).
+    expect(screen.getAllByRole('link', { name: /Map/i })).toHaveLength(1);
+    const nav = screen.getByTestId('kid-nav');
+    expect(nav.className).toContain('lg:fixed');
+    expect(nav.className).toContain('lg:flex-col');
+    expect(nav.className).toContain('lg:w-20');
+    expect(nav.className).toContain('lg:border-r');
+  });
+
   it('mid-scene tab tap shows quit-confirm dialog', () => {
     pathnameMock.mockReturnValue('/play/child_1/level/week_1/practice');
     render(

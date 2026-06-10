@@ -85,15 +85,19 @@ export function MultipleChoiceQuiz({
   };
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-6">
-      {prompt ? (
-        <p className="font-hanzi text-center text-lg text-[var(--color-ocean-700)]">
-          {prompt}
-        </p>
-      ) : null}
-      <div className="flex items-center justify-center">{stimulus}</div>
+    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-6 lg:grid lg:grid-cols-2 lg:items-center lg:gap-10 lg:px-12">
+      {/* Left pane: prompt + stimulus (own column on lg) */}
+      <div className="flex flex-col items-center justify-center gap-8">
+        {prompt ? (
+          <p className="font-hanzi text-center text-lg text-[var(--color-ocean-700)]">
+            {prompt}
+          </p>
+        ) : null}
+        <div className="flex items-center justify-center">{stimulus}</div>
+      </div>
+      {/* Right pane: answer choices */}
       <ShakeWrap triggerKey={triggerKey}>
-        <div className="grid w-full max-w-md grid-cols-2 gap-3">
+        <div className="grid w-full max-w-md grid-cols-2 gap-3 lg:mx-auto lg:max-w-lg">
           {choices.map((c) => {
             const isGrayed = grayedKey !== null && c.key === grayedKey && revealed === null;
             const state =

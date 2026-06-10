@@ -51,6 +51,24 @@ describe('MultipleChoiceQuiz', () => {
     expect(onComplete).toHaveBeenCalledWith(true);
   });
 
+  it('splits stimulus-left / choices-right on landscape (lg:), still renders all parts', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(false);
+    const { container } = render(
+      <MultipleChoiceQuiz
+        prompt={<span>问</span>}
+        stimulus={<span>字</span>}
+        choices={choices}
+        onComplete={() => undefined}
+      />,
+    );
+    expect(screen.getByText('问')).toBeInTheDocument();
+    expect(screen.getByText('字')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'A' })).toBeInTheDocument();
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).toContain('lg:grid');
+    expect(root.className).toContain('lg:grid-cols-2');
+  });
+
   it('plays ding on correct, buzz on wrong', async () => {
     vi.mocked(useReducedMotion).mockReturnValue(false);
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
