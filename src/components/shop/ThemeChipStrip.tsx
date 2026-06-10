@@ -1,6 +1,6 @@
 'use client';
 
-import { AVATAR_THEMES, THEME_DISPLAY_NAMES, type AvatarTheme } from '@/lib/avatar/themes';
+import { SHOP_FILTER_THEMES, THEME_DISPLAY_NAMES, type AvatarTheme } from '@/lib/avatar/themes';
 
 export type ThemeChipValue = 'all' | AvatarTheme;
 
@@ -12,7 +12,7 @@ interface ThemeChipStripProps {
 export function ThemeChipStrip({ selected, onSelect }: ThemeChipStripProps) {
   const chips: { value: ThemeChipValue; label: string }[] = [
     { value: 'all', label: '全部 / All' },
-    ...AVATAR_THEMES.map((t) => ({
+    ...SHOP_FILTER_THEMES.map((t) => ({
       value: t,
       label: `${THEME_DISPLAY_NAMES[t].zh} / ${THEME_DISPLAY_NAMES[t].en}`,
     })),

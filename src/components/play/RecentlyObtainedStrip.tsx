@@ -8,6 +8,7 @@ interface Props {
 }
 
 const ONE_DAY_MS = 24 * 3600 * 1000;
+const HTTP_URL = /^https?:\/\//i;
 
 export function RecentlyObtainedStrip({ items, nowMs }: Props) {
   if (items.length === 0) return null;
@@ -33,7 +34,21 @@ export function RecentlyObtainedStrip({ items, nowMs }: Props) {
                   新 NEW
                 </span>
               )}
-              <span className="text-2xl leading-none">{item.displayEmoji}</span>
+              {/* displayEmoji is either an emoji glyph OR a real image URL
+                  (collectible art backfill). Render <img> for URLs so we never
+                  print a raw link as text. */}
+              {HTTP_URL.test(item.displayEmoji) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.displayEmoji}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  className="h-8 w-8 rounded object-cover"
+                />
+              ) : (
+                <span className="text-2xl leading-none">{item.displayEmoji}</span>
+              )}
               <span className="text-center text-[10px] leading-tight text-[var(--color-ocean-900)]">
                 {item.nameZh}
               </span>

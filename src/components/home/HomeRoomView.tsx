@@ -146,7 +146,11 @@ export function HomeRoomView({ childId, ownedSlugs, placements: initialPlacement
           {isLiftedItem && selected && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-[var(--color-sand-700)]">
-                已选中: {getFurniture(selected.slug)?.nameZh ?? selected.slug}
+                已选中 / Selected:{' '}
+                {(() => {
+                  const def = getFurniture(selected.slug);
+                  return def ? `${def.nameZh} / ${def.nameEn}` : selected.slug;
+                })()}
               </span>
               <button
                 onClick={handlePutAway}

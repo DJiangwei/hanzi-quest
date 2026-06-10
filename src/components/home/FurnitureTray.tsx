@@ -55,7 +55,10 @@ export function FurnitureTray({ unplacedSlugs, selectedSlug, onSelect }: Props) 
               >
                 <def.Component />
               </svg>
-              <span className="mt-0.5 text-center leading-tight">{def.nameZh}</span>
+              <span className="mt-0.5 text-center font-hanzi leading-tight">{def.nameZh}</span>
+              <span className="text-center text-[9px] leading-tight text-[var(--color-sand-600)]">
+                {def.nameEn}
+              </span>
             </button>
           );
         })
