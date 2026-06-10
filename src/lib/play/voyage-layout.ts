@@ -25,3 +25,36 @@ export function voyageLayout(total: number): VoyagePoint[] {
     yPct: ((i + 0.5) / total) * 100,
   }));
 }
+
+/** Horizontal margin (% from each edge) for the landscape snake. */
+const H_MARGIN = 12;
+/** Y centres for the 1-row / 2-row landscape layouts. */
+const ROW_Y_SINGLE = 50;
+const ROW_Y_TWO = [32, 70] as const;
+
+/**
+ * Lays `total` stops in a wide HORIZONTAL snake (boustrophedon) that fits a
+ * landscape board with NO scroll: one row for ≤5 stops, otherwise two rows —
+ * the top row runs left→right, the bottom row runs right→left, so the dotted
+ * route reads as one continuous winding voyage across the sea-chart.
+ *
+ * Used on `lg:` (landscape iPad); phones keep the tall `voyageLayout` above.
+ */
+export function voyageLayoutHorizontal(total: number): VoyagePoint[] {
+  if (total <= 0) return [];
+  const rows = total <= 5 ? 1 : 2;
+  const perRow = Math.ceil(total / rows);
+  return Array.from({ length: total }, (_, i) => {
+    const row = Math.floor(i / perRow);
+    const countInRow = Math.min(perRow, total - row * perRow);
+    const j = i % perRow;
+    // Snake: even rows go left→right, odd rows right→left.
+    const eff = row % 2 === 0 ? j : countInRow - 1 - j;
+    const xPct =
+      countInRow === 1
+        ? 50
+        : H_MARGIN + (eff / (countInRow - 1)) * (100 - 2 * H_MARGIN);
+    const yPct = rows === 1 ? ROW_Y_SINGLE : ROW_Y_TWO[row];
+    return { xPct, yPct };
+  });
+}
