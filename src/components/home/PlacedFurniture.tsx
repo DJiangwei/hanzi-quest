@@ -55,6 +55,16 @@ export function PlacedFurniture({ slug, x, y, editMode, selected, onTap }: Props
           opacity={0.9}
         />
       )}
+      {/* Soft contact shadow beneath the item — grounds it in the room (2.5D
+          depth). Floor items get a fuller shadow; wall items a faint one. */}
+      <ellipse
+        cx={w / 2}
+        cy={def.surface === 'wall' ? h - 0.6 : h - 1.2}
+        rx={w * 0.42}
+        ry={def.surface === 'wall' ? 0.7 : 1.6}
+        fill="#1a1208"
+        opacity={def.surface === 'wall' ? 0.08 : 0.13}
+      />
       {/* Component is drawn within a 0,0 → w,h box */}
       <svg
         x={0}

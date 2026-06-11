@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { requireChild } from '@/lib/auth/guards';
 import { getHomeState } from '@/lib/db/home';
+import { getRoomSurfaces } from '@/lib/db/home-surfaces';
+import { getSurface } from '@/lib/home/surfaces';
 import { HomeRoomView } from '@/components/home/HomeRoomView';
 
 interface PageProps {
@@ -11,7 +13,12 @@ export default async function HomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const { ownedSlugs, placements } = await getHomeState(child.id);
+  const [{ ownedSlugs, placements }, roomSurfaces] = await Promise.all([
+    getHomeState(child.id),
+    getRoomSurfaces(child.id),
+  ]);
+  // Owned slugs include all kind='home' purchases; surfaces are the ones in the catalog.
+  const ownedSurfaceSlugs = ownedSlugs.filter((s) => getSurface(s) !== undefined);
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
@@ -38,6 +45,8 @@ export default async function HomePage({ params }: PageProps) {
           childId={child.id}
           ownedSlugs={ownedSlugs}
           placements={placements}
+          roomSurfaces={roomSurfaces}
+          ownedSurfaceSlugs={ownedSurfaceSlugs}
         />
       )}
     </main>

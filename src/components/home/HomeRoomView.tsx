@@ -3,11 +3,18 @@
 import { useState, useCallback, useTransition } from 'react';
 import { type HomeRoomId } from '@/lib/home/rooms';
 import { getFurniture } from '@/lib/home/furniture-catalog';
+import type { SurfaceKind } from '@/lib/home/surfaces';
 import { RoomTabs } from './RoomTabs';
 import { RoomCanvas } from './RoomCanvas';
 import { FurnitureTray } from './FurnitureTray';
-import { placeFurnitureAction, removeFurnitureAction } from '@/lib/actions/home';
+import { SurfacePicker } from './SurfacePicker';
+import {
+  placeFurnitureAction,
+  removeFurnitureAction,
+  setRoomSurfaceAction,
+} from '@/lib/actions/home';
 import type { HomePlacement } from '@/lib/db/home';
+import type { RoomSurface } from '@/lib/db/home-surfaces';
 
 interface Selected {
   source: 'tray' | 'placed';
@@ -18,6 +25,10 @@ interface Props {
   childId: string;
   ownedSlugs: string[];
   placements: HomePlacement[];
+  /** Equipped wallpaper/floor per room (defaults applied server-side). */
+  roomSurfaces?: Record<string, RoomSurface>;
+  /** Owned surface slugs (buyable wallpapers/floors the kid purchased). */
+  ownedSurfaceSlugs?: string[];
 }
 
 /**
@@ -31,13 +42,44 @@ interface Props {
  * Optimistic local placement state mirrors DB; reconciled from props on
  * next navigation (server revalidates on action success).
  */
-export function HomeRoomView({ childId, ownedSlugs, placements: initialPlacements }: Props) {
+export function HomeRoomView({
+  childId,
+  ownedSlugs,
+  placements: initialPlacements,
+  roomSurfaces: initialSurfaces = {},
+  ownedSurfaceSlugs = [],
+}: Props) {
   const [activeRoom, setActiveRoom] = useState<HomeRoomId>('bedroom');
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [selected, setSelected] = useState<Selected | null>(null);
   // Optimistic local placements — seeded from server-fetched props
   const [localPlacements, setLocalPlacements] = useState<HomePlacement[]>(initialPlacements);
+  // Optimistic local surfaces (wallpaper/floor per room)
+  const [localSurfaces, setLocalSurfaces] =
+    useState<Record<string, RoomSurface>>(initialSurfaces);
   const [, startTransition] = useTransition();
+
+  const activeSurface = localSurfaces[activeRoom];
+
+  const handleSetSurface = useCallback(
+    (kind: SurfaceKind, slug: string) => {
+      setLocalSurfaces((prev) => {
+        const cur = prev[activeRoom];
+        if (!cur) return prev;
+        return {
+          ...prev,
+          [activeRoom]: {
+            wallpaperSlug: kind === 'wallpaper' ? slug : cur.wallpaperSlug,
+            floorSlug: kind === 'floor' ? slug : cur.floorSlug,
+          },
+        };
+      });
+      startTransition(async () => {
+        await setRoomSurfaceAction(childId, activeRoom, kind, slug);
+      });
+    },
+    [activeRoom, childId],
+  );
 
   // Slugs placed in ANY room (to filter tray)
   const placedSlugs = new Set(localPlacements.map((p) => p.slug));
@@ -135,6 +177,8 @@ export function HomeRoomView({ childId, ownedSlugs, placements: initialPlacement
         mode={mode}
         selectedSlug={selected?.slug ?? null}
         liftedSlug={liftedSlug}
+        wallpaperSlug={activeSurface?.wallpaperSlug}
+        floorSlug={activeSurface?.floorSlug}
         onPlacedTap={handlePlacedTap}
         onCellTap={handleCellTap}
       />
@@ -180,6 +224,16 @@ export function HomeRoomView({ childId, ownedSlugs, placements: initialPlacement
             selectedSlug={selected?.source === 'tray' ? selected.slug : null}
             onSelect={handleTraySelect}
           />
+
+          {/* Wallpaper + floor picker for this room */}
+          {activeSurface && (
+            <SurfacePicker
+              ownedSurfaceSlugs={ownedSurfaceSlugs}
+              wallpaperSlug={activeSurface.wallpaperSlug}
+              floorSlug={activeSurface.floorSlug}
+              onSelect={handleSetSurface}
+            />
+          )}
         </div>
       )}
     </div>
