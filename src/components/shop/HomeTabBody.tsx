@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { purchaseShopItemAction } from '@/lib/actions/shop';
 import { FURNITURE_CATALOG, type FurnitureCategory } from '@/lib/home/furniture-catalog';
+import { listSurfaces, type SurfaceKind } from '@/lib/home/surfaces';
 import type { ShopItemRow } from '@/lib/db/shop';
 
 interface Props {
@@ -172,6 +173,71 @@ export function HomeTabBody({
           </div>
         </section>
       ))}
+
+      {(['wallpaper', 'floor'] as SurfaceKind[]).map((kind) => {
+        const buyables = listSurfaces(kind).filter((s) => !s.isDefault);
+        if (buyables.length === 0) return null;
+        const vb = kind === 'wallpaper' ? '0 0 100 25' : '0 25 100 50';
+        return (
+          <section key={kind}>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-900/70">
+              {kind === 'wallpaper' ? '🖼️ 墙纸 / Wallpaper' : '🪵 地板 / Floor'}
+            </h3>
+            <div className="flex flex-col gap-3">
+              {buyables.map((s) => {
+                const shopItem = shopItemBySlug.get(s.slug);
+                const isOwned = shopItem ? ownedShopItemIds.has(shopItem.id) : false;
+                const affordable = shopItem ? coinBalance >= shopItem.priceCoins : false;
+                let actionLabel: string;
+                let actionDisabled = false;
+                let onAction: () => void = () => {};
+                if (!shopItem) {
+                  actionLabel = '即将上线 / Coming soon';
+                  actionDisabled = true;
+                } else if (isOwned) {
+                  actionLabel = '已购买 / Owned';
+                  actionDisabled = true;
+                } else if (!affordable) {
+                  actionLabel = `🪙 ${shopItem.priceCoins}`;
+                  actionDisabled = true;
+                } else {
+                  actionLabel = `购买 / Buy 🪙 ${shopItem.priceCoins}`;
+                  onAction = () => purchase(shopItem.id);
+                }
+                return (
+                  <article
+                    key={s.slug}
+                    className="flex items-center gap-3 rounded-2xl border-2 border-amber-800/30 bg-amber-50 p-3 shadow-sm"
+                  >
+                    <svg
+                      viewBox={vb}
+                      width={64}
+                      height={40}
+                      preserveAspectRatio="none"
+                      aria-hidden
+                      className="shrink-0 rounded-lg border border-amber-200"
+                    >
+                      {s.render()}
+                    </svg>
+                    <div className="flex-1">
+                      <div className="text-base font-extrabold text-amber-950">{s.nameZh}</div>
+                      <div className="text-sm font-semibold text-amber-900">{s.nameEn}</div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={actionDisabled || pending}
+                      onClick={onAction}
+                      className="rounded-lg border-2 border-amber-800/40 bg-amber-100 px-3 py-1 text-sm font-bold text-amber-900 disabled:opacity-40"
+                    >
+                      {actionLabel}
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
