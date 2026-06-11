@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { getRoom, type HomeRoomId } from '@/lib/home/rooms';
 import { getFurniture } from '@/lib/home/furniture-catalog';
+import { getSurface, ROOM_DEFAULT_SURFACES } from '@/lib/home/surfaces';
 import { cellsForFootprint, validCells, cellKey } from '@/lib/home/grid';
 import { PlacedFurniture } from './PlacedFurniture';
 import type { HomePlacement } from '@/lib/db/home';
@@ -21,6 +22,9 @@ interface Props {
   selectedSlug: string | null;
   /** Currently lifted slug (placed item being moved). */
   liftedSlug: string | null;
+  /** Equipped wallpaper / floor slug for this room (falls back to room default). */
+  wallpaperSlug?: string;
+  floorSlug?: string;
   onPlacedTap: (slug: string) => void;
   onCellTap: (x: number, y: number) => void;
 }
@@ -35,10 +39,13 @@ export function RoomCanvas({
   mode,
   selectedSlug,
   liftedSlug,
+  wallpaperSlug,
+  floorSlug,
   onPlacedTap,
   onCellTap,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const uid = useId().replace(/:/g, '');
   const room = getRoom(activeRoom);
 
   // Placements for the active room only
@@ -71,7 +78,12 @@ export function RoomCanvas({
 
   if (!room) return null;
 
-  const { Backdrop } = room;
+  // Resolve the equipped (or default) surfaces for this room.
+  const def = ROOM_DEFAULT_SURFACES[activeRoom];
+  const wall = getSurface(wallpaperSlug ?? def.wallpaper) ?? getSurface(def.wallpaper)!;
+  const floor = getSurface(floorSlug ?? def.floor) ?? getSurface(def.floor)!;
+  const coveId = `cove-${uid}`;
+  const poolId = `pool-${uid}`;
 
   // Handle click/tap on SVG surface to derive grid cell
   function handleSvgClick(e: React.MouseEvent<SVGSVGElement>) {
@@ -99,8 +111,27 @@ export function RoomCanvas({
       onClick={handleSvgClick}
       aria-label={`${room.nameZh} / ${room.nameEn}`}
     >
-      {/* Backdrop */}
-      <Backdrop />
+      {/* Equipped wallpaper + floor surfaces */}
+      {wall.render()}
+      {floor.render()}
+
+      {/* 2.5D depth overlay — cove shadow (ceiling), skirting board, floor light pool */}
+      <defs>
+        <linearGradient id={coveId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#000" stopOpacity="0.16" />
+          <stop offset="1" stopColor="#000" stopOpacity="0" />
+        </linearGradient>
+        <radialGradient id={poolId} cx="0.6" cy="0.42" r="0.62">
+          <stop offset="0" stopColor="#fff6e0" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#fff6e0" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <g aria-hidden>
+        <rect x={0} y={0} width={VB_W} height={6} fill={`url(#${coveId})`} />
+        <rect x={0} y={23.4} width={VB_W} height={2.2} fill="#000" opacity={0.10} />
+        <rect x={0} y={23.4} width={VB_W} height={0.7} fill="#fff" opacity={0.18} />
+        <ellipse cx={56} cy={46} rx={62} ry={26} fill={`url(#${poolId})`} />
+      </g>
 
       {/* Edit-mode faint grid */}
       {mode === 'edit' && (

@@ -9,6 +9,13 @@ import { revalidatePath } from 'next/cache';
 import { requireChild } from '@/lib/auth/guards';
 import { db } from '@/db';
 import { placeFurnitureInTx, removeFurnitureInTx } from '@/lib/db/home';
+import {
+  setRoomSurface,
+  InvalidSurfaceError,
+  SurfaceNotOwnedError,
+  type RoomSurface,
+} from '@/lib/db/home-surfaces';
+import type { SurfaceKind } from '@/lib/home/surfaces';
 import type { HomeRoomId } from '@/lib/home/rooms';
 import {
   FurnitureNotOwnedError,
@@ -51,6 +58,38 @@ export async function placeFurnitureAction(
 
   revalidatePath(`/play/${childId}/home`);
   return { ok: true };
+}
+
+export interface SetSurfaceResult {
+  ok: boolean;
+  reason?: string;
+  surface?: RoomSurface;
+}
+
+/**
+ * Equip a wallpaper or floor in a room. Validates kind + ownership (or default)
+ * in `setRoomSurface`. Returns the new (wallpaper, floor) pair on success.
+ */
+export async function setRoomSurfaceAction(
+  childId: string,
+  room: HomeRoomId,
+  kind: SurfaceKind,
+  slug: string,
+): Promise<SetSurfaceResult> {
+  const { child } = await requireChild(childId);
+
+  let surface: RoomSurface;
+  try {
+    surface = await setRoomSurface(child.id, room, kind, slug);
+  } catch (err) {
+    if (err instanceof InvalidSurfaceError || err instanceof SurfaceNotOwnedError) {
+      return { ok: false, reason: err.message };
+    }
+    throw err;
+  }
+
+  revalidatePath(`/play/${childId}/home`);
+  return { ok: true, surface };
 }
 
 /**
