@@ -23,6 +23,7 @@ export const VOYAGE_MAPS: Record<string, VoyageMap> = {
   'pirate-class-level-1': {
     nameZh: '加勒比海',
     nameEn: 'Caribbean Sea',
+    imageUrl: 'https://mfl7ap4djy0w98ey.public.blob.vercel-storage.com/maps/pirate-class-level-1.jpg',
     stops: [
       { labelZh: '旧哈瓦那', labelEn: 'Old Havana', emoji: '🏛️' },
       { labelZh: '大蓝洞', labelEn: 'Great Blue Hole', emoji: '🌀' },
@@ -39,6 +40,7 @@ export const VOYAGE_MAPS: Record<string, VoyageMap> = {
   'pirate-class-level-2': {
     nameZh: '印度洋',
     nameEn: 'Indian Ocean',
+    imageUrl: 'https://mfl7ap4djy0w98ey.public.blob.vercel-storage.com/maps/pirate-class-level-2.jpg',
     stops: [
       { labelZh: '毛里求斯瀑布', labelEn: 'Mauritius Waterfall', emoji: '💦' },
       { labelZh: '留尼汪海龟海滩', labelEn: 'Réunion Turtle Beach', emoji: '🐢' },
