@@ -102,6 +102,53 @@ export async function listDefaultAvatarItems(): Promise<AvatarItemRow[]> {
     .where(eq(avatarItems.unlockVia, 'default'));
 }
 
+export interface FestivalCosmeticListing {
+  avatarItemId: string;
+  unlockRef: string | null;
+  slotId: string;
+  equipped: boolean;
+}
+
+/**
+ * The festival (reward-only) avatar cosmetics this child has unlocked, for the
+ * 节日衣橱 / wardrobe. Reward cosmetics live in `child_avatar_inventory` (granted
+ * by the monthly festival challenge, `theme='festival'`) but are NOT in the shop
+ * listings — so the wardrobe is the only re-equip surface for them. `equipped`
+ * reflects whether the item is currently worn in its slot.
+ */
+export async function listOwnedFestivalCosmetics(
+  childId: string,
+): Promise<FestivalCosmeticListing[]> {
+  const rows = await db
+    .select({
+      avatarItemId: avatarItems.id,
+      unlockRef: avatarItems.unlockRef,
+      slotId: avatarItems.slotId,
+      equippedItemId: childAvatarEquipped.avatarItemId,
+    })
+    .from(childAvatarInventory)
+    .innerJoin(avatarItems, eq(avatarItems.id, childAvatarInventory.avatarItemId))
+    .leftJoin(
+      childAvatarEquipped,
+      and(
+        eq(childAvatarEquipped.childId, childId),
+        eq(childAvatarEquipped.avatarItemId, avatarItems.id),
+      ),
+    )
+    .where(
+      and(
+        eq(childAvatarInventory.childId, childId),
+        eq(avatarItems.theme, 'festival'),
+      ),
+    );
+  return rows.map((r) => ({
+    avatarItemId: r.avatarItemId,
+    unlockRef: r.unlockRef,
+    slotId: r.slotId,
+    equipped: r.equippedItemId != null,
+  }));
+}
+
 /**
  * Returns the child's currently-equipped avatar item per slot. For any slot
  * where the child has no equipped row (or has equipped null), falls back to

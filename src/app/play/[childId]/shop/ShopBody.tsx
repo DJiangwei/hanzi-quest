@@ -13,7 +13,14 @@ import { DecorTabBody } from '@/components/shop/DecorTabBody';
 import { HomeTabBody } from '@/components/shop/HomeTabBody';
 import { PowerupsTabBody } from '@/components/shop/PowerupsTabBody';
 import { AvatarTryOnPreview, type TryOnState } from '@/components/shop/AvatarTryOnPreview';
-import type { AvatarShopListing, EquippedAvatar, SoundThemeListing, ShopItemRow } from '@/lib/db/shop';
+import { FestivalWardrobe } from '@/components/shop/FestivalWardrobe';
+import type {
+  AvatarShopListing,
+  EquippedAvatar,
+  SoundThemeListing,
+  ShopItemRow,
+  FestivalCosmeticListing,
+} from '@/lib/db/shop';
 import type { PetShopListing } from '@/lib/db/pets';
 import type { DecorShopListing } from '@/lib/db/decor';
 import type { PowerupShopListing, PowerupCounts } from '@/lib/db/powerups';
@@ -37,6 +44,7 @@ interface Props {
   powerupListings: PowerupShopListing[];
   powerupCounts: PowerupCounts;
   homeShopItems: ShopItemRow[];
+  festivalCosmetics: FestivalCosmeticListing[];
 }
 
 export function ShopBody({
@@ -53,6 +61,7 @@ export function ShopBody({
   powerupListings,
   powerupCounts,
   homeShopItems,
+  festivalCosmetics,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ShopCategory>('avatar');
@@ -63,6 +72,7 @@ export function ShopBody({
   const [equipped, setEquipped] = useState<EquippedAvatar>(initialEquipped);
   const [themeFilter, setThemeFilter] = useState<ThemeChipValue>('all');
   const [tryOn, setTryOn] = useState<TryOnState | null>(null);
+  const [cosmetics, setCosmetics] = useState<FestivalCosmeticListing[]>(festivalCosmetics);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -119,6 +129,45 @@ export function ShopBody({
         router.refresh();
       } catch (err) {
         setEquipped(previousEquipped);
+        setErrorMessage(err instanceof Error ? err.message : '装备失败 / Equip failed');
+      }
+    });
+  };
+
+  // Re-equip a festival wardrobe cosmetic (already owned — no purchase).
+  const handleEquipCosmetic = (c: FestivalCosmeticListing) => {
+    if (c.equipped) return;
+    setErrorMessage(null);
+    const previousEquipped = equipped;
+    const previousCosmetics = cosmetics;
+    setEquipped({
+      ...equipped,
+      [c.slotId]: {
+        avatarItemId: c.avatarItemId,
+        unlockRef: c.unlockRef,
+        slotId: c.slotId,
+        isDefault: false,
+      },
+    });
+    // Only one cosmetic per slot can be worn — clear the flag on same-slot peers.
+    setCosmetics((prev) =>
+      prev.map((x) => ({
+        ...x,
+        equipped:
+          x.avatarItemId === c.avatarItemId
+            ? true
+            : x.slotId === c.slotId
+              ? false
+              : x.equipped,
+      })),
+    );
+    startTransition(async () => {
+      try {
+        await equipAvatarItemAction(c.avatarItemId, { childId });
+        router.refresh();
+      } catch (err) {
+        setEquipped(previousEquipped);
+        setCosmetics(previousCosmetics);
         setErrorMessage(err instanceof Error ? err.message : '装备失败 / Equip failed');
       }
     });
@@ -210,6 +259,11 @@ export function ShopBody({
             tryingShopItemId={tryOn?.listing.shopItem.id ?? null}
             onPurchase={handleTryOn}
             onEquip={handleEquip}
+          />
+          <FestivalWardrobe
+            cosmetics={cosmetics}
+            pending={pending}
+            onEquip={handleEquipCosmetic}
           />
         </>
       )}
