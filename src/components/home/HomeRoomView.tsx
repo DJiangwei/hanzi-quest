@@ -26,9 +26,9 @@ interface Props {
   ownedSlugs: string[];
   placements: HomePlacement[];
   /** Equipped wallpaper/floor per room (defaults applied server-side). */
-  roomSurfaces: Record<string, RoomSurface>;
+  roomSurfaces?: Record<string, RoomSurface>;
   /** Owned surface slugs (buyable wallpapers/floors the kid purchased). */
-  ownedSurfaceSlugs: string[];
+  ownedSurfaceSlugs?: string[];
 }
 
 /**
@@ -46,8 +46,8 @@ export function HomeRoomView({
   childId,
   ownedSlugs,
   placements: initialPlacements,
-  roomSurfaces: initialSurfaces,
-  ownedSurfaceSlugs,
+  roomSurfaces: initialSurfaces = {},
+  ownedSurfaceSlugs = [],
 }: Props) {
   const [activeRoom, setActiveRoom] = useState<HomeRoomId>('bedroom');
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -65,6 +65,7 @@ export function HomeRoomView({
     (kind: SurfaceKind, slug: string) => {
       setLocalSurfaces((prev) => {
         const cur = prev[activeRoom];
+        if (!cur) return prev;
         return {
           ...prev,
           [activeRoom]: {
