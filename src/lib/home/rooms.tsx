@@ -1,15 +1,20 @@
 import type { ReactElement } from 'react';
 
-export type HomeRoomId = 'bedroom' | 'living' | 'playroom';
+export type HomeRoomId = 'bedroom' | 'living' | 'playroom' | 'yard';
 
 export interface RoomDef {
   id: HomeRoomId;
   nameZh: string;
   nameEn: string;
+  /** Tab glyph. */
+  emoji: string;
   cols: number;   // always 8
   rows: number;   // always 6
   wallRows: number; // top wallRows rows are 'wall' zone (always 2)
-  /** Flat-SVG backdrop drawn in a 0 0 100 75 viewBox (8 cols × 6 rows = 12.5 units/cell). */
+  /**
+   * Flat-SVG backdrop drawn in a 0 0 100 75 viewBox (8 cols × 6 rows = 12.5 units/cell).
+   * NOTE: dead/back-compat — `RoomCanvas` renders swappable surfaces instead.
+   */
   Backdrop: () => ReactElement;
 }
 
@@ -103,6 +108,34 @@ function PlayroomBackdrop(): ReactElement {
   );
 }
 
+/** Yard — outdoor: sky (top zone) + grass ground, picket fence at the horizon */
+function YardBackdrop(): ReactElement {
+  return (
+    <g aria-hidden>
+      {/* Sky */}
+      <rect x={0} y={0} width={100} height={25} fill="#bfe6f5" />
+      <circle cx={82} cy={7} r={4.5} fill="#ffe27a" />
+      {[[16, 8], [40, 6], [64, 10]].map(([cx, cy], i) => (
+        <g key={i}>
+          <circle cx={cx} cy={cy} r={3.2} fill="#ffffff" />
+          <circle cx={cx + 4} cy={cy} r={2.6} fill="#ffffff" />
+          <circle cx={cx - 4} cy={cy} r={2.6} fill="#ffffff" />
+        </g>
+      ))}
+      {/* Grass ground */}
+      <rect x={0} y={25} width={100} height={50} fill="#8ecb6a" />
+      {[34, 46, 58, 70].map((y) => (
+        <line key={y} x1={0} y1={y} x2={100} y2={y} stroke="#79b857" strokeWidth={0.5} opacity={0.5} />
+      ))}
+      {/* Picket fence along the horizon */}
+      <rect x={0} y={23} width={100} height={2} fill="#f3ead6" />
+      {Array.from({ length: 13 }, (_, i) => (
+        <rect key={i} x={i * 8 + 1} y={20.5} width={2.4} height={4.5} fill="#f7f0df" />
+      ))}
+    </g>
+  );
+}
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 export const HOME_ROOMS: RoomDef[] = [
@@ -110,6 +143,7 @@ export const HOME_ROOMS: RoomDef[] = [
     id: 'bedroom',
     nameZh: '卧室',
     nameEn: 'Bedroom',
+    emoji: '🛏️',
     cols: 8,
     rows: 6,
     wallRows: 2,
@@ -119,6 +153,7 @@ export const HOME_ROOMS: RoomDef[] = [
     id: 'living',
     nameZh: '客厅',
     nameEn: 'Living Room',
+    emoji: '🛋️',
     cols: 8,
     rows: 6,
     wallRows: 2,
@@ -128,10 +163,21 @@ export const HOME_ROOMS: RoomDef[] = [
     id: 'playroom',
     nameZh: '游戏室',
     nameEn: 'Playroom',
+    emoji: '🎮',
     cols: 8,
     rows: 6,
     wallRows: 2,
     Backdrop: PlayroomBackdrop,
+  },
+  {
+    id: 'yard',
+    nameZh: '院子',
+    nameEn: 'Yard',
+    emoji: '🌳',
+    cols: 8,
+    rows: 6,
+    wallRows: 2,
+    Backdrop: YardBackdrop,
   },
 ];
 

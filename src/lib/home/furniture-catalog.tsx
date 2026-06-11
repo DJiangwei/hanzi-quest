@@ -527,6 +527,127 @@ function RocketLampComponent(): ReactElement {
   );
 }
 
+// ─── OUTDOOR (yard) — floor surface ──────────────────────────────────────────
+
+/** Swing set — 2×2 floor item */
+function SwingComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      {/* A-frame legs */}
+      <line x1={3} y1={23.5} x2={7} y2={3} stroke="#9a6f44" strokeWidth={1.2} strokeLinecap="round" />
+      <line x1={11} y1={23.5} x2={7} y2={3} stroke="#7f5a36" strokeWidth={1.2} strokeLinecap="round" />
+      <line x1={18} y1={23.5} x2={18} y2={3} stroke="#9a6f44" strokeWidth={1.2} strokeLinecap="round" />
+      {/* Top beam */}
+      <rect x={6} y={2.4} width={13} height={1.4} rx={0.7} fill="#a87c4a" />
+      <rect x={6} y={2.4} width={13} height={0.5} rx={0.7} fill="#c49a64" />
+      {/* Chains */}
+      <line x1={10} y1={3.5} x2={10} y2={14} stroke="#b8bcc4" strokeWidth={0.5} />
+      <line x1={15} y1={3.5} x2={15} y2={14} stroke="#b8bcc4" strokeWidth={0.5} />
+      {/* Seat */}
+      <rect x={9} y={14} width={7} height={1.6} rx={0.6} fill="#e0584f" />
+      <rect x={9} y={14} width={7} height={0.6} rx={0.6} fill="#ef7d75" />
+    </g>
+  );
+}
+
+/** Sandbox — 2×1 floor item */
+function SandboxComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      {/* Sand */}
+      <rect x={1.5} y={6.5} width={22} height={5.5} rx={1} fill="#f0dca8" />
+      <rect x={1.5} y={6.5} width={22} height={1.4} rx={1} fill="#f7e9c4" />
+      {/* Wooden frame */}
+      <rect x={0.6} y={5.6} width={23.8} height={1.8} rx={0.6} fill="#b88a52" />
+      <rect x={0.6} y={11} width={23.8} height={1.6} rx={0.6} fill="#a87c46" />
+      {[1, 12, 23].map((x, i) => (
+        <rect key={i} x={x} y={5.6} width={1.6} height={7} rx={0.4} fill="#c49a64" />
+      ))}
+      {/* Bucket + spade */}
+      <rect x={16} y={3} width={3} height={3} rx={0.5} fill="#e05050" />
+      <rect x={16} y={3} width={3} height={0.8} rx={0.4} fill="#ef7878" />
+      <line x1={6} y1={6.5} x2={4.5} y2={2.5} stroke="#4aa0e0" strokeWidth={0.7} />
+      <rect x={3.6} y={1.6} width={2} height={1.4} rx={0.4} fill="#4aa0e0" />
+    </g>
+  );
+}
+
+/** Picnic table — 2×1 floor item */
+function PicnicTableComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      {/* Bench shadows / legs */}
+      <line x1={3} y1={12} x2={5} y2={7} stroke="#8a6038" strokeWidth={1} strokeLinecap="round" />
+      <line x1={21} y1={12} x2={19} y2={7} stroke="#8a6038" strokeWidth={1} strokeLinecap="round" />
+      {/* Benches */}
+      <rect x={1.5} y={9} width={6.5} height={1.5} rx={0.5} fill="#c2925a" />
+      <rect x={16} y={9} width={6.5} height={1.5} rx={0.5} fill="#c2925a" />
+      {/* Tabletop */}
+      <rect x={3} y={5.4} width={18} height={2} rx={0.6} fill="#d8ad6e" stroke="#a87c46" strokeWidth={0.4} />
+      <rect x={3} y={5.4} width={18} height={0.7} rx={0.6} fill="#e8c690" />
+      {/* Planks */}
+      {[6, 9, 12, 15, 18].map((x, i) => (
+        <line key={i} x1={x} y1={5.6} x2={x} y2={7.2} stroke="#b6884e" strokeWidth={0.3} />
+      ))}
+      {/* Parasol pole + canopy */}
+      <rect x={11.7} y={1} width={0.7} height={5} fill="#9a7040" />
+      <path d="M 6 2.2 Q 12 -1.2 18 2.2 Z" fill="#e0584f" />
+      <path d="M 6 2.2 Q 9 0.6 12 2.2 Z" fill="#ef7d75" />
+    </g>
+  );
+}
+
+/** Little tree — 1×2 floor item (tall) */
+function GardenTreeComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      {/* Trunk */}
+      <rect x={5.4} y={15} width={1.8} height={9} rx={0.6} fill="#9a6f44" />
+      <rect x={5.4} y={15} width={0.6} height={9} fill="#b4895a" />
+      {/* Canopy */}
+      <circle cx={6.25} cy={9} r={5.2} fill="#5fa843" />
+      <circle cx={3.4} cy={11} r={3.4} fill="#6cb84f" />
+      <circle cx={9} cy={11} r={3.4} fill="#6cb84f" />
+      <circle cx={6.25} cy={7} r={3.6} fill="#7cc65d" />
+      {/* Highlights + fruit */}
+      <circle cx={4.6} cy={7} r={1.4} fill="#90d472" opacity={0.7} />
+      {[[4, 10], [8.5, 9], [6.5, 12]].map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r={0.7} fill="#e0584f" />
+      ))}
+    </g>
+  );
+}
+
+/** Flower bed — 2×1 floor item */
+function FlowerBedComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      {/* Planter box */}
+      <rect x={1.5} y={8} width={22} height={4.5} rx={0.8} fill="#b07a48" />
+      <rect x={1.5} y={8} width={22} height={1.2} rx={0.8} fill="#c8945c" />
+      <rect x={1.5} y={11} width={22} height={1.5} rx={0.8} fill="#9a6638" />
+      {/* Soil */}
+      <rect x={2.5} y={7.3} width={20} height={1.4} rx={0.6} fill="#6b4a2e" />
+      {/* Flowers */}
+      {[4.5, 9, 13.5, 18, 21].map((cx, i) => {
+        const petal = ['#e0584f', '#ef9b3e', '#e36fb0', '#f0d24a', '#8a6fe0'][i % 5];
+        return (
+          <g key={i}>
+            <line x1={cx} y1={7.5} x2={cx} y2={4} stroke="#5fa843" strokeWidth={0.6} />
+            {[0, 72, 144, 216, 288].map((a) => {
+              const rad = (a * Math.PI) / 180;
+              return (
+                <circle key={a} cx={cx + Math.cos(rad) * 1.3} cy={3.2 + Math.sin(rad) * 1.3} r={0.9} fill={petal} />
+              );
+            })}
+            <circle cx={cx} cy={3.2} r={0.8} fill="#fff2b0" />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 export const FURNITURE_CATALOG: FurnitureDef[] = [
@@ -754,6 +875,62 @@ export const FURNITURE_CATALOG: FurnitureDef[] = [
     rarity: 'rare',
     priceCoins: 150,
     Component: RocketLampComponent,
+  },
+  // outdoor (yard) — floor surface
+  {
+    slug: 'yard-swing',
+    category: 'furniture',
+    surface: 'floor',
+    footprint: { w: 2, h: 2 },
+    nameZh: '秋千',
+    nameEn: 'Swing Set',
+    rarity: 'rare',
+    priceCoins: 500,
+    Component: SwingComponent,
+  },
+  {
+    slug: 'yard-sandbox',
+    category: 'furniture',
+    surface: 'floor',
+    footprint: { w: 2, h: 1 },
+    nameZh: '沙坑',
+    nameEn: 'Sandbox',
+    rarity: 'common',
+    priceCoins: 350,
+    Component: SandboxComponent,
+  },
+  {
+    slug: 'yard-picnic-table',
+    category: 'furniture',
+    surface: 'floor',
+    footprint: { w: 2, h: 1 },
+    nameZh: '野餐桌',
+    nameEn: 'Picnic Table',
+    rarity: 'common',
+    priceCoins: 350,
+    Component: PicnicTableComponent,
+  },
+  {
+    slug: 'yard-tree',
+    category: 'plant_toy',
+    surface: 'floor',
+    footprint: { w: 1, h: 2 },
+    nameZh: '小树',
+    nameEn: 'Little Tree',
+    rarity: 'common',
+    priceCoins: 300,
+    Component: GardenTreeComponent,
+  },
+  {
+    slug: 'yard-flower-bed',
+    category: 'plant_toy',
+    surface: 'floor',
+    footprint: { w: 2, h: 1 },
+    nameZh: '花圃',
+    nameEn: 'Flower Bed',
+    rarity: 'common',
+    priceCoins: 250,
+    Component: FlowerBedComponent,
   },
 ];
 

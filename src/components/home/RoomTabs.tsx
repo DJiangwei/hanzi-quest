@@ -30,9 +30,7 @@ export function RoomTabs({ activeRoom, onSwitch }: Props) {
                 : 'bg-white/70 text-[var(--color-ocean-800)] hover:bg-white/90',
             ].join(' ')}
           >
-            <span className="text-base leading-none">
-              {room.id === 'bedroom' ? '🛏️' : room.id === 'living' ? '🛋️' : '🎮'}
-            </span>
+            <span className="text-base leading-none">{room.emoji}</span>
             <span className="mt-0.5 text-xs leading-none">{room.nameZh}</span>
           </button>
         );

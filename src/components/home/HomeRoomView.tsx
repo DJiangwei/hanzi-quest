@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useTransition } from 'react';
-import { type HomeRoomId } from '@/lib/home/rooms';
+import { getRoom, type HomeRoomId } from '@/lib/home/rooms';
 import { getFurniture } from '@/lib/home/furniture-catalog';
 import type { SurfaceKind } from '@/lib/home/surfaces';
 import { RoomTabs } from './RoomTabs';
@@ -159,7 +159,10 @@ export function HomeRoomView({
       {/* Edit / Done toggle */}
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-hanzi text-lg font-bold text-[var(--color-ocean-900)]">
-          {activeRoom === 'bedroom' ? '🛏️ 卧室 / Bedroom' : activeRoom === 'living' ? '🛋️ 客厅 / Living room' : '🎮 游戏室 / Playroom'}
+          {(() => {
+            const r = getRoom(activeRoom);
+            return r ? `${r.emoji} ${r.nameZh} / ${r.nameEn}` : activeRoom;
+          })()}
         </h2>
         <button
           onClick={mode === 'edit' ? exitEdit : enterEdit}

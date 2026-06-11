@@ -33,34 +33,61 @@ const grad = (id: string, from: string, to: string, vertical = true) =>
     el('stop', { offset: 0, 'stop-color': from }),
     el('stop', { offset: 1, 'stop-color': to }),
   );
+/** Vertical 3-stop gradient — lets a wall/floor read with a soft mid sheen. */
+const grad3 = (id: string, a: string, b: string, c: string) =>
+  el(
+    'linearGradient',
+    { id, x1: 0, y1: 0, x2: 0, y2: 1 },
+    el('stop', { offset: 0, 'stop-color': a }),
+    el('stop', { offset: 0.5, 'stop-color': b }),
+    el('stop', { offset: 1, 'stop-color': c }),
+  );
 const g = (...kids: ReactElement[]) => h('g', { 'aria-hidden': true }, ...kids);
 
 /* ── WALLPAPERS (wall zone: 0..25) ──────────────────────────────────────────── */
 
 function wallPeach(): ReactElement {
   return g(
-    el('defs', {}, grad('sg-wall-peach', '#fbe9d6', '#f3d3b6')),
+    el('defs', {}, grad3('sg-wall-peach', '#fbe7cf', '#f5d6b4', '#eec39c')),
     rect({ x: 0, y: 0, width: 100, height: 25, fill: 'url(#sg-wall-peach)' }),
+    // wainscot panels for a richer, less-flat wall
     ...[14, 28, 42, 56, 70, 84].map((x) =>
-      line({ key: x, x1: x, y1: 0, x2: x, y2: 25, stroke: '#eccba3', 'stroke-width': 0.4 }),
+      line({ key: x, x1: x, y1: 0, x2: x, y2: 25, stroke: '#e3b88c', 'stroke-width': 0.5 }),
+    ),
+    ...[14, 28, 42, 56, 70, 84].map((x) =>
+      line({ key: `h${x}`, x1: x + 0.6, y1: 0, x2: x + 0.6, y2: 25, stroke: '#fdf0e0', 'stroke-width': 0.4, opacity: 0.7 }),
     ),
   );
 }
 function wallBlue(): ReactElement {
   return g(
-    el('defs', {}, grad('sg-wall-blue', '#d4ecf8', '#b8d4e8')),
+    el('defs', {}, grad3('sg-wall-blue', '#dbeff9', '#c2dcee', '#a9cbe3')),
     rect({ x: 0, y: 0, width: 100, height: 25, fill: 'url(#sg-wall-blue)' }),
     ...[12.5, 37.5, 62.5, 87.5].flatMap((x) =>
-      [7, 17].map((y) => circ({ key: `${x}-${y}`, cx: x, cy: y, r: 1, fill: '#a8c8e0' })),
+      [7, 17].map((y) =>
+        el(
+          'g',
+          { key: `${x}-${y}` },
+          circ({ cx: x, cy: y, r: 1.2, fill: '#9bc0dd' }),
+          circ({ cx: x - 0.4, cy: y - 0.4, r: 0.5, fill: '#eaf5fc' }),
+        ),
+      ),
     ),
   );
 }
 function wallYellow(): ReactElement {
   return g(
-    el('defs', {}, grad('sg-wall-yellow', '#fdf0a8', '#f9e580')),
+    el('defs', {}, grad3('sg-wall-yellow', '#fef2a6', '#fbe684', '#f6d85e')),
     rect({ x: 0, y: 0, width: 100, height: 25, fill: 'url(#sg-wall-yellow)' }),
     ...[10, 30, 50, 70, 90].flatMap((x) =>
-      [6, 16].map((y) => circ({ key: `${x}-${y}`, cx: x, cy: y, r: 1.1, fill: '#f0d040' })),
+      [6, 16].map((y) =>
+        el(
+          'g',
+          { key: `${x}-${y}` },
+          circ({ cx: x, cy: y, r: 1.3, fill: '#eece3a' }),
+          circ({ cx: x - 0.4, cy: y - 0.4, r: 0.5, fill: '#fff6c8' }),
+        ),
+      ),
     ),
   );
 }
@@ -109,27 +136,35 @@ function wallMintStripe(): ReactElement {
 
 function floorHoney(): ReactElement {
   return g(
-    el('defs', {}, grad('sg-floor-honey', '#e7c79a', '#d8b27e')),
+    // darker at the back (near horizon) → lighter to the front = subtle depth
+    el('defs', {}, grad3('sg-floor-honey', '#caa46f', '#e3c290', '#edd0a3')),
     rect({ x: 0, y: 25, width: 100, height: 50, fill: 'url(#sg-floor-honey)' }),
     ...[36, 48, 60, 72].map((y) =>
-      line({ key: y, x1: 0, y1: y, x2: 100, y2: y, stroke: '#cba36f', 'stroke-width': 0.5, opacity: 0.6 }),
+      line({ key: y, x1: 0, y1: y, x2: 100, y2: y, stroke: '#bd9460', 'stroke-width': 0.5, opacity: 0.65 }),
+    ),
+    ...[36, 48, 60, 72].map((y) =>
+      line({ key: `s${y}`, x1: 0, y1: y - 0.5, x2: 100, y2: y - 0.5, stroke: '#f3dcb4', 'stroke-width': 0.3, opacity: 0.5 }),
     ),
   );
 }
 function floorStone(): ReactElement {
   return g(
-    el('defs', {}, grad('sg-floor-stone', '#d2cbbe', '#c2bbab')),
+    el('defs', {}, grad3('sg-floor-stone', '#bcb4a4', '#cfc8ba', '#d8d1c4')),
     rect({ x: 0, y: 25, width: 100, height: 50, fill: 'url(#sg-floor-stone)' }),
-    ...[41, 57].map((y) => line({ key: `h${y}`, x1: 0, y1: y, x2: 100, y2: y, stroke: '#aea795', 'stroke-width': 0.5 })),
-    ...[25, 50, 75].map((x) => line({ key: `v${x}`, x1: x, y1: 25, x2: x, y2: 75, stroke: '#aea795', 'stroke-width': 0.5 })),
+    ...[41, 57].map((y) => line({ key: `h${y}`, x1: 0, y1: y, x2: 100, y2: y, stroke: '#a59e8c', 'stroke-width': 0.5 })),
+    ...[25, 50, 75].map((x) => line({ key: `v${x}`, x1: x, y1: 25, x2: x, y2: 75, stroke: '#a59e8c', 'stroke-width': 0.5 })),
+    ...[41, 57].map((y) => line({ key: `hl${y}`, x1: 0, y1: y - 0.4, x2: 100, y2: y - 0.4, stroke: '#eae4d8', 'stroke-width': 0.3, opacity: 0.6 })),
   );
 }
 function floorSeafoam(): ReactElement {
   return g(
-    el('defs', {}, grad('sg-floor-seafoam', '#c4ecdd', '#a9ddc9')),
+    el('defs', {}, grad3('sg-floor-seafoam', '#9fd6c0', '#bbe8d6', '#c9efe0')),
     rect({ x: 0, y: 25, width: 100, height: 50, fill: 'url(#sg-floor-seafoam)' }),
     ...[40, 56].map((y) =>
-      line({ key: y, x1: 0, y1: y, x2: 100, y2: y, stroke: '#93cdb5', 'stroke-width': 0.5, opacity: 0.6 }),
+      line({ key: y, x1: 0, y1: y, x2: 100, y2: y, stroke: '#8bc7af', 'stroke-width': 0.5, opacity: 0.6 }),
+    ),
+    ...[40, 56].map((y) =>
+      line({ key: `s${y}`, x1: 0, y1: y - 0.5, x2: 100, y2: y - 0.5, stroke: '#d9f4ea', 'stroke-width': 0.3, opacity: 0.5 }),
     ),
   );
 }
@@ -177,6 +212,70 @@ function floorDarkwood(): ReactElement {
   );
 }
 
+/* ── OUTDOOR SKIES (wall zone: 0..25) ───────────────────────────────────────── */
+
+function skyDay(): ReactElement {
+  return g(
+    el('defs', {}, grad3('sg-sky-day', '#aee0f4', '#c7ecf8', '#e3f6fb')),
+    rect({ x: 0, y: 0, width: 100, height: 25, fill: 'url(#sg-sky-day)' }),
+    circ({ cx: 84, cy: 7, r: 4.2, fill: '#ffe27a' }),
+    circ({ cx: 84, cy: 7, r: 6, fill: '#fff2b8', opacity: 0.35 }),
+    ...[[16, 9], [44, 6]].map(([cx, cy], i) =>
+      el(
+        'g',
+        { key: i },
+        circ({ cx, cy, r: 3.4, fill: '#ffffff' }),
+        circ({ cx: cx + 4.5, cy, r: 2.7, fill: '#ffffff' }),
+        circ({ cx: cx - 4.5, cy, r: 2.7, fill: '#ffffff' }),
+      ),
+    ),
+  );
+}
+function skySunset(): ReactElement {
+  return g(
+    el('defs', {}, grad3('sg-sky-sunset', '#ffd29b', '#ff9e7a', '#f06f86')),
+    rect({ x: 0, y: 0, width: 100, height: 25, fill: 'url(#sg-sky-sunset)' }),
+    circ({ cx: 50, cy: 17, r: 6, fill: '#ffe9a8' }),
+    circ({ cx: 50, cy: 17, r: 9, fill: '#ffd27e', opacity: 0.3 }),
+    ...[10, 28, 72, 90].map((cx, i) =>
+      el('g', { key: i }, circ({ cx, cy: 7, r: 2.6, fill: '#ffd9c2' }), circ({ cx: cx + 3.4, cy: 7, r: 2, fill: '#ffd9c2' })),
+    ),
+  );
+}
+
+/* ── OUTDOOR GROUNDS (floor zone: 25..75) ───────────────────────────────────── */
+
+function groundLawn(): ReactElement {
+  return g(
+    el('defs', {}, grad3('sg-ground-lawn', '#79bf57', '#8fcd68', '#a0d97a')),
+    rect({ x: 0, y: 25, width: 100, height: 50, fill: 'url(#sg-ground-lawn)' }),
+    ...[
+      [12, 40], [30, 50], [48, 44], [66, 56], [84, 46], [22, 64], [58, 66], [90, 62], [40, 70],
+    ].map(([x, y], i) => el('path', { key: i, d: `M ${x} ${y} l -1.6 -4 l 1.6 0.8 l 1.6 -4 l 1.6 4 l 1.6 -0.8 z`, fill: '#5fa843', opacity: 0.8 })),
+  );
+}
+function groundSand(): ReactElement {
+  return g(
+    el('defs', {}, grad3('sg-ground-sand', '#e6cd96', '#efd9a8', '#f5e4bb')),
+    rect({ x: 0, y: 25, width: 100, height: 50, fill: 'url(#sg-ground-sand)' }),
+    ...[[20, 42], [54, 50], [80, 44], [34, 62], [68, 66], [12, 58]].map(([cx, cy], i) =>
+      circ({ key: i, cx, cy, r: 0.8, fill: '#d8bd83', opacity: 0.7 }),
+    ),
+  );
+}
+function groundDeck(): ReactElement {
+  return g(
+    el('defs', {}, grad3('sg-ground-deck', '#b78a5c', '#c89c6c', '#d3a878')),
+    rect({ x: 0, y: 25, width: 100, height: 50, fill: 'url(#sg-ground-deck)' }),
+    ...[0, 16.7, 33.3, 50, 66.7, 83.3, 100].map((x) =>
+      line({ key: x, x1: x, y1: 25, x2: x, y2: 75, stroke: '#8f6a44', 'stroke-width': 0.7 }),
+    ),
+    ...[0.8, 17.5, 34.1, 50.8, 67.5, 84.1].map((x) =>
+      line({ key: `s${x}`, x1: x, y1: 25, x2: x, y2: 75, stroke: '#dcb78a', 'stroke-width': 0.4, opacity: 0.6 }),
+    ),
+  );
+}
+
 /* ── CATALOG ─────────────────────────────────────────────────────────────────── */
 
 export const SURFACES: SurfaceDef[] = [
@@ -188,6 +287,9 @@ export const SURFACES: SurfaceDef[] = [
   { slug: 'wall-wood', kind: 'wallpaper', nameZh: '木板墙', nameEn: 'Wood Panel', rarity: 'common', priceCoins: 220, render: wallWood },
   { slug: 'wall-pastel-dots', kind: 'wallpaper', nameZh: '粉彩波点', nameEn: 'Pastel Dots', rarity: 'common', priceCoins: 220, render: wallPastelDots },
   { slug: 'wall-mint-stripe', kind: 'wallpaper', nameZh: '薄荷条纹', nameEn: 'Mint Stripe', rarity: 'common', priceCoins: 220, render: wallMintStripe },
+  // outdoor skies (wallpaper-kind, for the yard)
+  { slug: 'sky-day', kind: 'wallpaper', nameZh: '晴天', nameEn: 'Clear Sky', rarity: 'common', priceCoins: 0, isDefault: true, render: skyDay },
+  { slug: 'sky-sunset', kind: 'wallpaper', nameZh: '黄昏天空', nameEn: 'Sunset Sky', rarity: 'rare', priceCoins: 320, render: skySunset },
   // floors
   { slug: 'floor-honey', kind: 'floor', nameZh: '蜜色木地板', nameEn: 'Honey Wood', rarity: 'common', priceCoins: 0, isDefault: true, render: floorHoney },
   { slug: 'floor-stone', kind: 'floor', nameZh: '灰石砖', nameEn: 'Grey Stone', rarity: 'common', priceCoins: 0, isDefault: true, render: floorStone },
@@ -196,6 +298,10 @@ export const SURFACES: SurfaceDef[] = [
   { slug: 'floor-grass', kind: 'floor', nameZh: '草地绿', nameEn: 'Grass', rarity: 'common', priceCoins: 240, render: floorGrass },
   { slug: 'floor-cloud-carpet', kind: 'floor', nameZh: '云朵地毯', nameEn: 'Cloud Carpet', rarity: 'rare', priceCoins: 300, render: floorCloudCarpet },
   { slug: 'floor-darkwood', kind: 'floor', nameZh: '深木地板', nameEn: 'Dark Wood', rarity: 'common', priceCoins: 240, render: floorDarkwood },
+  // outdoor grounds (floor-kind, for the yard)
+  { slug: 'ground-lawn', kind: 'floor', nameZh: '草坪', nameEn: 'Lawn', rarity: 'common', priceCoins: 0, isDefault: true, render: groundLawn },
+  { slug: 'ground-sand', kind: 'floor', nameZh: '沙地', nameEn: 'Sand', rarity: 'common', priceCoins: 240, render: groundSand },
+  { slug: 'ground-deck', kind: 'floor', nameZh: '木台', nameEn: 'Deck', rarity: 'common', priceCoins: 240, render: groundDeck },
 ];
 
 export const SURFACE_BY_SLUG: Record<string, SurfaceDef> = Object.fromEntries(
@@ -215,6 +321,7 @@ export const ROOM_DEFAULT_SURFACES: Record<string, { wallpaper: string; floor: s
   bedroom: { wallpaper: 'wall-peach', floor: 'floor-honey' },
   living: { wallpaper: 'wall-blue', floor: 'floor-stone' },
   playroom: { wallpaper: 'wall-yellow', floor: 'floor-seafoam' },
+  yard: { wallpaper: 'sky-day', floor: 'ground-lawn' },
 };
 
 /** True if a surface slug is a free default (equippable without ownership). */
