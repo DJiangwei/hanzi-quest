@@ -21,7 +21,7 @@ export default async function HomePage({ params }: PageProps) {
   const ownedSurfaceSlugs = ownedSlugs.filter((s) => getSurface(s) !== undefined);
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-6 lg:max-w-4xl">
       <h1 className="font-hanzi text-2xl font-bold tracking-tight text-[var(--color-ocean-900)]">
         🏠 我的家 / My Home
       </h1>

@@ -140,3 +140,20 @@ describe('plan slugs are present', () => {
     expect(FURNITURE_BY_SLUG.has(slug)).toBe(true);
   });
 });
+
+describe('outdoor (yard) furniture', () => {
+  const yardSlugs = [
+    'yard-swing',
+    'yard-sandbox',
+    'yard-picnic-table',
+    'yard-tree',
+    'yard-flower-bed',
+  ];
+
+  it.each(yardSlugs)('%s exists and sits on the floor (ground) zone', (slug) => {
+    const def = getFurniture(slug);
+    expect(def).toBeDefined();
+    // surface='floor' → validCells restricts it to the ground zone, keeping the sky clear
+    expect(def!.surface).toBe('floor');
+  });
+});

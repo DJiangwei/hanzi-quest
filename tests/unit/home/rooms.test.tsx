@@ -8,18 +8,19 @@ import {
 } from '@/lib/home/rooms';
 
 describe('HOME_ROOMS structure', () => {
-  it('has exactly 3 rooms', () => {
-    expect(HOME_ROOMS).toHaveLength(3);
+  it('has exactly 4 rooms', () => {
+    expect(HOME_ROOMS).toHaveLength(4);
   });
 
-  it('contains bedroom, living, playroom', () => {
+  it('contains bedroom, living, playroom, yard', () => {
     const ids = HOME_ROOMS.map((r) => r.id);
     expect(ids).toContain('bedroom');
     expect(ids).toContain('living');
     expect(ids).toContain('playroom');
+    expect(ids).toContain('yard');
   });
 
-  it.each(['bedroom', 'living', 'playroom'] as HomeRoomId[])(
+  it.each(['bedroom', 'living', 'playroom', 'yard'] as HomeRoomId[])(
     '%s has cols=8, rows=6, wallRows=2',
     (id) => {
       const room = getRoom(id)!;
@@ -30,7 +31,7 @@ describe('HOME_ROOMS structure', () => {
     },
   );
 
-  it.each(['bedroom', 'living', 'playroom'] as HomeRoomId[])(
+  it.each(['bedroom', 'living', 'playroom', 'yard'] as HomeRoomId[])(
     '%s has bilingual names',
     (id) => {
       const room = getRoom(id)!;
@@ -41,7 +42,16 @@ describe('HOME_ROOMS structure', () => {
     },
   );
 
-  it.each(['bedroom', 'living', 'playroom'] as HomeRoomId[])(
+  it.each(['bedroom', 'living', 'playroom', 'yard'] as HomeRoomId[])(
+    '%s has a non-empty emoji glyph',
+    (id) => {
+      const room = getRoom(id)!;
+      expect(typeof room.emoji).toBe('string');
+      expect(room.emoji.length).toBeGreaterThan(0);
+    },
+  );
+
+  it.each(['bedroom', 'living', 'playroom', 'yard'] as HomeRoomId[])(
     '%s has a Backdrop function',
     (id) => {
       const room = getRoom(id)!;
@@ -88,7 +98,7 @@ describe('cellZone', () => {
 });
 
 describe('Backdrop render smoke', () => {
-  it.each(['bedroom', 'living', 'playroom'] as HomeRoomId[])(
+  it.each(['bedroom', 'living', 'playroom', 'yard'] as HomeRoomId[])(
     '%s Backdrop renders without error',
     (id) => {
       const room = getRoom(id)!;

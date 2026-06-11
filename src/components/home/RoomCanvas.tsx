@@ -84,6 +84,8 @@ export function RoomCanvas({
   const floor = getSurface(floorSlug ?? def.floor) ?? getSurface(def.floor)!;
   const coveId = `cove-${uid}`;
   const poolId = `pool-${uid}`;
+  const vignetteId = `vig-${uid}`;
+  const windowId = `win-${uid}`;
 
   // Handle click/tap on SVG surface to derive grid cell
   function handleSvgClick(e: React.MouseEvent<SVGSVGElement>) {
@@ -115,22 +117,38 @@ export function RoomCanvas({
       {wall.render()}
       {floor.render()}
 
-      {/* 2.5D depth overlay — cove shadow (ceiling), skirting board, floor light pool */}
+      {/* 2.5D depth overlay — cove shadow (ceiling), corner AO, window light,
+          skirting/horizon line, floor light pool. Generic across all rooms. */}
       <defs>
         <linearGradient id={coveId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#000" stopOpacity="0.16" />
           <stop offset="1" stopColor="#000" stopOpacity="0" />
         </linearGradient>
         <radialGradient id={poolId} cx="0.6" cy="0.42" r="0.62">
-          <stop offset="0" stopColor="#fff6e0" stopOpacity="0.28" />
+          <stop offset="0" stopColor="#fff6e0" stopOpacity="0.30" />
           <stop offset="1" stopColor="#fff6e0" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={vignetteId} cx="0.5" cy="0.46" r="0.72">
+          <stop offset="0.55" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.16" />
+        </radialGradient>
+        <radialGradient id={windowId} cx="0.2" cy="0.12" r="0.55">
+          <stop offset="0" stopColor="#fff7e2" stopOpacity="0.34" />
+          <stop offset="1" stopColor="#fff7e2" stopOpacity="0" />
         </radialGradient>
       </defs>
       <g aria-hidden>
-        <rect x={0} y={0} width={VB_W} height={6} fill={`url(#${coveId})`} />
-        <rect x={0} y={23.4} width={VB_W} height={2.2} fill="#000" opacity={0.10} />
-        <rect x={0} y={23.4} width={VB_W} height={0.7} fill="#fff" opacity={0.18} />
+        {/* ceiling cove shadow */}
+        <rect x={0} y={0} width={VB_W} height={7} fill={`url(#${coveId})`} />
+        {/* warm light wash from the top-left (window / sun) */}
+        <rect x={0} y={0} width={VB_W} height={VB_H} fill={`url(#${windowId})`} />
+        {/* floor sunlight pool */}
         <ellipse cx={56} cy={46} rx={62} ry={26} fill={`url(#${poolId})`} />
+        {/* skirting board / horizon line at the wall-floor seam */}
+        <rect x={0} y={23.2} width={VB_W} height={2.6} fill="#000" opacity={0.10} />
+        <rect x={0} y={23.2} width={VB_W} height={0.7} fill="#fff" opacity={0.20} />
+        {/* corner ambient occlusion (drawn last so it frames the scene) */}
+        <rect x={0} y={0} width={VB_W} height={VB_H} fill={`url(#${vignetteId})`} />
       </g>
 
       {/* Edit-mode faint grid */}
