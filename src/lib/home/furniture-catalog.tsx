@@ -28,8 +28,9 @@ function PosterStarsComponent(): ReactElement {
   return (
     <g aria-hidden>
       {/* Frame */}
-      <rect x={1} y={1} width={10.5} height={10.5} rx={0.8} fill="#3a2a8a" stroke="#1a0a5a" strokeWidth={0.8} />
-      <rect x={2} y={2} width={8.5} height={8.5} fill="#0a0a2a" />
+      <rect x={1} y={1} width={10.5} height={10.5} rx={1.2} fill="#3a2a8a" stroke="#1a0a5a" strokeWidth={0.7} />
+      <rect x={1} y={1} width={10.5} height={1.4} rx={1.2} fill="#4d3aa6" />
+      <rect x={2} y={2} width={8.5} height={8.5} rx={0.4} fill="#0a0a2a" />
       {/* Stars */}
       <circle cx={6.25} cy={6.25} r={1.2} fill="#ffe840" />
       {[
@@ -48,8 +49,9 @@ function FramedFishComponent(): ReactElement {
   return (
     <g aria-hidden>
       {/* Frame */}
-      <rect x={1} y={1} width={10.5} height={10.5} rx={0.5} fill="#8b5e3c" stroke="#5a3820" strokeWidth={0.8} />
-      <rect x={2} y={2} width={8.5} height={8.5} fill="#d0eef8" />
+      <rect x={1} y={1} width={10.5} height={10.5} rx={1.1} fill="#8b5e3c" stroke="#5a3820" strokeWidth={0.7} />
+      <rect x={1} y={1} width={10.5} height={1.3} rx={1.1} fill="#a06f48" />
+      <rect x={2} y={2} width={8.5} height={8.5} rx={0.4} fill="#d0eef8" />
       {/* Fish body */}
       <ellipse cx={6.25} cy={6.25} r={3} ry={2} fill="#f06030" stroke="#c04010" strokeWidth={0.5} />
       {/* Tail */}
@@ -68,7 +70,8 @@ function ClockRoundComponent(): ReactElement {
   return (
     <g aria-hidden>
       {/* Clock case */}
-      <circle cx={6.25} cy={6.25} r={5} fill="#f0e8d0" stroke="#8b6020" strokeWidth={0.8} />
+      <circle cx={6.25} cy={6.25} r={5} fill="#f0e8d0" stroke="#8b6020" strokeWidth={0.7} />
+      <path d="M 2.9 2.9 A 5 5 0 0 1 9.6 2.9" fill="none" stroke="#fbf6e6" strokeWidth={0.9} strokeLinecap="round" />
       <circle cx={6.25} cy={6.25} r={4.2} fill="#fffdf5" stroke="#c09040" strokeWidth={0.4} />
       {/* Hour markers */}
       {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg, i) => {
@@ -94,9 +97,11 @@ function WindowSunnyComponent(): ReactElement {
   return (
     <g aria-hidden>
       {/* Window frame */}
-      <rect x={0.5} y={0.5} width={24} height={11.5} rx={0.8} fill="#c0a060" stroke="#8b6030" strokeWidth={0.8} />
+      <rect x={0.5} y={0.5} width={24} height={11.5} rx={1.2} fill="#c0a060" stroke="#8b6030" strokeWidth={0.7} />
+      <rect x={0.5} y={0.5} width={24} height={1.1} rx={1.2} fill="#d4b478" />
       {/* Sky */}
-      <rect x={1.5} y={1.5} width={22} height={9.5} fill="#a8d8f0" />
+      <rect x={1.5} y={1.5} width={22} height={9.5} rx={0.4} fill="#a8d8f0" />
+      <rect x={1.5} y={1.5} width={22} height={3} rx={0.4} fill="#c2e6f7" />
       {/* Divider cross */}
       <line x1={12.5} y1={1.5} x2={12.5} y2={11} stroke="#c0a060" strokeWidth={0.7} />
       <line x1={1.5} y1={6.25} x2={23.5} y2={6.25} stroke="#c0a060" strokeWidth={0.7} />
@@ -151,14 +156,17 @@ function LampStringComponent(): ReactElement {
 function FloorLampComponent(): ReactElement {
   return (
     <g aria-hidden>
+      {/* Glow */}
+      <ellipse cx={6.25} cy={6} rx={3.2} ry={1.7} fill="#fff8d0" opacity={0.45} />
       {/* Base */}
-      <ellipse cx={6.25} cy={11.5} rx={3.5} ry={0.8} fill="#8b6030" />
+      <ellipse cx={6.25} cy={11.5} rx={3.5} ry={0.9} fill="#8b6030" />
+      <ellipse cx={6.25} cy={11.3} rx={3} ry={0.6} fill="#a3753e" />
       {/* Pole */}
-      <rect x={5.8} y={3} width={0.9} height={8.5} fill="#b0a080" />
+      <rect x={5.8} y={3} width={0.9} height={8.5} rx={0.4} fill="#b0a080" />
+      <rect x={5.8} y={3} width={0.35} height={8.5} fill="#c8bd9a" />
       {/* Shade */}
       <path d="M 3 5.5 L 9.5 5.5 L 8 3 L 4.5 3 Z" fill="#f0e0b0" stroke="#c0a060" strokeWidth={0.5} />
-      {/* Glow */}
-      <ellipse cx={6.25} cy={6} rx={3} ry={1.5} fill="#fff8d0" opacity={0.4} />
+      <path d="M 4.5 3 L 8 3 L 7.7 3.7 L 4.8 3.7 Z" fill="#fbf0cf" />
     </g>
   );
 }
@@ -170,17 +178,22 @@ function BedCozyComponent(): ReactElement {
   return (
     <g aria-hidden>
       {/* Frame */}
-      <rect x={0.5} y={3} width={24} height={9} rx={1} fill="#8b5e3c" />
+      <rect x={0.5} y={3} width={24} height={9} rx={1.6} fill="#8b5e3c" />
+      <rect x={0.5} y={10.4} width={24} height={1.6} rx={1.6} fill="#6f4a2e" />
       {/* Mattress */}
-      <rect x={1} y={3.5} width={23} height={8} rx={0.8} fill="#f5e8d0" />
-      {/* Pillow */}
-      <rect x={1.5} y={4} width={5} height={4} rx={1.5} fill="#fff" stroke="#ddd" strokeWidth={0.4} />
+      <rect x={1} y={3.5} width={23} height={8} rx={1.4} fill="#f5e8d0" />
+      <rect x={1} y={3.5} width={23} height={2} rx={1.4} fill="#fff" opacity={0.5} />
       {/* Blanket */}
-      <rect x={7} y={5} width={16.5} height={6} rx={1} fill="#7080d0" stroke="#5060b0" strokeWidth={0.4} />
-      {/* Blanket fold */}
+      <rect x={7} y={5} width={16.5} height={6} rx={1.4} fill="#7080d0" />
+      <rect x={7} y={5} width={16.5} height={1.6} rx={1.4} fill="#8a98e0" />
+      <rect x={7} y={9.6} width={16.5} height={1.4} rx={1.4} fill="#5060b0" />
       <path d="M 7 8 Q 15 7 23.5 8" stroke="#5060b0" strokeWidth={0.4} fill="none" />
+      {/* Pillow */}
+      <rect x={1.5} y={4} width={5} height={4} rx={1.8} fill="#fff" stroke="#e6ddd2" strokeWidth={0.4} />
+      <rect x={1.9} y={4.4} width={4.2} height={1.3} rx={1.2} fill="#fff" opacity={0.7} />
       {/* Headboard */}
-      <rect x={0.5} y={1} width={24} height={2.5} rx={1} fill="#5a3820" />
+      <rect x={0.5} y={1} width={24} height={2.5} rx={1.2} fill="#5a3820" />
+      <rect x={0.5} y={1} width={24} height={0.8} rx={1.2} fill="#714a2e" />
     </g>
   );
 }
@@ -190,18 +203,24 @@ function SofaTealComponent(): ReactElement {
   return (
     <g aria-hidden>
       {/* Base */}
-      <rect x={0.5} y={5} width={24} height={7} rx={1} fill="#2a8090" />
-      {/* Seat cushions */}
-      <rect x={1} y={5.5} width={10.5} height={5} rx={1} fill="#3a9aa8" />
-      <rect x={12.5} y={5.5} width={11} height={5} rx={1} fill="#3a9aa8" />
+      <rect x={0.5} y={5} width={24} height={7} rx={1.4} fill="#2a8090" />
+      <rect x={0.5} y={10.6} width={24} height={1.4} rx={1.4} fill="#1f6878" />
       {/* Backrest */}
-      <rect x={0.5} y={2.5} width={24} height={3} rx={1} fill="#2a8090" />
+      <rect x={0.5} y={2.5} width={24} height={3} rx={1.2} fill="#2a8090" />
+      <rect x={0.5} y={2.5} width={24} height={1} rx={1.2} fill="#3fa6b4" />
+      {/* Seat cushions */}
+      <rect x={1} y={5.5} width={10.5} height={5} rx={1.2} fill="#3a9aa8" />
+      <rect x={12.5} y={5.5} width={11} height={5} rx={1.2} fill="#3a9aa8" />
+      <rect x={1} y={5.5} width={10.5} height={1.4} rx={1.2} fill="#54b6c4" />
+      <rect x={12.5} y={5.5} width={11} height={1.4} rx={1.2} fill="#54b6c4" />
       {/* Arm rests */}
-      <rect x={0.5} y={4} width={3} height={8} rx={0.8} fill="#1a6070" />
-      <rect x={21.5} y={4} width={3} height={8} rx={0.8} fill="#1a6070" />
+      <rect x={0.5} y={4} width={3} height={8} rx={1} fill="#1a6070" />
+      <rect x={0.5} y={4} width={3} height={1.4} rx={1} fill="#2a8090" />
+      <rect x={21.5} y={4} width={3} height={8} rx={1} fill="#1a6070" />
+      <rect x={21.5} y={4} width={3} height={1.4} rx={1} fill="#2a8090" />
       {/* Legs */}
-      <rect x={2} y={11.5} width={1.5} height={1} rx={0.3} fill="#5a3820" />
-      <rect x={21.5} y={11.5} width={1.5} height={1} rx={0.3} fill="#5a3820" />
+      <rect x={2} y={11.5} width={1.5} height={1.1} rx={0.4} fill="#5a3820" />
+      <rect x={21.5} y={11.5} width={1.5} height={1.1} rx={0.4} fill="#5a3820" />
     </g>
   );
 }
@@ -210,16 +229,19 @@ function SofaTealComponent(): ReactElement {
 function ChairWoodComponent(): ReactElement {
   return (
     <g aria-hidden>
-      {/* Seat */}
-      <rect x={2} y={6} width={8.5} height={3} rx={0.5} fill="#c08040" />
       {/* Backrest */}
-      <rect x={2.5} y={2.5} width={7.5} height={3.5} rx={0.5} fill="#a06030" />
+      <rect x={2.5} y={2.5} width={7.5} height={3.5} rx={0.9} fill="#a06030" />
+      <rect x={2.5} y={2.5} width={7.5} height={1} rx={0.9} fill="#bd7a44" />
+      {/* Seat */}
+      <rect x={2} y={6} width={8.5} height={3} rx={0.9} fill="#c08040" />
+      <rect x={2} y={6} width={8.5} height={1} rx={0.9} fill="#d69a58" />
+      <rect x={2} y={8.2} width={8.5} height={0.8} rx={0.9} fill="#a06a32" />
       {/* Back legs */}
-      <rect x={2.5} y={9} width={1} height={3.5} rx={0.3} fill="#8b5020" />
-      <rect x={9} y={9} width={1} height={3.5} rx={0.3} fill="#8b5020" />
+      <rect x={2.5} y={9} width={1} height={3.5} rx={0.4} fill="#8b5020" />
+      <rect x={9} y={9} width={1} height={3.5} rx={0.4} fill="#8b5020" />
       {/* Front legs */}
-      <rect x={2.5} y={9} width={1} height={3} rx={0.3} fill="#a06030" />
-      <rect x={9} y={9} width={1} height={3} rx={0.3} fill="#a06030" />
+      <rect x={2.5} y={9} width={1} height={3} rx={0.4} fill="#a06030" />
+      <rect x={9} y={9} width={1} height={3} rx={0.4} fill="#a06030" />
     </g>
   );
 }
@@ -228,13 +250,16 @@ function ChairWoodComponent(): ReactElement {
 function TableRoundComponent(): ReactElement {
   return (
     <g aria-hidden>
-      {/* Tabletop */}
-      <ellipse cx={6.25} cy={5.5} rx={5} ry={1.5} fill="#d4a060" stroke="#a07030" strokeWidth={0.5} />
-      <ellipse cx={6.25} cy={4.5} rx={5} ry={1.5} fill="#e0b070" stroke="#a07030" strokeWidth={0.5} />
-      {/* Leg */}
-      <rect x={5.7} y={6} width={1.1} height={4.5} fill="#a07030" />
       {/* Foot */}
-      <ellipse cx={6.25} cy={10.5} rx={2.5} ry={0.6} fill="#a07030" />
+      <ellipse cx={6.25} cy={10.5} rx={2.5} ry={0.6} fill="#946730" />
+      {/* Leg */}
+      <rect x={5.7} y={6} width={1.1} height={4.5} rx={0.4} fill="#a07030" />
+      <rect x={5.7} y={6} width={0.4} height={4.5} fill="#b9854a" />
+      {/* Tabletop side (depth) */}
+      <ellipse cx={6.25} cy={5.5} rx={5} ry={1.5} fill="#b98a4e" stroke="#946730" strokeWidth={0.4} />
+      {/* Tabletop surface */}
+      <ellipse cx={6.25} cy={4.5} rx={5} ry={1.5} fill="#e0b070" stroke="#a07030" strokeWidth={0.4} />
+      <ellipse cx={5.2} cy={4} rx={2.4} ry={0.7} fill="#eec596" opacity={0.7} />
     </g>
   );
 }
@@ -244,10 +269,13 @@ function BookshelfComponent(): ReactElement {
   return (
     <g aria-hidden>
       {/* Shelf unit */}
-      <rect x={0.5} y={0.5} width={24} height={12} rx={0.5} fill="#8b5e3c" />
+      <rect x={0.5} y={0.5} width={24} height={12} rx={1} fill="#8b5e3c" />
+      <rect x={0.5} y={0.5} width={24} height={1} rx={1} fill="#a06f48" />
+      <rect x={0.5} y={0.5} width={1.2} height={12} rx={1} fill="#9c6c44" />
+      <rect x={23.3} y={0.5} width={1.2} height={12} fill="#724a2d" />
       {/* Shelves */}
-      <rect x={1} y={4.5} width={23} height={0.8} fill="#5a3820" />
-      <rect x={1} y={8.5} width={23} height={0.8} fill="#5a3820" />
+      <rect x={1} y={4.5} width={23} height={0.8} rx={0.3} fill="#5a3820" />
+      <rect x={1} y={8.5} width={23} height={0.8} rx={0.3} fill="#5a3820" />
       {/* Books on shelf 1 */}
       {[1.2, 3, 4.6, 6.2, 8, 9.6, 11.5, 13, 14.8, 16.4, 18, 19.6].map((x, i) => {
         const colors = ['#e05050', '#50b050', '#5080e0', '#e0c050', '#d060c0', '#50c0c0'];
@@ -268,9 +296,11 @@ function ToyChestComponent(): ReactElement {
   return (
     <g aria-hidden>
       {/* Chest body */}
-      <rect x={1} y={5} width={10.5} height={7} rx={0.8} fill="#e8a030" stroke="#c07020" strokeWidth={0.6} />
+      <rect x={1} y={5} width={10.5} height={7} rx={1.2} fill="#e8a030" stroke="#c07020" strokeWidth={0.5} />
+      <rect x={1} y={9.6} width={10.5} height={2.4} rx={1.2} fill="#cf8a24" />
       {/* Lid */}
-      <rect x={0.8} y={3} width={11} height={2.5} rx={0.8} fill="#f0b840" stroke="#c07020" strokeWidth={0.6} />
+      <rect x={0.8} y={3} width={11} height={2.5} rx={1.1} fill="#f0b840" stroke="#c07020" strokeWidth={0.5} />
+      <rect x={0.8} y={3} width={11} height={0.9} rx={1.1} fill="#f8cc66" />
       {/* Hinge */}
       <rect x={5.5} y={4.8} width={1.5} height={0.6} rx={0.3} fill="#8b6020" />
       {/* Latch */}
@@ -287,17 +317,20 @@ function ToyChestComponent(): ReactElement {
 function DeskStudyComponent(): ReactElement {
   return (
     <g aria-hidden>
-      {/* Desktop */}
-      <rect x={0.5} y={4.5} width={24} height={1.5} rx={0.4} fill="#c8a060" stroke="#9a7030" strokeWidth={0.5} />
+      {/* Desktop side (depth) */}
+      <rect x={0.5} y={4.5} width={24} height={1.5} rx={0.5} fill="#a87c3e" stroke="#9a7030" strokeWidth={0.4} />
       {/* Top surface */}
-      <rect x={0.5} y={3.5} width={24} height={1.2} rx={0.4} fill="#d4b070" />
+      <rect x={0.5} y={3.5} width={24} height={1.2} rx={0.5} fill="#d4b070" />
+      <rect x={0.5} y={3.5} width={24} height={0.5} rx={0.5} fill="#e6c98c" />
       {/* Legs */}
-      <rect x={1} y={6} width={1.2} height={6.5} rx={0.3} fill="#9a7030" />
-      <rect x={22.8} y={6} width={1.2} height={6.5} rx={0.3} fill="#9a7030" />
+      <rect x={1} y={6} width={1.2} height={6.5} rx={0.4} fill="#9a7030" />
+      <rect x={22.8} y={6} width={1.2} height={6.5} rx={0.4} fill="#9a7030" />
       {/* Drawer unit */}
-      <rect x={15} y={5} width={8.5} height={7} rx={0.4} fill="#b89050" stroke="#9a7030" strokeWidth={0.4} />
-      <rect x={15.5} y={5.5} width={7.5} height={2.8} rx={0.3} fill="#c8a060" />
-      <rect x={15.5} y={9} width={7.5} height={2.5} rx={0.3} fill="#c8a060" />
+      <rect x={15} y={5} width={8.5} height={7} rx={0.7} fill="#b89050" stroke="#9a7030" strokeWidth={0.4} />
+      <rect x={15.5} y={5.5} width={7.5} height={2.8} rx={0.4} fill="#c8a060" />
+      <rect x={15.5} y={5.5} width={7.5} height={0.8} rx={0.4} fill="#d8b574" />
+      <rect x={15.5} y={9} width={7.5} height={2.5} rx={0.4} fill="#c8a060" />
+      <rect x={15.5} y={9} width={7.5} height={0.7} rx={0.4} fill="#d8b574" />
       <circle cx={19.25} cy={6.9} r={0.5} fill="#8b6020" />
       <circle cx={19.25} cy={10.25} r={0.5} fill="#8b6020" />
       {/* Pencil holder */}
@@ -322,6 +355,8 @@ function RugRoundComponent(): ReactElement {
       <ellipse cx={6.25} cy={7} rx={3.5} ry={2.8} fill="#e87070" />
       {/* Inner center */}
       <ellipse cx={6.25} cy={7} rx={2} ry={1.6} fill="#d04040" />
+      {/* Soft sheen (top-left light) */}
+      <ellipse cx={4.6} cy={5.4} rx={2.4} ry={1.4} fill="#fff" opacity={0.12} />
       {/* Pattern dots */}
       {[0, 60, 120, 180, 240, 300].map((deg, i) => {
         const rad = deg * (Math.PI / 180);
@@ -366,6 +401,7 @@ function PlantFernComponent(): ReactElement {
     <g aria-hidden>
       {/* Pot */}
       <path d="M 3.5 9.5 L 4.5 12.5 L 8 12.5 L 9 9.5 Z" fill="#c87040" />
+      <path d="M 3.5 9.5 L 3.9 10.7 L 4.9 10.7 L 4.7 9.5 Z" fill="#d98a52" />
       <ellipse cx={6.25} cy={9.5} rx={2.8} ry={0.7} fill="#a85030" />
       {/* Soil */}
       <ellipse cx={6.25} cy={9.5} rx={2} ry={0.5} fill="#5a3010" />
@@ -394,6 +430,7 @@ function PlantCactusComponent(): ReactElement {
       <ellipse cx={6.25} cy={9.5} rx={2.8} ry={0.7} fill="#c06020" />
       {/* Main cactus body */}
       <rect x={5.3} y={3} width={1.9} height={6.5} rx={0.9} fill="#40a040" />
+      <rect x={5.5} y={3.3} width={0.6} height={5.8} rx={0.3} fill="#5cbf5c" opacity={0.8} />
       {/* Left arm */}
       <rect x={3.5} y={5.5} width={1.9} height={1.2} rx={0.6} fill="#40a040" />
       <rect x={3.5} y={4} width={1.2} height={1.7} rx={0.6} fill="#40a040" />
@@ -417,8 +454,10 @@ function TeddyBearComponent(): ReactElement {
     <g aria-hidden>
       {/* Body */}
       <ellipse cx={6.25} cy={8.5} rx={3.5} ry={4} fill="#c89050" />
+      <ellipse cx={5} cy={6.6} rx={1.4} ry={2} fill="#d8a468" opacity={0.7} />
       {/* Head */}
       <circle cx={6.25} cy={4.5} r={2.8} fill="#c89050" />
+      <circle cx={5.3} cy={3.6} r={1.1} fill="#d8a468" opacity={0.7} />
       {/* Ears */}
       <circle cx={3.8} cy={2.3} r={1.3} fill="#c89050" />
       <circle cx={3.8} cy={2.3} r={0.7} fill="#d4a068" />
@@ -468,9 +507,11 @@ function RocketLampComponent(): ReactElement {
       {/* Pole */}
       <rect x={5.9} y={6} width={0.7} height={6} fill="#a0a0b0" />
       {/* Rocket body */}
-      <rect x={4.5} y={4} width={3.5} height={4} rx={0.5} fill="#4060d0" />
+      <rect x={4.5} y={4} width={3.5} height={4} rx={0.7} fill="#4060d0" />
+      <rect x={4.8} y={4.3} width={0.9} height={3.4} rx={0.4} fill="#6a86e6" opacity={0.85} />
       {/* Nose cone */}
       <path d="M 4.5 4 L 6.25 1 L 8 4 Z" fill="#d04040" />
+      <path d="M 5.4 2.5 L 6.25 1 L 6.5 2.5 Z" fill="#e36a6a" />
       {/* Window */}
       <circle cx={6.25} cy={5.5} r={1} fill="#a0d0ff" stroke="#2040a0" strokeWidth={0.3} />
       {/* Fins */}
