@@ -7,12 +7,26 @@ import { playSound } from '@/lib/audio/play';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 
+/** Bilingual copy for the "no card this time" notices (David, 2026-06-12). */
+const CARD_MESSAGES: Record<string, { zh: string; en: string }> = {
+  review_done_today: {
+    zh: '今日回顾已完成，不再获得新卡片',
+    en: "Today's review is done — no new card",
+  },
+  daily_cap_reached: {
+    zh: '今日卡片已经发放完毕，明日再来',
+    en: "All of today's cards are claimed — come back tomorrow",
+  },
+};
+
 interface Props {
   weekLabel: string;
   coinsThisSession: number;
   childId: string;
   weekId: string;
   chestAvailable: boolean;
+  /** When set, shows a bilingual "no card" notice (review-done / daily cap). */
+  cardMessage?: 'review_done_today' | 'daily_cap_reached' | null;
   onContinue: () => void;
 }
 
@@ -22,6 +36,7 @@ export function LevelFanfare({
   // childId and weekId are kept in Props for API stability (callers pass them)
   // but not needed in this component after the legacy chest button was removed
   chestAvailable,
+  cardMessage,
   onContinue,
 }: Props) {
   const reduced = useReducedMotion();
@@ -58,6 +73,17 @@ export function LevelFanfare({
           🪙 +{coinsThisSession}
         </span>
       </p>
+      {cardMessage && CARD_MESSAGES[cardMessage] && (
+        <p
+          data-testid="card-message"
+          className="max-w-xs rounded-2xl bg-[var(--color-sand-100)] px-4 py-2 text-sm font-semibold text-[var(--color-sand-800)]"
+        >
+          <span className="mr-1">🎴</span>
+          {CARD_MESSAGES[cardMessage].zh}
+          <span className="mx-1 text-[var(--color-sand-500)]">·</span>
+          {CARD_MESSAGES[cardMessage].en}
+        </p>
+      )}
       <WoodSignButton size="lg" variant="primary" onClick={onContinue}>
         回地图 / Back to map
       </WoodSignButton>

@@ -15,7 +15,6 @@ import {
   getWeekProgress,
   hasPriorAttempt,
   isPerfectWeekForChild,
-  listLevelsForWeek,
   recordSceneAttempt,
   startPlaySession,
   upsertWeekProgress,
@@ -82,6 +81,32 @@ async function safePullRevealCard(
   } catch (err) {
     console.error(`[finishLevelAction] ${source} pullCardForChild failed:`, err);
     return null;
+  }
+}
+
+/** Why a card grant did not produce a card, surfaced to the kid on the fanfare. */
+export type CardSkipReason = 'review_done_today' | 'daily_cap_reached';
+
+/**
+ * Pull a card and report BOTH the card (if any) and why it was skipped — so the
+ * caller can tell the kid "今日回顾已完成" (review already done today) vs "今日卡片
+ * 已发放完毕" (daily cap reached). Guarded: any failure degrades to no card / no
+ * message and never breaks level completion.
+ */
+async function pullSectionCard(
+  childId: string,
+  source: 'boss_clear' | 'review' | 'practice',
+  refId: string,
+): Promise<{ card: RevealCard | null; skip: CardSkipReason | null }> {
+  try {
+    const res = await pullCardForChild(childId, source, refId);
+    if (res.granted) return { card: toRevealCard(res), skip: null };
+    if (res.reason === 'already_granted') return { card: null, skip: 'review_done_today' };
+    if (res.reason === 'daily_cap_reached') return { card: null, skip: 'daily_cap_reached' };
+    return { card: null, skip: null };
+  } catch (err) {
+    console.error(`[finishLevelAction] ${source} pullCardForChild failed:`, err);
+    return { card: null, skip: null };
   }
 }
 
@@ -311,6 +336,8 @@ const FinishLevelSchema = z.object({
   sessionId: z.string().uuid(),
   childId: z.string().uuid(),
   weekId: z.string().uuid(),
+  /** Which section just finished. Drives boss detection + per-section card grants. */
+  section: z.enum(['review', 'practice', 'boss']).default('boss'),
   totalScenesPassed: z.number().int().min(0),
   totalScenesInWeek: z.number().int().min(1),
   durationSeconds: z.number().int().min(0),
@@ -323,6 +350,8 @@ export async function finishLevelAction(
   bossCleared: boolean;
   freePullClaimed: boolean;
   cardGrants: RevealCard[];
+  /** Why no card was granted this completion (review-done / cap), or null. */
+  cardMessage?: CardSkipReason | null;
   bonuses: EconomyBonus[];
   trophies: GrantedTrophy[];
   xp: { gained: number; level: number; leveledUp: boolean };
@@ -341,11 +370,15 @@ export async function finishLevelAction(
     (parsed.totalScenesPassed / parsed.totalScenesInWeek) * 100,
   );
 
-  // Detect boss clear: last level type is 'boss' AND all scenes were passed.
-  const levels = await listLevelsForWeek(parsed.weekId);
-  const lastLevel = levels[levels.length - 1];
+  // Boss clear = the BOSS section finished with all its scenes passed. (Pre-2026-06
+  // this was derived from the week's last level being a boss, which mis-fired for
+  // review/practice section runs — they'd mark the week boss-cleared and pay out
+  // boss rewards. Threading the section makes it exact.)
   const allScenesCleared = parsed.totalScenesPassed === parsed.totalScenesInWeek;
-  const bossCleared = lastLevel?.sceneType === 'boss' && allScenesCleared;
+  const bossCleared = parsed.section === 'boss' && allScenesCleared;
+  // Message shown on the fanfare when a completion earns no card (review already
+  // done today, or the daily cap is hit).
+  let cardMessage: CardSkipReason | null = null;
 
   // Read existing progress BEFORE the upsert to guard against double-awarding on retry.
   const existing = await getWeekProgress(child.id, parsed.weekId);
@@ -416,10 +449,31 @@ export async function finishLevelAction(
 
   let bossCard: RevealCard | null = null;
   if (bossCleared) {
-    bossCard = await safePullRevealCard(child.id, 'boss_clear', parsed.sessionId);
+    const r = await pullSectionCard(child.id, 'boss_clear', parsed.sessionId);
+    bossCard = r.card;
+    if (r.skip) cardMessage = r.skip; // boss never returns 'already_granted'
   }
 
-  const cardGrants: RevealCard[] = [bossCard, perfectCard].filter(
+  // Per-section card grant for review / practice (boss handled above).
+  //  • review   → once per (week, day): refId = `${weekId}:${dayUtc}`. A repeat of
+  //    the SAME week's review the same day reports 'review_done_today'.
+  //  • practice → every full completion: refId = sessionId (only the daily cap
+  //    bounds it). Both still consume the shared daily card cap.
+  let sectionCard: RevealCard | null = null;
+  if (
+    allScenesCleared &&
+    (parsed.section === 'review' || parsed.section === 'practice')
+  ) {
+    const refId =
+      parsed.section === 'review'
+        ? `${parsed.weekId}:${todayUtcIso()}`
+        : parsed.sessionId;
+    const r = await pullSectionCard(child.id, parsed.section, refId);
+    sectionCard = r.card;
+    if (r.skip) cardMessage = r.skip;
+  }
+
+  const cardGrants: RevealCard[] = [bossCard, perfectCard, sectionCard].filter(
     (c): c is RevealCard => c !== null,
   );
 
@@ -458,6 +512,7 @@ export async function finishLevelAction(
     bossCleared,
     freePullClaimed: existing?.freePullClaimed ?? false,
     cardGrants,
+    cardMessage,
     bonuses,
     trophies: collectedTrophies,
     xp: { gained: levelXpGained, level: levelLastXpResult.level, leveledUp: levelLastXpResult.leveledUp },

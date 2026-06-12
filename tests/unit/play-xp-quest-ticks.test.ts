@@ -425,17 +425,14 @@ describe('finishLevelAction — boss clear XP + quest ticks', () => {
     expect(earnCardCalls[0]?.[2]).toBe(1); // 1 card granted
   });
 
-  it('does NOT tick boss_clear XP when boss was NOT cleared', async () => {
-    mocks.listLevelsForWeek.mockResolvedValue([
-      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
-      { id: 'l2', position: 1, sceneType: 'word_match', sceneConfig: {} },
-    ]);
+  it('does NOT tick boss_clear XP when a non-boss section finishes', async () => {
     mocks.getWeekProgress.mockResolvedValue(null);
 
     await finishLevelAction({
       sessionId: SESSION_ID,
       childId: CHILD_ID,
       weekId: WEEK_ID,
+      section: 'practice',
       totalScenesPassed: 2,
       totalScenesInWeek: 2,
       durationSeconds: 120,
@@ -464,17 +461,14 @@ describe('finishLevelAction — boss clear XP + quest ticks', () => {
     expect(result.xp.gained).toBe(50);
   });
 
-  it('result.xp.gained=0 when boss was NOT cleared', async () => {
-    mocks.listLevelsForWeek.mockResolvedValue([
-      { id: 'l1', position: 0, sceneType: 'flashcard', sceneConfig: {} },
-      { id: 'l2', position: 1, sceneType: 'word_match', sceneConfig: {} },
-    ]);
+  it('result.xp.gained=0 when a non-boss section finishes', async () => {
     mocks.getWeekProgress.mockResolvedValue(null);
 
     const result = await finishLevelAction({
       sessionId: SESSION_ID,
       childId: CHILD_ID,
       weekId: WEEK_ID,
+      section: 'practice',
       totalScenesPassed: 2,
       totalScenesInWeek: 2,
       durationSeconds: 120,

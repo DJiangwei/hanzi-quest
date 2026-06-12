@@ -101,6 +101,55 @@ describe('LevelFanfare', () => {
     expect(screen.queryByRole('button', { name: /开启宝箱/ })).not.toBeInTheDocument();
   });
 
+  it('renders a bilingual "review done today" notice when cardMessage is set', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(false);
+    render(
+      <LevelFanfare
+        weekLabel="Lesson 5"
+        coinsThisSession={50}
+        childId="c1"
+        weekId="w1"
+        chestAvailable={false}
+        cardMessage="review_done_today"
+        onContinue={() => undefined}
+      />,
+    );
+    const msg = screen.getByTestId('card-message');
+    expect(msg).toHaveTextContent(/今日回顾已完成/);
+    expect(msg).toHaveTextContent(/no new card/i);
+  });
+
+  it('renders the daily-cap notice when cardMessage=daily_cap_reached', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(false);
+    render(
+      <LevelFanfare
+        weekLabel="Lesson 5"
+        coinsThisSession={50}
+        childId="c1"
+        weekId="w1"
+        chestAvailable={false}
+        cardMessage="daily_cap_reached"
+        onContinue={() => undefined}
+      />,
+    );
+    expect(screen.getByTestId('card-message')).toHaveTextContent(/今日卡片已经发放完毕/);
+  });
+
+  it('renders no card-message notice when cardMessage is null/absent', () => {
+    vi.mocked(useReducedMotion).mockReturnValue(false);
+    render(
+      <LevelFanfare
+        weekLabel="Lesson 5"
+        coinsThisSession={50}
+        childId="c1"
+        weekId="w1"
+        chestAvailable={false}
+        onContinue={() => undefined}
+      />,
+    );
+    expect(screen.queryByTestId('card-message')).not.toBeInTheDocument();
+  });
+
   it('calls onContinue when 回地图 button is clicked', () => {
     vi.mocked(useReducedMotion).mockReturnValue(false);
     const onContinue = vi.fn();
