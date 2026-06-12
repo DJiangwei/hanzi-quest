@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
     lifetimeEarned: vi.fn(),
     isPackComplete: vi.fn(),
     longestStreak: vi.fn(),
+    getCompletedFlagContinents: vi.fn(),
     // collections DB mock
     getPackBySlug: vi.fn(),
     // db mocks
@@ -41,6 +42,7 @@ vi.mock('@/lib/db/trophies-evaluators', () => ({
   getLifetimeEarned: mocks.lifetimeEarned,
   isPackComplete: mocks.isPackComplete,
   getLongestStreak: mocks.longestStreak,
+  getCompletedFlagContinents: mocks.getCompletedFlagContinents,
 }));
 
 vi.mock('@/lib/db/collections', () => ({
@@ -133,6 +135,27 @@ describe('checkAndGrantTrophies', () => {
     const granted = await checkAndGrantTrophies('c1', { kind: 'boss-clear', weekId: 'w1' });
 
     expect(granted.map((g) => g.slug)).toContain('boss-trio');
+  });
+
+  // ── continent-complete ────────────────────────────────────────────────────
+
+  it('continent-complete: grants a trophy for each fully-owned continent', async () => {
+    mocks.getCompletedFlagContinents.mockResolvedValue(['asia', 'europe']);
+    setupSelectForNewGrants(['continent-asia', 'continent-europe']);
+
+    const granted = await checkAndGrantTrophies('c1', { kind: 'continent-complete' });
+
+    expect(granted.map((g) => g.slug)).toEqual(
+      expect.arrayContaining(['continent-asia', 'continent-europe']),
+    );
+  });
+
+  it('continent-complete: returns [] when no continent is complete', async () => {
+    mocks.getCompletedFlagContinents.mockResolvedValue([]);
+
+    const granted = await checkAndGrantTrophies('c1', { kind: 'continent-complete' });
+
+    expect(granted).toEqual([]);
   });
 
   // ── perfect-week ──────────────────────────────────────────────────────────

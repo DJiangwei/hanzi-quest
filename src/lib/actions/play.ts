@@ -485,6 +485,14 @@ export async function finishLevelAction(
     );
   }
 
+  // A granted flag card may have completed a whole continent — grant + surface
+  // the continent trophy (idempotent; only newly-earned ones come back).
+  if (cardGrants.some((c) => c.packSlug === 'flags-v1')) {
+    collectedTrophies.push(
+      ...(await checkAndGrantTrophies(child.id, { kind: 'continent-complete' })),
+    );
+  }
+
   // ─── XP + Quest ticks (additive, guarded, fire-and-forget) ──────────────
   // Run AFTER all primary DB writes. A failure here must never break the action.
   let levelXpGained = 0;
