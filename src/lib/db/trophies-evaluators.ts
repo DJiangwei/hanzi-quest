@@ -1,5 +1,11 @@
 import { and, countDistinct, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
+import { getPackBySlug } from './collections';
+import {
+  CONTINENT_ORDER,
+  FLAGS_BY_SLUG,
+  type Continent,
+} from '@/lib/collections/flagsData';
 import {
   childCollections,
   coinBalances,
@@ -49,6 +55,47 @@ export async function getLifetimeEarned(childId: string): Promise<number> {
     .where(eq(coinBalances.childId, childId))
     .limit(1);
   return rows[0]?.lifetimeEarned ?? 0;
+}
+
+/**
+ * The flag continents (`flags-v1`) this child has fully collected. Groups the
+ * pack catalog by `FLAGS_BY_SLUG[slug].continent` and returns the continents
+ * whose every flag is owned.
+ */
+export async function getCompletedFlagContinents(
+  childId: string,
+): Promise<Continent[]> {
+  const pack = await getPackBySlug('flags-v1');
+  if (!pack) return [];
+  const items = await db
+    .select({ id: collectibleItems.id, slug: collectibleItems.slug })
+    .from(collectibleItems)
+    .where(eq(collectibleItems.packId, pack.id));
+  if (items.length === 0) return [];
+  const ownedRows = await db
+    .select({ itemId: childCollections.itemId })
+    .from(childCollections)
+    .innerJoin(collectibleItems, eq(collectibleItems.id, childCollections.itemId))
+    .where(
+      and(
+        eq(childCollections.childId, childId),
+        eq(collectibleItems.packId, pack.id),
+      ),
+    );
+  const owned = new Set(ownedRows.map((r) => r.itemId));
+
+  const total = new Map<Continent, number>();
+  const have = new Map<Continent, number>();
+  for (const it of items) {
+    const cont = FLAGS_BY_SLUG[it.slug]?.continent;
+    if (!cont) continue;
+    total.set(cont, (total.get(cont) ?? 0) + 1);
+    if (owned.has(it.id)) have.set(cont, (have.get(cont) ?? 0) + 1);
+  }
+  return CONTINENT_ORDER.filter((c) => {
+    const t = total.get(c) ?? 0;
+    return t > 0 && (have.get(c) ?? 0) >= t;
+  });
 }
 
 export async function isPackComplete(childId: string, packId: string): Promise<boolean> {

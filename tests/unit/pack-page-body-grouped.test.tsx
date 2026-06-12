@@ -6,7 +6,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/actions/gacha', () => ({
-  swapShardsForItem: vi.fn().mockResolvedValue({ ok: true, shardsRemaining: 2 }),
+  swapShardsForItem: vi
+    .fn()
+    .mockResolvedValue({ ok: true, shardsRemaining: 2, continentTrophies: [] }),
 }));
 
 import { PackPageBody } from '@/components/play/PackPageBody';
@@ -77,6 +79,45 @@ describe('PackPageBody grouped render', () => {
     expect(within(asia).queryByText('France')).not.toBeInTheDocument();
     const europe = screen.getByTestId('pack-section-europe');
     expect(within(europe).getByText('France')).toBeInTheDocument();
+  });
+
+  it('renders a scroll-jump nav chip per non-empty continent', () => {
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={[]}
+        ownedItems={[]}
+        balance={0}
+        shardCount={0}
+      />,
+    );
+    const nav = screen.getByTestId('continent-nav');
+    expect(within(nav).getByTestId('continent-nav-asia')).toBeInTheDocument();
+    expect(within(nav).getByTestId('continent-nav-europe')).toBeInTheDocument();
+    expect(within(nav).getByTestId('continent-nav-africa')).toBeInTheDocument();
+    // Oceania has no items → no chip.
+    expect(within(nav).queryByTestId('continent-nav-oceania')).not.toBeInTheDocument();
+  });
+
+  it('scrolls a continent section into view when its nav chip is tapped', () => {
+    const scrollSpy = vi.fn();
+    // jsdom does not implement scrollIntoView — stub it.
+    Element.prototype.scrollIntoView = scrollSpy;
+    render(
+      <PackPageBody
+        childId="c1"
+        packSlug="flags-v1"
+        items={items}
+        ownedItemIds={[]}
+        ownedItems={[]}
+        balance={0}
+        shardCount={0}
+      />,
+    );
+    screen.getByTestId('continent-nav-europe').click();
+    expect(scrollSpy).toHaveBeenCalled();
   });
 
   it('falls back to a single flat grid when the pack has no grouping', () => {

@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { ShardPill } from './ShardPill';
 import { SwapDialog } from './SwapDialog';
 import { CardDetailDialog } from './CardDetailDialog';
+import { TrophyToast } from './TrophyToast';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
+import type { GrantedTrophy } from '@/lib/actions/play';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { swapShardsForItem, convertDuplicateToShard } from '@/lib/actions/gacha';
 
@@ -66,7 +68,15 @@ export function PackPageBody({
 
   const [swapItem, setSwapItem] = useState<CollectibleItem | null>(null);
   const [detailItem, setDetailItem] = useState<CollectibleItem | null>(null);
+  const [continentTrophies, setContinentTrophies] = useState<GrantedTrophy[]>([]);
   const [, startConvert] = useTransition();
+
+  // Scroll-jump nav: tap a group chip → scroll its section into view.
+  const scrollToGroup = (key: string) => {
+    document
+      .getElementById(`pack-section-${key}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const convert = (itemId: string) => {
     startConvert(async () => {
@@ -191,6 +201,30 @@ export function PackPageBody({
       <div className="rounded-2xl border border-[#c89f5e] bg-[linear-gradient(180deg,#f5ead0_0%,#ead7a8_100%)] p-4">
         {meta.grouping ? (
           <div className="flex flex-col gap-4">
+            {/* Scroll-jump nav — one chip per group, sticky at the top. */}
+            <div
+              data-testid="continent-nav"
+              className="sticky top-0 z-20 -mx-1 flex gap-1.5 overflow-x-auto rounded-xl bg-[#f1e3c2]/95 px-1 py-1.5 backdrop-blur"
+            >
+              {meta.grouping.order.map((key) => {
+                if (!items.some((i) => meta.grouping!.resolveGroup(i.slug) === key)) {
+                  return null;
+                }
+                const label = meta.grouping!.labels[key];
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    data-testid={`continent-nav-${key}`}
+                    onClick={() => scrollToGroup(key)}
+                    className="flex shrink-0 items-center gap-1 rounded-full border-2 border-[#c89f5e] bg-white/80 px-2.5 py-1 text-xs font-bold text-[var(--color-treasure-800)] hover:bg-white"
+                  >
+                    <span aria-hidden>{label.emoji}</span>
+                    {label.zh}
+                  </button>
+                );
+              })}
+            </div>
             {meta.grouping.order.map((key) => {
               const groupItems = items.filter(
                 (i) => meta.grouping!.resolveGroup(i.slug) === key,
@@ -201,7 +235,12 @@ export function PackPageBody({
                 ownedSet.has(i.id),
               ).length;
               return (
-                <section key={key} data-testid={`pack-section-${key}`}>
+                <section
+                  key={key}
+                  id={`pack-section-${key}`}
+                  data-testid={`pack-section-${key}`}
+                  className="scroll-mt-14"
+                >
                   <div className="mb-2 flex items-center gap-2">
                     <span className="text-xl" aria-hidden="true">
                       {label.emoji}
@@ -248,16 +287,20 @@ export function PackPageBody({
           shardBalance={shardCount}
           onConfirm={async () => {
             const result = await swapShardsForItem(childId, swapItem.id);
-            if (result.ok) {
-              setSwapItem(null);
-              // revalidatePath in the action handles refresh
-            } else {
-              // No toast UX in this PR; just close. v2 candidate.
-              setSwapItem(null);
+            setSwapItem(null);
+            if (result.ok && result.continentTrophies.length > 0) {
+              // Swapping for the last flag of a continent earns its trophy.
+              setContinentTrophies(result.continentTrophies);
             }
+            // revalidatePath in the action handles the data refresh.
           }}
         />
       ) : null}
+
+      <TrophyToast
+        trophies={continentTrophies}
+        onDone={() => setContinentTrophies([])}
+      />
 
       {detailItem ? (
         <CardDetailDialog

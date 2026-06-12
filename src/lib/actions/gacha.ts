@@ -10,7 +10,7 @@ import { getPackBySlug } from '@/lib/db/collections';
 import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
 import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { getPackMeta } from '@/lib/collections/packRegistry';
-import { checkAndGrantTrophies } from '@/lib/db/trophies';
+import { checkAndGrantTrophies, type GrantedTrophy } from '@/lib/db/trophies';
 import { todayUtcIso } from '@/lib/db/streaks';
 import { pullCardInTx, swapShardsInTx, convertDuplicateInTx, grantGiftPackInTx, type CardGrantResult, type CardGrantSkipped, type GiftCard } from '@/lib/db/grants';
 import { getActivityForRange } from '@/lib/db/activity';
@@ -129,6 +129,10 @@ export async function pullCardForChild(
     // A grant may have completed a pack — record the trophy (idempotent).
     // Guarded + fire-and-forget: a trophy failure must never break the grant.
     void safePackCompleteTrophy(childId, result.packSlug);
+    // A flag grant may also have completed a continent (any grant path — incl.
+    // story/gift that don't flow through finishLevelAction). Guarded grant so the
+    // trophy is never missed; gameplay/swap paths surface the toast themselves.
+    if (result.packSlug === 'flags-v1') void safeContinentTrophies(childId);
   }
   return result;
 }
@@ -142,35 +146,50 @@ async function safePackCompleteTrophy(childId: string, packSlug: string): Promis
   }
 }
 
+/** Guarded continent-complete trophy check. Never throws. */
+async function safeContinentTrophies(childId: string): Promise<void> {
+  try {
+    await checkAndGrantTrophies(childId, { kind: 'continent-complete' });
+  } catch (err) {
+    console.error('[gacha] continent-complete trophy check failed:', err);
+  }
+}
+
 export async function swapShardsForItem(
   childId: string,
   itemId: string,
 ): Promise<
-  | { ok: true; shardsRemaining: number }
+  | { ok: true; shardsRemaining: number; continentTrophies: GrantedTrophy[] }
   | { ok: false; reason: 'insufficient_shards' | 'already_owned' | 'item_not_found' }
 > {
   const { child } = await requireChild(childId);
   const result = await db.transaction((tx) => swapShardsInTx(tx, child.id, itemId));
-  if (result.ok) {
-    revalidatePath(`/play/${child.id}/collection`);
-    // Resolve the swapped item's pack and check pack-completion. Guarded — a
-    // secondary-lookup failure must never break a successful swap.
-    try {
-      const item = await db
-        .select({ packSlug: collectionPacks.slug })
-        .from(collectibleItems)
-        .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
-        .where(eq(collectibleItems.id, itemId));
-      const packSlug = item[0]?.packSlug;
-      if (packSlug) {
-        revalidatePath(`/play/${child.id}/collection/${packSlug}`);
-        void safePackCompleteTrophy(child.id, packSlug);
+  if (!result.ok) return result;
+
+  revalidatePath(`/play/${child.id}/collection`);
+  let continentTrophies: GrantedTrophy[] = [];
+  // Resolve the swapped item's pack and check pack/continent completion. Guarded
+  // — a secondary-lookup failure must never break a successful swap.
+  try {
+    const item = await db
+      .select({ packSlug: collectionPacks.slug })
+      .from(collectibleItems)
+      .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
+      .where(eq(collectibleItems.id, itemId));
+    const packSlug = item[0]?.packSlug;
+    if (packSlug) {
+      revalidatePath(`/play/${child.id}/collection/${packSlug}`);
+      void safePackCompleteTrophy(child.id, packSlug);
+      if (packSlug === 'flags-v1') {
+        continentTrophies = await checkAndGrantTrophies(child.id, {
+          kind: 'continent-complete',
+        });
       }
-    } catch (err) {
-      console.error('[gacha] swap pack-complete check failed:', err);
     }
+  } catch (err) {
+    console.error('[gacha] swap completion check failed:', err);
   }
-  return result;
+  return { ok: true, shardsRemaining: result.shardsRemaining, continentTrophies };
 }
 
 /**
@@ -213,10 +232,13 @@ export async function claimWeeklyGiftIfDue(
   }
 
   revalidatePath(`/play/${childId}`);
-  for (const slug of new Set(result.cards.map((c) => c.packSlug))) {
+  const giftSlugs = new Set(result.cards.map((c) => c.packSlug));
+  for (const slug of giftSlugs) {
     revalidatePath(`/play/${childId}/collection/${slug}`);
     void safePackCompleteTrophy(childId, slug);
   }
+  // The gift's flag may have completed a continent — guarded grant.
+  if (giftSlugs.has('flags-v1')) void safeContinentTrophies(childId);
   return { cards: result.cards };
 }
 

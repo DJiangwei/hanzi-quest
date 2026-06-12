@@ -5,12 +5,14 @@ import {
   countCompletedLevels,
   countDistinctBossWeeks,
   countOwnedDecorations,
+  getCompletedFlagContinents,
   getLifetimeEarned,
   getLongestStreak,
   isPackComplete,
   isPerfectWeekForChild,
 } from './trophies-evaluators';
 import { getPackBySlug } from './collections';
+import { CONTINENT_REWARDS } from '@/lib/collections/continentRewards';
 
 export type TrophyRow = typeof trophies.$inferSelect;
 
@@ -27,6 +29,7 @@ export type TrophyCheckContext =
   | { kind: 'level-complete' }
   | { kind: 'coin-award' }
   | { kind: 'pack-complete'; packSlug: string }
+  | { kind: 'continent-complete' }
   | { kind: 'scene-clear'; sceneType: string; score: number }
   | { kind: 'sound-theme-equip'; slug: string | null }
   | { kind: 'decor-purchase' }
@@ -115,6 +118,11 @@ export async function checkAndGrantTrophies(
       const pack = await getPackBySlug(context.packSlug);
       if (!pack) break;
       if (await isPackComplete(childId, pack.id)) slugs.add(trophySlug);
+      break;
+    }
+    case 'continent-complete': {
+      const continents = await getCompletedFlagContinents(childId);
+      for (const c of continents) slugs.add(CONTINENT_REWARDS[c].trophySlug);
       break;
     }
     case 'scene-clear': {
