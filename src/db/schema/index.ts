@@ -14,3 +14,4 @@ export * from './gacha';
 export * from './xp';
 export * from './quests';
 export * from './home';
+export * from './homework';
