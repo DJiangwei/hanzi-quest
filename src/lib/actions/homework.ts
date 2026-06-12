@@ -2,8 +2,15 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { requireChild } from '@/lib/auth/guards';
-import { getPlayableWeekForChild } from '@/lib/db/weeks';
+import { assertParent, requireChild } from '@/lib/auth/guards';
+import { getWeekOwnedBy, getPlayableWeekForChild } from '@/lib/db/weeks';
+import {
+  createHomeworkItem,
+  updateHomeworkItem,
+  deleteHomeworkItem,
+  reorderHomeworkItems,
+} from '@/lib/db/homework';
+import { parseHomeworkConfig, type HomeworkType } from '@/lib/homework/schemas';
 import { pullCardForChild } from '@/lib/actions/gacha';
 import { awardCoins } from '@/lib/db/coins';
 import { awardXp } from '@/lib/db/xp';
@@ -76,4 +83,53 @@ export async function finishHomeworkAction(
 
   revalidatePath(`/play/${child.id}/week/${parsed.weekId}`);
   return { ok: true, cardGrants: card ? [card] : [], cardMessage, xp };
+}
+
+// ---------------------------------------------------------------------------
+// Parent authoring actions
+// ---------------------------------------------------------------------------
+
+async function assertOwnsWeek(weekId: string): Promise<void> {
+  const parent = await assertParent();
+  const week = await getWeekOwnedBy(weekId, parent.id);
+  if (!week) throw new Error('Week not found for this parent');
+}
+
+export async function addHomeworkItemAction(
+  weekId: string,
+  type: HomeworkType,
+  rawConfig: unknown,
+): Promise<string> {
+  await assertOwnsWeek(weekId);
+  const config = parseHomeworkConfig(type, rawConfig); // throws ZodError on bad shape
+  const id = await createHomeworkItem({ weekId, type, config });
+  revalidatePath(`/parent/week/${weekId}/review`);
+  return id;
+}
+
+export async function updateHomeworkItemAction(
+  weekId: string,
+  id: string,
+  type: HomeworkType,
+  rawConfig: unknown,
+): Promise<void> {
+  await assertOwnsWeek(weekId);
+  const config = parseHomeworkConfig(type, rawConfig);
+  await updateHomeworkItem(id, config);
+  revalidatePath(`/parent/week/${weekId}/review`);
+}
+
+export async function deleteHomeworkItemAction(weekId: string, id: string): Promise<void> {
+  await assertOwnsWeek(weekId);
+  await deleteHomeworkItem(id);
+  revalidatePath(`/parent/week/${weekId}/review`);
+}
+
+export async function reorderHomeworkItemsAction(
+  weekId: string,
+  orderedIds: string[],
+): Promise<void> {
+  await assertOwnsWeek(weekId);
+  await reorderHomeworkItems(weekId, orderedIds);
+  revalidatePath(`/parent/week/${weekId}/review`);
 }
