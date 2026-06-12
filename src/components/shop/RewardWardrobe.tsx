@@ -2,49 +2,59 @@
 
 import { AvatarRender } from '@/components/play/AvatarRender';
 import { FESTIVAL_THEMES } from '@/lib/calendar/festivals';
+import { CONTINENT_LABELS, CONTINENT_ORDER } from '@/lib/collections/flagsData';
+import { CONTINENT_REWARDS } from '@/lib/collections/continentRewards';
 import type { AvatarSlotId } from '@/lib/avatar/defaultLook';
-import type { FestivalCosmeticListing } from '@/lib/db/shop';
+import type { RewardCosmeticListing } from '@/lib/db/shop';
 
-/** avatarItemRef → bilingual label, derived from the festival theme map. */
-const REF_LABEL: Record<string, { zh: string; en: string; emoji: string }> =
-  Object.fromEntries(
+/** avatarItemRef → bilingual label, from the festival themes + continent labels. */
+const REF_LABEL: Record<string, { zh: string; en: string; emoji: string }> = {
+  ...Object.fromEntries(
     Object.values(FESTIVAL_THEMES).map((t) => [
       t.avatarItemRef,
       { zh: t.nameZh, en: t.nameEn, emoji: t.emoji },
     ]),
-  );
+  ),
+  ...Object.fromEntries(
+    CONTINENT_ORDER.map((c) => [
+      CONTINENT_REWARDS[c].avatarItemRef,
+      { zh: CONTINENT_LABELS[c].zh, en: CONTINENT_LABELS[c].en, emoji: CONTINENT_LABELS[c].emoji },
+    ]),
+  ),
+};
 
 interface Props {
-  cosmetics: FestivalCosmeticListing[];
+  cosmetics: RewardCosmeticListing[];
   pending: boolean;
-  onEquip: (c: FestivalCosmeticListing) => void;
+  onEquip: (c: RewardCosmeticListing) => void;
 }
 
 /**
- * 节日衣橱 / Festival Wardrobe — re-equip past festival cosmetics. These are
- * reward-only items (not sold in the shop), so this strip is the only place the
- * kid can put an old festival look back on. Hidden when nothing is unlocked.
+ * 奖励衣橱 / Rewards Wardrobe — re-equip earned cosmetics (festival cosmetics +
+ * continent-completion cosmetics). These are reward-only items (not sold in the
+ * shop), so this strip is the only place to put an old reward look back on.
+ * Hidden when nothing is unlocked.
  */
-export function FestivalWardrobe({ cosmetics, pending, onEquip }: Props) {
+export function RewardWardrobe({ cosmetics, pending, onEquip }: Props) {
   if (cosmetics.length === 0) return null;
 
   return (
     <section className="px-4 pb-5 pt-1">
       <h3 className="text-sm font-extrabold text-amber-950">
-        🎀 节日衣橱 / Festival Wardrobe
+        🎁 奖励衣橱 / Rewards Wardrobe
       </h3>
       <p className="mb-2 text-xs text-amber-800/80">
-        穿上你解锁过的节日装扮 / Re-equip festival looks you&apos;ve unlocked
+        穿上你赢得的特别装扮 / Re-equip the special looks you&apos;ve earned
       </p>
       <div
         className="flex gap-3 overflow-x-auto pb-1"
         role="listbox"
-        aria-label="Festival wardrobe"
+        aria-label="Rewards wardrobe"
       >
         {cosmetics.map((c) => {
           const label = c.unlockRef ? REF_LABEL[c.unlockRef] : undefined;
-          const nameZh = label ? `${label.emoji} ${label.zh}` : '节日装扮';
-          const nameEn = label?.en ?? 'Festival look';
+          const nameZh = label ? `${label.emoji} ${label.zh}` : '奖励装扮';
+          const nameEn = label?.en ?? 'Reward look';
           return (
             <button
               key={c.avatarItemId}

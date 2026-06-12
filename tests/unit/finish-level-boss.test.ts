@@ -60,6 +60,7 @@ vi.mock('@/lib/db/streaks', () => ({
   todayUtcIso: () => '2026-05-19',
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/continent-rewards', () => ({ grantContinentRewards: vi.fn().mockResolvedValue([]) }));
 vi.mock('@/lib/db/trophies', () => ({
   checkAndGrantTrophies: mocks.checkAndGrantTrophies,
 }));

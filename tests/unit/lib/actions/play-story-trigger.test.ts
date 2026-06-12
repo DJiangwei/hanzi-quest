@@ -42,6 +42,7 @@ vi.mock('@/lib/db/weeks', () => ({
   listCharactersForWeek: vi.fn(),
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/continent-rewards', () => ({ grantContinentRewards: vi.fn().mockResolvedValue([]) }));
 vi.mock('@/lib/actions/gacha', () => ({
   pullCardForChild: vi.fn().mockResolvedValue({ granted: false, reason: 'already_granted_this_week' }),
 }));

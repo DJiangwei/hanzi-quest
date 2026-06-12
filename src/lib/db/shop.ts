@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   avatarItems,
@@ -102,28 +102,34 @@ export async function listDefaultAvatarItems(): Promise<AvatarItemRow[]> {
     .where(eq(avatarItems.unlockVia, 'default'));
 }
 
-export interface FestivalCosmeticListing {
+export interface RewardCosmeticListing {
   avatarItemId: string;
   unlockRef: string | null;
   slotId: string;
+  /** Reward theme — drives the bilingual label (festival vs continent). */
+  theme: string | null;
   equipped: boolean;
 }
 
+/** Reward-only avatar themes surfaced in the wardrobe (earned, never sold). */
+const REWARD_WARDROBE_THEMES = ['festival', 'continent'];
+
 /**
- * The festival (reward-only) avatar cosmetics this child has unlocked, for the
- * 节日衣橱 / wardrobe. Reward cosmetics live in `child_avatar_inventory` (granted
- * by the monthly festival challenge, `theme='festival'`) but are NOT in the shop
- * listings — so the wardrobe is the only re-equip surface for them. `equipped`
- * reflects whether the item is currently worn in its slot.
+ * The reward-only avatar cosmetics this child has unlocked, for the 奖励衣橱 /
+ * wardrobe. Reward cosmetics live in `child_avatar_inventory` (granted by the
+ * monthly festival challenge `theme='festival'` or continent completion
+ * `theme='continent'`) but are NOT in the shop listings — so the wardrobe is the
+ * only re-equip surface for them. `equipped` reflects the currently-worn item.
  */
-export async function listOwnedFestivalCosmetics(
+export async function listOwnedRewardCosmetics(
   childId: string,
-): Promise<FestivalCosmeticListing[]> {
+): Promise<RewardCosmeticListing[]> {
   const rows = await db
     .select({
       avatarItemId: avatarItems.id,
       unlockRef: avatarItems.unlockRef,
       slotId: avatarItems.slotId,
+      theme: avatarItems.theme,
       equippedItemId: childAvatarEquipped.avatarItemId,
     })
     .from(childAvatarInventory)
@@ -138,13 +144,14 @@ export async function listOwnedFestivalCosmetics(
     .where(
       and(
         eq(childAvatarInventory.childId, childId),
-        eq(avatarItems.theme, 'festival'),
+        inArray(avatarItems.theme, REWARD_WARDROBE_THEMES),
       ),
     );
   return rows.map((r) => ({
     avatarItemId: r.avatarItemId,
     unlockRef: r.unlockRef,
     slotId: r.slotId,
+    theme: r.theme,
     equipped: r.equippedItemId != null,
   }));
 }

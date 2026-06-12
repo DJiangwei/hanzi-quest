@@ -1501,6 +1501,105 @@ const festivalDumpling: ItemDef = {
   ),
 };
 
+// ─── CONTINENT REWARD COSMETICS (earned by completing a continent's flags) ────
+
+const continentAsia: ItemDef = {
+  unlockRef: 'continent-asia', slot: 'hat', displayName: '亚洲斗笠', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'an Asian conical straw hat', theme: 'continent',
+  renderSvg: () => (
+    <g key="continent-asia">
+      <ellipse cx="50" cy="33" rx="24" ry="5" fill="#e0c081" stroke="#9a7b3f" strokeWidth="1" />
+      <path d="M 50 11 L 28 33 Q 50 29 72 33 Z" fill="#d9b06a" stroke="#9a7b3f" strokeWidth="1.2" />
+      <circle cx="50" cy="12" r="2.4" fill="#b8863b" />
+      <path d="M 40 31 Q 50 27 60 31" fill="none" stroke="#b8863b" strokeWidth="0.8" />
+    </g>
+  ),
+};
+
+const continentEurope: ItemDef = {
+  unlockRef: 'continent-europe', slot: 'hat', displayName: '欧洲皇冠', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'a golden European crown', theme: 'continent',
+  renderSvg: () => (
+    <g key="continent-europe">
+      <path d="M 32 32 L 32 20 L 40 26 L 50 16 L 60 26 L 68 20 L 68 32 Z" fill="#fbbf24" stroke="#b45309" strokeWidth="1.2" />
+      <rect x="32" y="31" width="36" height="4" fill="#f59e0b" stroke="#b45309" strokeWidth="0.8" />
+      <circle cx="50" cy="16" r="2.2" fill="#ef4444" />
+      <circle cx="40" cy="26" r="1.6" fill="#60a5fa" />
+      <circle cx="60" cy="26" r="1.6" fill="#34d399" />
+    </g>
+  ),
+};
+
+const continentAfrica: ItemDef = {
+  unlockRef: 'continent-africa', slot: 'hat', displayName: '非洲探险帽', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'a khaki safari pith helmet', theme: 'continent',
+  renderSvg: () => (
+    <g key="continent-africa">
+      <ellipse cx="50" cy="33" rx="23" ry="4.5" fill="#b8a878" stroke="#7c6b3f" strokeWidth="1" />
+      <path d="M 32 31 Q 32 16 50 16 Q 68 16 68 31 Z" fill="#cdbd8a" stroke="#7c6b3f" strokeWidth="1.2" />
+      <path d="M 32 28 Q 50 24 68 28" fill="none" stroke="#7c6b3f" strokeWidth="1" />
+      <rect x="48" y="16" width="4" height="9" fill="#a3915f" />
+    </g>
+  ),
+};
+
+const continentNorthAmerica: ItemDef = {
+  unlockRef: 'continent-north-america', slot: 'hat', displayName: '北美牛仔帽', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'a brown cowboy hat', theme: 'continent',
+  renderSvg: () => (
+    <g key="continent-north-america">
+      <path d="M 26 33 Q 50 27 74 33 Q 50 38 26 33 Z" fill="#8b5e34" stroke="#5a3d22" strokeWidth="1.2" />
+      <path d="M 37 33 Q 36 16 50 16 Q 64 16 63 33 Z" fill="#a06a3c" stroke="#5a3d22" strokeWidth="1.2" />
+      <path d="M 44 16 Q 50 14 56 16 L 56 21 Q 50 19 44 21 Z" fill="#8b5e34" />
+      <rect x="37" y="29" width="26" height="2.6" fill="#5a3d22" />
+    </g>
+  ),
+};
+
+const continentSouthAmerica: ItemDef = {
+  unlockRef: 'continent-south-america', slot: 'hat', displayName: '南美羽冠', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'a colorful carnival feather headdress', theme: 'continent',
+  renderSvg: () => (
+    <g key="continent-south-america">
+      {[
+        { x: 50, c: '#ef4444', h: 6 },
+        { x: 42, c: '#f59e0b', h: 11 },
+        { x: 58, c: '#10b981', h: 11 },
+        { x: 35, c: '#3b82f6', h: 16 },
+        { x: 65, c: '#a855f7', h: 16 },
+      ].map((f) => (
+        <path key={f.x} d={`M ${f.x} 30 L ${f.x - 3} ${f.h} Q ${f.x} ${f.h - 3} ${f.x + 3} ${f.h} Z`} fill={f.c} stroke="#7f1d1d" strokeWidth="0.6" />
+      ))}
+      <path d="M 33 30 Q 50 26 67 30 L 67 34 Q 50 30 33 34 Z" fill="#fcd34d" stroke="#b45309" strokeWidth="1" />
+    </g>
+  ),
+};
+
+const continentOceania: ItemDef = {
+  unlockRef: 'continent-oceania', slot: 'hat', displayName: '大洋洲花冠', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'a tropical flower crown', theme: 'continent',
+  renderSvg: () => (
+    <g key="continent-oceania">
+      <path d="M 30 30 Q 50 24 70 30" fill="none" stroke="#16a34a" strokeWidth="2.4" />
+      {[
+        { x: 32, c: '#fb7185' },
+        { x: 42, c: '#fbbf24' },
+        { x: 50, c: '#f472b6' },
+        { x: 58, c: '#fbbf24' },
+        { x: 68, c: '#fb7185' },
+      ].map((fl) => (
+        <g key={fl.x}>
+          {[0, 72, 144, 216, 288].map((a) => {
+            const r = (a * Math.PI) / 180;
+            return <circle key={a} cx={fl.x + Math.cos(r) * 2.4} cy={27 + Math.sin(r) * 2.4} r="1.8" fill={fl.c} />;
+          })}
+          <circle cx={fl.x} cy="27" r="1.5" fill="#fff7cd" />
+        </g>
+      ))}
+    </g>
+  ),
+};
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 const ALL_ITEMS: ItemDef[] = [
@@ -1579,6 +1678,12 @@ const ALL_ITEMS: ItemDef[] = [
   festivalChrys,
   festivalWinter,
   festivalDumpling,
+  continentAsia,
+  continentEurope,
+  continentAfrica,
+  continentNorthAmerica,
+  continentSouthAmerica,
+  continentOceania,
 ];
 
 export const ITEM_CATALOG: Record<string, ItemDef> = Object.fromEntries(

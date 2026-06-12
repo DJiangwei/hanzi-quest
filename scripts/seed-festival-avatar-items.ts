@@ -1,12 +1,14 @@
 /**
- * Seed the 12 festival avatar cosmetics into `avatar_items`.
+ * Seed ALL reward-only avatar cosmetics into `avatar_items` — festival cosmetics
+ * (theme='festival') AND continent-completion cosmetics (theme='continent').
+ * Iterates `rewardItems()`, so it stays current as reward themes are added.
  *
  * Usage:
  *   pnpm tsx scripts/seed-festival-avatar-items.ts
  *
  * Idempotent: inserts only the reward items whose `unlock_ref` isn't present.
- * These are REWARD-ONLY (`unlock_via='achievement'`, theme='festival') — never
- * sold in the shop, never auto-granted; the monthly festival challenge grants +
+ * These are REWARD-ONLY (`unlock_via='achievement'`) — never sold, never auto-
+ * granted; the monthly festival challenge / continent completion grants +
  * auto-equips them. They use existing slots (hat/decor), so no avatar_slots
  * change is needed.
  *

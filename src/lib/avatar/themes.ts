@@ -12,6 +12,7 @@ export const AVATAR_THEMES = [
   'space',
   'unicorn',
   'festival',
+  'continent',
 ] as const;
 export type AvatarTheme = (typeof AVATAR_THEMES)[number];
 
@@ -21,15 +22,19 @@ export const THEME_DISPLAY_NAMES: Record<AvatarTheme, { zh: string; en: string }
   space: { zh: '太空', en: 'Space' },
   unicorn: { zh: '独角兽彩虹', en: 'Unicorn' },
   festival: { zh: '节日', en: 'Festival' },
+  continent: { zh: '大洲', en: 'Continent' },
 };
 
+/** Reward-only themes — earned, never sold; excluded from the shop chip filter. */
+const REWARD_THEMES: readonly AvatarTheme[] = ['festival', 'continent'];
+
 /**
- * Themes shown as shop filter chips. `festival` is excluded — festival items
- * are reward-only (earned via the monthly challenge, never sold), so they never
- * appear in the shop grid; they surface via the festival wardrobe instead.
+ * Themes shown as shop filter chips. Reward-only themes (festival, continent)
+ * are excluded — those items are earned (monthly challenge / continent
+ * completion), never sold; they surface via the rewards wardrobe instead.
  */
 export const SHOP_FILTER_THEMES: readonly AvatarTheme[] = AVATAR_THEMES.filter(
-  (t) => t !== 'festival',
+  (t) => !REWARD_THEMES.includes(t),
 );
 
 export function isAvatarTheme(value: unknown): value is AvatarTheme {
