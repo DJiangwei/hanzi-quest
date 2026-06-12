@@ -9,7 +9,8 @@ export type XpSource =
   | 'boss_clear'
   | 'daily_quest'
   | 'daily_chest'
-  | 'streak_milestone';
+  | 'streak_milestone'
+  | 'homework';
 
 export interface AwardXpResult { totalXp: number; level: number; leveledUp: boolean; }
 
