@@ -25,13 +25,18 @@ const granted = {
   nameZh: '中国', nameEn: 'China', loreZh: null, loreEn: null, isDupe: false, shardsAfter: 0, cardsToday: 1,
 };
 
+// Valid UUIDs for the action input (schema validates with .uuid()).
+const CHILD_ID = '22222222-3333-4444-a555-666666666666';
+const WEEK_ID = '33333333-4444-4555-a666-777777777777';
+
 beforeEach(() => vi.clearAllMocks());
 
 describe('finishHomeworkAction', () => {
   it('granted → awards coins + XP and returns the card', async () => {
     mocks.pullCardForChild.mockResolvedValue(granted);
-    const res = await finishHomeworkAction({ childId: 'c1', weekId: 'w1' });
-    expect(mocks.pullCardForChild).toHaveBeenCalledWith('c1', 'homework', 'w1:2026-06-12');
+    const res = await finishHomeworkAction({ childId: CHILD_ID, weekId: WEEK_ID });
+    // child.id comes from the requireChild mock ('c1'); refId uses the input weekId.
+    expect(mocks.pullCardForChild).toHaveBeenCalledWith('c1', 'homework', `${WEEK_ID}:2026-06-12`);
     expect(mocks.awardCoins).toHaveBeenCalled();
     expect(res.cardGrants).toHaveLength(1);
     expect(res.cardMessage).toBeNull();
@@ -39,7 +44,7 @@ describe('finishHomeworkAction', () => {
 
   it('already_granted → no coins, homework_done_today', async () => {
     mocks.pullCardForChild.mockResolvedValue({ granted: false, reason: 'already_granted' });
-    const res = await finishHomeworkAction({ childId: 'c1', weekId: 'w1' });
+    const res = await finishHomeworkAction({ childId: CHILD_ID, weekId: WEEK_ID });
     expect(mocks.awardCoins).not.toHaveBeenCalled();
     expect(res.cardGrants).toEqual([]);
     expect(res.cardMessage).toBe('homework_done_today');
@@ -47,7 +52,7 @@ describe('finishHomeworkAction', () => {
 
   it('daily_cap_reached → no coins, daily_cap_reached', async () => {
     mocks.pullCardForChild.mockResolvedValue({ granted: false, reason: 'daily_cap_reached' });
-    const res = await finishHomeworkAction({ childId: 'c1', weekId: 'w1' });
+    const res = await finishHomeworkAction({ childId: CHILD_ID, weekId: WEEK_ID });
     expect(mocks.awardCoins).not.toHaveBeenCalled();
     expect(res.cardMessage).toBe('daily_cap_reached');
   });

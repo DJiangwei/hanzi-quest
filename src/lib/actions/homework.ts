@@ -16,8 +16,8 @@ const HOMEWORK_COMPLETE_COINS = 80;
 const HOMEWORK_XP = 30;
 
 const FinishHomeworkSchema = z.object({
-  childId: z.string(),
-  weekId: z.string(),
+  childId: z.string().uuid(),
+  weekId: z.string().uuid(),
 });
 
 export async function finishHomeworkAction(
