@@ -8,15 +8,15 @@ import {
 import { FESTIVAL_THEMES } from '@/lib/calendar/festivals';
 
 describe('festival avatar cosmetics', () => {
-  it('rewardItems() returns 12 festival cosmetics, reward-only + unpriced', () => {
+  it('rewardItems() are reward-only + unpriced: 12 festival + 6 continent', () => {
     const items = rewardItems();
-    expect(items).toHaveLength(12);
     for (const i of items) {
-      expect(i.theme).toBe('festival');
       expect(i.rewardOnly).toBe(true);
       expect(i.priceCoins).toBeUndefined();
       expect(['hat', 'decor']).toContain(i.slot);
     }
+    expect(items.filter((i) => i.theme === 'festival')).toHaveLength(12);
+    expect(items.filter((i) => i.theme === 'continent')).toHaveLength(6);
   });
 
   it('reward items are excluded from defaults and from the shop catalog', () => {

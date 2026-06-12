@@ -20,6 +20,7 @@ import {
   upsertWeekProgress,
 } from '@/lib/db/play';
 import { checkAndGrantTrophies, type GrantedTrophy } from '@/lib/db/trophies';
+import { grantContinentRewards } from '@/lib/db/continent-rewards';
 export type { GrantedTrophy } from '@/lib/db/trophies';
 import { tickStreak, todayUtcIso } from '@/lib/db/streaks';
 import {
@@ -486,11 +487,10 @@ export async function finishLevelAction(
   }
 
   // A granted flag card may have completed a whole continent — grant + surface
-  // the continent trophy (idempotent; only newly-earned ones come back).
+  // the continent trophy AND its reward cosmetic (idempotent; only newly-earned
+  // trophies come back).
   if (cardGrants.some((c) => c.packSlug === 'flags-v1')) {
-    collectedTrophies.push(
-      ...(await checkAndGrantTrophies(child.id, { kind: 'continent-complete' })),
-    );
+    collectedTrophies.push(...(await grantContinentRewards(child.id)));
   }
 
   // ─── XP + Quest ticks (additive, guarded, fire-and-forget) ──────────────

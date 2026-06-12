@@ -4,7 +4,7 @@ import {
   getShopPageData,
   listSoundThemeListings,
   listShopItemsByKind,
-  listOwnedFestivalCosmetics,
+  listOwnedRewardCosmetics,
 } from '@/lib/db/shop';
 import { getChildSettings } from '@/lib/db/settings';
 import { listPetShopListings, getEquippedPet } from '@/lib/db/pets';
@@ -24,7 +24,7 @@ export default async function ShopPage({ params }: PageProps) {
     notFound();
   }
 
-  const [shop, sounds, settings, petListings, equippedPet, decorListings, powerupListings, powerupCounts, homeShopItems, festivalCosmetics] = await Promise.all([
+  const [shop, sounds, settings, petListings, equippedPet, decorListings, powerupListings, powerupCounts, homeShopItems, rewardCosmetics] = await Promise.all([
     getShopPageData(childId),
     listSoundThemeListings(),
     getChildSettings(childId),
@@ -34,7 +34,7 @@ export default async function ShopPage({ params }: PageProps) {
     listPowerupShopListings(),
     getPowerupCounts(childId),
     listShopItemsByKind('home'),
-    listOwnedFestivalCosmetics(childId),
+    listOwnedRewardCosmetics(childId),
   ]);
 
   return (
@@ -53,7 +53,7 @@ export default async function ShopPage({ params }: PageProps) {
         powerupListings={powerupListings}
         powerupCounts={powerupCounts}
         homeShopItems={homeShopItems}
-        festivalCosmetics={festivalCosmetics}
+        rewardCosmetics={rewardCosmetics}
       />
     </main>
   );

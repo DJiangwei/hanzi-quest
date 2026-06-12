@@ -11,6 +11,7 @@ import { pull, pullInTx, type PullResult } from '@/lib/db/gacha';
 import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { checkAndGrantTrophies, type GrantedTrophy } from '@/lib/db/trophies';
+import { grantContinentRewards } from '@/lib/db/continent-rewards';
 import { todayUtcIso } from '@/lib/db/streaks';
 import { pullCardInTx, swapShardsInTx, convertDuplicateInTx, grantGiftPackInTx, type CardGrantResult, type CardGrantSkipped, type GiftCard } from '@/lib/db/grants';
 import { getActivityForRange } from '@/lib/db/activity';
@@ -146,12 +147,12 @@ async function safePackCompleteTrophy(childId: string, packSlug: string): Promis
   }
 }
 
-/** Guarded continent-complete trophy check. Never throws. */
+/** Guarded continent-complete reward grant (trophy + cosmetic). Never throws. */
 async function safeContinentTrophies(childId: string): Promise<void> {
   try {
-    await checkAndGrantTrophies(childId, { kind: 'continent-complete' });
+    await grantContinentRewards(childId);
   } catch (err) {
-    console.error('[gacha] continent-complete trophy check failed:', err);
+    console.error('[gacha] continent-complete reward grant failed:', err);
   }
 }
 
@@ -181,9 +182,7 @@ export async function swapShardsForItem(
       revalidatePath(`/play/${child.id}/collection/${packSlug}`);
       void safePackCompleteTrophy(child.id, packSlug);
       if (packSlug === 'flags-v1') {
-        continentTrophies = await checkAndGrantTrophies(child.id, {
-          kind: 'continent-complete',
-        });
+        continentTrophies = await grantContinentRewards(child.id);
       }
     }
   } catch (err) {

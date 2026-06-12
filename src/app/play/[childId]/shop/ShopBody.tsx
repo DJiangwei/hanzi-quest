@@ -13,13 +13,13 @@ import { DecorTabBody } from '@/components/shop/DecorTabBody';
 import { HomeTabBody } from '@/components/shop/HomeTabBody';
 import { PowerupsTabBody } from '@/components/shop/PowerupsTabBody';
 import { AvatarTryOnPreview, type TryOnState } from '@/components/shop/AvatarTryOnPreview';
-import { FestivalWardrobe } from '@/components/shop/FestivalWardrobe';
+import { RewardWardrobe } from '@/components/shop/RewardWardrobe';
 import type {
   AvatarShopListing,
   EquippedAvatar,
   SoundThemeListing,
   ShopItemRow,
-  FestivalCosmeticListing,
+  RewardCosmeticListing,
 } from '@/lib/db/shop';
 import type { PetShopListing } from '@/lib/db/pets';
 import type { DecorShopListing } from '@/lib/db/decor';
@@ -44,7 +44,7 @@ interface Props {
   powerupListings: PowerupShopListing[];
   powerupCounts: PowerupCounts;
   homeShopItems: ShopItemRow[];
-  festivalCosmetics: FestivalCosmeticListing[];
+  rewardCosmetics: RewardCosmeticListing[];
 }
 
 export function ShopBody({
@@ -61,7 +61,7 @@ export function ShopBody({
   powerupListings,
   powerupCounts,
   homeShopItems,
-  festivalCosmetics,
+  rewardCosmetics,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ShopCategory>('avatar');
@@ -72,7 +72,7 @@ export function ShopBody({
   const [equipped, setEquipped] = useState<EquippedAvatar>(initialEquipped);
   const [themeFilter, setThemeFilter] = useState<ThemeChipValue>('all');
   const [tryOn, setTryOn] = useState<TryOnState | null>(null);
-  const [cosmetics, setCosmetics] = useState<FestivalCosmeticListing[]>(festivalCosmetics);
+  const [cosmetics, setCosmetics] = useState<RewardCosmeticListing[]>(rewardCosmetics);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -135,7 +135,7 @@ export function ShopBody({
   };
 
   // Re-equip a festival wardrobe cosmetic (already owned — no purchase).
-  const handleEquipCosmetic = (c: FestivalCosmeticListing) => {
+  const handleEquipCosmetic = (c: RewardCosmeticListing) => {
     if (c.equipped) return;
     setErrorMessage(null);
     const previousEquipped = equipped;
@@ -260,7 +260,7 @@ export function ShopBody({
             onPurchase={handleTryOn}
             onEquip={handleEquip}
           />
-          <FestivalWardrobe
+          <RewardWardrobe
             cosmetics={cosmetics}
             pending={pending}
             onEquip={handleEquipCosmetic}
