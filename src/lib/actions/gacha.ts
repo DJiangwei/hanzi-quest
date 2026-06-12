@@ -108,7 +108,12 @@ export async function pullPaid(
   return { ...result, trophies };
 }
 
-export type CardGrantSource = 'boss_clear' | 'perfect_week' | 'story_chapter';
+export type CardGrantSource =
+  | 'boss_clear'
+  | 'perfect_week'
+  | 'story_chapter'
+  | 'review'
+  | 'practice';
 
 export async function pullCardForChild(
   childId: string,

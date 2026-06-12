@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import type { EconomyBonus, GrantedTrophy } from '@/lib/actions/play';
+import type { EconomyBonus, GrantedTrophy, CardSkipReason } from '@/lib/actions/play';
 import type { PowerupCounts } from '@/lib/db/powerups';
 import {
   finishAttemptAction,
@@ -88,6 +88,8 @@ interface Props {
   weekLabel: string;
   /** 1-based week number used for boss creature selection. Defaults to 1. */
   weekNumber?: number;
+  /** Which section this run plays — drives boss detection + per-section card grants. */
+  section?: 'review' | 'practice' | 'boss';
   levels: CompiledLevel[];
   charactersById: Record<string, CharacterDetail>;
   pool: CharacterDetail[];
@@ -104,6 +106,7 @@ export function SceneRunner({
   weekId,
   weekLabel,
   weekNumber = 1,
+  section = 'boss',
   levels,
   charactersById,
   pool,
@@ -120,6 +123,7 @@ export function SceneRunner({
   const [done, setDone] = useState(false);
   const [lastSceneType, setLastSceneType] = useState<SceneType | null>(null);
   const [revealCards, setRevealCards] = useState<RevealCard[]>([]);
+  const [cardMessage, setCardMessage] = useState<CardSkipReason | null>(null);
   const [activeBonuses, setActiveBonuses] = useState<EconomyBonus[]>([]);
   const [activeTrophies, setActiveTrophies] = useState<GrantedTrophy[]>([]);
   const [activeXp, setActiveXp] = useState<{ gained: number; level: number; leveledUp: boolean } | null>(null);
@@ -177,6 +181,7 @@ export function SceneRunner({
           childId={childId}
           weekId={weekId}
           chestAvailable={lastSceneType === 'boss'}
+          cardMessage={cardMessage}
           onContinue={() => router.push(resolvedExitHref)}
         />
         {revealCards.length > 0 ? (
@@ -229,6 +234,7 @@ export function SceneRunner({
           sessionId,
           childId,
           weekId,
+          section,
           totalScenesPassed: totalLevels,
           totalScenesInWeek: totalLevels,
           durationSeconds: elapsedSeconds,
@@ -237,6 +243,9 @@ export function SceneRunner({
         collectedTrophies.push(...levelResult.trophies);
         if (levelResult.cardGrants.length) {
           setRevealCards((q) => [...q, ...levelResult.cardGrants]);
+        }
+        if (levelResult.cardMessage) {
+          setCardMessage(levelResult.cardMessage);
         }
         // Accumulate level XP — prefer the level-up signal from finishLevelAction
         if (levelResult.xp.gained > 0 || levelResult.xp.leveledUp) {
