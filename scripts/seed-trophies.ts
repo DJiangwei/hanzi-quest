@@ -8,17 +8,13 @@
  * points there. Confirm before running.
  */
 
+import { pathToFileURL } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 
 loadEnv({ path: '.env.local', quiet: true });
 loadEnv({ quiet: true });
 
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL not set');
-  process.exit(2);
-}
-
-type Category = 'mastery' | 'streak' | 'collection' | 'coins' | 'practice' | 'story';
+type Category = 'mastery' | 'streak' | 'collection' | 'coins' | 'practice' | 'story' | 'season';
 interface TrophySeed {
   slug: string;
   emoji: string;
@@ -32,7 +28,7 @@ interface TrophySeed {
   displayOrder: number;
 }
 
-const TROPHIES: TrophySeed[] = [
+export const TROPHIES: TrophySeed[] = [
   { slug: 'first-boss', emoji: '🐙', nameZh: '首战告捷', nameEn: 'First Voyage', descriptionZh: '第一次打败海怪', descriptionEn: 'Defeat your first kraken boss', loreZh: '勇敢的小海盗第一次扬起了胜利的旗帜！', loreEn: 'Your first victorious flag flies high!', category: 'mastery', displayOrder: 1 },
   { slug: 'perfect-week', emoji: '⭐', nameZh: '完美一周', nameEn: 'Perfect Week', descriptionZh: '把一周里每个场景都做到 100 分', descriptionEn: 'Get 100% on every level of a week', loreZh: '所有的星星都亮了起来。', loreEn: 'Every star is lit up.', category: 'mastery', displayOrder: 2 },
   { slug: '100-levels', emoji: '💯', nameZh: '百关达人', nameEn: 'Centurion', descriptionZh: '通关 100 个场景', descriptionEn: 'Complete 100 levels', loreZh: '一百次扬帆，一百次靠岸。', loreEn: 'A hundred sails, a hundred shores.', category: 'mastery', displayOrder: 3 },
@@ -68,9 +64,15 @@ const TROPHIES: TrophySeed[] = [
   { slug: 'equip-sound-theme', emoji: '🎵', nameZh: '音效收藏家', nameEn: 'Sound Collector', descriptionZh: '装备第一个非默认音效主题', descriptionEn: 'Equip your first non-default sound theme', loreZh: '不一样的音乐，不一样的航行。', loreEn: 'A new sound, a new voyage.', category: 'practice', displayOrder: 43 },
 
   { slug: 'first-chapter', emoji: '📖', nameZh: '第一章', nameEn: 'First Chapter', descriptionZh: '解锁你的第一章故事', descriptionEn: 'Unlock your first story chapter', loreZh: '海盗日记的第一页翻开了。', loreEn: "Page one of your pirate's log is open.", category: 'story', displayOrder: 100 },
+
+  { slug: 'season-summer-master', emoji: '⛵', nameZh: '夏季航海大师', nameEn: 'Summer Voyage Master', descriptionZh: '完成夏季航海赛季的全部 30 个档位', descriptionEn: 'Reach tier 30 of the Summer Voyage season', loreZh: '整片夏日海洋都记得你的名字。', loreEn: 'The whole summer sea remembers your name.', category: 'season', displayOrder: 60 },
 ];
 
 async function main() {
+  if (!process.env.DATABASE_URL) {
+    console.error('DATABASE_URL not set');
+    process.exit(2);
+  }
   const { db } = await import('../src/db');
   const { trophies } = await import('../src/db/schema');
   const { eq } = await import('drizzle-orm');
@@ -90,9 +92,12 @@ async function main() {
   console.log(`Done. Inserted ${inserted} new trophies (skipped ${TROPHIES.length - inserted}).`);
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+// Only auto-run when executed directly (so tests can import { TROPHIES }).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .then(() => process.exit(0))
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    });
+}
