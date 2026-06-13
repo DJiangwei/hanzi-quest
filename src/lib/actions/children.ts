@@ -19,6 +19,10 @@ const ChildInputSchema = z.object({
     .trim()
     .min(1, 'Name is required')
     .max(60, 'Name is too long'),
+  gender: z
+    .union([z.literal('boy'), z.literal('girl'), z.literal('')])
+    .nullish()
+    .transform((v) => (v == null || v === '' ? null : v)),
   birthYear: z
     .union([z.string().trim(), z.literal('')])
     .transform((v) => (v === '' ? null : Number(v)))
@@ -37,6 +41,7 @@ export async function createChildAction(
 ): Promise<ChildActionState> {
   const parsed = ChildInputSchema.safeParse({
     displayName: formData.get('displayName'),
+    gender: formData.get('gender') ?? '',
     birthYear: formData.get('birthYear') ?? '',
   });
   if (!parsed.success) {
@@ -52,6 +57,7 @@ export async function createChildAction(
   await createChildProfile({
     parentUserId: parent.id,
     displayName: parsed.data.displayName,
+    gender: parsed.data.gender,
     birthYear: parsed.data.birthYear,
     currentCurriculumPackId: defaultPackId,
   });
