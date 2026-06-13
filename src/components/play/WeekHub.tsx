@@ -20,6 +20,7 @@ interface Props {
   };
   /** weekId for View Transitions API morph with the island Link on the map */
   weekId?: string;
+  homework?: { present: boolean; doneToday: boolean; count: number };
 }
 
 function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cleared' {
@@ -29,7 +30,7 @@ function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cle
   return 'idle';
 }
 
-export function WeekHub({ childId, week, sections, weekId }: Props) {
+export function WeekHub({ childId, week, sections, weekId, homework }: Props) {
   const reviewState = deriveState(sections.review.done, sections.review.total);
   const practiceState = deriveState(sections.practice.done, sections.practice.total);
   const bossState: 'idle' | 'in-progress' | 'cleared' | 'locked' = sections.boss.locked
@@ -90,6 +91,16 @@ export function WeekHub({ childId, week, sections, weekId }: Props) {
               : undefined
           }
         />
+        {homework?.present ? (
+          <SectionCard
+            href={`/play/${childId}/homework/${week.id}`}
+            emoji="📚"
+            titleZh="作业"
+            titleEn="Homework"
+            progressText={`${homework.count} 题 / items`}
+            state={homework.doneToday ? 'cleared' : 'idle'}
+          />
+        ) : null}
       </div>
     </main>
   );

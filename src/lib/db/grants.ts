@@ -93,7 +93,7 @@ export interface CardGrantSkipped {
 export async function pullCardInTx(
   tx: Tx,
   childId: string,
-  source: 'boss_clear' | 'perfect_week' | 'story_chapter' | 'review' | 'practice',
+  source: 'boss_clear' | 'perfect_week' | 'story_chapter' | 'review' | 'practice' | 'homework',
   refId: string,
   dayUtc: string,
   rng: () => number = Math.random,

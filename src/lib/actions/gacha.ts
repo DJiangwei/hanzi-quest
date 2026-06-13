@@ -114,7 +114,8 @@ export type CardGrantSource =
   | 'perfect_week'
   | 'story_chapter'
   | 'review'
-  | 'practice';
+  | 'practice'
+  | 'homework';
 
 export async function pullCardForChild(
   childId: string,
