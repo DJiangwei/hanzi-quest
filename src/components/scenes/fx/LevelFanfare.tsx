@@ -17,6 +17,10 @@ const CARD_MESSAGES: Record<string, { zh: string; en: string }> = {
     zh: '今日卡片已经发放完毕，明日再来',
     en: "All of today's cards are claimed — come back tomorrow",
   },
+  homework_done_today: {
+    zh: '今日作业已完成，明日再来',
+    en: "Today's homework is done — come back tomorrow",
+  },
 };
 
 interface Props {
@@ -25,8 +29,8 @@ interface Props {
   childId: string;
   weekId: string;
   chestAvailable: boolean;
-  /** When set, shows a bilingual "no card" notice (review-done / daily cap). */
-  cardMessage?: 'review_done_today' | 'daily_cap_reached' | null;
+  /** When set, shows a bilingual "no card" notice (review-done / daily cap / homework-done). */
+  cardMessage?: 'review_done_today' | 'daily_cap_reached' | 'homework_done_today' | null;
   onContinue: () => void;
 }
 
