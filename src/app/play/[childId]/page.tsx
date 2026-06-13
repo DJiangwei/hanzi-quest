@@ -6,6 +6,8 @@ import { AvatarRender } from '@/components/play/AvatarRender';
 import { WeekStrip } from '@/components/play/WeekStrip';
 import { LevelBadge } from '@/components/play/LevelBadge';
 import { DailyQuestsPanel } from '@/components/play/DailyQuestsPanel';
+import { SeasonBanner } from '@/components/play/SeasonBanner';
+import { getSeasonBannerState, syncSeasonProgress } from '@/lib/db/season';
 import { requireChild } from '@/lib/auth/guards';
 import { getCoinBalance } from '@/lib/db/coins';
 import {
@@ -45,6 +47,10 @@ export default async function PlayHomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
+  // End-of-season auto-bank (no-op during the active season): banks any
+  // reached-but-unclaimed tiers once the season has ended so nothing is lost.
+  await syncSeasonProgress(child.id);
+
   const todayIso = todayUtcIso();
   const monday = mondayOfIsoWeek(todayIso);
   const sunday = isoDateAddDays(monday, 6);
@@ -60,6 +66,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     weekActivity,
     maps,
     xpData,
+    seasonBanner,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -71,6 +78,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     getActivityForRange(child.id, monday, sunday),
     listMapsForChild(child.id),
     getChildXp(child.id),
+    getSeasonBannerState(child.id),
   ]);
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
@@ -201,6 +209,8 @@ export default async function PlayHomePage({ params }: PageProps) {
           initialChestClaimed={chestClaimed}
         />
       )}
+
+      <SeasonBanner childId={childId} state={seasonBanner} />
       </div>
 
       {/* Map pane — right on lg, below the HUD on phones */}

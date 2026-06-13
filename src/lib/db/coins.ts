@@ -20,7 +20,8 @@ export type AwardCoinReason =
   | 'streak_milestone'
   | 'perfect_week'
   | 'daily_chest'
-  | 'homework_complete';
+  | 'homework_complete'
+  | 'season_reward';
 
 export const DAILY_LOGIN_AWARD = 20;
 export const STREAK_MILESTONE_AWARD = 100;

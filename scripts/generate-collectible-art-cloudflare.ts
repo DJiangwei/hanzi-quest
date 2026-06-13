@@ -25,7 +25,20 @@ const TARGET_PACK_SLUGS = [
   'dinosaurs-v1',
   'solar-system-v1',
   'landmarks-v1',
+  'season-summer-v1',
 ];
+
+/** Per-slug subject prompts for the Summer Voyage season cards. */
+const SEASON_SUBJECT: Record<string, string> = {
+  'season-tortoise':
+    'a friendly old sea-turtle captain wearing a small sailor hat, full body, centered, plain light background',
+  'season-flyingfish':
+    'a bright flying fish leaping over blue ocean waves, full body, centered, plain light background',
+  'season-dolphin':
+    'a happy grey dolphin leaping above sunny ocean waves, full body, centered, plain light background',
+  'season-kraken':
+    'a friendly golden cartoon kraken octopus with big eyes, full body, centered, plain light background',
+};
 
 const STYLE_PREAMBLE =
   'cartoon illustration for children, bright colors, simple, single subject, no text: ';
@@ -92,6 +105,8 @@ function buildPrompt(
       const loc = landmarkLocation(slug);
       return `${STYLE_PREAMBLE}the ${nameEn}, a famous landmark${loc ? ` in ${loc}` : ''}, centered, plain light background`;
     }
+    case 'season-summer-v1':
+      return `${STYLE_PREAMBLE}${SEASON_SUBJECT[slug] ?? `a ${nameEn}, a summer sea creature, full body, centered, plain light background`}`;
     default:
       return `${STYLE_PREAMBLE}${nameEn}`;
   }
