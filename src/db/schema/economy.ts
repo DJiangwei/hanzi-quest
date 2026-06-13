@@ -27,6 +27,7 @@ export const coinReason = pgEnum('coin_reason', [
   'perfect_week',
   'daily_chest',
   'homework_complete',
+  'season_reward',
 ]);
 
 export const shopItemKind = pgEnum('shop_item_kind', [
