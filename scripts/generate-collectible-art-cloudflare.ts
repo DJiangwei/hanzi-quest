@@ -207,6 +207,9 @@ async function main() {
           contentType: 'image/jpeg',
           addRandomSuffix: false,
           allowOverwrite: true,
+          // Pass the RW token explicitly — implicit env resolution can miss it
+          // under dotenvx injection (override:false leaves a stale value).
+          token: process.env.BLOB_READ_WRITE_TOKEN,
         });
         await db
           .update(collectibleItems)

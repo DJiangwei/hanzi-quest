@@ -79,6 +79,8 @@ async function main() {
         contentType: 'image/jpeg',
         addRandomSuffix: false,
         allowOverwrite: true,
+        // Explicit RW token (implicit env resolution misses it under dotenvx).
+        token: process.env.BLOB_READ_WRITE_TOKEN,
       });
       results[slug] = blob.url;
       console.log(`  ✅ ${slug} (${Math.round(bytes.length / 1024)}KB) → ${blob.url}`);
