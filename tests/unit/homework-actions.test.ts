@@ -2,14 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   assertParent: vi.fn().mockResolvedValue({ id: 'p1' }),
-  getWeekOwnedBy: vi.fn().mockResolvedValue({ id: 'w1' }),
+  getChildOwnedBy: vi.fn().mockResolvedValue({ id: 'c1' }),
+  getPlayableWeekForChild: vi.fn().mockResolvedValue({ id: 'w1' }),
   createHomeworkItem: vi.fn().mockResolvedValue('h1'),
   updateHomeworkItem: vi.fn().mockResolvedValue(undefined),
   deleteHomeworkItem: vi.fn().mockResolvedValue(undefined),
   reorderHomeworkItems: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/lib/auth/guards', () => ({ assertParent: mocks.assertParent, requireChild: vi.fn() }));
-vi.mock('@/lib/db/weeks', () => ({ getWeekOwnedBy: mocks.getWeekOwnedBy, getPlayableWeekForChild: vi.fn() }));
+vi.mock('@/lib/db/weeks', () => ({
+  getPlayableWeekForChild: mocks.getPlayableWeekForChild,
+  getWeekOwnedBy: vi.fn(),
+}));
+vi.mock('@/lib/db/children', () => ({ getChildOwnedBy: mocks.getChildOwnedBy }));
 vi.mock('@/lib/db/homework', () => ({
   createHomeworkItem: mocks.createHomeworkItem,
   updateHomeworkItem: mocks.updateHomeworkItem,
@@ -28,24 +33,32 @@ import { addHomeworkItemAction, deleteHomeworkItemAction } from '@/lib/actions/h
 
 beforeEach(() => vi.clearAllMocks());
 
-describe('homework parent actions', () => {
-  it('addHomeworkItemAction validates config + creates the item', async () => {
-    const id = await addHomeworkItemAction('w1', 'sentence_order', { tokens: ['我', '爱', '你'] });
+describe('homework parent actions (per-child)', () => {
+  it('addHomeworkItemAction validates config + creates the item for the child', async () => {
+    const id = await addHomeworkItemAction('c1', 'w1', 'sentence_order', { tokens: ['我', '爱', '你'] });
     expect(id).toBe('h1');
     expect(mocks.createHomeworkItem).toHaveBeenCalledWith(
-      expect.objectContaining({ weekId: 'w1', type: 'sentence_order' }),
+      expect.objectContaining({ childId: 'c1', weekId: 'w1', type: 'sentence_order' }),
     );
   });
 
   it('addHomeworkItemAction rejects an invalid config', async () => {
     await expect(
-      addHomeworkItemAction('w1', 'sentence_order', { tokens: ['x'] }),
+      addHomeworkItemAction('c1', 'w1', 'sentence_order', { tokens: ['x'] }),
+    ).rejects.toThrow();
+    expect(mocks.createHomeworkItem).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the parent does not own the child', async () => {
+    mocks.getChildOwnedBy.mockResolvedValueOnce(null);
+    await expect(
+      addHomeworkItemAction('c1', 'w1', 'sentence_order', { tokens: ['我', '爱'] }),
     ).rejects.toThrow();
     expect(mocks.createHomeworkItem).not.toHaveBeenCalled();
   });
 
   it('deleteHomeworkItemAction calls the db', async () => {
-    await deleteHomeworkItemAction('w1', 'h1');
+    await deleteHomeworkItemAction('c1', 'w1', 'h1');
     expect(mocks.deleteHomeworkItem).toHaveBeenCalledWith('h1');
   });
 });

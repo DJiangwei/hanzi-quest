@@ -15,12 +15,15 @@ describe('HomeworkEditor', () => {
   it('lists existing items and deletes one', async () => {
     render(
       <HomeworkEditor
+        childId="c1"
         weekId="w1"
         items={[{ id: 'h1', type: 'sentence_order', summary: '我 / 爱 / 你' }]}
       />,
     );
     expect(screen.getByText('我 / 爱 / 你')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /delete/i }));
-    await waitFor(() => expect(deleteHomeworkItemAction).toHaveBeenCalledWith('w1', 'h1'));
+    await waitFor(() =>
+      expect(deleteHomeworkItemAction).toHaveBeenCalledWith('c1', 'w1', 'h1'),
+    );
   });
 });

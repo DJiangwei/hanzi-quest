@@ -16,6 +16,7 @@ interface HomeworkItem {
 }
 
 interface Props {
+  childId: string;
   weekId: string;
   items: HomeworkItem[];
 }
@@ -26,7 +27,7 @@ const TYPE_LABELS: Record<HomeworkType, string> = {
   sentence_order: 'sentence_order',
 };
 
-export function HomeworkEditor({ weekId, items }: Props) {
+export function HomeworkEditor({ childId, weekId, items }: Props) {
   const router = useRouter();
   const [localItems, setLocalItems] = useState<HomeworkItem[]>(items);
   const [addType, setAddType] = useState<HomeworkType | null>(null);
@@ -37,7 +38,7 @@ export function HomeworkEditor({ weekId, items }: Props) {
     setActionError('');
     startTransition(async () => {
       try {
-        await deleteHomeworkItemAction(weekId, id);
+        await deleteHomeworkItemAction(childId, weekId, id);
         setLocalItems((prev) => prev.filter((item) => item.id !== id));
         router.refresh();
       } catch (err) {
@@ -55,7 +56,7 @@ export function HomeworkEditor({ weekId, items }: Props) {
     setLocalItems(newItems);
     startTransition(async () => {
       try {
-        await reorderHomeworkItemsAction(weekId, orderedIds);
+        await reorderHomeworkItemsAction(childId, weekId, orderedIds);
         router.refresh();
       } catch (err) {
         setActionError(err instanceof Error ? err.message : 'Reorder failed');
@@ -73,7 +74,7 @@ export function HomeworkEditor({ weekId, items }: Props) {
     setLocalItems(newItems);
     startTransition(async () => {
       try {
-        await reorderHomeworkItemsAction(weekId, orderedIds);
+        await reorderHomeworkItemsAction(childId, weekId, orderedIds);
         router.refresh();
       } catch (err) {
         setActionError(err instanceof Error ? err.message : 'Reorder failed');
@@ -179,13 +180,13 @@ export function HomeworkEditor({ weekId, items }: Props) {
               </button>
             </div>
             {addType === 'char_quiz' && (
-              <CharQuizForm weekId={weekId} onSaved={handleSaved} />
+              <CharQuizForm childId={childId} weekId={weekId} onSaved={handleSaved} />
             )}
             {addType === 'word_building' && (
-              <WordBuildingForm weekId={weekId} onSaved={handleSaved} />
+              <WordBuildingForm childId={childId} weekId={weekId} onSaved={handleSaved} />
             )}
             {addType === 'sentence_order' && (
-              <SentenceOrderForm weekId={weekId} onSaved={handleSaved} />
+              <SentenceOrderForm childId={childId} weekId={weekId} onSaved={handleSaved} />
             )}
           </div>
         )}

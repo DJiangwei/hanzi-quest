@@ -14,11 +14,11 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('homework db', () => {
   it('listHomeworkItems orders by position', async () => {
-    const rows = [{ id: 'h1', weekId: 'w1', position: 0, type: 'char_quiz', config: {} }];
+    const rows = [{ id: 'h1', childId: 'c1', weekId: 'w1', position: 0, type: 'char_quiz', config: {} }];
     mocks.select.mockReturnValue({
       from: () => ({ where: () => ({ orderBy: () => Promise.resolve(rows) }) }),
     });
-    const items = await listHomeworkItems('w1');
+    const items = await listHomeworkItems('c1', 'w1');
     expect(items).toHaveLength(1);
     expect(items[0].id).toBe('h1');
   });
@@ -27,13 +27,13 @@ describe('homework db', () => {
     mocks.select.mockReturnValue({
       from: () => ({ where: () => ({ limit: () => Promise.resolve([{ id: 'h1' }]) }) }),
     });
-    expect(await weekHasHomework('w1')).toBe(true);
+    expect(await weekHasHomework('c1', 'w1')).toBe(true);
   });
 
   it('weekHasHomework returns false when none', async () => {
     mocks.select.mockReturnValue({
       from: () => ({ where: () => ({ limit: () => Promise.resolve([]) }) }),
     });
-    expect(await weekHasHomework('w1')).toBe(false);
+    expect(await weekHasHomework('c1', 'w1')).toBe(false);
   });
 });

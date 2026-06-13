@@ -3,7 +3,8 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { assertParent, requireChild } from '@/lib/auth/guards';
-import { getWeekOwnedBy, getPlayableWeekForChild } from '@/lib/db/weeks';
+import { getPlayableWeekForChild } from '@/lib/db/weeks';
+import { getChildOwnedBy } from '@/lib/db/children';
 import {
   createHomeworkItem,
   updateHomeworkItem,
@@ -89,47 +90,62 @@ export async function finishHomeworkAction(
 // Parent authoring actions
 // ---------------------------------------------------------------------------
 
-async function assertOwnsWeek(weekId: string): Promise<void> {
+/** Parent must own the child, and the week must be playable for that child. */
+async function assertOwnsChildWeek(childId: string, weekId: string): Promise<void> {
   const parent = await assertParent();
-  const week = await getWeekOwnedBy(weekId, parent.id);
-  if (!week) throw new Error('Week not found for this parent');
+  const child = await getChildOwnedBy(childId, parent.id);
+  if (!child) throw new Error('Child not found for this parent');
+  const week = await getPlayableWeekForChild(childId, weekId);
+  if (!week) throw new Error('Week not playable for this child');
+}
+
+function revalidateHomework(childId: string, weekId: string): void {
+  revalidatePath(`/parent/children/${childId}/homework/${weekId}`);
+  revalidatePath(`/play/${childId}/week/${weekId}`);
 }
 
 export async function addHomeworkItemAction(
+  childId: string,
   weekId: string,
   type: HomeworkType,
   rawConfig: unknown,
 ): Promise<string> {
-  await assertOwnsWeek(weekId);
+  await assertOwnsChildWeek(childId, weekId);
   const config = parseHomeworkConfig(type, rawConfig); // throws ZodError on bad shape
-  const id = await createHomeworkItem({ weekId, type, config });
-  revalidatePath(`/parent/week/${weekId}/review`);
+  const id = await createHomeworkItem({ childId, weekId, type, config });
+  revalidateHomework(childId, weekId);
   return id;
 }
 
 export async function updateHomeworkItemAction(
+  childId: string,
   weekId: string,
   id: string,
   type: HomeworkType,
   rawConfig: unknown,
 ): Promise<void> {
-  await assertOwnsWeek(weekId);
+  await assertOwnsChildWeek(childId, weekId);
   const config = parseHomeworkConfig(type, rawConfig);
   await updateHomeworkItem(id, config);
-  revalidatePath(`/parent/week/${weekId}/review`);
+  revalidateHomework(childId, weekId);
 }
 
-export async function deleteHomeworkItemAction(weekId: string, id: string): Promise<void> {
-  await assertOwnsWeek(weekId);
+export async function deleteHomeworkItemAction(
+  childId: string,
+  weekId: string,
+  id: string,
+): Promise<void> {
+  await assertOwnsChildWeek(childId, weekId);
   await deleteHomeworkItem(id);
-  revalidatePath(`/parent/week/${weekId}/review`);
+  revalidateHomework(childId, weekId);
 }
 
 export async function reorderHomeworkItemsAction(
+  childId: string,
   weekId: string,
   orderedIds: string[],
 ): Promise<void> {
-  await assertOwnsWeek(weekId);
-  await reorderHomeworkItems(weekId, orderedIds);
-  revalidatePath(`/parent/week/${weekId}/review`);
+  await assertOwnsChildWeek(childId, weekId);
+  await reorderHomeworkItems(childId, weekId, orderedIds);
+  revalidateHomework(childId, weekId);
 }
