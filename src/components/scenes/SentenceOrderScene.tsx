@@ -19,13 +19,26 @@ interface Token {
 export function SentenceOrderScene({ tokens, translationEn, onComplete }: Props) {
   const reduced = useReducedMotion();
   const pool = useMemo<Token[]>(() => tokens.map((text, id) => ({ id, text })), [tokens]);
-  const visualOrder = useMemo(
-    () =>
-      pool
-        .map((_, i) => i)
-        .sort((a, b) => ((a * 7 + 3) % pool.length) - ((b * 7 + 3) % pool.length)),
-    [pool],
-  );
+  // Deterministic (pure) but well-mixed visual shuffle of the pool. Seeded from
+  // the token chars so it's stable per render. A plain `(a*k)%n` comparator
+  // collapses to the identity for some n (e.g. n=3, n=7 — the common sentence
+  // lengths), which would render the chips already in order; a seeded
+  // Fisher-Yates + an anti-identity rotation guarantees a visibly shuffled order.
+  const visualOrder = useMemo(() => {
+    const n = pool.length;
+    const arr = Array.from({ length: n }, (_, i) => i);
+    let seed = (pool.reduce((s, t) => s + t.text.charCodeAt(0), 0) + n * 97) >>> 0;
+    const rand = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+    for (let i = n - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+    }
+    if (n > 1 && arr.every((v, i) => v === i)) arr.push(arr.shift()!); // never identity
+    return arr;
+  }, [pool]);
   const [placed, setPlaced] = useState<Token[]>([]);
   const [shakeKey, setShakeKey] = useState(0);
 

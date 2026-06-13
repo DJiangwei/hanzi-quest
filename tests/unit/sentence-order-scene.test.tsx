@@ -22,4 +22,15 @@ describe('SentenceOrderScene', () => {
     screen.getByRole('button', { name: '你' }).click();
     expect(onComplete).toHaveBeenCalledWith(true);
   });
+
+  it('shuffles the visual order — n=3 chips are NOT rendered in token order', () => {
+    // The pool buttons render in DOM/token order; the visual shuffle is applied
+    // via inline `order`. A regression guard: order must NOT be the identity
+    // [0,1,2] (which would show the answer already in sequence).
+    render(<SentenceOrderScene tokens={['我', '爱', '你']} onComplete={() => {}} />);
+    const orders = ['我', '爱', '你'].map(
+      (t) => screen.getByRole('button', { name: t }).style.order,
+    );
+    expect(orders).not.toEqual(['0', '1', '2']);
+  });
 });
