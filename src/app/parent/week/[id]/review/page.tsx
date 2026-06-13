@@ -5,6 +5,21 @@ import { PublishWeekButton } from '@/components/parent/PublishWeekButton';
 import { assertParent } from '@/lib/auth/guards';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import { getWeekOwnedBy } from '@/lib/db/weeks';
+import { listHomeworkItems } from '@/lib/db/homework';
+import { parseHomeworkConfig } from '@/lib/homework/schemas';
+import { HomeworkEditor } from '@/components/parent/HomeworkEditor';
+
+/** One-line summary of a homework item for the editor list. */
+function summarizeHomework(type: string, config: unknown): string {
+  try {
+    const c = parseHomeworkConfig(type as never, config);
+    if (c.type === 'sentence_order') return c.tokens.join(' / ');
+    if (c.type === 'char_quiz') return c.questionZh;
+    return `给「${c.baseChar}」组词`;
+  } catch {
+    return '(invalid item)';
+  }
+}
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -16,7 +31,15 @@ export default async function ReviewWeekPage({ params }: PageProps) {
   const week = await getWeekOwnedBy(id, parent.id);
   if (!week) notFound();
 
-  const chars = await getCharactersWithDetailsForWeek(id);
+  const [chars, homeworkRows] = await Promise.all([
+    getCharactersWithDetailsForWeek(id),
+    listHomeworkItems(id),
+  ]);
+  const homeworkSummaries = homeworkRows.map((r) => ({
+    id: r.id,
+    type: r.type,
+    summary: summarizeHomework(r.type, r.config),
+  }));
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
@@ -92,6 +115,8 @@ export default async function ReviewWeekPage({ params }: PageProps) {
           ))}
         </div>
       )}
+
+      <HomeworkEditor weekId={week.id} items={homeworkSummaries} />
     </main>
   );
 }
