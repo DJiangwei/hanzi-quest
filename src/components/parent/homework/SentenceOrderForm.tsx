@@ -4,11 +4,12 @@ import { useState, useTransition } from 'react';
 import { addHomeworkItemAction } from '@/lib/actions/homework';
 
 interface Props {
+  childId: string;
   weekId: string;
   onSaved: () => void;
 }
 
-export function SentenceOrderForm({ weekId, onSaved }: Props) {
+export function SentenceOrderForm({ childId, weekId, onSaved }: Props) {
   const [tokens, setTokens] = useState<string[]>(['', '']);
   const [translationEn, setTranslationEn] = useState('');
   const [error, setError] = useState('');
@@ -36,7 +37,7 @@ export function SentenceOrderForm({ weekId, onSaved }: Props) {
     };
     startTransition(async () => {
       try {
-        await addHomeworkItemAction(weekId, 'sentence_order', config);
+        await addHomeworkItemAction(childId, weekId, 'sentence_order', config);
         onSaved();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error saving item');

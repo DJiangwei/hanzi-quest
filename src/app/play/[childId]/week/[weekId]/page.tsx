@@ -19,7 +19,7 @@ export default async function WeekHubPage({ params }: PageProps) {
 
   const [stats, homeworkItems] = await Promise.all([
     getSectionStatsForChild(childId, weekId),
-    listHomeworkItems(weekId),
+    listHomeworkItems(childId, weekId),
   ]);
   const bossLocked = stats.practice.done < BOSS_UNLOCK_PRACTICE_THRESHOLD;
 

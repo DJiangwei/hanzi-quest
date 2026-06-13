@@ -9,11 +9,12 @@ interface Option {
 }
 
 interface Props {
+  childId: string;
   weekId: string;
   onSaved: () => void;
 }
 
-export function CharQuizForm({ weekId, onSaved }: Props) {
+export function CharQuizForm({ childId, weekId, onSaved }: Props) {
   const [hanzi, setHanzi] = useState('');
   const [questionZh, setQuestionZh] = useState('');
   const [options, setOptions] = useState<Option[]>([
@@ -54,7 +55,7 @@ export function CharQuizForm({ weekId, onSaved }: Props) {
     };
     startTransition(async () => {
       try {
-        await addHomeworkItemAction(weekId, 'char_quiz', config);
+        await addHomeworkItemAction(childId, weekId, 'char_quiz', config);
         onSaved();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error saving item');

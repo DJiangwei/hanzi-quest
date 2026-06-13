@@ -16,7 +16,7 @@ export default async function HomeworkPage({ params }: PageProps) {
   const week = await getPlayableWeekForChild(child.id, weekId);
   if (!week) notFound();
 
-  const rows = await listHomeworkItems(weekId);
+  const rows = await listHomeworkItems(child.id, weekId);
   if (rows.length === 0) notFound();
 
   // Validate + narrow each config; skip any that fail (defensive).
