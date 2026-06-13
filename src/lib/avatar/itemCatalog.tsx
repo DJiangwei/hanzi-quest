@@ -1600,6 +1600,116 @@ const continentOceania: ItemDef = {
   ),
 };
 
+// ─── SEASON REWARD COSMETICS (earned via the Season Pass reward track) ────────
+
+const seasonSailorHat: ItemDef = {
+  unlockRef: 'season-sailor-hat', slot: 'hat', displayName: '水手帽', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'a white sailor hat with a blue ribbon', theme: 'season',
+  renderSvg: () => (
+    <g key="season-sailor-hat">
+      <path d="M 33 32 Q 33 18 50 18 Q 67 18 67 32 Z" fill="#f8fafc" stroke="#1e3a8a" strokeWidth="1.2" />
+      <rect x="31" y="30" width="38" height="5" rx="2.5" fill="#f1f5f9" stroke="#1e3a8a" strokeWidth="0.8" />
+      <rect x="31" y="31" width="38" height="2.4" fill="#2563eb" />
+      <path d="M 50 19 l 4 -5 l -8 0 Z" fill="#2563eb" />
+    </g>
+  ),
+};
+
+const seasonCaptainHat: ItemDef = {
+  unlockRef: 'season-captain-hat', slot: 'hat', displayName: '船长帽', rarity: 'epic',
+  rewardOnly: true, narrativeHint: "a navy captain's bicorne hat", theme: 'season',
+  renderSvg: () => (
+    <g key="season-captain-hat">
+      <path d="M 28 33 Q 50 13 72 33 Q 50 27 28 33 Z" fill="#1e3a8a" stroke="#0f1f44" strokeWidth="1.2" />
+      <rect x="33" y="29" width="34" height="3.6" rx="1.5" fill="#fbbf24" />
+      <circle cx="50" cy="24" r="3" fill="#fbbf24" stroke="#b45309" strokeWidth="0.8" />
+    </g>
+  ),
+};
+
+const seasonAnchorDecor: ItemDef = {
+  unlockRef: 'season-anchor-decor', slot: 'decor', displayName: '船锚挂饰', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'with a small iron anchor charm', theme: 'season',
+  renderSvg: () => (
+    <g key="season-anchor-decor" stroke="#475569" strokeWidth="1.6" fill="none" strokeLinecap="round">
+      <circle cx="80" cy="74" r="2.4" fill="#94a3b8" />
+      <line x1="80" y1="76" x2="80" y2="90" />
+      <line x1="74" y1="80" x2="86" y2="80" />
+      <path d="M 73 86 Q 80 93 87 86" />
+    </g>
+  ),
+};
+
+const seasonParrotDecor: ItemDef = {
+  unlockRef: 'season-parrot-decor', slot: 'decor', displayName: '鹦鹉肩饰', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'with a colorful parrot on the shoulder', theme: 'season',
+  renderSvg: () => (
+    <g key="season-parrot-decor">
+      <ellipse cx="78" cy="74" rx="6" ry="8" fill="#22c55e" stroke="#15803d" strokeWidth="1" />
+      <circle cx="78" cy="66" r="4.5" fill="#ef4444" />
+      <circle cx="79.5" cy="65" r="1" fill="#1f2937" />
+      <path d="M 82 66 l 4 1 l -4 1.5 Z" fill="#f59e0b" />
+      <path d="M 74 74 l -5 4 l 5 1 Z" fill="#3b82f6" />
+    </g>
+  ),
+};
+
+const seasonSpyglassDecor: ItemDef = {
+  unlockRef: 'season-spyglass-decor', slot: 'decor', displayName: '望远镜', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'holding a brass spyglass', theme: 'season',
+  renderSvg: () => (
+    <g key="season-spyglass-decor">
+      <rect x="70" y="72" width="16" height="6" rx="3" transform="rotate(28 78 75)" fill="#b45309" stroke="#7c3f06" strokeWidth="1" />
+      <rect x="82" y="78" width="8" height="6" rx="3" transform="rotate(28 86 81)" fill="#d97706" stroke="#7c3f06" strokeWidth="1" />
+      <circle cx="73" cy="71" r="2.4" fill="#fde68a" stroke="#7c3f06" strokeWidth="0.8" />
+    </g>
+  ),
+};
+
+const seasonWheelDecor: ItemDef = {
+  unlockRef: 'season-wheel-decor', slot: 'decor', displayName: '船舵挂饰', rarity: 'rare',
+  rewardOnly: true, narrativeHint: "with a small ship's wheel emblem", theme: 'season',
+  renderSvg: () => (
+    <g key="season-wheel-decor" stroke="#7c3f06" strokeWidth="1.4">
+      <circle cx="80" cy="78" r="7" fill="#d9a066" />
+      <circle cx="80" cy="78" r="3" fill="#b45309" />
+      {[0, 45, 90, 135].map((a) => (
+        <line key={a} x1={80 - 9 * Math.cos((a * Math.PI) / 180)} y1={78 - 9 * Math.sin((a * Math.PI) / 180)} x2={80 + 9 * Math.cos((a * Math.PI) / 180)} y2={78 + 9 * Math.sin((a * Math.PI) / 180)} />
+      ))}
+    </g>
+  ),
+};
+
+const seasonSunsetBg: ItemDef = {
+  unlockRef: 'season-sunset-bg', slot: 'background', displayName: '夕阳海湾', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'against a warm sunset bay', theme: 'season',
+  renderSvg: () => (
+    <g key="season-sunset-bg">
+      <rect x="0" y="0" width="100" height="100" rx="14" fill="#fdba74" />
+      <rect x="0" y="46" width="100" height="54" rx="0" fill="#fb923c" />
+      <rect x="0" y="64" width="100" height="36" fill="#0ea5e9" />
+      <circle cx="50" cy="46" r="13" fill="#fde68a" />
+      <path d="M 0 78 q 12 -5 24 0 t 24 0 t 24 0 t 24 0" fill="none" stroke="#bae6fd" strokeWidth="1.6" />
+    </g>
+  ),
+};
+
+const seasonCaptainCoat: ItemDef = {
+  unlockRef: 'season-captain-coat', slot: 'top', displayName: '船长大衣', rarity: 'epic',
+  rewardOnly: true, narrativeHint: "a navy captain's coat with gold buttons", theme: 'season',
+  renderSvg: () => (
+    <g key="season-captain-coat">
+      <path d="M 26 72 L 28 95 L 72 95 L 74 72 Q 60 64 50 64 Q 40 64 26 72 Z" fill="#1e3a8a" stroke="#0f1f44" strokeWidth="1.4" />
+      <path d="M 50 64 L 43 95 L 57 95 Z" fill="#0f1f44" />
+      <circle cx="46" cy="78" r="1.4" fill="#fbbf24" />
+      <circle cx="46" cy="85" r="1.4" fill="#fbbf24" />
+      <circle cx="54" cy="78" r="1.4" fill="#fbbf24" />
+      <circle cx="54" cy="85" r="1.4" fill="#fbbf24" />
+      <rect x="26" y="72" width="6" height="14" fill="#fbbf24" opacity="0.85" transform="rotate(20 29 79)" />
+    </g>
+  ),
+};
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 const ALL_ITEMS: ItemDef[] = [
@@ -1684,6 +1794,14 @@ const ALL_ITEMS: ItemDef[] = [
   continentNorthAmerica,
   continentSouthAmerica,
   continentOceania,
+  seasonSailorHat,
+  seasonCaptainHat,
+  seasonAnchorDecor,
+  seasonParrotDecor,
+  seasonSpyglassDecor,
+  seasonWheelDecor,
+  seasonSunsetBg,
+  seasonCaptainCoat,
 ];
 
 export const ITEM_CATALOG: Record<string, ItemDef> = Object.fromEntries(

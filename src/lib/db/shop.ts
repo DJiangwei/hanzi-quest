@@ -112,7 +112,7 @@ export interface RewardCosmeticListing {
 }
 
 /** Reward-only avatar themes surfaced in the wardrobe (earned, never sold). */
-const REWARD_WARDROBE_THEMES = ['festival', 'continent'];
+const REWARD_WARDROBE_THEMES = ['festival', 'continent', 'season'];
 
 /**
  * The reward-only avatar cosmetics this child has unlocked, for the 奖励衣橱 /
