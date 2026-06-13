@@ -36,7 +36,7 @@ export default async function SecuredParentLayout({
           <Link href="/parent/unlock" className="font-bold underline">
             Set a parent PIN
           </Link>{' '}
-          to keep Yinuo from accidentally editing your work.
+          to keep your child from accidentally editing your work.
         </div>
       )}
       <header className="flex items-center justify-between border-b border-[var(--color-sand-200)] bg-white/80 px-6 py-3 backdrop-blur">

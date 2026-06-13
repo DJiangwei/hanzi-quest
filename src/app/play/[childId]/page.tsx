@@ -3,7 +3,6 @@ import { IslandMap } from '@/components/play/IslandMap';
 import { VoyageBoard } from '@/components/play/VoyageBoard';
 import { getVoyageMap } from '@/lib/play/map-boards';
 import { AvatarRender } from '@/components/play/AvatarRender';
-import { LatestChapterPill } from '@/components/play/LatestChapterPill';
 import { WeekStrip } from '@/components/play/WeekStrip';
 import { LevelBadge } from '@/components/play/LevelBadge';
 import { DailyQuestsPanel } from '@/components/play/DailyQuestsPanel';
@@ -202,8 +201,6 @@ export default async function PlayHomePage({ params }: PageProps) {
           initialChestClaimed={chestClaimed}
         />
       )}
-
-      <LatestChapterPill childId={child.id} />
       </div>
 
       {/* Map pane — right on lg, below the HUD on phones */}

@@ -403,9 +403,9 @@ export async function finishLevelAction(
       refType: 'week',
       refId: parsed.weekId,
     });
-    // Eager story generation — fire-and-forget. Boss completion MUST NOT
-    // depend on this; the story page synchronously regenerates if missing.
-    void triggerEagerStoryGeneration(child.id, parsed.weekId);
+    // Story mode is HIDDEN (2026-06-13) — ZH text quality not yet up to par.
+    // Eager generation disabled so no new chapters are produced; the helper +
+    // routes are retained for re-enable. (Was: triggerEagerStoryGeneration.)
     // Check for perfect-week bonus: every scene this child played for this
     // week must have at least one attempt with score=100.
     if (await isPerfectWeekForChild(child.id, parsed.weekId)) {
