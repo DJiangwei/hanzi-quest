@@ -8,15 +8,19 @@ import {
 import { FESTIVAL_THEMES } from '@/lib/calendar/festivals';
 
 describe('festival avatar cosmetics', () => {
-  it('rewardItems() are reward-only + unpriced: 12 festival + 6 continent', () => {
+  it('rewardItems() are reward-only + unpriced: 12 festival + 6 continent + 8 season', () => {
     const items = rewardItems();
     for (const i of items) {
       expect(i.rewardOnly).toBe(true);
       expect(i.priceCoins).toBeUndefined();
+    }
+    // festival + continent cosmetics live on hat/decor slots.
+    for (const i of items.filter((i) => i.theme === 'festival' || i.theme === 'continent')) {
       expect(['hat', 'decor']).toContain(i.slot);
     }
     expect(items.filter((i) => i.theme === 'festival')).toHaveLength(12);
     expect(items.filter((i) => i.theme === 'continent')).toHaveLength(6);
+    expect(items.filter((i) => i.theme === 'season')).toHaveLength(8);
   });
 
   it('reward items are excluded from defaults and from the shop catalog', () => {
