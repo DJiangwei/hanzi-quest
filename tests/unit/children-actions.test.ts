@@ -82,9 +82,25 @@ describe('createChildAction', () => {
     expect(createChildProfileMock).toHaveBeenCalledWith({
       parentUserId: 'user_p',
       displayName: 'Anna',
+      gender: null,
       birthYear: 2019,
       currentCurriculumPackId: 'pack_default_id',
     });
+  });
+
+  it('passes the chosen gender through to the profile', async () => {
+    assertParentMock.mockResolvedValue(parentRow);
+    createChildProfileMock.mockResolvedValue({ id: 'c_new' });
+
+    await createChildAction({}, fd({ displayName: 'Liam', gender: 'boy' }));
+    expect(createChildProfileMock).toHaveBeenCalledWith(
+      expect.objectContaining({ displayName: 'Liam', gender: 'boy' }),
+    );
+
+    await createChildAction({}, fd({ displayName: 'Mia', gender: 'girl' }));
+    expect(createChildProfileMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ displayName: 'Mia', gender: 'girl' }),
+    );
   });
 
   it('auto-enrolls the new child in the default shared pack', async () => {

@@ -4,11 +4,13 @@ import {
   avatarItems,
   childAvatarEquipped,
   childAvatarInventory,
+  childProfiles,
   coinBalances,
   powerupInventory,
   shopItems,
   shopPurchases,
 } from '@/db/schema';
+import { defaultHeadForGender } from '@/lib/avatar/defaultLook';
 import { awardCoinsInTx } from './coins';
 import type { GrantedTrophy } from './trophies';
 import {
@@ -165,8 +167,31 @@ export async function getEquippedAvatar(
   childId: string,
 ): Promise<EquippedAvatar> {
   const defaults = await listDefaultAvatarItems();
+
+  // Resolve the gendered default HEAD: among the default head rows (warm / boy /
+  // girl) pick the one matching the child's gender; null gender → neutral.
+  const [childRow] = await db
+    .select({ gender: childProfiles.gender })
+    .from(childProfiles)
+    .where(eq(childProfiles.id, childId))
+    .limit(1);
+  const headRef = defaultHeadForGender(childRow?.gender ?? null);
+
   const defaultBySlot: Record<string, AvatarItemRow> = {};
-  for (const item of defaults) defaultBySlot[item.slotId] = item;
+  for (const item of defaults) {
+    if (item.slotId === 'head') {
+      // Only the gender-matched head becomes the head default (the 3 default
+      // heads would otherwise collide on the 'head' slot).
+      if (item.unlockRef === headRef) defaultBySlot.head = item;
+    } else {
+      defaultBySlot[item.slotId] = item;
+    }
+  }
+  // Fallback: the gendered head row isn't seeded yet → use any default head.
+  if (!defaultBySlot.head) {
+    const anyHead = defaults.find((d) => d.slotId === 'head');
+    if (anyHead) defaultBySlot.head = anyHead;
+  }
 
   const equipRows = await db
     .select({

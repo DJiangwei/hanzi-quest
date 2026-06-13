@@ -7,6 +7,7 @@ export type ChildProfileRow = typeof childProfiles.$inferSelect;
 export interface CreateChildInput {
   parentUserId: string;
   displayName: string;
+  gender?: 'boy' | 'girl' | null;
   birthYear?: number | null;
   currentCurriculumPackId?: string | null;
   avatarConfig?: Record<string, unknown>;
@@ -20,6 +21,7 @@ export async function createChildProfile(
     .values({
       parentUserId: input.parentUserId,
       displayName: input.displayName,
+      gender: input.gender ?? null,
       birthYear: input.birthYear ?? null,
       currentCurriculumPackId: input.currentCurriculumPackId ?? null,
       avatarConfig: input.avatarConfig ?? {},

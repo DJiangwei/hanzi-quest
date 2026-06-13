@@ -48,6 +48,8 @@ const defaultHead: ItemDef = {
   theme: 'pirate',
   renderSvg: () => (
     <g key="default-kid-warm">
+      <ellipse cx="28" cy="47" rx="3.6" ry="5" fill="#f5c79a" stroke="#7a4a2a" strokeWidth="1.2" />
+      <ellipse cx="72" cy="47" rx="3.6" ry="5" fill="#f5c79a" stroke="#7a4a2a" strokeWidth="1.2" />
       <circle
         cx="50"
         cy="46"
@@ -67,6 +69,53 @@ const defaultHead: ItemDef = {
       />
       <circle cx="36" cy="50" r="2.5" fill="#f0a07a" opacity="0.6" />
       <circle cx="64" cy="50" r="2.5" fill="#f0a07a" opacity="0.6" />
+    </g>
+  ),
+};
+
+// Gendered default heads (PR: avatar gender). Both carry ears. Selected as the
+// head default by the child's `gender` in getEquippedAvatar; free defaults so a
+// kid can also swap between them in the avatar shop.
+const defaultKidBoy: ItemDef = {
+  unlockRef: 'default-kid-boy',
+  slot: 'head',
+  displayName: '男孩',
+  narrativeHint: 'a cheerful young boy',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="default-kid-boy">
+      <ellipse cx="28" cy="47" rx="3.6" ry="5" fill="#f5c79a" stroke="#7a4a2a" strokeWidth="1.2" />
+      <ellipse cx="72" cy="47" rx="3.6" ry="5" fill="#f5c79a" stroke="#7a4a2a" strokeWidth="1.2" />
+      <circle cx="50" cy="46" r="22" fill="#f5c79a" stroke="#7a4a2a" strokeWidth="1.5" />
+      <rect x="37.5" y="38.5" width="8.5" height="2.2" rx="1.1" fill="#5a3a1e" />
+      <rect x="54" y="38.5" width="8.5" height="2.2" rx="1.1" fill="#5a3a1e" />
+      <circle cx="42" cy="45" r="1.9" fill="#2a1a14" />
+      <circle cx="58" cy="45" r="1.9" fill="#2a1a14" />
+      <path d="M 43 53 Q 50 57 57 53" stroke="#7a4a2a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <circle cx="36" cy="50" r="2.4" fill="#f0a07a" opacity="0.5" />
+      <circle cx="64" cy="50" r="2.4" fill="#f0a07a" opacity="0.5" />
+    </g>
+  ),
+};
+
+const defaultKidGirl: ItemDef = {
+  unlockRef: 'default-kid-girl',
+  slot: 'head',
+  displayName: '女孩',
+  narrativeHint: 'a cheerful young girl',
+  theme: 'pirate',
+  renderSvg: () => (
+    <g key="default-kid-girl">
+      <ellipse cx="28" cy="47" rx="3.6" ry="5" fill="#f7cda3" stroke="#7a4a2a" strokeWidth="1.2" />
+      <ellipse cx="72" cy="47" rx="3.6" ry="5" fill="#f7cda3" stroke="#7a4a2a" strokeWidth="1.2" />
+      <circle cx="50" cy="46" r="22" fill="#f7cda3" stroke="#7a4a2a" strokeWidth="1.5" />
+      <circle cx="42" cy="45" r="1.9" fill="#2a1a14" />
+      <circle cx="58" cy="45" r="1.9" fill="#2a1a14" />
+      <path d="M 38.5 42.5 l -2 -1.6 M 42 41.5 l 0 -2 M 45.5 42.5 l 2 -1.6" stroke="#2a1a14" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      <path d="M 54.5 42.5 l -2 -1.6 M 58 41.5 l 0 -2 M 61.5 42.5 l 2 -1.6" stroke="#2a1a14" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      <path d="M 45 53 Q 50 57 55 53 Q 50 55 45 53 Z" fill="#e26a7e" stroke="#c14a5e" strokeWidth="0.6" />
+      <circle cx="35" cy="51" r="3" fill="#f6889b" opacity="0.55" />
+      <circle cx="65" cy="51" r="3" fill="#f6889b" opacity="0.55" />
     </g>
   ),
 };
@@ -833,6 +882,8 @@ const caribKidTan: ItemDef = {
   theme: 'caribbean',
   renderSvg: () => (
     <g key="carib-kid-tan">
+      <ellipse cx="28" cy="47" rx="3.6" ry="5" fill="#d4965e" stroke="#7a4a2a" strokeWidth="1.2" />
+      <ellipse cx="72" cy="47" rx="3.6" ry="5" fill="#d4965e" stroke="#7a4a2a" strokeWidth="1.2" />
       <circle cx="50" cy="46" r="22" fill="#d4965e" stroke="#7a4a2a" strokeWidth="1.5" />
       <circle cx="42" cy="44" r="1.8" fill="#2a1a14" />
       <circle cx="58" cy="44" r="1.8" fill="#2a1a14" />
@@ -1043,6 +1094,8 @@ const spaceFaceCool: ItemDef = {
   narrativeHint: 'with a cool space-explorer face', theme: 'space',
   renderSvg: () => (
     <g key="space-face-cool">
+      <ellipse cx="28" cy="47" rx="3.6" ry="5" fill="#e8c9a0" stroke="#7a4a2a" strokeWidth="1.2" />
+      <ellipse cx="72" cy="47" rx="3.6" ry="5" fill="#e8c9a0" stroke="#7a4a2a" strokeWidth="1.2" />
       <circle cx="50" cy="46" r="22" fill="#e8c9a0" stroke="#7a4a2a" strokeWidth="1.5" />
       <circle cx="42" cy="44" r="1.8" fill="#2a1a14" />
       <circle cx="58" cy="44" r="1.8" fill="#2a1a14" />
@@ -1192,6 +1245,8 @@ const unicornFace: ItemDef = {
   narrativeHint: 'with a sweet pastel unicorn face', theme: 'unicorn',
   renderSvg: () => (
     <g key="unicorn-face">
+      <ellipse cx="28" cy="47" rx="3.6" ry="5" fill="#fde7f3" stroke="#db2777" strokeWidth="1" />
+      <ellipse cx="72" cy="47" rx="3.6" ry="5" fill="#fde7f3" stroke="#db2777" strokeWidth="1" />
       <circle cx="50" cy="46" r="22" fill="#fde7f3" stroke="#db2777" strokeWidth="1.2" />
       <circle cx="42" cy="44" r="2" fill="#7e22ce" />
       <circle cx="58" cy="44" r="2" fill="#7e22ce" />
@@ -1714,6 +1769,8 @@ const seasonCaptainCoat: ItemDef = {
 
 const ALL_ITEMS: ItemDef[] = [
   defaultHead,
+  defaultKidBoy,
+  defaultKidGirl,
   defaultBandana,
   defaultTee,
   defaultOcean,

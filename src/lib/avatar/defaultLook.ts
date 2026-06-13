@@ -16,6 +16,25 @@ export const DEFAULT_AVATAR = {
   // decor intentionally absent
 } as const;
 
+/** Avatar gender chosen at child creation; null = neutral. */
+export type AvatarGender = 'boy' | 'girl';
+
+/**
+ * Gendered default HEAD per child gender. The head slot's default is resolved by
+ * gender in `getEquippedAvatar`; null/unknown gender falls back to the neutral
+ * `DEFAULT_AVATAR.head`. All three heads carry ears.
+ */
+export const GENDER_DEFAULT_HEAD: Record<AvatarGender, string> = {
+  boy: 'default-kid-boy',
+  girl: 'default-kid-girl',
+};
+
+/** The default head unlockRef for a (possibly null) gender. */
+export function defaultHeadForGender(gender: string | null | undefined): string {
+  if (gender === 'boy' || gender === 'girl') return GENDER_DEFAULT_HEAD[gender];
+  return DEFAULT_AVATAR.head;
+}
+
 /**
  * Slot rendering order (back → front). Adding to this array auto-extends
  * AvatarRender — no other code change needed.

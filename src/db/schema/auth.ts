@@ -33,6 +33,9 @@ export const childProfiles = pgTable('child_profiles', {
     .references(() => users.id, { onDelete: 'cascade' }),
   displayName: text('display_name').notNull(),
   avatarConfig: jsonb('avatar_config').notNull().default({}),
+  // 'boy' | 'girl' | null (neutral). Chosen at child creation; drives the
+  // gendered default avatar head. Plain text (validated at the app layer).
+  gender: text('gender'),
   birthYear: smallint('birth_year'),
   currentCurriculumPackId: uuid('current_curriculum_pack_id').references(
     () => curriculumPacks.id,

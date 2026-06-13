@@ -45,6 +45,21 @@ export function AddChildForm() {
         />
       </div>
       <div className="flex flex-col gap-1">
+        <span className="text-xs text-[var(--color-sand-700)]">
+          Gender (sets the default avatar)
+        </span>
+        <div className="flex gap-4 text-sm">
+          <label className="flex items-center gap-1.5">
+            <input type="radio" name="gender" value="boy" defaultChecked />
+            男孩 / Boy
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="radio" name="gender" value="girl" />
+            女孩 / Girl
+          </label>
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
         <label htmlFor="birthYear" className="text-xs text-[var(--color-sand-700)]">
           Birth year (optional)
         </label>
