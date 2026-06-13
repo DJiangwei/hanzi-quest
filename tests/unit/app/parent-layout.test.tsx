@@ -15,55 +15,71 @@ vi.mock('@/lib/auth/bootstrap', () => ({
 vi.mock('@/lib/db/parent-settings', () => ({
   getParentSettings: vi.fn(),
 }));
+vi.mock('@clerk/nextjs', () => ({ UserButton: () => null }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ensureUserBootstrapped } from '@/lib/auth/bootstrap';
 import { getParentSettings } from '@/lib/db/parent-settings';
 import ParentLayout from '@/app/parent/layout';
+import SecuredParentLayout from '@/app/parent/(secured)/layout';
 
 const get = vi.fn();
+const mockUser = (v: unknown) =>
+  (ensureUserBootstrapped as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(v);
+const mockSettings = (v: unknown) =>
+  (getParentSettings as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(v);
+
 beforeEach(() => {
   vi.clearAllMocks();
   (cookies as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ get });
-  (ensureUserBootstrapped as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-    id: 'user_abc',
+  mockUser({ id: 'user_abc' });
+});
+
+describe('ParentLayout (base — auth only, NO PIN gate)', () => {
+  // Regression guard for the infinite-redirect loop: /parent/unlock renders
+  // under THIS layout, so it must never redirect to /parent/unlock.
+  it('does NOT redirect to /parent/unlock even when PIN set + cookie missing', async () => {
+    get.mockReturnValue(undefined);
+    mockSettings({ parentPinHash: '$2b$10$abc' });
+    const result = await ParentLayout({ children: 'x' as unknown as React.ReactNode });
+    expect(redirect).not.toHaveBeenCalled();
+    expect(result).toBeDefined();
+  });
+
+  it('redirects to /sign-in when not authenticated', async () => {
+    mockUser(null);
+    await expect(
+      ParentLayout({ children: null as unknown as React.ReactNode }),
+    ).rejects.toThrow('REDIRECT');
+    expect(redirect).toHaveBeenCalledWith('/sign-in');
   });
 });
 
-describe('ParentLayout PIN gate', () => {
+describe('SecuredParentLayout PIN gate', () => {
   it('redirects to /parent/unlock when PIN set and cookie missing', async () => {
     get.mockReturnValue(undefined);
-    (getParentSettings as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      parentPinHash: '$2b$10$abc',
-      failedAttempts: 0,
-      lockedUntil: null,
-    });
+    mockSettings({ parentPinHash: '$2b$10$abc', failedAttempts: 0, lockedUntil: null });
 
     await expect(
-      ParentLayout({ children: null as unknown as React.ReactNode }),
+      SecuredParentLayout({ children: null as unknown as React.ReactNode }),
     ).rejects.toThrow('REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/parent/unlock');
   });
 
   it('passes through when cookie present', async () => {
     get.mockReturnValue({ value: '1' });
-    (getParentSettings as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      parentPinHash: '$2b$10$abc',
-      failedAttempts: 0,
-      lockedUntil: null,
-    });
-    const result = await ParentLayout({ children: 'kids' as unknown as React.ReactNode });
+    mockSettings({ parentPinHash: '$2b$10$abc', failedAttempts: 0, lockedUntil: null });
+    const result = await SecuredParentLayout({ children: 'kids' as unknown as React.ReactNode });
     expect(redirect).not.toHaveBeenCalled();
     expect(result).toBeDefined();
   });
 
   it('passes through (with FirstTimeBanner) when no PIN set', async () => {
     get.mockReturnValue(undefined);
-    (getParentSettings as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    const result = await ParentLayout({ children: 'kids' as unknown as React.ReactNode });
+    mockSettings(null);
+    const result = await SecuredParentLayout({ children: 'kids' as unknown as React.ReactNode });
     expect(redirect).not.toHaveBeenCalled();
     expect(result).toBeDefined();
-    // we don't assert on JSX shape; just that it didn't redirect
   });
 });
