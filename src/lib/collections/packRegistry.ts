@@ -7,7 +7,9 @@ import { SeaCreatureCard } from '@/components/play/items/SeaCreatureCard';
 import { SolarBodyCard } from '@/components/play/items/SolarBodyCard';
 import { ZodiacGridItem } from '@/components/play/items/ZodiacGridItem';
 import { FestivalCard } from '@/components/play/items/FestivalCard';
+import { SeasonCard } from '@/components/play/items/SeasonCard';
 import { FESTIVALS_BY_SLUG } from '@/lib/collections/festivalsData';
+import { SEASON_CARDS_BY_SLUG } from '@/lib/collections/seasonCardsData';
 import { DINOSAURS_BY_SLUG } from '@/lib/collections/dinosaursData';
 import {
   FLAGS_BY_SLUG,
@@ -184,6 +186,20 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: FestivalCard,
     resolveRevealEmoji: (slug) => FESTIVALS_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'season-summer-v1': {
+    displayNameZh: '夏季航海',
+    displayNameEn: 'Summer Voyage',
+    sloganZh: '赛季限定，随航海图一起收集。',
+    sloganEn: 'Season-exclusive — earned along the voyage.',
+    themeEmoji: '⛵',
+    themeBannerClass:
+      'bg-gradient-to-br from-cyan-200 via-teal-300 to-sky-500',
+    themeAccentClass: 'text-teal-900',
+    paidPullCost: 0, // reward-only — never sold / pulled via gacha
+    gridColumns: 3,
+    ItemCard: SeasonCard,
+    resolveRevealEmoji: (slug) => SEASON_CARDS_BY_SLUG[slug]?.emoji ?? null,
   },
 };
 
