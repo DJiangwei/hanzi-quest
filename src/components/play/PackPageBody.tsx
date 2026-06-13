@@ -11,13 +11,7 @@ import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections
 import type { GrantedTrophy } from '@/lib/actions/play';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { swapShardsForItem, convertDuplicateToShard } from '@/lib/actions/gacha';
-
-/**
- * Shards needed to swap for one card. Mirrors `SHARD_SWAP_COST` in
- * `@/lib/db/grants` (which is server-only — can't be imported into this
- * client component). Keep the two in sync.
- */
-const SWAP_COST = 3;
+import { shardSwapCostForPack } from '@/lib/economy/shards';
 
 interface Props {
   childId: string;
@@ -58,6 +52,8 @@ export function PackPageBody({
   if (!meta) {
     throw new Error(`PackPageBody: no UI meta registered for ${packSlug}`);
   }
+  // Per-pack swap cost (3 regular; 12 for the festival/season limited packs).
+  const SWAP_COST = shardSwapCostForPack(packSlug);
   const router = useRouter();
   const ownedSet = new Set(ownedItemIds);
 

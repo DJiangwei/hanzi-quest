@@ -66,11 +66,25 @@ describe('swapShardsInTx (universal wallet)', () => {
     if (!r.ok) expect(r.reason).toBe('insufficient_shards');
   });
 
-  it('spends 3 global shards and grants the item when affordable', async () => {
+  it('spends 3 global shards and grants the item when affordable (regular pack)', async () => {
     // 1) item lookup 2) owned check (none) 3) wallet → 5 4) update wallet 5) insert collection
-    const tx = makeTx([[{ id: 'item-1' }], [], [{ shards: 5 }], [], []]);
+    const tx = makeTx([[{ id: 'item-1', packSlug: 'zodiac-v1' }], [], [{ shards: 5 }], [], []]);
     const r = await swapShardsInTx(tx, 'c1', 'item-1');
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.shardsRemaining).toBe(2); // 5 - 3
+  });
+
+  it('charges the elevated cost (12) for a season/festival limited card', async () => {
+    const tx = makeTx([[{ id: 'sc1', packSlug: 'season-summer-v1' }], [], [{ shards: 15 }], [], []]);
+    const r = await swapShardsInTx(tx, 'c1', 'sc1');
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.shardsRemaining).toBe(3); // 15 - 12
+  });
+
+  it('is insufficient at 11 shards for a limited card (cost 12)', async () => {
+    const tx = makeTx([[{ id: 'fc1', packSlug: 'festivals-v1' }], [], [{ shards: 11 }]]);
+    const r = await swapShardsInTx(tx, 'c1', 'fc1');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe('insufficient_shards');
   });
 });
