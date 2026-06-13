@@ -8,10 +8,13 @@ import {
   collectibleItems,
   collectionPacks,
 } from '@/db/schema/collections';
+import { SHARD_SWAP_COST, shardSwapCostForPack } from '@/lib/economy/shards';
 
 export const WEEKLY_CARD_CAP = 10; // dead since card-economy-v2 — daily cap replaced it
 export const DAILY_CARD_CAP = 10;
-export const SHARD_SWAP_COST = 3;
+// SHARD_SWAP_COST (regular packs) now lives in '@/lib/economy/shards' (shared
+// with the client). Re-exported here for existing importers.
+export { SHARD_SWAP_COST };
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -360,7 +363,11 @@ export async function convertDuplicateInTx(
 }
 
 /**
- * Trade SHARD_SWAP_COST universal shards for a chosen unowned item (any pack).
+ * Trade universal shards for a chosen unowned item. The cost is per-pack:
+ * regular packs cost `SHARD_SWAP_COST` (3); the reward-only limited packs
+ * (festival + season) cost `SHARD_SWAP_COST_EXCLUSIVE` (12) — see
+ * `@/lib/economy/shards`. The cost is derived from the TARGET item's pack so the
+ * charge matches the cost the client displays for that pack.
  */
 export async function swapShardsInTx(
   tx: Tx,
@@ -368,13 +375,18 @@ export async function swapShardsInTx(
   itemId: string,
 ): Promise<
   | { ok: true; shardsRemaining: number }
-  | { ok: false; reason: 'insufficient_shards' | 'already_owned' | 'item_not_found' }
+  | {
+      ok: false;
+      reason: 'insufficient_shards' | 'already_owned' | 'item_not_found';
+    }
 > {
   const items = await tx
-    .select({ id: collectibleItems.id })
+    .select({ id: collectibleItems.id, packSlug: collectionPacks.slug })
     .from(collectibleItems)
+    .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
     .where(eq(collectibleItems.id, itemId));
   if (items.length === 0) return { ok: false, reason: 'item_not_found' };
+  const cost = shardSwapCostForPack(items[0].packSlug);
 
   const owned = await tx
     .select({ itemId: childCollections.itemId })
@@ -393,13 +405,13 @@ export async function swapShardsInTx(
     .where(eq(childShards.childId, childId))
     .for('update');
   const shards = balRows[0]?.shards ?? 0;
-  if (shards < SHARD_SWAP_COST) return { ok: false, reason: 'insufficient_shards' };
+  if (shards < cost) return { ok: false, reason: 'insufficient_shards' };
 
   await tx
     .update(childShards)
-    .set({ shards: shards - SHARD_SWAP_COST })
+    .set({ shards: shards - cost })
     .where(eq(childShards.childId, childId));
   await tx.insert(childCollections).values({ childId, itemId, count: 1 });
 
-  return { ok: true, shardsRemaining: shards - SHARD_SWAP_COST };
+  return { ok: true, shardsRemaining: shards - cost };
 }
