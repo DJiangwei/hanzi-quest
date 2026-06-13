@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
 import { generateStoryChapter } from '@/lib/actions/story';
 import {
@@ -33,7 +34,11 @@ async function loadChapter(
   }
 }
 
+/** Story mode hidden 2026-06-13 (ZH text quality). Flip to false to re-enable. */
+const STORY_HIDDEN = true;
+
 export default async function StoryChapterPage({ params }: PageProps) {
+  if (STORY_HIDDEN) notFound();
   const { childId, weekId } = await params;
   const { child } = await requireChild(childId);
 

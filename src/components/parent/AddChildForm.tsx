@@ -41,7 +41,7 @@ export function AddChildForm() {
           required
           maxLength={60}
           className="rounded-xl border border-[var(--color-sand-200)] px-3 py-2 text-sm focus:border-[var(--color-ocean-500)] focus:outline-none"
-          placeholder="Yinuo"
+          placeholder="Child's name"
         />
       </div>
       <div className="flex flex-col gap-1">

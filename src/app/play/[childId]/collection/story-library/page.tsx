@@ -1,13 +1,18 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
 import { listStoryChaptersForChild } from '@/lib/db/story';
 import { StoryLibraryGrid } from '@/components/play/story/StoryLibraryGrid';
+
+/** Story mode hidden 2026-06-13 (ZH text quality). Flip to false to re-enable. */
+const STORY_HIDDEN = true;
 
 export default async function StoryLibraryPage({
   params,
 }: {
   params: Promise<{ childId: string }>;
 }) {
+  if (STORY_HIDDEN) notFound();
   const { childId } = await params;
   const { child } = await requireChild(childId);
   const chapters = await listStoryChaptersForChild(child.id);
