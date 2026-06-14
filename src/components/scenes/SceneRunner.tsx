@@ -44,7 +44,6 @@ const CardChestReveal = dynamic(
 interface CharacterWord {
   id: string;
   text: string;
-  pinyinArray: string[];
   imageHook: string | null;
   meaningEn: string | null;
   imageUrl: string | null;
@@ -343,7 +342,8 @@ export function SceneRunner({
       body = c ? (
         <ImagePickScene
           key={currentLevel.id}
-          target={{ ...c, imageUrl: stimulusImageUrl }}
+          target={c}
+          imageUrl={stimulusImageUrl}
           pool={pool}
           onComplete={advance}
           hintRequested={hintRequested}
@@ -467,7 +467,6 @@ export function SceneRunner({
           correctWord={{
             wordId: correctWord.id,
             text: correctWord.text,
-            pinyinArray: correctWord.pinyinArray,
             imageHook: correctWord.imageHook,
             meaningEn: correctWord.meaningEn,
             imageUrl: correctWord.imageUrl,
@@ -475,7 +474,6 @@ export function SceneRunner({
           distractors={distractors.map((w) => ({
             wordId: w.id,
             text: w.text,
-            pinyinArray: w.pinyinArray,
             imageHook: w.imageHook,
             meaningEn: w.meaningEn,
             imageUrl: w.imageUrl,
