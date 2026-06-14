@@ -60,6 +60,7 @@ export default async function SectionPage({ params }: PageProps) {
     meaningEn: c.meaningEn ?? null,
     meaningZh: c.meaningZh ?? null,
     imageHook: c.imageHook ?? null,
+    audioUrl: c.audioUrl ?? null,
     firstWord: c.words[0]?.text ?? null,
     words: c.words.map((w) => ({
       id: w.id,
@@ -67,6 +68,7 @@ export default async function SectionPage({ params }: PageProps) {
       imageHook: w.imageHook ?? null,
       meaningEn: w.meaningEn ?? null,
       imageUrl: w.imageUrl ?? null,
+      audioUrl: w.audioUrl ?? null,
     })),
     sentence: c.sentence
       ? {

@@ -12,6 +12,7 @@ interface WordOption {
   imageHook: string | null;
   meaningEn: string | null;
   imageUrl: string | null;
+  audioUrl?: string | null;
 }
 
 interface BaseChar {
@@ -37,13 +38,15 @@ interface Props {
  */
 function WordLabel({
   text,
+  audioUrl,
   weekCharSet,
   speak,
   canSpeak,
 }: {
   text: string;
+  audioUrl: string | null;
   weekCharSet: Set<string>;
-  speak: (text: string) => void;
+  speak: (text: string, audioUrl?: string | null) => void;
   canSpeak: boolean;
 }) {
   return (
@@ -55,7 +58,7 @@ function WordLabel({
           </span>
         ))}
       </span>
-      {canSpeak && (
+      {(canSpeak || audioUrl) && (
         <span
           role="button"
           tabIndex={0}
@@ -63,12 +66,12 @@ function WordLabel({
           data-testid={`speak-${text}`}
           onClick={(e) => {
             e.stopPropagation();
-            speak(text);
+            speak(text, audioUrl);
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.stopPropagation();
-              speak(text);
+              speak(text, audioUrl);
             }
           }}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg text-sky-700 hover:bg-sky-200"
@@ -97,7 +100,13 @@ export function ImageWordScene({
       shuffle([correctWord, ...distractors]).map((w) => ({
         key: w.wordId,
         label: (
-          <WordLabel text={w.text} weekCharSet={weekCharSet} speak={speak} canSpeak={canSpeak} />
+          <WordLabel
+            text={w.text}
+            audioUrl={w.audioUrl ?? null}
+            weekCharSet={weekCharSet}
+            speak={speak}
+            canSpeak={canSpeak}
+          />
         ),
         isCorrect: w.wordId === correctWord.wordId,
       })),

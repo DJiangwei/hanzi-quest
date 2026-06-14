@@ -27,6 +27,7 @@ const correctWord = {
   imageHook: 'a smiling adult standing next to a small child',
   meaningEn: 'adult',
   imageUrl: null,
+  audioUrl: 'https://blob/audio/大人.mp3',
 };
 const distractors = [
   { wordId: 'w-d1', text: '主人', imageHook: null, meaningEn: 'master', imageUrl: null },
@@ -79,7 +80,8 @@ describe('ImageWordScene', () => {
     const onComplete = vi.fn();
     renderScene({ onComplete });
     fireEvent.click(screen.getByTestId('speak-大人'));
-    expect(speakMock).toHaveBeenCalledWith('大人');
+    // passes the pre-recorded clip URL (falls back to TTS inside useSpeak if absent)
+    expect(speakMock).toHaveBeenCalledWith('大人', 'https://blob/audio/大人.mp3');
     // tapping 🔊 must NOT trigger a selection
     act(() => { vi.advanceTimersByTime(800); });
     expect(onComplete).not.toHaveBeenCalled();

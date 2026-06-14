@@ -9,6 +9,7 @@ interface CharacterDetail {
   characterId: string;
   hanzi: string;
   pinyinArray: string[];
+  audioUrl?: string | null;
 }
 
 interface Props {
@@ -41,7 +42,7 @@ export function AudioPickScene({ target, pool, onComplete, hintRequested }: Prop
       stimulus={
         <button
           type="button"
-          onClick={() => speak(target.hanzi)}
+          onClick={() => speak(target.hanzi, target.audioUrl)}
           className="flex h-32 w-32 items-center justify-center rounded-full bg-sky-200 text-5xl shadow-lg transition-transform active:scale-95 hover:bg-sky-300"
           aria-label="Play audio"
         >
