@@ -13,7 +13,7 @@ interface SpeakButtonProps {
 }
 
 const BASE =
-  'inline-flex items-center justify-center gap-1 rounded-full bg-amber-100 font-medium text-amber-900 hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2';
+  'inline-flex items-center justify-center gap-1 rounded-full bg-sky-100 font-medium text-sky-900 hover:bg-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2';
 const SIZES: Record<NonNullable<SpeakButtonProps['size']>, string> = {
   sm: 'h-11 w-11 text-base', // ≥44px tap target per spec §5
   md: 'h-11 min-w-11 px-4 text-sm',
