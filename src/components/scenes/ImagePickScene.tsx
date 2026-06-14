@@ -9,18 +9,21 @@ interface CharacterDetail {
   hanzi: string;
   pinyinArray: string[];
   imageHook: string | null;
-  /** A picture (reused from one of the char's words) shown as the stimulus. */
-  imageUrl?: string | null;
 }
 
 interface Props {
   target: CharacterDetail;
   pool: CharacterDetail[];
+  /** A picture (reused from one of the char's words) shown as the stimulus. */
+  imageUrl?: string | null;
   onComplete: (correct: boolean) => void;
   hintRequested?: boolean;
 }
 
-export function ImagePickScene({ target, pool, onComplete, hintRequested }: Props) {
+export function ImagePickScene({ target, pool, imageUrl, onComplete, hintRequested }: Props) {
+  // Shuffle ONCE per scene (keyed on the stable characterId, not the target/pool
+  // object identity) — otherwise a parent re-render reshuffles the options
+  // mid-selection, making them jump around.
   const choices = useMemo(() => {
     const distractors = sampleDistractors(
       pool,
@@ -33,17 +36,18 @@ export function ImagePickScene({ target, pool, onComplete, hintRequested }: Prop
       label: <span className="text-5xl">{c.hanzi}</span>,
       isCorrect: c.characterId === target.characterId,
     }));
-  }, [pool, target]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target.characterId]);
 
   return (
     <MultipleChoiceQuiz
       prompt="看图找字 / Find the character"
       stimulus={
-        target.imageUrl ? (
+        imageUrl ? (
           <div className="h-44 w-72 overflow-hidden rounded-2xl border-4 border-amber-800/30 bg-amber-50 shadow-lg">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={target.imageUrl}
+              src={imageUrl}
               alt={target.imageHook ?? target.hanzi}
               className="h-full w-full object-cover"
               loading="eager"

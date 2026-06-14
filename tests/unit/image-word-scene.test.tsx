@@ -13,6 +13,9 @@ vi.mock('@/lib/hooks/coin-hud-context', async () => {
 vi.mock('@/lib/hooks/use-reduced-motion', () => ({
   useReducedMotion: () => false,
 }));
+const speakMock = vi.fn();
+vi.mock('@/lib/hooks/useSpeak', () => ({ useSpeak: () => speakMock }));
+vi.mock('@/lib/hooks/useSpeechSupported', () => ({ useSpeechSupported: () => true }));
 
 import { ImageWordScene } from '@/components/scenes/ImageWordScene';
 
@@ -21,15 +24,14 @@ const weekChars = ['人', '大', '小'];
 const correctWord = {
   wordId: 'w-correct',
   text: '大人',
-  pinyinArray: ['dà', 'rén'],
   imageHook: 'a smiling adult standing next to a small child',
   meaningEn: 'adult',
   imageUrl: null,
 };
 const distractors = [
-  { wordId: 'w-d1', text: '主人', pinyinArray: ['zhǔ', 'rén'], imageHook: null, meaningEn: 'master', imageUrl: null },
-  { wordId: 'w-d2', text: '人民', pinyinArray: ['rén', 'mín'], imageHook: null, meaningEn: 'people', imageUrl: null },
-  { wordId: 'w-d3', text: '老人', pinyinArray: ['lǎo', 'rén'], imageHook: null, meaningEn: 'elder', imageUrl: null },
+  { wordId: 'w-d1', text: '主人', imageHook: null, meaningEn: 'master', imageUrl: null },
+  { wordId: 'w-d2', text: '人民', imageHook: null, meaningEn: 'people', imageUrl: null },
+  { wordId: 'w-d3', text: '老人', imageHook: null, meaningEn: 'elder', imageUrl: null },
 ];
 
 function renderScene(props: Partial<Parameters<typeof ImageWordScene>[0]> = {}) {
@@ -73,10 +75,14 @@ describe('ImageWordScene', () => {
     expect(screen.getByRole('button', { name: /老人/ })).toBeInTheDocument();
   });
 
-  it('shows pinyin under each word option', () => {
-    renderScene();
-    expect(screen.getByText('dà rén')).toBeInTheDocument();
-    expect(screen.getByText('zhǔ rén')).toBeInTheDocument();
+  it('each option has a 🔊 that speaks the word without selecting it', () => {
+    const onComplete = vi.fn();
+    renderScene({ onComplete });
+    fireEvent.click(screen.getByTestId('speak-大人'));
+    expect(speakMock).toHaveBeenCalledWith('大人');
+    // tapping 🔊 must NOT trigger a selection
+    act(() => { vi.advanceTimersByTime(800); });
+    expect(onComplete).not.toHaveBeenCalled();
   });
 
   it('highlights the week characters inside each option', () => {

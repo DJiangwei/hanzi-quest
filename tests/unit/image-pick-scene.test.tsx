@@ -19,10 +19,11 @@ const pool = [
 ];
 
 describe('ImagePickScene (看图找字)', () => {
-  it('renders a real <img> when the target has an imageUrl (reused word picture)', () => {
+  it('renders a real <img> when an imageUrl is given (reused word picture)', () => {
     render(
       <ImagePickScene
-        target={{ ...pool[0], imageUrl: 'https://blob/elephant.jpg' }}
+        target={pool[0]}
+        imageUrl="https://blob/elephant.jpg"
         pool={pool}
         onComplete={() => {}}
       />,
@@ -33,19 +34,39 @@ describe('ImagePickScene (看图找字)', () => {
   });
 
   it('falls back to the imageHook text card when no imageUrl', () => {
-    render(<ImagePickScene target={{ ...pool[0] }} pool={pool} onComplete={() => {}} />);
+    render(<ImagePickScene target={pool[0]} pool={pool} onComplete={() => {}} />);
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.getByText('big elephant')).toBeInTheDocument();
   });
 
   it('renders character choices (hanzi options)', () => {
     render(
+      <ImagePickScene target={pool[0]} imageUrl="https://blob/x.jpg" pool={pool} onComplete={() => {}} />,
+    );
+    expect(screen.getByRole('button', { name: '大' })).toBeInTheDocument();
+  });
+
+  it('keeps the option order STABLE across a parent re-render (no jumping)', () => {
+    const hanziButtons = () =>
+      screen
+        .getAllByRole('button')
+        .map((b) => b.textContent)
+        .filter((t) => t && /^[大小人木]$/.test(t));
+    const { rerender } = render(
+      <ImagePickScene target={pool[0]} imageUrl="https://blob/x.jpg" pool={pool} onComplete={() => {}} />,
+    );
+    const order1 = hanziButtons();
+    expect(order1).toHaveLength(4);
+    // Re-render with NEW object/array identities (same characterId) — mimics the
+    // SceneRunner re-render that used to reshuffle the options mid-selection.
+    rerender(
       <ImagePickScene
-        target={{ ...pool[0], imageUrl: 'https://blob/x.jpg' }}
-        pool={pool}
+        target={{ ...pool[0] }}
+        imageUrl="https://blob/x.jpg"
+        pool={[...pool]}
         onComplete={() => {}}
       />,
     );
-    expect(screen.getByRole('button', { name: '大' })).toBeInTheDocument();
+    expect(hanziButtons()).toEqual(order1);
   });
 });
