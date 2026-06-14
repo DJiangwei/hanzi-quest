@@ -5,6 +5,8 @@ import { useSpeak } from '@/lib/hooks/useSpeak';
 
 interface SpeakButtonProps {
   text: string;
+  /** Pre-recorded clip; preferred over browser TTS when present. */
+  audioUrl?: string | null;
   size?: 'sm' | 'md';
   label?: string;
   className?: string;
@@ -19,6 +21,7 @@ const SIZES: Record<NonNullable<SpeakButtonProps['size']>, string> = {
 
 export function SpeakButton({
   text,
+  audioUrl = null,
   size = 'sm',
   label = 'Read aloud',
   className = '',
@@ -26,12 +29,13 @@ export function SpeakButton({
   const supported = useSpeechSupported();
   const speak = useSpeak();
 
-  if (!supported) return null;
+  // Render if EITHER a pre-recorded clip exists OR the browser can do TTS.
+  if (!supported && !audioUrl) return null;
 
   return (
     <button
       type="button"
-      onClick={() => speak(text)}
+      onClick={() => speak(text, audioUrl)}
       aria-label={label}
       className={`${BASE} ${SIZES[size]} ${className}`}
     >

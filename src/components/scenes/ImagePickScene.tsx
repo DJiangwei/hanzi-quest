@@ -9,6 +9,7 @@ interface CharacterDetail {
   hanzi: string;
   pinyinArray: string[];
   imageHook: string | null;
+  audioUrl?: string | null;
 }
 
 interface Props {
@@ -63,6 +64,7 @@ export function ImagePickScene({ target, pool, imageUrl, onComplete, hintRequest
       onComplete={onComplete}
       hintRequested={hintRequested}
       postRevealAudio={target.hanzi}
+      postRevealAudioUrl={target.audioUrl}
     />
   );
 }

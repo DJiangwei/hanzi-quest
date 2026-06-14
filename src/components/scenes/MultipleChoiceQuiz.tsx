@@ -27,6 +27,8 @@ interface Props {
    * reveal speech is the safe moment to pronounce the correct content.
    */
   postRevealAudio?: string;
+  /** Pre-recorded clip for `postRevealAudio`; preferred over TTS when present. */
+  postRevealAudioUrl?: string | null;
   /**
    * Override the default 750ms auto-advance delay after reveal. Used by
    * SentenceClozeScene so the full sentence playback (~2-3s) isn't cut off.
@@ -41,6 +43,7 @@ export function MultipleChoiceQuiz({
   onComplete,
   hintRequested,
   postRevealAudio,
+  postRevealAudioUrl,
   postRevealHoldMs,
 }: Props) {
   const [revealed, setRevealed] = useState<string | null>(null);
@@ -78,7 +81,7 @@ export function MultipleChoiceQuiz({
       // Speak the correct content once on reveal. The kid's pick is the
       // user gesture that authorizes Web Speech; chained speak() inside the
       // click handler stays inside the gesture chain.
-      speak(postRevealAudio);
+      speak(postRevealAudio, postRevealAudioUrl);
     }
     const holdMs = postRevealHoldMs ?? 750;
     setTimeout(() => completeRef.current(isCorrect), holdMs);

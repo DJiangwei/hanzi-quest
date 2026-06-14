@@ -47,6 +47,7 @@ interface CharacterWord {
   imageHook: string | null;
   meaningEn: string | null;
   imageUrl: string | null;
+  audioUrl?: string | null;
 }
 
 interface CharacterDetail {
@@ -56,6 +57,7 @@ interface CharacterDetail {
   meaningEn: string | null;
   meaningZh: string | null;
   imageHook: string | null;
+  audioUrl?: string | null;
   firstWord: string | null;
   words: CharacterWord[];
   sentence: { id: string; text: string; translationEn: string | null } | null;
@@ -298,11 +300,13 @@ export function SceneRunner({
           key={currentLevel.id}
           data={{
             hanzi: c.hanzi,
+            hanziAudioUrl: c.audioUrl ?? null,
             pinyin: c.pinyinArray,
             meaningEn: c.meaningEn,
             meaningZh: c.meaningZh,
             imageHook: c.imageHook,
             firstWord: c.firstWord,
+            firstWordAudioUrl: c.words[0]?.audioUrl ?? null,
             firstSentence: c.sentence?.text ?? null,
           }}
           onComplete={() => advance(true)}
@@ -470,6 +474,7 @@ export function SceneRunner({
             imageHook: correctWord.imageHook,
             meaningEn: correctWord.meaningEn,
             imageUrl: correctWord.imageUrl,
+            audioUrl: correctWord.audioUrl ?? null,
           }}
           distractors={distractors.map((w) => ({
             wordId: w.id,
@@ -477,6 +482,7 @@ export function SceneRunner({
             imageHook: w.imageHook,
             meaningEn: w.meaningEn,
             imageUrl: w.imageUrl,
+            audioUrl: w.audioUrl ?? null,
           }))}
           onComplete={advance}
           hintRequested={hintRequested}

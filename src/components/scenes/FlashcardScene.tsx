@@ -9,11 +9,13 @@ import { useSpeak } from '@/lib/hooks/useSpeak';
 
 interface FlashcardSceneData {
   hanzi: string;
+  hanziAudioUrl?: string | null;
   pinyin: string[];
   meaningEn: string | null;
   meaningZh: string | null;
   imageHook: string | null;
   firstWord: string | null;
+  firstWordAudioUrl?: string | null;
   firstSentence: string | null;
 }
 
@@ -34,7 +36,7 @@ export function FlashcardScene({ data, onComplete }: Props) {
       <div className="flex flex-col items-center justify-center gap-6 px-6 py-10">
         <button
           type="button"
-          onClick={() => speak(data.hanzi)}
+          onClick={() => speak(data.hanzi, data.hanziAudioUrl)}
           className="font-hanzi block select-none leading-none text-[clamp(8rem,42vw,16rem)] text-[var(--color-ocean-900)] transition-transform active:scale-95"
           aria-label={`Play audio for ${data.hanzi}`}
           style={{
@@ -48,7 +50,7 @@ export function FlashcardScene({ data, onComplete }: Props) {
           {pinyinShown ? (
             <button
               type="button"
-              onClick={() => speak(data.hanzi)}
+              onClick={() => speak(data.hanzi, data.hanziAudioUrl)}
               className="text-3xl font-medium tracking-wider text-[var(--color-ocean-700)]"
             >
               {data.pinyin.join(' ')}
@@ -90,6 +92,7 @@ export function FlashcardScene({ data, onComplete }: Props) {
                 </span>
                 <SpeakButton
                   text={data.firstWord}
+                  audioUrl={data.firstWordAudioUrl}
                   size="sm"
                   label={`Read aloud ${data.firstWord}`}
                 />
