@@ -10,6 +10,7 @@ interface CharacterDetail {
   characterId: string;
   hanzi: string;
   meaningEn: string | null;
+  audioUrl?: string | null;
 }
 
 interface Props {
@@ -51,7 +52,7 @@ export function TranslatePickScene({ target, pool, direction, onComplete, hintRe
         <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-amber-100 text-7xl font-bold text-amber-900 shadow-lg">
           {target.hanzi}
         </div>
-        <SpeakButton text={target.hanzi} size="sm" label={`Play sound for ${target.hanzi}`} />
+        <SpeakButton text={target.hanzi} audioUrl={target.audioUrl} size="sm" label={`Play sound for ${target.hanzi}`} />
       </div>
     ) : (
       <div className="flex h-32 items-center justify-center rounded-2xl bg-amber-100 px-8 text-3xl font-bold text-amber-900 shadow-lg">
