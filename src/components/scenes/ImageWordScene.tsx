@@ -74,7 +74,7 @@ function WordLabel({
               speak(text, audioUrl);
             }
           }}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg text-sky-700 hover:bg-sky-200"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg text-amber-900 hover:bg-amber-200"
         >
           🔊
         </span>

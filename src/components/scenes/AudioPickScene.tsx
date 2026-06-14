@@ -43,7 +43,7 @@ export function AudioPickScene({ target, pool, onComplete, hintRequested }: Prop
         <button
           type="button"
           onClick={() => speak(target.hanzi, target.audioUrl)}
-          className="flex h-32 w-32 items-center justify-center rounded-full bg-sky-200 text-5xl shadow-lg transition-transform active:scale-95 hover:bg-sky-300"
+          className="flex h-32 w-32 items-center justify-center rounded-full bg-amber-200 text-5xl text-amber-900 shadow-lg transition-transform active:scale-95 hover:bg-amber-300"
           aria-label="Play audio"
         >
           🔊
