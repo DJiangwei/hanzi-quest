@@ -19,6 +19,7 @@
  *   pnpm tsx scripts/verify-collectible-images.ts   → target 62/62
  */
 import { config } from 'dotenv';
+import { UNIFIED_ART_STYLE } from '@/lib/ai/art-style';
 
 const TARGET_PACK_SLUGS = [
   'sea-creatures-v1',
@@ -40,8 +41,10 @@ const SEASON_SUBJECT: Record<string, string> = {
     'a friendly golden cartoon kraken octopus with big eyes, full body, centered, plain light background',
 };
 
-const STYLE_PREAMBLE =
-  'cartoon illustration for children, bright colors, simple, single subject, no text: ';
+// Unified style shared with the word-image regen (src/lib/ai/art-style.ts) so
+// card art matches the word pictures. Set FORCE=1 to re-do ALL cards in this
+// style (default: only fill cards missing art).
+const STYLE_PREAMBLE = UNIFIED_ART_STYLE;
 
 const CF_MODEL = '@cf/black-forest-labs/flux-1-schnell';
 const CONCURRENCY = 3;
@@ -177,8 +180,9 @@ async function main() {
       ),
     );
 
+  const force = process.env.FORCE === '1';
   const eligible: Row[] = allItems
-    .filter((i) => !(i.imageUrl && /^https?:\/\//i.test(i.imageUrl)))
+    .filter((i) => force || !(i.imageUrl && /^https?:\/\//i.test(i.imageUrl)))
     .map((i) => ({
       id: i.id,
       slug: i.slug,

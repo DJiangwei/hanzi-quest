@@ -15,11 +15,9 @@
  */
 
 import { config } from 'dotenv';
+import { UNIFIED_ART_STYLE } from '@/lib/ai/art-style';
 
-// The single unified style for ALL generated art (keep in sync with the
-// collectible/map recipes once approved).
-const STYLE =
-  "children's book illustration, friendly modern cartoon, bold clean outlines, bright flat colors with soft simple shading, single centered subject, plain soft pastel background, no text, no watermark: ";
+const STYLE = UNIFIED_ART_STYLE;
 const CF_MODEL = '@cf/black-forest-labs/flux-1-schnell';
 const CONCURRENCY = 3;
 
