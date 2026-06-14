@@ -64,6 +64,7 @@ export default async function SectionPage({ params }: PageProps) {
     words: c.words.map((w) => ({
       id: w.id,
       text: w.text,
+      pinyinArray: w.pinyinArray ?? [],
       imageHook: w.imageHook ?? null,
       meaningEn: w.meaningEn ?? null,
       imageUrl: w.imageUrl ?? null,

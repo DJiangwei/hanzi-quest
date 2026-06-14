@@ -9,6 +9,8 @@ interface CharacterDetail {
   hanzi: string;
   pinyinArray: string[];
   imageHook: string | null;
+  /** A picture (reused from one of the char's words) shown as the stimulus. */
+  imageUrl?: string | null;
 }
 
 interface Props {
@@ -37,9 +39,21 @@ export function ImagePickScene({ target, pool, onComplete, hintRequested }: Prop
     <MultipleChoiceQuiz
       prompt="看图找字 / Find the character"
       stimulus={
-        <div className="flex h-44 w-72 items-center justify-center rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 text-center text-base text-amber-900 shadow-sm">
-          {target.imageHook ?? '（暂无图像描述）/ (no image yet)'}
-        </div>
+        target.imageUrl ? (
+          <div className="h-44 w-72 overflow-hidden rounded-2xl border-4 border-amber-800/30 bg-amber-50 shadow-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={target.imageUrl}
+              alt={target.imageHook ?? target.hanzi}
+              className="h-full w-full object-cover"
+              loading="eager"
+            />
+          </div>
+        ) : (
+          <div className="flex h-44 w-72 items-center justify-center rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 text-center text-base text-amber-900 shadow-sm">
+            {target.imageHook ?? '（暂无图像描述）/ (no image yet)'}
+          </div>
+        )
       }
       choices={choices}
       onComplete={onComplete}
