@@ -115,29 +115,34 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
   }
 
   // ── SIGHT ───────────────────────────────────────────────────────────────
-  if (sizing.sight > 0) {
+  if (sizing.imagePick > 0 || sizing.lianliankan > 0) {
     const imageId = tmplByType.get('image_pick');
     const usedCharIds = new Set<string>();
 
-    // image_pick (slot 0): if any char has imageHook
-    if (sizing.sight >= 1 && imageId) {
-      const withHook = chars.filter((c) => Boolean(c.imageHook));
-      if (withHook.length > 0) {
-        const target = pickRandom(withHook);
+    // image_pick (看图找字): N distinct chars. Runtime shows a picture from one of
+    // the char's words and asks which character it is. Prefer chars that have a
+    // word to picture; fall back to any char (the scene degrades to the imageHook
+    // text card when no word image exists).
+    if (sizing.imagePick > 0 && imageId) {
+      const eligible = chars.filter((c) => c.words.length > 0);
+      const picks = shuffle(eligible.length > 0 ? eligible : chars).slice(
+        0,
+        sizing.imagePick,
+      );
+      picks.forEach((target, i) => {
         usedCharIds.add(target.id);
         push(
           imageId,
           { characterId: target.id },
           'sight',
-          'practice:image_pick:0',
+          `practice:image_pick:${i}`,
         );
-      }
-      // No visual_pick fallback in PR #51+. If no eligible char, slot stays unfilled.
+      });
     }
 
-    // lianliankan (slot 1 — multi-char, exactly 4 chars with meaningEn)
+    // lianliankan (multi-char, exactly 4 chars with meaningEn)
     const lianliankanId = tmplByType.get('lianliankan');
-    if (sizing.sight >= 2 && lianliankanId) {
+    if (sizing.lianliankan >= 1 && lianliankanId) {
       const withMeaning = chars.filter((c) => Boolean(c.meaningEn));
       const sample = shuffle(withMeaning).slice(0, 4);
       if (sample.length === 4) {
@@ -290,16 +295,19 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
 
 interface PracticeSizing {
   audio: number;
-  sight: number;
+  /** 看图找字 / image_pick scenes (bumped — kid finds the character from a picture). */
+  imagePick: number;
+  /** 连连看 / lianliankan scenes. */
+  lianliankan: number;
   imageWord: number;
   meaning: number;
 }
 
 function computePracticeSizing(n: number): PracticeSizing {
-  if (n < 2)  return { audio: 0, sight: 0, imageWord: 0, meaning: 0 };
-  if (n < 4)  return { audio: 1, sight: 1, imageWord: 1, meaning: 4 };  // 7 practice
-  if (n < 10) return { audio: 2, sight: 1, imageWord: 1, meaning: 6 };  // 10 practice
-  return { audio: 3, sight: 2, imageWord: 2, meaning: 6 };              // 13 practice (was 14)
+  if (n < 2)  return { audio: 0, imagePick: 0, lianliankan: 0, imageWord: 0, meaning: 0 };
+  if (n < 4)  return { audio: 1, imagePick: 1, lianliankan: 0, imageWord: 1, meaning: 4 };  // 7
+  if (n < 10) return { audio: 2, imagePick: 2, lianliankan: 1, imageWord: 1, meaning: 6 };  // 12
+  return { audio: 3, imagePick: 3, lianliankan: 1, imageWord: 2, meaning: 6 };              // 15
 }
 
 function pickRandom<T>(arr: T[]): T {

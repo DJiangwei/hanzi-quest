@@ -88,7 +88,7 @@ describe('compileWeekIntoLevels — image_word', () => {
     captureRows(inserted);
 
     const count = await compileWeekIntoLevels('w-test');
-    expect(count).toBe(24);     // 10 review + 13 practice + 1 boss (PR #51: sight 3→2)
+    expect(count).toBe(26);     // 10 review + 15 practice + 1 boss (image_pick 1→3)
     const imageWordRows = inserted.filter((r) => r.sceneTemplateId === 't-image_word');
     expect(imageWordRows).toHaveLength(2);
     for (const r of imageWordRows) {
@@ -108,8 +108,8 @@ describe('compileWeekIntoLevels — image_word', () => {
     const count = await compileWeekIntoLevels('w-test');
     // PR #51: no visual_pick fallback for unfilled image_word slots.
     // PR #57: word_match retired; lianliankan in slot 1 (chars have meaningEn so it fills).
-    // 10 review + 3 audio + 2 sight (image_pick+lianliankan) + 0 image_word + 6 meaning + 1 boss = 22
-    expect(count).toBe(22);
+    // 10 review + 3 audio + 3 image_pick + 1 lianliankan + 0 image_word + 6 meaning + 1 boss = 24
+    expect(count).toBe(24);
     const imageWordRows = inserted.filter((r) => r.sceneTemplateId === 't-image_word');
     expect(imageWordRows).toHaveLength(0);
     const visualPickRows = inserted.filter((r) => r.sceneTemplateId === 't-visual_pick');

@@ -44,6 +44,7 @@ const CardChestReveal = dynamic(
 interface CharacterWord {
   id: string;
   text: string;
+  pinyinArray: string[];
   imageHook: string | null;
   meaningEn: string | null;
   imageUrl: string | null;
@@ -335,8 +336,18 @@ export function SceneRunner({
     case 'image_pick': {
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
+      // 看图找字: show a picture from one of the char's words (reusing the word
+      // images) and ask which character it is. Falls back to the imageHook text
+      // card inside ImagePickScene when no word image exists.
+      const stimulusImageUrl = c?.words.find((w) => w.imageUrl)?.imageUrl ?? null;
       body = c ? (
-        <ImagePickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} hintRequested={hintRequested} />
+        <ImagePickScene
+          key={currentLevel.id}
+          target={{ ...c, imageUrl: stimulusImageUrl }}
+          pool={pool}
+          onComplete={advance}
+          hintRequested={hintRequested}
+        />
       ) : (
         <MissingData />
       );
@@ -452,9 +463,11 @@ export function SceneRunner({
         <ImageWordScene
           key={currentLevel.id}
           baseChar={{ characterId: baseCharDetail.characterId, hanzi: baseCharDetail.hanzi }}
+          weekChars={pool.map((c) => c.hanzi)}
           correctWord={{
             wordId: correctWord.id,
             text: correctWord.text,
+            pinyinArray: correctWord.pinyinArray,
             imageHook: correctWord.imageHook,
             meaningEn: correctWord.meaningEn,
             imageUrl: correctWord.imageUrl,
@@ -462,6 +475,7 @@ export function SceneRunner({
           distractors={distractors.map((w) => ({
             wordId: w.id,
             text: w.text,
+            pinyinArray: w.pinyinArray,
             imageHook: w.imageHook,
             meaningEn: w.meaningEn,
             imageUrl: w.imageUrl,

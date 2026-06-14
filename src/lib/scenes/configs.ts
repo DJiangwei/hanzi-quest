@@ -101,9 +101,10 @@ export type ImageWordConfig = z.infer<typeof ImageWordConfigSchema>;
 
 // Boss is gated behind partial practice completion. Tune by editing this
 // constant; the WeekHub UI and the boss route guard both read it.
-export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 6;
+export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 7;
 
 // Total practice scenes per week for full-size (N >= 10 chars) weeks.
 // Smaller-N weeks scale down per compile-week.ts.
-// PR #51: visual_pick retired → 13 (was 14).
-export const PRACTICE_SCENE_COUNT = 13;
+// image-scenes PR: 看图找字 bumped 1 → 3 → 15 (3 audio + 3 image_pick + 1
+// lianliankan + 2 image_word + 6 meaning). PR #51: visual_pick retired (was 13/14).
+export const PRACTICE_SCENE_COUNT = 15;
