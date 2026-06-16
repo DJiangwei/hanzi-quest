@@ -23,6 +23,7 @@ vi.mock('@/lib/db/homework', () => ({
   listHomeworkItems: vi.fn(), weekHasHomework: vi.fn(),
 }));
 vi.mock('@/lib/actions/gacha', () => ({ pullCardForChild: vi.fn() }));
+vi.mock('@/lib/play/card-grants', () => ({ pullCardForChild: vi.fn() }));
 vi.mock('@/lib/db/coins', () => ({ awardCoins: vi.fn() }));
 vi.mock('@/lib/db/xp', () => ({ awardXp: vi.fn() }));
 vi.mock('@/lib/db/quests', () => ({ tickQuestProgressSafe: vi.fn() }));

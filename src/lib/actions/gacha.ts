@@ -12,12 +12,8 @@ import { AlreadyClaimedError } from '@/lib/errors/gacha-errors';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { checkAndGrantTrophies, type GrantedTrophy } from '@/lib/db/trophies';
 import { grantContinentRewards } from '@/lib/db/continent-rewards';
-import { todayUtcIso } from '@/lib/db/streaks';
-import { pullCardInTx, swapShardsInTx, convertDuplicateInTx, grantGiftPackInTx, type CardGrantResult, type CardGrantSkipped, type GiftCard } from '@/lib/db/grants';
-import { getActivityForRange } from '@/lib/db/activity';
-import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
-import { countCheckInDays, WEEKLY_CHECKIN_THRESHOLD } from '@/lib/db/checkins';
-import { tickQuestProgressSafe } from '@/lib/db/quests';
+import { swapShardsInTx, convertDuplicateInTx } from '@/lib/db/grants';
+import { safePackCompleteTrophy } from '@/lib/play/card-grants';
 
 // AlreadyClaimedError is NOT re-exported here — 'use server' files may only
 // export async functions. Client components import it directly from
@@ -109,54 +105,6 @@ export async function pullPaid(
   return { ...result, trophies };
 }
 
-export type CardGrantSource =
-  | 'boss_clear'
-  | 'perfect_week'
-  | 'story_chapter'
-  | 'review'
-  | 'practice'
-  | 'homework';
-
-export async function pullCardForChild(
-  childId: string,
-  source: CardGrantSource,
-  refId: string,
-): Promise<CardGrantResult | CardGrantSkipped> {
-  const dayUtc = todayUtcIso();
-  const result = await db.transaction((tx) =>
-    pullCardInTx(tx, childId, source, refId, dayUtc, Math.random),
-  );
-  if (result.granted) {
-    revalidatePath(`/play/${childId}/collection/${result.packSlug}`);
-    // A grant may have completed a pack — record the trophy (idempotent).
-    // Guarded + fire-and-forget: a trophy failure must never break the grant.
-    void safePackCompleteTrophy(childId, result.packSlug);
-    // A flag grant may also have completed a continent (any grant path — incl.
-    // story/gift that don't flow through finishLevelAction). Guarded grant so the
-    // trophy is never missed; gameplay/swap paths surface the toast themselves.
-    if (result.packSlug === 'flags-v1') void safeContinentTrophies(childId);
-  }
-  return result;
-}
-
-/** Guarded pack-complete trophy check. Never throws. */
-async function safePackCompleteTrophy(childId: string, packSlug: string): Promise<void> {
-  try {
-    await checkAndGrantTrophies(childId, { kind: 'pack-complete', packSlug });
-  } catch (err) {
-    console.error('[gacha] pack-complete trophy check failed:', err);
-  }
-}
-
-/** Guarded continent-complete reward grant (trophy + cosmetic). Never throws. */
-async function safeContinentTrophies(childId: string): Promise<void> {
-  try {
-    await grantContinentRewards(childId);
-  } catch (err) {
-    console.error('[gacha] continent-complete reward grant failed:', err);
-  }
-}
-
 export async function swapShardsForItem(
   childId: string,
   itemId: string,
@@ -208,42 +156,3 @@ export async function convertDuplicateToShard(
   return result;
 }
 
-/**
- * Trust-caller (NO requireChild) — invoked from finishAttemptAction which is
- * already auth-gated. Grants the weekly check-in gift pack iff the child has
- * >= WEEKLY_CHECKIN_THRESHOLD distinct check-in days this UTC week and hasn't
- * claimed yet this week. Bypasses the daily cap. Returns the gift cards or null.
- */
-export async function claimWeeklyGiftIfDue(
-  childId: string,
-): Promise<{ cards: GiftCard[] } | null> {
-  const today = todayUtcIso();
-  const monday = mondayOfIsoWeek(today);
-  const sunday = addDaysUtc(monday, 6);
-  const activity = await getActivityForRange(childId, monday, sunday);
-  if (countCheckInDays(activity) < WEEKLY_CHECKIN_THRESHOLD) return null;
-
-  const result = await db.transaction((tx) => grantGiftPackInTx(tx, childId, monday, Math.random));
-  if (!result.granted) return null;
-
-  // Additive, guarded, fire-and-forget: tick earn_card quest by number of cards granted.
-  if (result.cards.length > 0) {
-    void tickQuestProgressSafe(childId, 'earn_card', result.cards.length);
-  }
-
-  revalidatePath(`/play/${childId}`);
-  const giftSlugs = new Set(result.cards.map((c) => c.packSlug));
-  for (const slug of giftSlugs) {
-    revalidatePath(`/play/${childId}/collection/${slug}`);
-    void safePackCompleteTrophy(childId, slug);
-  }
-  // The gift's flag may have completed a continent — guarded grant.
-  if (giftSlugs.has('flags-v1')) void safeContinentTrophies(childId);
-  return { cards: result.cards };
-}
-
-function addDaysUtc(iso: string, days: number): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}

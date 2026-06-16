@@ -108,8 +108,8 @@ export default async function ParentDashboardPage() {
 
       <section className="rounded-2xl border border-dashed border-[var(--color-sand-200)] bg-[var(--color-ocean-100)]/40 p-5 text-sm text-[var(--color-ocean-900)]">
         <p>
-          🏴‍☠️ The 海盗班 crew sails through the shared 加勒比海 islands. To add your
-          own weekly homework, open a child → pick a week → add homework items.
+          🏴‍☠️ Your crew sails the shared 加勒比海 / Caribbean islands. To add weekly
+          homework, open a child → pick a week → add homework items.
         </p>
       </section>
     </main>

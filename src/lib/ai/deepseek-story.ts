@@ -35,11 +35,11 @@ Do not use any character outside the available list in body_zh. Do not write mor
 
 const TONE_INSTRUCTIONS: Record<StoryToneLiteral, string> = {
   triumphant:
-    'Yinuo crushed the boss with no mistakes. Write a victorious scene where she emerges in glory, the crew cheers, the treasure is rich.',
+    'The hero crushed the boss with no mistakes. Write a victorious scene where they emerge in glory, the crew cheers, the treasure is rich.',
   standard:
-    "Yinuo cleared the boss with a few stumbles. Write a satisfying scene where she finds what she's looking for through cleverness.",
+    "The hero cleared the boss with a few stumbles. Write a satisfying scene where they find what they're looking for through cleverness.",
   narrow_escape:
-    'Yinuo barely cleared the boss. Write a scene where things went sideways but she scraped through with quick thinking. The treasure is modest but real.',
+    'The hero barely cleared the boss. Write a scene where things went sideways but they scraped through with quick thinking. The treasure is modest but real.',
 };
 
 export function buildStoryUserPrompt(input: BuildPromptInput): string {

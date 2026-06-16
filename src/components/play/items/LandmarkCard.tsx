@@ -21,7 +21,7 @@ const sizeClasses: Record<NonNullable<LandmarkCardProps['size']>, string> = {
  * One landmark tile. Renders the emoji, bilingual name, location (city·country),
  * a continent badge, and — at `lg` + owned — a bilingual fun fact.
  *
- * Yinuo is English-native — both languages render side-by-side. No toggle.
+ * Kids are English-native — both languages render side-by-side. No toggle.
  */
 export function LandmarkCard({
   item,

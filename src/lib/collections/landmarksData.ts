@@ -3,7 +3,7 @@
  *
  * Pairs with the World Flags pack — landmarks are grouped by the SAME 6
  * continents (reusing `Continent` / `CONTINENT_LABELS` / `CONTINENT_ORDER` from
- * flagsData) so the geography lesson reinforces. Yinuo is English-native, so
+ * flagsData) so the geography lesson reinforces. Kids are English-native, so
  * every field is bilingual. Emoji glyphs are limited for landmarks (same
  * constraint as dinosaurs/solar), so cards differentiate primarily by name +
  * location + continent, not the emoji. Real illustrated images are a future

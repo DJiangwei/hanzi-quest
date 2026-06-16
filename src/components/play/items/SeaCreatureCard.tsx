@@ -20,7 +20,7 @@ const sizeClasses: Record<NonNullable<SeaCreatureCardProps['size']>, string> = {
  * One sea creature tile. Renders the emoji creature, name (CN+EN), and
  * (when not compact) the habitat + a one-line bilingual lore.
  *
- * Yinuo is English-native — both languages render side-by-side by default.
+ * Kids are English-native — both languages render side-by-side by default.
  * No language toggle.
  */
 export function SeaCreatureCard({

@@ -1,15 +1,15 @@
 /**
  * Source of truth for the 海洋生物 / Sea Creatures collection pack.
  *
- * Yinuo is English-native (UK heritage learner) — every field that the kid
+ * Kids are English-native (UK heritage learner) — every field that the kid
  * sees is bilingual. Habitat is rendered alongside the creature name; lore is
  * one short kid-friendly fact per creature. Emoji glyphs are stored in
  * `collectible_items.image_url` at seed time; the renderer uses them as plain
  * text glyphs (no `<img>`).
  *
  * Pirate-adventure theme: this pack lines up with the game's island/ocean
- * setting and the existing boss kraken — sea creatures are who Yinuo meets on
- * her voyages.
+ * setting and the existing boss kraken — sea creatures are who the child meets
+ * on their voyages.
  */
 
 export type SeaCreatureRarity = 'common' | 'rare' | 'epic';

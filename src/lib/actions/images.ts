@@ -1,7 +1,7 @@
 'use server';
 
 import { and, eq, isNotNull, isNull } from 'drizzle-orm';
-import { auth } from '@clerk/nextjs/server';
+import { assertParent } from '@/lib/auth/guards';
 import { db } from '@/db';
 import { characterWord, weekCharacters, words } from '@/db/schema';
 import { fetchAndUploadImage } from '@/lib/ai/pollinations';
@@ -16,10 +16,7 @@ export async function generateMissingImagesForWeek(weekId: string): Promise<{
   succeeded: number;
   failed: number;
 }> {
-  const session = await auth();
-  if (!session.userId) {
-    throw new Error('generateMissingImagesForWeek: no auth session');
-  }
+  await assertParent();
 
   // Join words ← character_word ← week_characters; scoped to this week, only
   // rows missing imageUrl but having a non-null imageHook (the prompt).

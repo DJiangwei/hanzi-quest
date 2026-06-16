@@ -75,6 +75,10 @@ vi.mock('@/lib/actions/gacha', () => ({
   pullCardForChild: mocks.pullCardForChild,
   claimWeeklyGiftIfDue: mocks.claimWeeklyGiftIfDue,
 }));
+vi.mock('@/lib/play/card-grants', () => ({
+  pullCardForChild: mocks.pullCardForChild,
+  claimWeeklyGiftIfDue: mocks.claimWeeklyGiftIfDue,
+}));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/db/continent-rewards', () => ({ grantContinentRewards: vi.fn().mockResolvedValue([]) }));
 vi.mock('@/lib/db/xp', () => ({

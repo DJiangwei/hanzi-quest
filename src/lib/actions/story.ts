@@ -20,7 +20,7 @@ import {
 import { checkAndGrantTrophies } from '@/lib/db/trophies';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import { getPlayableWeekForChild } from '@/lib/db/weeks';
-import { pullCardForChild } from './gacha';
+import { pullCardForChild } from '@/lib/play/card-grants';
 
 const GenerateInputSchema = z.object({
   childId: z.string(),

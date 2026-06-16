@@ -60,7 +60,7 @@ vi.mock('@/lib/db/trophies', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-import { claimWeeklyGiftIfDue } from '@/lib/actions/gacha';
+import { claimWeeklyGiftIfDue } from '@/lib/play/card-grants';
 
 beforeEach(() => {
   vi.clearAllMocks();

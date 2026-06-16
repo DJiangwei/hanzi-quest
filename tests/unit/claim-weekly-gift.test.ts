@@ -15,7 +15,7 @@ vi.mock('@/lib/db/grants', async (orig) => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
-import { claimWeeklyGiftIfDue } from '@/lib/actions/gacha';
+import { claimWeeklyGiftIfDue } from '@/lib/play/card-grants';
 
 function activityWith(n: number) {
   return Array.from({ length: 7 }, (_, i) => ({

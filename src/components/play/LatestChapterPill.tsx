@@ -19,7 +19,7 @@ export async function LatestChapterPill({ childId }: Props) {
             📖 你最新的故事 / Your latest story
           </p>
           <p className="text-xs text-amber-800/80">
-            Captain Yinuo&apos;s latest chapter
+            Your latest chapter
           </p>
         </div>
         <span aria-hidden className="text-2xl">

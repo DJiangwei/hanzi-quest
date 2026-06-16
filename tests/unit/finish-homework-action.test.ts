@@ -12,6 +12,7 @@ vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild, assertPa
 vi.mock('@/lib/db/weeks', () => ({ getPlayableWeekForChild: mocks.getPlayableWeekForChild, getWeekOwnedBy: vi.fn() }));
 vi.mock('@/lib/db/children', () => ({ getChildOwnedBy: vi.fn() }));
 vi.mock('@/lib/actions/gacha', () => ({ pullCardForChild: mocks.pullCardForChild }));
+vi.mock('@/lib/play/card-grants', () => ({ pullCardForChild: mocks.pullCardForChild }));
 vi.mock('@/lib/db/coins', () => ({ awardCoins: mocks.awardCoins }));
 vi.mock('@/lib/db/xp', () => ({ awardXp: mocks.awardXp }));
 vi.mock('@/lib/db/quests', () => ({ tickQuestProgressSafe: mocks.tickQuestProgressSafe }));

@@ -23,7 +23,7 @@ const REASON_ICON: Record<EconomyBonus['reason'], string> = {
  * One toast per bonus, each persists `durationMs` then fades. When the last
  * fades, calls `onDone`.
  *
- * Yinuo is English-native — every toast renders the Chinese label and the
+ * Kids are English-native — every toast renders the Chinese label and the
  * English label side-by-side. No language toggle.
  */
 export function BonusToast({

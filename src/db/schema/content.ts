@@ -141,7 +141,7 @@ export const weeks = pgTable(
   'weeks',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    // Null for shared pack-level weeks (e.g. 海盗班 Level 1) — those belong to
+    // Null for shared pack-level weeks (e.g. the shared curriculum pack) — those belong to
     // a curriculum_pack and are played by every child whose
     // current_curriculum_pack_id points at that pack.
     parentUserId: text('parent_user_id').references(() => users.id, {

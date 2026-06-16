@@ -16,6 +16,7 @@ const gachaMock = vi.hoisted(() => ({
   ),
 }));
 vi.mock('@/lib/actions/gacha', () => gachaMock);
+vi.mock('@/lib/play/card-grants', () => gachaMock);
 
 const aiMock = vi.hoisted(() => ({
   generateStoryChapterWithAI: vi.fn(),

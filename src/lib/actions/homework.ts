@@ -12,7 +12,7 @@ import {
   reorderHomeworkItems,
 } from '@/lib/db/homework';
 import { parseHomeworkConfig, type HomeworkType } from '@/lib/homework/schemas';
-import { pullCardForChild } from '@/lib/actions/gacha';
+import { pullCardForChild } from '@/lib/play/card-grants';
 import { awardCoins } from '@/lib/db/coins';
 import { awardXp } from '@/lib/db/xp';
 import { tickQuestProgressSafe } from '@/lib/db/quests';
