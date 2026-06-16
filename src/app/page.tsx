@@ -3,15 +3,18 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ensureUserBootstrapped } from '@/lib/auth/bootstrap';
 import { listChildrenForUser } from '@/lib/db/children';
+import { ChildPicker } from '@/components/ChildPicker';
 
 export default async function HomePage() {
   const user = await ensureUserBootstrapped();
 
+  let multiChildren: { id: string; displayName: string }[] = [];
   if (user) {
     const children = await listChildrenForUser(user.id);
     if (children.length === 1) {
       redirect(`/play/${children[0].id}`);
     }
+    multiChildren = children.map((c) => ({ id: c.id, displayName: c.displayName }));
   }
 
   const t = await getTranslations('Home');
@@ -29,6 +32,9 @@ export default async function HomePage() {
           {t('subtitle')}
         </p>
       </div>
+      {user && multiChildren.length > 1 && (
+        <ChildPicker players={multiChildren} />
+      )}
       <div className="flex flex-wrap items-center justify-center gap-3">
         {!user && (
           <>
