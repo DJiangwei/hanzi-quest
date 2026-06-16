@@ -4,11 +4,11 @@ const dbMock = vi.hoisted(() => ({
   select: vi.fn(),
   update: vi.fn(),
 }));
-const authMock = vi.hoisted(() => vi.fn());
+const assertParentMock = vi.hoisted(() => vi.fn());
 const fetchAndUploadMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/db', () => ({ db: dbMock }));
-vi.mock('@clerk/nextjs/server', () => ({ auth: authMock }));
+vi.mock('@/lib/auth/guards', () => ({ assertParent: assertParentMock }));
 vi.mock('@/lib/ai/pollinations', () => ({ fetchAndUploadImage: fetchAndUploadMock }));
 
 import { generateMissingImagesForWeek } from '@/lib/actions/images';
@@ -16,9 +16,9 @@ import { generateMissingImagesForWeek } from '@/lib/actions/images';
 beforeEach(() => {
   dbMock.select.mockReset();
   dbMock.update.mockReset();
-  authMock.mockReset();
+  assertParentMock.mockReset();
   fetchAndUploadMock.mockReset();
-  authMock.mockResolvedValue({ userId: 'user_x' });
+  assertParentMock.mockResolvedValue({ id: 'user_x', role: 'parent' });
 });
 
 function mockWordsQuery(rows: Array<{ id: string; text: string; imageHook: string | null }>) {
@@ -81,8 +81,8 @@ describe('generateMissingImagesForWeek', () => {
     expect(fetchAndUploadMock).not.toHaveBeenCalled();
   });
 
-  it('throws when auth() returns no session', async () => {
-    authMock.mockResolvedValue({ userId: null });
-    await expect(generateMissingImagesForWeek('week-1')).rejects.toThrow();
+  it('throws when assertParent rejects (non-parent caller)', async () => {
+    assertParentMock.mockRejectedValue(new Error('Parent role required'));
+    await expect(generateMissingImagesForWeek('week-1')).rejects.toThrow('Parent role required');
   });
 });
