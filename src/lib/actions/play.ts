@@ -116,28 +116,6 @@ const SCENE_REPLAY_AWARD = 5;
 const PERFECT_BONUS = 25;
 const BOSS_CLEAR_REWARD = 300;
 
-/**
- * Kick off story chapter generation in the background. Errors are logged
- * but never bubble up — boss completion must succeed even if DeepSeek is
- * down. The chapter page synchronously falls back if eager gen didn't
- * finish in time.
- *
- * NOTE: this is `async` only to satisfy the `'use server'` constraint that
- * all exports must be async. Callers in this file invoke it WITHOUT await
- * (prefixed with `void`) so the fire-and-forget contract is preserved.
- */
-export async function triggerEagerStoryGeneration(
-  childId: string,
-  weekId: string,
-): Promise<void> {
-  try {
-    const { generateStoryChapter } = await import('@/lib/actions/story');
-    await generateStoryChapter({ childId, weekId });
-  } catch (err) {
-    console.error('[finishLevelAction] eager story gen failed:', err);
-  }
-}
-
 export type EconomyBonusReason =
   | 'daily_login'
   | 'streak_milestone'
