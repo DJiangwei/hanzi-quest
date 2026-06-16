@@ -74,6 +74,7 @@ export async function updateChildAction(
 ): Promise<ChildActionState> {
   const parsed = ChildInputSchema.safeParse({
     displayName: formData.get('displayName'),
+    gender: formData.get('gender') ?? '',
     birthYear: formData.get('birthYear') ?? '',
   });
   if (!parsed.success) {
@@ -83,6 +84,7 @@ export async function updateChildAction(
   const parent = await assertParent();
   const updated = await updateChildOwnedBy(childId, parent.id, {
     displayName: parsed.data.displayName,
+    gender: parsed.data.gender,
     birthYear: parsed.data.birthYear,
   });
   if (!updated) {

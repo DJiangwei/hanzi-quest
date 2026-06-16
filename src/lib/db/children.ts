@@ -59,6 +59,7 @@ export async function getChildOwnedBy(
 
 export interface UpdateChildInput {
   displayName?: string;
+  gender?: 'boy' | 'girl' | null;
   birthYear?: number | null;
   currentCurriculumPackId?: string | null;
 }

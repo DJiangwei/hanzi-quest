@@ -38,6 +38,7 @@ export default async function EditChildPage({ params }: PageProps) {
       <EditChildForm
         childId={child.id}
         defaultDisplayName={child.displayName}
+        defaultGender={child.gender}
         defaultBirthYear={child.birthYear}
       />
 
