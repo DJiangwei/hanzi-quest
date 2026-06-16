@@ -12,6 +12,13 @@
  *
  * Idempotent path (words/{id}.jpg, overwrite-safe). Re-runnable. Failures are
  * logged (and skipped) so the run completes; re-run to retry stragglers.
+ *
+ * RESUME across CF's ~300-image/day free-tier cap: set SKIP_UPLOADED_AFTER to an
+ * ISO date and the run skips any word whose Blob image was already (re)uploaded
+ * on/after it (a free HEAD per word, no neurons) — so a re-run only spends quota
+ * on the words NOT yet regenerated this pass. Example (finish the tail tomorrow):
+ *   SKIP_UPLOADED_AFTER=2026-06-15 pnpm tsx scripts/regenerate-word-images-cloudflare.ts
+ * Unset = process every word (original behavior).
  */
 
 import { config } from 'dotenv';
@@ -25,6 +32,14 @@ const CONCURRENCY = 3;
 const SUBJECT_OVERRIDE: Record<string, string> = {
   小鱼: 'a cute happy little cartoon fish swimming, single subject',
   鱼: 'a cute happy cartoon fish, single subject',
+  // NSFW false-positive rephrases (flux flags these benign words; safe descriptive prompts)
+  不是: 'a friendly cartoon child shaking their head no beside a red cross mark, single subject',
+  海贝: 'a pretty spiral seashell on the beach sand, single subject',
+  名字: 'a colorful name-tag sticker with a smiling face, single subject',
+  宝石: 'a sparkling blue gemstone jewel, single subject',
+  鼻子: 'a cute smiling cartoon face, single subject',
+  花生: 'two cartoon peanuts in their shell, single subject',
+  下雪: 'a snowy winter scene with falling snowflakes and a small snowman, single subject',
 };
 
 async function gen(prompt: string, acct: string, token: string): Promise<Buffer> {
@@ -50,20 +65,47 @@ async function main() {
   const { db } = await import('@/db');
   const { words } = await import('@/db/schema');
   const { eq, isNotNull } = await import('drizzle-orm');
-  const { put } = await import('@vercel/blob');
+  const { put, head } = await import('@vercel/blob');
+
+  const skipAfter = process.env.SKIP_UPLOADED_AFTER
+    ? new Date(process.env.SKIP_UPLOADED_AFTER)
+    : null;
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
 
   const rows = await db
-    .select({ id: words.id, text: words.text, hook: words.imageHook })
+    .select({
+      id: words.id,
+      text: words.text,
+      hook: words.imageHook,
+      imageUrl: words.imageUrl,
+    })
     .from(words)
     .where(isNotNull(words.imageHook));
 
-  console.log(`\nRe-generating ${rows.length} word images in the unified style.\n`);
+  console.log(
+    `\nRe-generating ${rows.length} word images in the unified style${
+      skipAfter ? ` (resume: skipping any re-uploaded on/after ${skipAfter.toISOString()})` : ''
+    }.\n`,
+  );
   let done = 0;
   let failed = 0;
+  let skipped = 0;
   for (let i = 0; i < rows.length; i += CONCURRENCY) {
     const batch = rows.slice(i, i + CONCURRENCY);
     await Promise.all(
       batch.map(async (row) => {
+        // Resume: skip words whose Blob image was already (re)uploaded this pass.
+        if (skipAfter && row.imageUrl) {
+          try {
+            const meta = await head(row.imageUrl, { token: blobToken });
+            if (meta.uploadedAt && new Date(meta.uploadedAt) >= skipAfter) {
+              skipped += 1;
+              return;
+            }
+          } catch {
+            // No blob / head failed → fall through and (re)generate.
+          }
+        }
         const subject = SUBJECT_OVERRIDE[row.text] ?? row.hook!;
         try {
           const bytes = await gen(`${STYLE}${subject}`, acct, token);
@@ -84,7 +126,7 @@ async function main() {
       }),
     );
   }
-  console.log(`\nDone. ${done} regenerated, ${failed} failed.`);
+  console.log(`\nDone. ${done} regenerated, ${skipped} skipped (resume), ${failed} failed.`);
 }
 
 main()
