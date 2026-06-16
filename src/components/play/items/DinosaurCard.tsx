@@ -43,7 +43,7 @@ const eraBadgeClass: Record<DinosaurEra, string> = {
  * One dinosaur tile. Renders the emoji, bilingual name, era badge, and
  * (on `lg` + owned) bilingual lore.
  *
- * Yinuo is English-native — both languages render side-by-side by default.
+ * Kids are English-native — both languages render side-by-side by default.
  */
 export function DinosaurCard({
   item,

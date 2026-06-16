@@ -1,7 +1,7 @@
 /**
  * Source of truth for the 太阳系 / Solar System collection pack.
  *
- * Yinuo is English-native (UK heritage learner) — every field that the kid
+ * Kids are English-native (UK heritage learner) — every field that the kid
  * sees is bilingual. Body type (rocky planet / gas giant / star / moon) is
  * rendered alongside the body name; lore is one short kid-friendly fact per
  * body. Emoji glyphs are stored in `collectible_items.image_url` at seed time;

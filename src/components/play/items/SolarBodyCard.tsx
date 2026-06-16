@@ -50,7 +50,7 @@ const typeBadgeClass: Record<SolarBodyType, string> = {
  * One solar-system body tile. Renders the emoji, bilingual name, type badge,
  * and (on `lg` + owned) bilingual lore.
  *
- * Yinuo is English-native — both languages render side-by-side by default.
+ * Kids are English-native — both languages render side-by-side by default.
  */
 export function SolarBodyCard({
   item,

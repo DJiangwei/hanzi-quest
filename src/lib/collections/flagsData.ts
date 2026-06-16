@@ -1,7 +1,7 @@
 /**
  * Source of truth for the 世界国旗 / World Flags collection pack.
  *
- * Yinuo is English-native (UK heritage learner) — every field that the kid
+ * Kids are English-native (UK heritage learner) — every field that the kid
  * sees is bilingual. Capital is rendered alongside the country name; lore is
  * one short, kid-friendly, apolitical fact per country. Emoji flags are stored
  * in `collectible_items.image_url` at seed time; the renderer uses them as

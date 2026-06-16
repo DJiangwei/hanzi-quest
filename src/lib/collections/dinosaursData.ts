@@ -1,7 +1,7 @@
 /**
  * Source of truth for the 恐龙世界 / Dinosaurs collection pack.
  *
- * Yinuo is English-native (UK heritage learner) — every field that the kid
+ * Kids are English-native (UK heritage learner) — every field that the kid
  * sees is bilingual. Era is rendered alongside the dinosaur name; lore is one
  * short kid-friendly fact per species. Emoji glyphs are stored in
  * `collectible_items.image_url` at seed time; the renderer uses them as plain

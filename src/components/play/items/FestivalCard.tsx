@@ -20,7 +20,7 @@ const sizeClasses: Record<NonNullable<FestivalCardProps['size']>, string> = {
  * One festival tile (节日 pack). Emoji glyph + bilingual name + (at `lg`+owned)
  * bilingual lore. Reward-only pack — earned via the monthly festival challenge.
  *
- * Yinuo is English-native — both languages render side-by-side. No toggle.
+ * Kids are English-native — both languages render side-by-side. No toggle.
  */
 export function FestivalCard({
   item,
