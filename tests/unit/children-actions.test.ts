@@ -166,8 +166,21 @@ describe('updateChildAction', () => {
     expect(res).toEqual({});
     expect(updateChildOwnedByMock).toHaveBeenCalledWith('c1', 'user_p', {
       displayName: 'Anna 2',
+      gender: null,
       birthYear: 2018,
     });
+  });
+
+  it('passes the chosen gender through to the profile', async () => {
+    assertParentMock.mockResolvedValue(parentRow);
+    updateChildOwnedByMock.mockResolvedValue({ id: 'c1' });
+
+    await updateChildAction('c1', {}, fd({ displayName: 'Mei', gender: 'girl' }));
+    expect(updateChildOwnedByMock).toHaveBeenCalledWith(
+      'c1',
+      'user_p',
+      expect.objectContaining({ gender: 'girl' }),
+    );
   });
 });
 

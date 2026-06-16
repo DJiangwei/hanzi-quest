@@ -12,12 +12,14 @@ const INITIAL: ChildActionState = {};
 interface Props {
   childId: string;
   defaultDisplayName: string;
+  defaultGender: string | null;
   defaultBirthYear: number | null;
 }
 
 export function EditChildForm({
   childId,
   defaultDisplayName,
+  defaultGender,
   defaultBirthYear,
 }: Props) {
   const boundAction = updateChildAction.bind(null, childId);
@@ -40,6 +42,40 @@ export function EditChildForm({
           maxLength={60}
           className="rounded-xl border border-[var(--color-sand-200)] px-3 py-2 text-sm focus:border-[var(--color-ocean-500)] focus:outline-none"
         />
+      </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-[var(--color-sand-700)]">
+          Gender (sets the default avatar)
+        </span>
+        <div className="flex gap-4 text-sm">
+          <label className="flex items-center gap-1.5">
+            <input
+              type="radio"
+              name="gender"
+              value="boy"
+              defaultChecked={defaultGender === 'boy'}
+            />
+            男孩 / Boy
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input
+              type="radio"
+              name="gender"
+              value="girl"
+              defaultChecked={defaultGender === 'girl'}
+            />
+            女孩 / Girl
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input
+              type="radio"
+              name="gender"
+              value=""
+              defaultChecked={defaultGender == null}
+            />
+            未设置 / Neutral
+          </label>
+        </div>
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="birthYear" className="text-xs text-[var(--color-sand-700)]">
