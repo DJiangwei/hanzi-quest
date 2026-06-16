@@ -20,7 +20,7 @@ export default async function HomePage() {
     <main className="flex flex-1 flex-col items-center justify-center gap-8 bg-[var(--color-sand-50)] px-6 py-12 text-center">
       <div className="flex flex-col items-center gap-3">
         <span className="rounded-full bg-[var(--color-ocean-100)] px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-ocean-700)]">
-          For the 海盗班 crew
+          Weekly characters, made playable
         </span>
         <h1 className="font-hanzi text-6xl font-bold tracking-tight text-[var(--color-ocean-900)]">
           {t('title')}
