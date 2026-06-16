@@ -24,7 +24,7 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
-import { pullCardForChild } from '@/lib/actions/gacha';
+import { pullCardForChild } from '@/lib/play/card-grants';
 
 beforeEach(() => {
   transactionMock.mockReset();

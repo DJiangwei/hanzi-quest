@@ -67,6 +67,9 @@ vi.mock('@/lib/db/trophies', () => ({
 vi.mock('@/lib/actions/gacha', () => ({
   pullCardForChild: mocks.pullCardForChild,
 }));
+vi.mock('@/lib/play/card-grants', () => ({
+  pullCardForChild: mocks.pullCardForChild,
+}));
 vi.mock('@/lib/db/xp', () => ({
   awardXp: vi.fn().mockResolvedValue({ totalXp: 10, level: 1, leveledUp: false }),
 }));

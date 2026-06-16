@@ -27,7 +27,7 @@ import {
   getPlayableWeekForChild,
   listCharactersForWeek,
 } from '@/lib/db/weeks';
-import { pullCardForChild, claimWeeklyGiftIfDue } from './gacha';
+import { pullCardForChild, claimWeeklyGiftIfDue } from '@/lib/play/card-grants';
 import type { GiftCard } from '@/lib/db/grants';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import { awardXp, type AwardXpResult } from '@/lib/db/xp';
