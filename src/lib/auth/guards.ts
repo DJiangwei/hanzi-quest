@@ -45,6 +45,22 @@ export async function assertParent(): Promise<UserRow> {
 }
 
 /**
+ * Asserts the caller is signed in AND has the 'admin' role. Used to gate the
+ * cross-account admin grant console — the ONE sanctioned cross-account write
+ * path (admin actions deliberately skip requireChild to reach other accounts).
+ */
+export async function assertAdmin(): Promise<UserRow> {
+  const { userId } = await auth();
+  if (!userId) throw new UnauthorizedError();
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new UnauthorizedError(`Clerk user ${userId} has no mirrored row`);
+  }
+  if (user.role !== 'admin') throw new ForbiddenError('Admin role required');
+  return user;
+}
+
+/**
  * Asserts the caller is a parent AND owns the given child.
  * Use in every server action that mutates child-scoped data.
  */
