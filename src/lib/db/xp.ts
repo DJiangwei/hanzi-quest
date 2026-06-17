@@ -10,7 +10,8 @@ export type XpSource =
   | 'daily_quest'
   | 'daily_chest'
   | 'streak_milestone'
-  | 'homework';
+  | 'homework'
+  | 'admin_grant';
 
 export interface AwardXpResult { totalXp: number; level: number; leveledUp: boolean; }
 
