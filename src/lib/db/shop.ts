@@ -402,6 +402,10 @@ async function purchasePowerupInTx(
   childId: string,
   shopItem: ShopItemRow,
 ): Promise<PurchaseResult> {
+  // Validate the powerup kind BEFORE any debit/write so an invalid item is
+  // rejected with ItemNotPurchasableError without touching the ledger (matches
+  // the pre-refactor ordering — see purchase-powerup.test.ts).
+  resolvePowerupKind(shopItem);
   // Powerups are stackable — no duplicate ownership check.
   await debitAndRecordInTx(tx, childId, shopItem);
   await applyPowerupInventoryInTx(tx, childId, shopItem);
@@ -414,11 +418,8 @@ async function purchasePowerupInTx(
   };
 }
 
-async function applyPowerupInventoryInTx(
-  tx: Tx,
-  childId: string,
-  shopItem: ShopItemRow,
-): Promise<void> {
+/** Validate + return the powerup kind, throwing ItemNotPurchasableError if bad. */
+function resolvePowerupKind(shopItem: ShopItemRow): ValidPowerupKind {
   const meta = (shopItem.metadata ?? {}) as { powerupKind?: string };
   const kind = meta.powerupKind;
   if (!kind || !(VALID_POWERUP_KINDS as readonly string[]).includes(kind)) {
@@ -426,10 +427,19 @@ async function applyPowerupInventoryInTx(
       `Shop item ${shopItem.slug} has invalid metadata.powerupKind=${kind}`,
     );
   }
+  return kind as ValidPowerupKind;
+}
+
+async function applyPowerupInventoryInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<void> {
+  const kind = resolvePowerupKind(shopItem);
 
   await tx
     .insert(powerupInventory)
-    .values({ childId, kind: kind as ValidPowerupKind, count: 1 })
+    .values({ childId, kind, count: 1 })
     .onConflictDoUpdate({
       target: [powerupInventory.childId, powerupInventory.kind],
       set: { count: sql`${powerupInventory.count} + 1` },
