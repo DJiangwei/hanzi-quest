@@ -16,3 +16,4 @@ export * from './quests';
 export * from './home';
 export * from './homework';
 export * from './season';
+export * from './admin';

@@ -268,6 +268,55 @@ export async function purchaseShopItemInTx(
   }
 }
 
+export interface ApplyOwnershipResult {
+  /** True if the item was newly granted (false = was already owned, nothing written). */
+  newlyOwned: boolean;
+  /** The linked avatar_items.id for kind='avatar', else null. */
+  avatarItemId?: string | null;
+}
+
+/**
+ * Grant ownership of a shop item WITHOUT debiting coins. Idempotent: if the
+ * child already owns the item, returns `{ newlyOwned: false }` without writing
+ * anything. Exported so the admin grant console can grant items for free while
+ * reusing the exact per-kind side-effects (avatar inventory insert, powerup
+ * inventory increment, etc.).
+ *
+ * For `kind='powerup'` the purchase path stacks (always inserts +1), so this
+ * helper treats powerups as always newly-granted.
+ *
+ * Inserts a `shop_purchases` row with `coinsSpent=0` for all kinds to record
+ * the grant in the purchases log (consistent with the purchase path).
+ */
+export async function applyShopItemOwnershipInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<ApplyOwnershipResult> {
+  switch (shopItem.kind) {
+    case 'avatar':
+      return applyAvatarOwnershipInTx(tx, childId, shopItem);
+    case 'sound_theme':
+    case 'pet':
+    case 'decor':
+    case 'home':
+      return applyGenericOwnershipInTx(tx, childId, shopItem);
+    case 'powerup':
+      // Powerups are stackable — always newly-granted (no duplicate check).
+      await applyPowerupInventoryInTx(tx, childId, shopItem);
+      await tx.insert(shopPurchases).values({
+        childId,
+        shopItemId: shopItem.id,
+        coinsSpent: 0,
+      });
+      return { newlyOwned: true, avatarItemId: null };
+    default:
+      throw new ItemNotPurchasableError(
+        `Shop item kind '${shopItem.kind}' is not purchasable`,
+      );
+  }
+}
+
 async function purchaseAvatarInTx(
   tx: Tx,
   childId: string,
@@ -353,24 +402,13 @@ async function purchasePowerupInTx(
   childId: string,
   shopItem: ShopItemRow,
 ): Promise<PurchaseResult> {
-  const meta = (shopItem.metadata ?? {}) as { powerupKind?: string };
-  const kind = meta.powerupKind;
-  if (!kind || !(VALID_POWERUP_KINDS as readonly string[]).includes(kind)) {
-    throw new ItemNotPurchasableError(
-      `Shop item ${shopItem.slug} has invalid metadata.powerupKind=${kind}`,
-    );
-  }
-
+  // Validate the powerup kind BEFORE any debit/write so an invalid item is
+  // rejected with ItemNotPurchasableError without touching the ledger (matches
+  // the pre-refactor ordering — see purchase-powerup.test.ts).
+  resolvePowerupKind(shopItem);
   // Powerups are stackable — no duplicate ownership check.
   await debitAndRecordInTx(tx, childId, shopItem);
-
-  await tx
-    .insert(powerupInventory)
-    .values({ childId, kind: kind as ValidPowerupKind, count: 1 })
-    .onConflictDoUpdate({
-      target: [powerupInventory.childId, powerupInventory.kind],
-      set: { count: sql`${powerupInventory.count} + 1` },
-    });
+  await applyPowerupInventoryInTx(tx, childId, shopItem);
 
   const coinsAfter = await readBalanceInTx(tx, childId);
   return {
@@ -378,6 +416,110 @@ async function purchasePowerupInTx(
     coinsAfter,
     avatarItemId: null,
   };
+}
+
+/** Validate + return the powerup kind, throwing ItemNotPurchasableError if bad. */
+function resolvePowerupKind(shopItem: ShopItemRow): ValidPowerupKind {
+  const meta = (shopItem.metadata ?? {}) as { powerupKind?: string };
+  const kind = meta.powerupKind;
+  if (!kind || !(VALID_POWERUP_KINDS as readonly string[]).includes(kind)) {
+    throw new ItemNotPurchasableError(
+      `Shop item ${shopItem.slug} has invalid metadata.powerupKind=${kind}`,
+    );
+  }
+  return kind as ValidPowerupKind;
+}
+
+async function applyPowerupInventoryInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<void> {
+  const kind = resolvePowerupKind(shopItem);
+
+  await tx
+    .insert(powerupInventory)
+    .values({ childId, kind, count: 1 })
+    .onConflictDoUpdate({
+      target: [powerupInventory.childId, powerupInventory.kind],
+      set: { count: sql`${powerupInventory.count} + 1` },
+    });
+}
+
+async function applyAvatarOwnershipInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<ApplyOwnershipResult> {
+  const [linkedAvatarItem] = await tx
+    .select()
+    .from(avatarItems)
+    .where(
+      and(
+        eq(avatarItems.unlockRef, shopItem.slug),
+        eq(avatarItems.unlockVia, 'shop'),
+      ),
+    )
+    .limit(1);
+  if (!linkedAvatarItem) {
+    throw new ItemNotPurchasableError(
+      `Shop item ${shopItem.slug} has no linked avatar_items row — seed is out of sync`,
+    );
+  }
+
+  const [existing] = await tx
+    .select()
+    .from(childAvatarInventory)
+    .where(
+      and(
+        eq(childAvatarInventory.childId, childId),
+        eq(childAvatarInventory.avatarItemId, linkedAvatarItem.id),
+      ),
+    )
+    .limit(1);
+
+  if (existing) return { newlyOwned: false, avatarItemId: linkedAvatarItem.id };
+
+  await tx.insert(childAvatarInventory).values({
+    childId,
+    avatarItemId: linkedAvatarItem.id,
+  });
+
+  await tx.insert(shopPurchases).values({
+    childId,
+    shopItemId: shopItem.id,
+    coinsSpent: 0,
+  });
+
+  return { newlyOwned: true, avatarItemId: linkedAvatarItem.id };
+}
+
+async function applyGenericOwnershipInTx(
+  tx: Tx,
+  childId: string,
+  shopItem: ShopItemRow,
+): Promise<ApplyOwnershipResult> {
+  // Ownership for sound_theme / pet / decor / home = presence of a shop_purchases row.
+  const [existing] = await tx
+    .select()
+    .from(shopPurchases)
+    .where(
+      and(
+        eq(shopPurchases.childId, childId),
+        eq(shopPurchases.shopItemId, shopItem.id),
+      ),
+    )
+    .limit(1);
+
+  if (existing) return { newlyOwned: false, avatarItemId: null };
+
+  await tx.insert(shopPurchases).values({
+    childId,
+    shopItemId: shopItem.id,
+    coinsSpent: 0,
+  });
+
+  return { newlyOwned: true, avatarItemId: null };
 }
 
 async function debitAndRecordInTx(

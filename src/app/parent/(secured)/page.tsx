@@ -112,6 +112,27 @@ export default async function ParentDashboardPage() {
           homework, open a child → pick a week → add homework items.
         </p>
       </section>
+
+      {parent.role === 'admin' && (
+        <section className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                🛠️ Admin Console / 管理后台
+              </p>
+              <p className="mt-0.5 text-xs text-amber-700">
+                Cross-account grant console — coins, XP, cards, shop items.
+              </p>
+            </div>
+            <Link
+              href="/admin"
+              className="rounded-full bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm transition-transform hover:bg-amber-600 active:scale-95"
+            >
+              Open →
+            </Link>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
