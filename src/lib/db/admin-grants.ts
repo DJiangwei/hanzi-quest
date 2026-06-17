@@ -1,9 +1,14 @@
 // NEVER import this file from client code. It pulls in postgres.
 import { and, eq, sql } from 'drizzle-orm';
 import {
+  avatarItems,
+  childAvatarEquipped,
+  childAvatarInventory,
   childCollections,
   childShards,
   powerupInventory,
+  shopItems,
+  shopPurchases,
 } from '@/db/schema';
 import type { Tx } from '@/lib/db/shop';
 export { applyShopItemOwnershipInTx } from '@/lib/db/shop';
@@ -100,6 +105,85 @@ export async function removeCardInTx(
         eq(childCollections.childId, childId),
         eq(childCollections.itemId, itemId),
         sql`${childCollections.count} <= 0`,
+      ),
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Shop item revoke (undo path)
+// ---------------------------------------------------------------------------
+
+/**
+ * Revoke ownership of a shop item — the inverse of `applyShopItemOwnershipInTx`.
+ * Deletes the `shop_purchases` row. For `kind='avatar'` also removes the
+ * `child_avatar_inventory` row and unequips from `child_avatar_equipped` if
+ * currently worn.
+ *
+ * Best-effort: silently no-ops if the child doesn't own the item (undo of a
+ * failed/partial grant).
+ */
+export async function revokeShopItemInTx(
+  tx: Tx,
+  childId: string,
+  shopItemId: string,
+): Promise<void> {
+  // Load the shop item to determine its kind + slug (for avatar side-effects).
+  const items = await tx
+    .select({ id: shopItems.id, kind: shopItems.kind, slug: shopItems.slug })
+    .from(shopItems)
+    .where(eq(shopItems.id, shopItemId))
+    .limit(1);
+  if (items.length === 0) return; // item doesn't exist — nothing to revoke
+
+  const item = items[0];
+
+  // For avatar items: also remove from child_avatar_inventory and unequip.
+  if (item.kind === 'avatar') {
+    // Resolve the linked avatar_items row (unlockRef = shopItem.slug, unlockVia = 'shop').
+    const linkedItems = await tx
+      .select({ id: avatarItems.id })
+      .from(avatarItems)
+      .where(
+        and(
+          eq(avatarItems.unlockRef, item.slug),
+          eq(avatarItems.unlockVia, 'shop'),
+        ),
+      )
+      .limit(1);
+
+    if (linkedItems.length > 0) {
+      const avatarItemId = linkedItems[0].id;
+
+      // Unequip from child_avatar_equipped if currently worn (set to null).
+      // We delete the equip row to restore the default state.
+      await tx
+        .delete(childAvatarEquipped)
+        .where(
+          and(
+            eq(childAvatarEquipped.childId, childId),
+            eq(childAvatarEquipped.avatarItemId, avatarItemId),
+          ),
+        );
+
+      // Remove from child_avatar_inventory.
+      await tx
+        .delete(childAvatarInventory)
+        .where(
+          and(
+            eq(childAvatarInventory.childId, childId),
+            eq(childAvatarInventory.avatarItemId, avatarItemId),
+          ),
+        );
+    }
+  }
+
+  // Delete the shop_purchases row (applies to all kinds).
+  await tx
+    .delete(shopPurchases)
+    .where(
+      and(
+        eq(shopPurchases.childId, childId),
+        eq(shopPurchases.shopItemId, shopItemId),
       ),
     );
 }
