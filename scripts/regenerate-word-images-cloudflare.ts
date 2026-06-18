@@ -38,7 +38,7 @@ const SUBJECT_OVERRIDE: Record<string, string> = {
   名字: 'a colorful name-tag sticker with a smiling face, single subject',
   宝石: 'a sparkling blue gemstone jewel, single subject',
   鼻子: 'a cute smiling cartoon face, single subject',
-  花生: 'two cartoon peanuts in their shell, single subject',
+  花生: 'a single peanut in its shell, food illustration, single subject',
   下雪: 'a snowy winter scene with falling snowflakes and a small snowman, single subject',
 };
 

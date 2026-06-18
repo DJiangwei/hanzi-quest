@@ -8,12 +8,19 @@
  *
  * Idempotent + error-isolated per card: re-running only processes rows whose
  * image_url is not yet an http(s) URL, and one failed card never aborts the run.
+ * Set FORCE=1 to (re)do all cards in the unified style.
+ *
+ * RESUME across CF's ~300-image/day cap (and to retry NSFW-flaky stragglers
+ * without re-`put`-ing the rest): FORCE=1 SKIP_UPLOADED_AFTER=<ISO> skips any
+ * card whose Blob image was already (re)uploaded on/after that date (free HEAD).
  *
  * Credentials come from ENV (never hardcoded / committed):
  *   CF_ACCOUNT_ID, CF_API_TOKEN
  *
  * Run:
- *   CF_ACCOUNT_ID=xxx CF_API_TOKEN=yyy pnpm tsx scripts/generate-collectible-art-cloudflare.ts
+ *   CF_ACCOUNT_ID=xxx CF_API_TOKEN=yyy FORCE=1 pnpm tsx scripts/generate-collectible-art-cloudflare.ts
+ *   # retry just today's failures tomorrow:
+ *   FORCE=1 SKIP_UPLOADED_AFTER=2026-06-18 pnpm tsx scripts/generate-collectible-art-cloudflare.ts
  *
  * Verify:
  *   pnpm tsx scripts/verify-collectible-images.ts   → target 62/62
@@ -62,10 +69,11 @@ const SOLAR_SUBJECT: Record<string, string> = {
     'planet Mercury, a small grey cratered planet, viewed in outer space, centered, plain dark space background',
   venus:
     'planet Venus, a pale yellow cloudy planet, viewed in outer space, centered, plain dark space background',
+  // NOTE: avoid the literal word "Uranus" — it reliably trips flux's NSFW filter.
   uranus:
-    'planet Uranus, a pale blue-green planet, viewed in outer space, centered, plain dark space background',
+    'a pale cyan ice-giant planet with faint thin rings, viewed in outer space, centered, plain dark space background',
   neptune:
-    'planet Neptune, a deep blue planet, viewed in outer space, centered, plain dark space background',
+    'a deep blue ice-giant planet, viewed in outer space, centered, plain dark space background',
   sun: 'the Sun, a bright glowing yellow-orange star, viewed in outer space, centered, plain dark space background',
   moon: 'the Moon, a grey cratered moon, viewed in outer space, centered, plain dark space background',
 };
@@ -76,9 +84,11 @@ const SOLAR_SUBJECT: Record<string, string> = {
  */
 const SUBJECT_OVERRIDE: Record<string, string> = {
   seashell:
-    'a pretty spiral conch seashell on the sand, centered, plain light background',
+    'a pretty pink spiral conch shell on the sand, centered, plain light background',
   oyster:
-    'a closed oyster shell with a round white pearl beside it, centered, plain light background',
+    'a closed clam shell with a round white pearl beside it, centered, plain light background',
+  'sea-otter':
+    'a cute floating river otter holding a shell, full body, centered, plain light background',
   dolphin:
     'a happy grey dolphin leaping above the ocean waves, full body, centered, plain light background',
 };
@@ -88,6 +98,7 @@ interface Row {
   slug: string;
   nameEn: string;
   packSlug: string;
+  imageUrl: string | null;
 }
 
 function buildPrompt(
@@ -159,7 +170,15 @@ async function main() {
   const { db } = await import('@/db');
   const { collectionPacks, collectibleItems } = await import('@/db/schema');
   const { eq, inArray } = await import('drizzle-orm');
-  const { put } = await import('@vercel/blob');
+  const { put, head } = await import('@vercel/blob');
+
+  // RESUME (mirrors the word-image regen): with SKIP_UPLOADED_AFTER=<ISO>, skip
+  // any card whose Blob image was already (re)uploaded on/after that date — a
+  // free HEAD (Simple op), so a re-run only spends Advanced ops (put) on the
+  // cards NOT yet done this pass (e.g. retrying NSFW-flaky stragglers).
+  const skipAfter = process.env.SKIP_UPLOADED_AFTER
+    ? new Date(process.env.SKIP_UPLOADED_AFTER)
+    : null;
   const { LANDMARKS_BY_SLUG } = await import(
     '@/lib/collections/landmarksData'
   );
@@ -188,6 +207,7 @@ async function main() {
       slug: i.slug,
       nameEn: i.nameEn,
       packSlug: packSlugById.get(i.packId)!,
+      imageUrl: i.imageUrl,
     }));
 
   console.log(`\n${eligible.length} cards to generate (of ${allItems.length}).\n`);
@@ -197,12 +217,27 @@ async function main() {
 
   let done = 0;
   let failed = 0;
+  let skipped = 0;
   const queue = [...eligible];
 
   async function worker(workerId: number) {
     while (queue.length > 0) {
       const row = queue.shift();
       if (!row) break;
+      // Resume: skip cards already (re)uploaded this pass.
+      if (skipAfter && row.imageUrl) {
+        try {
+          const meta = await head(row.imageUrl, {
+            token: process.env.BLOB_READ_WRITE_TOKEN,
+          });
+          if (meta.uploadedAt && new Date(meta.uploadedAt) >= skipAfter) {
+            skipped += 1;
+            continue;
+          }
+        } catch {
+          // No blob / head failed → fall through and (re)generate.
+        }
+      }
       const prompt = buildPrompt(row, landmarkLocation);
       try {
         const bytes = await generateOne(prompt, acct!, token!);
@@ -237,7 +272,7 @@ async function main() {
     Array.from({ length: CONCURRENCY }, (_, i) => worker(i)),
   );
 
-  console.log(`\nDone. ${done} generated, ${failed} failed.\n`);
+  console.log(`\nDone. ${done} generated, ${skipped} skipped (resume), ${failed} failed.\n`);
   process.exit(failed > 0 ? 1 : 0);
 }
 
