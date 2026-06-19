@@ -194,7 +194,11 @@ export default async function PlayHomePage({ params }: PageProps) {
         childId={childId}
         currentMap={
           currentMap
-            ? { nameZh: currentMap.nameZh, nameEn: currentMap.nameEn }
+            ? {
+                slug: currentMap.slug,
+                nameZh: currentMap.nameZh,
+                nameEn: currentMap.nameEn,
+              }
             : null
         }
       />

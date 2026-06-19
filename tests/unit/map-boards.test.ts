@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { VOYAGE_MAPS, getVoyageMap } from '@/lib/play/map-boards';
+import {
+  VOYAGE_MAPS,
+  getVoyageMap,
+  getMapAccent,
+  DEFAULT_MAP_ACCENT,
+} from '@/lib/play/map-boards';
 
 describe('voyage maps config', () => {
   it('has Caribbean (10 stops) and Indian Ocean (9 stops)', () => {
@@ -10,6 +15,15 @@ describe('voyage maps config', () => {
   it('returns null for unconfigured packs', () => {
     expect(getVoyageMap('school-custom')).toBeNull();
     expect(getVoyageMap('nope')).toBeNull();
+  });
+
+  it('gives Indian Ocean a distinct accent and falls back to default elsewhere', () => {
+    const indian = getMapAccent('pirate-class-level-2');
+    expect(indian).not.toEqual(DEFAULT_MAP_ACCENT);
+    expect(indian.pillBg).toBe('#fde4cf');
+    // Caribbean uses the default; unknown packs do too.
+    expect(getMapAccent('pirate-class-level-1')).toEqual(DEFAULT_MAP_ACCENT);
+    expect(getMapAccent('nope')).toEqual(DEFAULT_MAP_ACCENT);
   });
 
   it('every stop has bilingual labels + an emoji', () => {
