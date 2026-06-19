@@ -17,6 +17,8 @@ const TARGET_PACK_SLUGS = [
   'dinosaurs-v1',
   'solar-system-v1',
   'landmarks-v1',
+  'season-summer-v1',
+  'festivals-v1',
 ];
 
 async function main() {
