@@ -1,7 +1,7 @@
 'use client';
 
 import { useSpeechSupported } from '@/lib/hooks/useSpeechSupported';
-import { useSpeak } from '@/lib/hooks/useSpeak';
+import { useSpeak, usableAudioUrl } from '@/lib/hooks/useSpeak';
 
 interface SpeakButtonProps {
   text: string;
@@ -29,8 +29,10 @@ export function SpeakButton({
   const supported = useSpeechSupported();
   const speak = useSpeak();
 
-  // Render if EITHER a pre-recorded clip exists OR the browser can do TTS.
-  if (!supported && !audioUrl) return null;
+  // Render if EITHER a usable pre-recorded clip exists OR the browser can do
+  // TTS. Char clips are not "usable" (filtered to the device voice), so a button
+  // backed only by a char clip must hide when TTS is unsupported (else silent).
+  if (!supported && !usableAudioUrl(audioUrl)) return null;
 
   return (
     <button
