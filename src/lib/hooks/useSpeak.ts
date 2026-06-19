@@ -6,6 +6,27 @@ import { useCallback } from 'react';
 // session per tab).
 let currentClip: HTMLAudioElement | null = null;
 
+/**
+ * Single-character MeloTTS clips (`audio/chars/{id}.mp3`) have unreliable
+ * one-syllable tones — a tonal-language word said on the wrong tone is the wrong
+ * word — so we ignore them and let the device's context-aware zh-CN voice speak
+ * single 字 instead. Multi-syllable word clips (`audio/words/{id}.mp3`) are fine
+ * and stay (consistent across devices). Flip this to re-enable char clips if a
+ * better single-char provider lands; the clip data is preserved in DB/Blob.
+ */
+const USE_CHARACTER_CLIPS = false;
+
+/**
+ * Returns the clip URL to actually use, or null to fall back to the device voice.
+ * Char clips are filtered out unless `USE_CHARACTER_CLIPS` is on; everything else
+ * (word clips, future providers) passes through.
+ */
+export function usableAudioUrl(audioUrl?: string | null): string | null {
+  if (!audioUrl) return null;
+  if (!USE_CHARACTER_CLIPS && audioUrl.includes('/audio/chars/')) return null;
+  return audioUrl;
+}
+
 function speakTts(text: string): void {
   const synth = window.speechSynthesis;
   if (synth == null) return;
@@ -30,14 +51,15 @@ function speakTts(text: string): void {
 export function useSpeak(): (text: string, audioUrl?: string | null) => void {
   return useCallback((text: string, audioUrl?: string | null) => {
     if (typeof window === 'undefined') return;
-    if (audioUrl) {
+    const url = usableAudioUrl(audioUrl);
+    if (url) {
       try {
         window.speechSynthesis?.cancel();
         if (currentClip) {
           currentClip.pause();
           currentClip = null;
         }
-        const clip = new Audio(audioUrl);
+        const clip = new Audio(url);
         currentClip = clip;
         void clip.play().catch(() => speakTts(text));
         return;
