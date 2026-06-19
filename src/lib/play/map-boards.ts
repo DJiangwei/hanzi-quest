@@ -5,9 +5,23 @@ export interface VoyageStop {
   emoji: string;
 }
 
+/**
+ * Per-map chrome accent (plain hex, applied inline). Differentiates the small
+ * shared chrome (home `MapHeaderPill`, `/maps` cards) so each sea region has its
+ * own colour. The voyage-board frame stays the shared treasure-map look; a map's
+ * identity comes mostly from its backdrop + stops, with this as a chrome accent.
+ */
+export interface MapAccent {
+  pillBg: string;
+  pillText: string;
+  cardBorder: string;
+}
+
 export interface VoyageMap {
   nameZh: string;
   nameEn: string;
+  /** Chrome accent; falls back to the ocean-turquoise default when absent. */
+  accent?: MapAccent;
   /** Ordered to match weekNumber: stops[0] = week 1. */
   stops: VoyageStop[];
   /**
@@ -16,6 +30,18 @@ export interface VoyageMap {
    * `scripts/generate-voyage-map-art.ts` and pasting the printed URL here.
    */
   imageUrl?: string;
+}
+
+/** Ocean-turquoise default — matches the legacy `--color-ocean` chrome. */
+export const DEFAULT_MAP_ACCENT: MapAccent = {
+  pillBg: '#d4eff2',
+  pillText: '#0e7490',
+  cardBorder: '#7dd3dc',
+};
+
+/** Resolve a map's chrome accent by pack slug (default when none configured). */
+export function getMapAccent(packSlug: string): MapAccent {
+  return VOYAGE_MAPS[packSlug]?.accent ?? DEFAULT_MAP_ACCENT;
 }
 
 /** Keyed by curriculum pack slug. Packs absent here fall back to <IslandMap>. */
@@ -40,6 +66,12 @@ export const VOYAGE_MAPS: Record<string, VoyageMap> = {
   'pirate-class-level-2': {
     nameZh: '印度洋',
     nameEn: 'Indian Ocean',
+    // Warm spice-route accent (coral/amber) — distinct from Caribbean turquoise.
+    accent: {
+      pillBg: '#fde4cf',
+      pillText: '#b4530a',
+      cardBorder: '#f0a868',
+    },
     imageUrl: 'https://mfl7ap4djy0w98ey.public.blob.vercel-storage.com/maps/pirate-class-level-2.jpg',
     stops: [
       { labelZh: '毛里求斯瀑布', labelEn: 'Mauritius Waterfall', emoji: '💦' },

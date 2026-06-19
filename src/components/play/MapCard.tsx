@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { switchMapAction } from '@/lib/actions/maps';
+import { getMapAccent } from '@/lib/play/map-boards';
 import type { MapForChild } from '@/lib/db/maps';
 
 interface Props {
@@ -25,18 +26,22 @@ export function MapCard({ childId, map }: Props) {
     }
   }
 
+  const switchable = !map.isCurrent && !map.isLocked;
+  const accent = getMapAccent(map.slug);
+
   return (
     <button
       type="button"
       data-testid="map-card"
       onClick={onClick}
+      style={switchable ? { borderColor: accent.cardBorder } : undefined}
       className={
         'relative flex w-full flex-col gap-2 rounded-2xl border-2 p-4 text-left shadow-sm transition-transform ' +
         (map.isCurrent
           ? 'border-[var(--color-treasure-400)] bg-white ring-2 ring-[var(--color-treasure-300)]'
           : map.isLocked
             ? 'border-[var(--color-sand-200)] bg-[var(--color-sand-50)] opacity-60'
-            : 'border-[var(--color-ocean-300)] bg-white active:scale-[0.98]')
+            : 'bg-white active:scale-[0.98]')
       }
       disabled={map.isLocked || map.isCurrent || pending}
       aria-label={`${map.nameEn} map${map.isLocked ? ', locked' : map.isCurrent ? ', current' : ''}`}
