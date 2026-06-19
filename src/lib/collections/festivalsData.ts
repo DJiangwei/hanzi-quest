@@ -1,8 +1,9 @@
 /**
  * 节日 / Festivals collectible pack (`festivals-v1`) — reward-only. Cards are
  * earned ONLY via the monthly festival challenge (never gacha; the pack is
- * `gacha_eligible = false`). Emoji glyphs (no generated art), like the
- * dinosaurs / landmarks packs. Bilingual per the locked collectibles rule.
+ * `gacha_eligible = false`). Real CF-flux cartoon art (in `image_url`, rendered
+ * via CardArt); the `emoji` below is the fallback glyph. Bilingual per the
+ * locked collectibles rule.
  */
 export interface FestivalItem {
   slug: string;

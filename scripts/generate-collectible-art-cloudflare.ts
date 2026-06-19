@@ -1,9 +1,10 @@
 /**
- * Generate real cartoon art for the 62 weak-emoji collectible cards using
- * Cloudflare Workers AI (flux-1-schnell), upload to Vercel Blob, and write the
- * URL into `collectible_items.image_url`.
+ * Generate real cartoon art for the weak-emoji collectible cards (78 total)
+ * using Cloudflare Workers AI (flux-1-schnell), upload to Vercel Blob, and write
+ * the URL into `collectible_items.image_url`.
  *
- * Scope: sea-creatures-v1 / dinosaurs-v1 / solar-system-v1 / landmarks-v1.
+ * Scope: sea-creatures-v1 / dinosaurs-v1 / solar-system-v1 / landmarks-v1 /
+ * season-summer-v1 / festivals-v1.
  * Flags (real flag emoji) + zodiac (procedural SVG) are intentionally excluded.
  *
  * Idempotent + error-isolated per card: re-running only processes rows whose
@@ -34,7 +35,35 @@ const TARGET_PACK_SLUGS = [
   'solar-system-v1',
   'landmarks-v1',
   'season-summer-v1',
+  'festivals-v1',
 ];
+
+/** Per-slug subject prompts for the 节日 / Festivals reward cards. */
+const FESTIVAL_SUBJECT: Record<string, string> = {
+  newyear:
+    'a festive new-year celebration scene with bright fireworks and colorful balloons, centered, plain light background',
+  'spring-festival':
+    'a red Chinese New Year lantern with gold tassels and a red lucky envelope, centered, plain light background',
+  lantern:
+    'a glowing red Chinese paper lantern beside a bowl of white tangyuan rice balls, centered, plain light background',
+  qingming:
+    'fresh green willow branches and a small colorful kite in a spring meadow, centered, plain light background',
+  'start-summer':
+    'lush bright green summer leaves with a blooming flower and a little woven basket, centered, plain light background',
+  'dragon-boat':
+    'a colorful dragon boat and a green bamboo-leaf-wrapped zongzi rice dumpling, centered, plain light background',
+  'summer-solstice':
+    'a big bright smiling sun shining over a sunny green field, centered, plain light background',
+  qixi: 'a pair of cute magpies and a red heart under twinkling stars, centered, plain light background',
+  'mid-autumn':
+    'a big round full moon above a stack of round mooncakes, centered, plain light background',
+  'double-ninth':
+    'bright yellow chrysanthemum flowers in front of a small green mountain peak, centered, plain light background',
+  'start-winter':
+    'a cute happy snowman with a scarf and gentle falling snowflakes, centered, plain light background',
+  'winter-solstice':
+    'a plate of steaming Chinese dumplings beside a bowl of tangyuan, food illustration, centered, plain light background',
+};
 
 /** Per-slug subject prompts for the Summer Voyage season cards. */
 const SEASON_SUBJECT: Record<string, string> = {
@@ -121,6 +150,8 @@ function buildPrompt(
     }
     case 'season-summer-v1':
       return `${STYLE_PREAMBLE}${SEASON_SUBJECT[slug] ?? `a ${nameEn}, a summer sea creature, full body, centered, plain light background`}`;
+    case 'festivals-v1':
+      return `${STYLE_PREAMBLE}${FESTIVAL_SUBJECT[slug] ?? `${nameEn}, a festive holiday scene, centered, plain light background`}`;
     default:
       return `${STYLE_PREAMBLE}${nameEn}`;
   }
