@@ -1,20 +1,39 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ensureUserBootstrapped } from '@/lib/auth/bootstrap';
 import { listChildrenForUser } from '@/lib/db/children';
-import { ChildPicker } from '@/components/ChildPicker';
+import { EntryChooser } from '@/components/EntryChooser';
+import { ENTRY_COOKIE, parseEntryPref } from '@/lib/auth/entry-pref';
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ choose?: string }>;
+}) {
   const user = await ensureUserBootstrapped();
 
-  let multiChildren: { id: string; displayName: string }[] = [];
   if (user) {
     const children = await listChildrenForUser(user.id);
-    if (children.length === 1) {
-      redirect(`/play/${children[0].id}`);
+    const forceChoose = (await searchParams)?.choose === '1';
+
+    // "Remember last choice": auto-enter where they last went, unless forced.
+    if (!forceChoose) {
+      const jar = await cookies();
+      const pref = parseEntryPref(jar.get(ENTRY_COOKIE)?.value);
+      if (pref?.kind === 'parent') redirect('/parent');
+      if (pref?.kind === 'kid' && children.some((c) => c.id === pref.childId)) {
+        redirect(`/play/${pref.childId}`);
+      }
     }
-    multiChildren = children.map((c) => ({ id: c.id, displayName: c.displayName }));
+
+    // First login (or ?choose=1): show the Kid/Parent fork.
+    return (
+      <EntryChooser
+        players={children.map((c) => ({ id: c.id, displayName: c.displayName }))}
+      />
+    );
   }
 
   const t = await getTranslations('Home');
@@ -32,34 +51,19 @@ export default async function HomePage() {
           {t('subtitle')}
         </p>
       </div>
-      {user && multiChildren.length > 1 && (
-        <ChildPicker players={multiChildren} />
-      )}
       <div className="flex flex-wrap items-center justify-center gap-3">
-        {!user && (
-          <>
-            <Link
-              href="/sign-up"
-              className="rounded-full bg-[var(--color-ocean-500)] px-6 py-3 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95"
-            >
-              Sign up
-            </Link>
-            <Link
-              href="/sign-in"
-              className="rounded-full border-2 border-[var(--color-ocean-300)] bg-white px-6 py-3 text-sm font-semibold text-[var(--color-ocean-700)] transition-transform hover:bg-[var(--color-ocean-100)] active:scale-95"
-            >
-              Sign in
-            </Link>
-          </>
-        )}
-        {user && (
-          <Link
-            href="/parent"
-            className="rounded-full bg-[var(--color-ocean-500)] px-7 py-3 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95"
-          >
-            Open parent dashboard →
-          </Link>
-        )}
+        <Link
+          href="/sign-up"
+          className="rounded-full bg-[var(--color-ocean-500)] px-6 py-3 text-sm font-semibold text-white shadow-md transition-transform hover:bg-[var(--color-ocean-700)] active:scale-95"
+        >
+          Sign up
+        </Link>
+        <Link
+          href="/sign-in"
+          className="rounded-full border-2 border-[var(--color-ocean-300)] bg-white px-6 py-3 text-sm font-semibold text-[var(--color-ocean-700)] transition-transform hover:bg-[var(--color-ocean-100)] active:scale-95"
+        >
+          Sign in
+        </Link>
       </div>
     </main>
   );

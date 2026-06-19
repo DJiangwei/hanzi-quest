@@ -61,6 +61,12 @@ export default async function SecuredParentLayout({
           >
             Children
           </Link>
+          <Link
+            href="/?choose=1"
+            className="font-medium text-[var(--color-sand-700)] hover:text-[var(--color-ocean-700)]"
+          >
+            切换 / Switch
+          </Link>
           <UserButton />
         </nav>
       </header>
