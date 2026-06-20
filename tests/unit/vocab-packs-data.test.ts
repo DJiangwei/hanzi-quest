@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TRANSPORT, TRANSPORT_BY_SLUG, TRANSPORT_GROUP_ORDER } from '@/lib/collections/transportData';
+import { MINIBEASTS, MINIBEASTS_BY_SLUG } from '@/lib/collections/minibeastsData';
 
 describe('transport data', () => {
   it('has 14 items, all bilingual + emoji + valid group, unique slugs', () => {
@@ -16,5 +17,18 @@ describe('transport data', () => {
   });
   it('BY_SLUG resolves', () => {
     expect(TRANSPORT_BY_SLUG['fire-engine']?.nameZh).toBe('消防车');
+  });
+});
+
+describe('minibeasts data', () => {
+  it('has 12 bilingual items with emoji + unique slugs', () => {
+    expect(MINIBEASTS).toHaveLength(12);
+    const slugs = new Set<string>();
+    for (const m of MINIBEASTS) {
+      expect(m.nameZh && m.nameEn && m.emoji).toBeTruthy();
+      expect(slugs.has(m.slug)).toBe(false);
+      slugs.add(m.slug);
+    }
+    expect(MINIBEASTS_BY_SLUG['ladybird']?.nameZh).toBe('瓢虫');
   });
 });
