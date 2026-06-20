@@ -7,23 +7,33 @@ import { useCallback } from 'react';
 let currentClip: HTMLAudioElement | null = null;
 
 /**
- * Single-character MeloTTS clips (`audio/chars/{id}.mp3`) have unreliable
- * one-syllable tones — a tonal-language word said on the wrong tone is the wrong
- * word — so we ignore them and let the device's context-aware zh-CN voice speak
- * single 字 instead. Multi-syllable word clips (`audio/words/{id}.mp3`) are fine
- * and stay (consistent across devices). Flip this to re-enable char clips if a
- * better single-char provider lands; the clip data is preserved in DB/Blob.
+ * ALL pre-generated MeloTTS clips are disabled — both single-character
+ * (`audio/chars/{id}.mp3`) AND multi-syllable word (`audio/words/{id}.mp3`)
+ * clips. MeloTTS Mandarin pronunciation is unreliable: wrong tones and wrong
+ * polyphone (多音字) readings. In a tonal language a word on the wrong tone is a
+ * DIFFERENT word — unacceptable for a learning app. We fall back to the device's
+ * context-aware zh-CN voice, which is excellent on the target iPads AND is always
+ * keyed to the correct `text` we pass (so it can never play "the wrong word").
+ *
+ * Char clips were disabled first (PR #120); word clips followed once David's
+ * playtest found many word clips equally wrong. The clip data is preserved in
+ * DB/Blob behind this flag — re-enable ONLY with a provider whose Mandarin tones
+ * are verified correct, and prefer routing it through a NEW Blob path (e.g.
+ * `audio/v2/…`) so the path-based filter below keeps the bad MeloTTS clips off.
  */
-const USE_CHARACTER_CLIPS = false;
+const USE_MELOTTS_CLIPS = false;
+
+/** MeloTTS Blob paths whose audio is unreliable (see USE_MELOTTS_CLIPS). */
+const MELOTTS_CLIP_PATH = /\/audio\/(chars|words)\//;
 
 /**
  * Returns the clip URL to actually use, or null to fall back to the device voice.
- * Char clips are filtered out unless `USE_CHARACTER_CLIPS` is on; everything else
- * (word clips, future providers) passes through.
+ * The unreliable MeloTTS clips (chars + words) are filtered out unless
+ * `USE_MELOTTS_CLIPS` is on; any other (future-provider) clip URL passes through.
  */
 export function usableAudioUrl(audioUrl?: string | null): string | null {
   if (!audioUrl) return null;
-  if (!USE_CHARACTER_CLIPS && audioUrl.includes('/audio/chars/')) return null;
+  if (!USE_MELOTTS_CLIPS && MELOTTS_CLIP_PATH.test(audioUrl)) return null;
   return audioUrl;
 }
 

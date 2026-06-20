@@ -4,9 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 const speakMock = vi.fn();
 vi.mock('@/lib/hooks/useSpeak', () => ({
   useSpeak: () => speakMock,
-  // Mirror the real filter: char clips → null (use device voice), else passthrough.
+  // Mirror the real filter: MeloTTS clips (chars + words) → null (use device
+  // voice), else passthrough.
   usableAudioUrl: (u?: string | null) =>
-    u && u.includes('/audio/chars/') ? null : (u ?? null),
+    u && /\/audio\/(chars|words)\//.test(u) ? null : (u ?? null),
 }));
 // Browser TTS NOT supported — proves the clip path still renders/plays.
 vi.mock('@/lib/hooks/useSpeechSupported', () => ({ useSpeechSupported: () => false }));
