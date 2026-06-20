@@ -34,6 +34,12 @@ describe('trust-caller endpoints are not exported from use-server action files',
     const src = read('src/lib/play/card-grants.ts');
     expect(src.trimStart()).not.toMatch(/^['"]use server['"]/);
   });
+
+  it('finishStudyLessonAction is requireChild-gated', () => {
+    const src = read('src/lib/actions/study.ts');
+    expect(src.trimStart()).toMatch(/^['"]use server['"]/);
+    expect(src).toMatch(/requireChild\(/);
+  });
 });
 
 describe('no family-specific strings in rendered surfaces', () => {
