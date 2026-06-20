@@ -124,6 +124,9 @@ const SUBJECT_OVERRIDE: Record<string, string> = {
     'a cute floating river otter holding a shell, full body, centered, plain light background',
   dolphin:
     'a happy grey dolphin leaping above the ocean waves, full body, centered, plain light background',
+  // "Gong" trips flux's NSFW false-positive; describe the object concretely.
+  gong:
+    'a large round bronze gong hanging in a wooden frame with a soft mallet, full body, centered, plain light background',
 };
 
 interface Row {
