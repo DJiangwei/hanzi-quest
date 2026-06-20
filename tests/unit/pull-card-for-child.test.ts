@@ -59,7 +59,7 @@ describe('pullCardForChild', () => {
 
     expect(result.granted).toBe(true);
     if (result.granted) expect(result.itemId).toBe('item-1');
-    expect(spy).toHaveBeenCalledWith({}, 'child-1', 'boss_clear', 'sess-1', '2026-05-31', Math.random);
+    expect(spy).toHaveBeenCalledWith({}, 'child-1', 'boss_clear', 'sess-1', '2026-05-31', Math.random, undefined);
   });
 
   it('returns daily_cap_reached when DB layer returns it', async () => {
