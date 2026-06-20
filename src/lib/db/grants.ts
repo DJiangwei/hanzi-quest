@@ -96,10 +96,11 @@ export interface CardGrantSkipped {
 export async function pullCardInTx(
   tx: Tx,
   childId: string,
-  source: 'boss_clear' | 'perfect_week' | 'story_chapter' | 'review' | 'practice' | 'homework',
+  source: 'boss_clear' | 'perfect_week' | 'story_chapter' | 'review' | 'practice' | 'homework' | 'study',
   refId: string,
   dayUtc: string,
   rng: () => number = Math.random,
+  packSlug?: string,
 ): Promise<CardGrantResult | CardGrantSkipped> {
   // 1. Daily counter with row lock.
   const dailyRows = await tx
@@ -153,6 +154,7 @@ export async function pullCardInTx(
       and(
         eq(collectionPacks.isActive, true),
         eq(collectionPacks.gachaEligible, true),
+        packSlug ? eq(collectionPacks.slug, packSlug) : undefined,
       ),
     );
 

@@ -21,16 +21,18 @@ export type CardGrantSource =
   | 'story_chapter'
   | 'review'
   | 'practice'
-  | 'homework';
+  | 'homework'
+  | 'study';
 
 export async function pullCardForChild(
   childId: string,
   source: CardGrantSource,
   refId: string,
+  packSlug?: string,
 ): Promise<CardGrantResult | CardGrantSkipped> {
   const dayUtc = todayUtcIso();
   const result = await db.transaction((tx) =>
-    pullCardInTx(tx, childId, source, refId, dayUtc, Math.random),
+    pullCardInTx(tx, childId, source, refId, dayUtc, Math.random, packSlug),
   );
   if (result.granted) {
     revalidatePath(`/play/${childId}/collection/${result.packSlug}`);
