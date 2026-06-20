@@ -8,6 +8,22 @@ import { SolarBodyCard } from '@/components/play/items/SolarBodyCard';
 import { ZodiacGridItem } from '@/components/play/items/ZodiacGridItem';
 import { FestivalCard } from '@/components/play/items/FestivalCard';
 import { SeasonCard } from '@/components/play/items/SeasonCard';
+import { TransportCard } from '@/components/play/items/TransportCard';
+import { MinibeastCard } from '@/components/play/items/MinibeastCard';
+import { InstrumentCard } from '@/components/play/items/InstrumentCard';
+import { AnimalCard } from '@/components/play/items/AnimalCard';
+import {
+  TRANSPORT_BY_SLUG,
+  TRANSPORT_GROUP_ORDER,
+  TRANSPORT_GROUP_LABELS,
+} from '@/lib/collections/transportData';
+import { MINIBEASTS_BY_SLUG } from '@/lib/collections/minibeastsData';
+import {
+  INSTRUMENTS_BY_SLUG,
+  INSTRUMENT_GROUP_ORDER,
+  INSTRUMENT_GROUP_LABELS,
+} from '@/lib/collections/instrumentsData';
+import { ANIMALS_BY_SLUG } from '@/lib/collections/animalsData';
 import { FESTIVALS_BY_SLUG } from '@/lib/collections/festivalsData';
 import { SEASON_CARDS_BY_SLUG } from '@/lib/collections/seasonCardsData';
 import { DINOSAURS_BY_SLUG } from '@/lib/collections/dinosaursData';
@@ -200,6 +216,68 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: SeasonCard,
     resolveRevealEmoji: (slug) => SEASON_CARDS_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'transport-v1': {
+    displayNameZh: '交通工具',
+    displayNameEn: 'Transport',
+    sloganZh: '陆地、水上、天空的交通工具。',
+    sloganEn: 'Things that go on land, water, and air.',
+    themeEmoji: '🚒',
+    themeBannerClass: 'bg-gradient-to-br from-red-200 via-orange-300 to-amber-400',
+    themeAccentClass: 'text-red-900',
+    paidPullCost: 300,
+    gridColumns: 3,
+    ItemCard: TransportCard,
+    resolveRevealEmoji: (slug) => TRANSPORT_BY_SLUG[slug]?.emoji ?? null,
+    grouping: {
+      resolveGroup: (slug) => TRANSPORT_BY_SLUG[slug]?.group ?? null,
+      order: TRANSPORT_GROUP_ORDER,
+      labels: TRANSPORT_GROUP_LABELS,
+    },
+  },
+  'minibeasts-v1': {
+    displayNameZh: '昆虫',
+    displayNameEn: 'Minibeasts',
+    sloganZh: '花园里的小虫子朋友。',
+    sloganEn: 'Little bug friends from the garden.',
+    themeEmoji: '🦋',
+    themeBannerClass: 'bg-gradient-to-br from-lime-200 via-green-300 to-emerald-400',
+    themeAccentClass: 'text-emerald-900',
+    paidPullCost: 300,
+    gridColumns: 3,
+    ItemCard: MinibeastCard,
+    resolveRevealEmoji: (slug) => MINIBEASTS_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'instruments-v1': {
+    displayNameZh: '乐器',
+    displayNameEn: 'Instruments',
+    sloganZh: '西洋和民族的乐器。',
+    sloganEn: 'Western and Chinese instruments.',
+    themeEmoji: '🎻',
+    themeBannerClass: 'bg-gradient-to-br from-violet-200 via-purple-300 to-fuchsia-400',
+    themeAccentClass: 'text-purple-900',
+    paidPullCost: 300,
+    gridColumns: 3,
+    ItemCard: InstrumentCard,
+    resolveRevealEmoji: (slug) => INSTRUMENTS_BY_SLUG[slug]?.emoji ?? null,
+    grouping: {
+      resolveGroup: (slug) => INSTRUMENTS_BY_SLUG[slug]?.group ?? null,
+      order: INSTRUMENT_GROUP_ORDER,
+      labels: INSTRUMENT_GROUP_LABELS,
+    },
+  },
+  'animals-v1': {
+    displayNameZh: '动物',
+    displayNameEn: 'Animals',
+    sloganZh: '宠物、森林和动物园的动物。',
+    sloganEn: 'Pets, woodland, and zoo animals.',
+    themeEmoji: '🦊',
+    themeBannerClass: 'bg-gradient-to-br from-amber-200 via-orange-200 to-yellow-300',
+    themeAccentClass: 'text-amber-900',
+    paidPullCost: 300,
+    gridColumns: 3,
+    ItemCard: AnimalCard,
+    resolveRevealEmoji: (slug) => ANIMALS_BY_SLUG[slug]?.emoji ?? null,
   },
 };
 
