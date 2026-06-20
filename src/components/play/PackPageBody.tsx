@@ -12,6 +12,7 @@ import type { GrantedTrophy } from '@/lib/actions/play';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { swapShardsForItem, convertDuplicateToShard } from '@/lib/actions/gacha';
 import { shardSwapCostForPack } from '@/lib/economy/shards';
+import { STUDY_MIN_OWNED } from '@/lib/play/study';
 
 interface Props {
   childId: string;
@@ -186,6 +187,30 @@ export function PackPageBody({
           {meta.sloganEn}
         </p>
       </header>
+
+      {(() => {
+        const canStudy = ownedSet.size >= STUDY_MIN_OWNED;
+        return (
+          <button
+            type="button"
+            data-testid="study-cta"
+            disabled={!canStudy}
+            onClick={() => router.push(`/play/${childId}/collection/${packSlug}/study`)}
+            className={[
+              'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 font-hanzi text-base font-bold',
+              canStudy
+                ? 'border-emerald-400 bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                : 'border-stone-300 bg-stone-100 text-stone-500',
+            ].join(' ')}
+          >
+            {canStudy ? (
+              <>📖 学习 / Study</>
+            ) : (
+              <span className="text-sm">📖 收集 3 张即可学习 / Collect 3 to study</span>
+            )}
+          </button>
+        );
+      })()}
 
       <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-center text-[11px] font-medium leading-snug text-amber-900">
         <p>重复的卡可以换成 🔹 碎片，{SWAP_COST} 个碎片换一张你想要的新卡。</p>
