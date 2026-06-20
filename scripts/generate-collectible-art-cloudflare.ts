@@ -36,6 +36,10 @@ const TARGET_PACK_SLUGS = [
   'landmarks-v1',
   'season-summer-v1',
   'festivals-v1',
+  'transport-v1',
+  'minibeasts-v1',
+  'instruments-v1',
+  'animals-v1',
 ];
 
 /** Per-slug subject prompts for the 节日 / Festivals reward cards. */
@@ -152,6 +156,14 @@ function buildPrompt(
       return `${STYLE_PREAMBLE}${SEASON_SUBJECT[slug] ?? `a ${nameEn}, a summer sea creature, full body, centered, plain light background`}`;
     case 'festivals-v1':
       return `${STYLE_PREAMBLE}${FESTIVAL_SUBJECT[slug] ?? `${nameEn}, a festive holiday scene, centered, plain light background`}`;
+    case 'transport-v1':
+      return `${STYLE_PREAMBLE}a ${nameEn}, a friendly cartoon vehicle, full body, side view, centered, plain light background`;
+    case 'minibeasts-v1':
+      return `${STYLE_PREAMBLE}a ${nameEn}, a cute friendly garden minibeast, full body, centered, plain light background`;
+    case 'instruments-v1':
+      return `${STYLE_PREAMBLE}a ${nameEn}, a musical instrument, full body, centered, plain light background`;
+    case 'animals-v1':
+      return `${STYLE_PREAMBLE}a ${nameEn}, a cute friendly cartoon animal, full body, centered, plain light background`;
     default:
       return `${STYLE_PREAMBLE}${nameEn}`;
   }
