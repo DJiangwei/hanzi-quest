@@ -11,6 +11,7 @@ export type XpSource =
   | 'daily_chest'
   | 'streak_milestone'
   | 'homework'
+  | 'study'
   | 'admin_grant';
 
 export interface AwardXpResult { totalXp: number; level: number; leveledUp: boolean; }
