@@ -61,7 +61,7 @@ describe('finishStudyLessonAction', () => {
   });
   it('grants nothing when the child owns fewer than 3 cards', async () => {
     listChildCollection.mockResolvedValue([{ id: 'a' }, { id: 'b' }]);
-    const res = await finishStudyLessonAction({ childId: 'c1', packSlug: 'animals-v1', score: 100 });
+    await finishStudyLessonAction({ childId: 'c1', packSlug: 'animals-v1', score: 100 });
     expect(pullCardForChild).not.toHaveBeenCalled();
   });
 });

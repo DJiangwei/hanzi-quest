@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-const requireChild = vi.fn(async (_childId: string) => ({ parent: { id: 'p' }, child: { id: 'c1' } }));
+const requireChild = vi.fn(async (childId: string) => ({ parent: { id: 'p' }, child: { id: childId } }));
 vi.mock('@/lib/auth/guards', () => ({ requireChild: (childId: string) => requireChild(childId) }));
 const redirect = vi.fn();
 const notFound = vi.fn(() => { throw new Error('notFound'); });
