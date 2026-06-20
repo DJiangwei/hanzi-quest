@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { TRANSPORT, TRANSPORT_BY_SLUG, TRANSPORT_GROUP_ORDER } from '@/lib/collections/transportData';
 import { MINIBEASTS, MINIBEASTS_BY_SLUG } from '@/lib/collections/minibeastsData';
 import { INSTRUMENTS, INSTRUMENTS_BY_SLUG, INSTRUMENT_GROUP_ORDER } from '@/lib/collections/instrumentsData';
+import { ANIMALS, ANIMALS_BY_SLUG } from '@/lib/collections/animalsData';
+
+const ZODIAC_ZH = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
 
 describe('transport data', () => {
   it('has 14 items, all bilingual + emoji + valid group, unique slugs', () => {
@@ -45,5 +48,19 @@ describe('instruments data', () => {
       slugs.add(i.slug);
     }
     expect(INSTRUMENTS_BY_SLUG['erhu']?.group).toBe('chinese');
+  });
+});
+
+describe('animals data', () => {
+  it('has 17 bilingual items, unique slugs, and excludes all 12 zodiac animals', () => {
+    expect(ANIMALS).toHaveLength(17);
+    const slugs = new Set<string>();
+    for (const a of ANIMALS) {
+      expect(a.nameZh && a.nameEn && a.emoji).toBeTruthy();
+      expect(ZODIAC_ZH).not.toContain(a.nameZh);
+      expect(slugs.has(a.slug)).toBe(false);
+      slugs.add(a.slug);
+    }
+    expect(ANIMALS_BY_SLUG['fox']?.nameZh).toBe('狐狸');
   });
 });
