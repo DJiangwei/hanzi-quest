@@ -12,6 +12,8 @@ import { TransportCard } from '@/components/play/items/TransportCard';
 import { MinibeastCard } from '@/components/play/items/MinibeastCard';
 import { InstrumentCard } from '@/components/play/items/InstrumentCard';
 import { AnimalCard } from '@/components/play/items/AnimalCard';
+import { ChampionCard } from '@/components/play/items/ChampionCard';
+import { CHAMPIONS_BY_SLUG } from '@/lib/collections/championsData';
 import {
   TRANSPORT_BY_SLUG,
   TRANSPORT_GROUP_ORDER,
@@ -216,6 +218,19 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: SeasonCard,
     resolveRevealEmoji: (slug) => SEASON_CARDS_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'champions-v1': {
+    displayNameZh: '海域霸主',
+    displayNameEn: 'Map Champions',
+    sloganZh: '击败每片海域的霸主才能获得。',
+    sloganEn: 'Earned only by defeating each sea overlord.',
+    themeEmoji: '👑',
+    themeBannerClass: 'bg-gradient-to-br from-amber-300 via-yellow-400 to-orange-500',
+    themeAccentClass: 'text-amber-900',
+    paidPullCost: 0, // reward-only — never sold / pulled via gacha
+    gridColumns: 3,
+    ItemCard: ChampionCard,
+    resolveRevealEmoji: (slug) => CHAMPIONS_BY_SLUG[slug]?.emoji ?? null,
   },
   'transport-v1': {
     displayNameZh: '交通工具',
