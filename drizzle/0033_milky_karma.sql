@@ -1,0 +1,1 @@
+ALTER TYPE "public"."trophy_category" ADD VALUE 'champion';
