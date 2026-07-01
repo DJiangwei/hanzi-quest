@@ -87,6 +87,30 @@ export async function listFinalBossClears(childId: string): Promise<string[]> {
 }
 
 /**
+ * Insert the (child, pack) clear. `firstClear=false` if it already existed —
+ * this row is the single idempotency guard for the champion reward grant.
+ */
+export async function recordFinalBossClear(
+  childId: string,
+  packId: string,
+): Promise<{ firstClear: boolean }> {
+  try {
+    await db.insert(finalBossClears).values({ childId, packId });
+    return { firstClear: true };
+  } catch (err) {
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      'code' in err &&
+      (err as { code: string }).code === '23505'
+    ) {
+      return { firstClear: false };
+    }
+    throw err;
+  }
+}
+
+/**
  * Grant + auto-equip the reward-only champion crown cosmetic. Best effort: if
  * the crown item isn't seeded yet, no-ops (the card/trophy grant must not depend
  * on it). Idempotent — inventory insert ignores a re-grant; equip upserts the
