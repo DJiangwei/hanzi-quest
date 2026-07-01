@@ -40,6 +40,12 @@ describe('trust-caller endpoints are not exported from use-server action files',
     expect(src.trimStart()).toMatch(/^['"]use server['"]/);
     expect(src).toMatch(/requireChild\(/);
   });
+
+  it('finishFinalBossAction is requireChild-gated', () => {
+    const src = read('src/lib/actions/final-boss.ts');
+    expect(src.trimStart()).toMatch(/^['"]use server['"]/);
+    expect(src).toMatch(/requireChild\(/);
+  });
 });
 
 describe('no family-specific strings in rendered surfaces', () => {
