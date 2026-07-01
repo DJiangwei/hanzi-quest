@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { equipSoundThemeAction } from '@/lib/actions/settings';
-import { purchaseShopItemAction } from '@/lib/actions/shop';
+import { useShopPurchase } from '@/lib/hooks/use-shop-purchase';
+import { ShopToast } from '@/components/shop/ShopToast';
 import { setAudioTheme } from '@/lib/audio/play';
 import { getTheme } from '@/lib/audio/themes';
 import type { SoundThemeListing } from '@/lib/db/shop';
@@ -91,8 +92,11 @@ export function SoundsTabBody({
   equippedThemeSlug,
 }: Props) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [equipPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const { purchase: purchaseItem, pending: purchasePending, feedback, clearFeedback } =
+    useShopPurchase(childId);
+  const pending = equipPending || purchasePending;
 
   const preview = async (slug: string) => {
     const theme = getTheme(slug);
@@ -122,17 +126,14 @@ export function SoundsTabBody({
     });
   };
 
+  // Purchase feedback flows through the toast; on a real purchase, equip the theme.
   const purchase = (shopItemId: string, slug: string) => {
     setError(null);
-    startTransition(async () => {
-      try {
-        await purchaseShopItemAction(shopItemId, { childId });
-        const result = await equipSoundThemeAction(childId, slug);
+    purchaseItem(shopItemId, () => {
+      void equipSoundThemeAction(childId, slug).then((result) => {
         setAudioTheme(result.themeSlug);
         router.refresh();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Purchase failed');
-      }
+      });
     });
   };
 
@@ -140,6 +141,7 @@ export function SoundsTabBody({
 
   return (
     <div className="flex flex-1 flex-col gap-3 px-3 py-4">
+      <ShopToast feedback={feedback} onDone={clearFeedback} />
       {error && (
         <div className="rounded-lg border-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
           {error}

@@ -14,6 +14,8 @@ import { HomeTabBody } from '@/components/shop/HomeTabBody';
 import { PowerupsTabBody } from '@/components/shop/PowerupsTabBody';
 import { AvatarTryOnPreview, type TryOnState } from '@/components/shop/AvatarTryOnPreview';
 import { RewardWardrobe } from '@/components/shop/RewardWardrobe';
+import { ShopToast } from '@/components/shop/ShopToast';
+import type { ShopFeedback } from '@/lib/hooks/use-shop-purchase';
 import type {
   AvatarShopListing,
   EquippedAvatar,
@@ -74,6 +76,7 @@ export function ShopBody({
   const [tryOn, setTryOn] = useState<TryOnState | null>(null);
   const [cosmetics, setCosmetics] = useState<RewardCosmeticListing[]>(rewardCosmetics);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [purchaseFeedback, setPurchaseFeedback] = useState<ShopFeedback | null>(null);
   const [pending, startTransition] = useTransition();
 
   // Switching category tabs discards any ephemeral try-on.
@@ -180,9 +183,16 @@ export function ShopBody({
     setErrorMessage(null);
     startTransition(async () => {
       try {
-        const result = await purchaseShopItemAction(listing.shopItem.id, { childId });
+        const res = await purchaseShopItemAction(listing.shopItem.id, { childId });
+        if (res.status !== 'purchased') {
+          // already_owned / insufficient — friendly toast, don't equip or clear.
+          setPurchaseFeedback({
+            kind: res.status === 'already_owned' ? 'owned' : 'insufficient',
+          });
+          return;
+        }
         setOwnedIds(new Set([...ownedIds, listing.shopItem.id]));
-        setCoinBalance(result.coinsAfter);
+        setCoinBalance((prev) => Math.max(0, prev - listing.shopItem.priceCoins));
         const catalogItem = lookupItem(listing.avatarItem.unlockRef);
         if (catalogItem) {
           setEquipped((prev) => ({
@@ -197,9 +207,10 @@ export function ShopBody({
         }
         await equipAvatarItemAction(listing.avatarItem.id, { childId });
         setTryOn(null);
+        setPurchaseFeedback({ kind: 'success' });
         router.refresh();
-      } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : '购买失败 / Purchase failed');
+      } catch {
+        setPurchaseFeedback({ kind: 'error' });
       }
     });
   };
@@ -233,6 +244,13 @@ export function ShopBody({
       </header>
 
       <ShopCategoryTabs active={activeTab} onChange={changeTab} />
+
+      {activeTab === 'avatar' && (
+        <ShopToast
+          feedback={purchaseFeedback}
+          onDone={() => setPurchaseFeedback(null)}
+        />
+      )}
 
       {activeTab === 'avatar' && (
         <>
