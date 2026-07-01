@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { purchaseShopItemAction } from '@/lib/actions/shop';
+import { useState } from 'react';
+import { useShopPurchase } from '@/lib/hooks/use-shop-purchase';
+import { ShopToast } from '@/components/shop/ShopToast';
 import { TrophyToast } from '@/components/play/TrophyToast';
 import type { DecorShopListing } from '@/lib/db/decor';
 import type { GrantedTrophy } from '@/lib/db/trophies';
@@ -25,33 +25,19 @@ export function DecorTabBody({
   ownedShopItemIds,
   coinBalance,
 }: Props) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { purchase: purchaseItem, pending, feedback, clearFeedback } =
+    useShopPurchase(childId);
   const [toastTrophies, setToastTrophies] = useState<GrantedTrophy[]>([]);
 
   const purchase = (shopItemId: string) => {
-    setError(null);
-    startTransition(async () => {
-      try {
-        const result = await purchaseShopItemAction(shopItemId, { childId });
-        if (result.trophies && result.trophies.length > 0) {
-          setToastTrophies(result.trophies);
-        }
-        router.refresh();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Purchase failed');
-      }
+    purchaseItem(shopItemId, (trophies) => {
+      if (trophies.length > 0) setToastTrophies(trophies);
     });
   };
 
   return (
     <div className="flex flex-1 flex-col gap-3 px-3 py-4">
-      {error && (
-        <div className="rounded-lg border-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
-          {error}
-        </div>
-      )}
+      <ShopToast feedback={feedback} onDone={clearFeedback} />
 
       <TrophyToast
         trophies={toastTrophies}

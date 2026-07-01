@@ -73,15 +73,16 @@ describe('purchaseShopItemAction', () => {
 
     expect(mocks.requireChild).toHaveBeenCalledWith('c1');
     expect(mocks.purchaseShopItem).toHaveBeenCalledWith('c1', 's1');
-    expect(result.coinsAfter).toBe(100);
+    // Action now returns a discriminated outcome, not the raw PurchaseResult.
+    expect(result).toEqual({ status: 'purchased', trophies: [] });
   });
 
-  it('propagates errors from purchaseShopItem', async () => {
+  it('re-throws unexpected errors from purchaseShopItem', async () => {
     mocks.requireChild.mockResolvedValue({ child: { id: 'c1' } });
-    mocks.purchaseShopItem.mockRejectedValue(new Error('已经买过啦'));
+    mocks.purchaseShopItem.mockRejectedValue(new Error('db exploded'));
     await expect(
       purchaseShopItemAction('s1', { childId: 'c1' }),
-    ).rejects.toThrow('已经买过啦');
+    ).rejects.toThrow('db exploded');
   });
 
   it('throws when requireChild rejects (parent does not own child)', async () => {
