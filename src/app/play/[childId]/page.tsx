@@ -32,6 +32,14 @@ import { generateDailyQuests, getTodayQuests, getDailyChestClaimed } from '@/lib
 import { getChildXp } from '@/lib/db/xp';
 import { titleForLevel } from '@/lib/xp/levels';
 import { getQuestDef } from '@/lib/quests/definitions';
+import {
+  isMapFullyCleared,
+  getFinalBossClear,
+  listFinalBossClears,
+} from '@/lib/db/final-boss';
+import { latestChampionTitle } from '@/lib/collections/championsData';
+import { mapOrderIndex } from '@/lib/play/map-order';
+import { ChampionTitleChip } from '@/components/play/ChampionTitleChip';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -83,6 +91,26 @@ export default async function PlayHomePage({ params }: PageProps) {
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
   const voyage = currentMap ? getVoyageMap(currentMap.slug) : null;
+
+  // Final-boss state for the CURRENT map (drives the voyage-board lair node) +
+  // the latest champion title (highest map order among beaten maps with a title).
+  const [finalBossState, beatenPackIds] = await Promise.all([
+    currentMap
+      ? Promise.all([
+          isMapFullyCleared(child.id, currentMap.packId),
+          getFinalBossClear(child.id, currentMap.packId),
+        ]).then(([unlocked, cleared]) => ({ unlocked, cleared }))
+      : Promise.resolve(null),
+    listFinalBossClears(child.id),
+  ]);
+
+  const slugForPackId = (packId: string) =>
+    maps.find((m) => m.packId === packId)?.slug;
+  const championTitle = latestChampionTitle(
+    beatenPackIds,
+    slugForPackId,
+    mapOrderIndex,
+  );
 
   const equippedRefs: Partial<Record<string, string | null>> = {};
   for (const [slot, info] of Object.entries(equipped)) {
@@ -181,7 +209,13 @@ export default async function PlayHomePage({ params }: PageProps) {
               {clearedCount}/{islands.length} island
               {islands.length === 1 ? '' : 's'} cleared
             </p>
-            <LevelBadge level={level} title={levelTitle} />
+            <div className="flex flex-wrap items-center gap-1.5">
+              <LevelBadge level={level} title={levelTitle} />
+              <ChampionTitleChip
+                titleZh={championTitle?.zh ?? null}
+                titleEn={championTitle?.en ?? null}
+              />
+            </div>
           </div>
         </div>
         <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-treasure-400)] px-3 py-1.5 text-base font-bold text-[var(--color-treasure-700)] shadow-md">
@@ -238,6 +272,7 @@ export default async function PlayHomePage({ params }: PageProps) {
           childId={childId}
           packSlug={currentMap!.slug}
           islands={islands.map((i) => ({ weekId: i.weekId, completionPercent: i.completionPercent }))}
+          finalBoss={finalBossState ?? undefined}
         />
       ) : (
         <IslandMap
