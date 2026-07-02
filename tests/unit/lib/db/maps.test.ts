@@ -15,19 +15,27 @@ const mocks = vi.hoisted(() => {
   const selectPackLeftJoin = vi.fn().mockReturnValue({ where: selectPackWhere });
   const selectPackFrom = vi.fn().mockReturnValue({ leftJoin: selectPackLeftJoin });
 
+  // Third select chain: listFinalBossClears → db.select().from(finalBossClears).where()
+  const selectFinalBossWhere = vi.fn().mockResolvedValue([]);
+  const selectFinalBossFrom = vi.fn().mockReturnValue({ where: selectFinalBossWhere });
+
   // update chain: db.update().set().where()
   const updateWhere = vi.fn().mockResolvedValue(undefined);
   const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
   const update = vi.fn().mockReturnValue({ set: updateSet });
 
-  // select dispatcher — first call routes to child chain, second to pack chain
+  // select dispatcher — call 1 → child (getCurrentPackId), call 2 → pack query,
+  // call 3 → final-boss-clears (listFinalBossClears).
   let selectCallCount = 0;
   const select = vi.fn().mockImplementation(() => {
     selectCallCount += 1;
     if (selectCallCount === 1) {
       return { from: selectChildFrom };
     }
-    return { from: selectPackFrom };
+    if (selectCallCount === 2) {
+      return { from: selectPackFrom };
+    }
+    return { from: selectFinalBossFrom };
   });
 
   return {
@@ -40,6 +48,8 @@ const mocks = vi.hoisted(() => {
     selectPackWhere,
     selectPackGroupBy,
     selectPackOrderBy,
+    selectFinalBossFrom,
+    selectFinalBossWhere,
     update,
     updateSet,
     updateWhere,
