@@ -26,6 +26,7 @@ const baseMap: MapForChild = {
   weekCount: 10,
   clearedCount: 3,
   isCurrent: true,
+  gated: false,
   isLocked: false,
 };
 
