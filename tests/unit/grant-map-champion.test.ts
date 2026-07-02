@@ -12,7 +12,7 @@ const { tx, transaction, insert, select } = vi.hoisted(() => {
   return {
     tx,
     transaction: vi.fn(async (fn: (t: unknown) => unknown) => fn(tx)),
-    insert: vi.fn((..._a: unknown[]) => ({
+    insert: vi.fn<(...a: unknown[]) => unknown>(() => ({
       values: () => ({
         onConflictDoUpdate: () => ({}),
         onConflictDoNothing: () => ({}),
@@ -38,7 +38,7 @@ vi.mock('@/lib/db/admin-grants', () => ({
 }));
 
 const { checkAndGrantTrophies } = vi.hoisted(() => ({
-  checkAndGrantTrophies: vi.fn(async (..._a: unknown[]) => [
+  checkAndGrantTrophies: vi.fn<(...a: unknown[]) => unknown>(async () => [
     {
       slug: 'champion-caribbean',
       nameZh: '加勒比海霸主',

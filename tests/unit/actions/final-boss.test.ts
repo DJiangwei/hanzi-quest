@@ -7,18 +7,18 @@ vi.mock('@/lib/auth/guards', () => ({
   })),
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-const getPackBySlug = vi.fn(async (..._a: unknown[]) => ({
+const getPackBySlug = vi.fn<(...a: unknown[]) => unknown>(async () => ({
   id: 'pk',
   slug: 'pirate-class-level-1',
 }));
 vi.mock('@/lib/db/collections', () => ({
   getPackBySlug: (...a: unknown[]) => getPackBySlug(...a),
 }));
-const isMapFullyCleared = vi.fn(async (..._a: unknown[]) => true);
-const recordFinalBossClear = vi.fn(async (..._a: unknown[]) => ({
+const isMapFullyCleared = vi.fn<(...a: unknown[]) => unknown>(async () => true);
+const recordFinalBossClear = vi.fn<(...a: unknown[]) => unknown>(async () => ({
   firstClear: true,
 }));
-const grantMapChampionRewards = vi.fn(async (..._a: unknown[]) => ({
+const grantMapChampionRewards = vi.fn<(...a: unknown[]) => unknown>(async () => ({
   card: {
     id: 'i',
     slug: 'champion-caribbean',

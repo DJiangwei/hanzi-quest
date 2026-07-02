@@ -7,7 +7,7 @@ const requireChild = vi.fn<(...a: unknown[]) => unknown>(async () => ({
 vi.mock('@/lib/auth/guards', () => ({
   requireChild: (...a: unknown[]) => requireChild(...a),
 }));
-const redirect = vi.fn((..._a: unknown[]) => {
+const redirect = vi.fn<(...a: unknown[]) => never>(() => {
   throw new Error('redirect');
 });
 const notFound = vi.fn(() => {
