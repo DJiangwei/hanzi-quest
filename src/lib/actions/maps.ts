@@ -16,7 +16,7 @@ export async function switchMapAction(
     throw new Error('Map not found');
   }
   if (target.isLocked) {
-    throw new MapLockedError();
+    throw new MapLockedError(target.gated ? 'gated' : 'no_weeks');
   }
   await setCurrentPackForChild(child.id, packId);
   revalidatePath(`/play/${child.id}`);
