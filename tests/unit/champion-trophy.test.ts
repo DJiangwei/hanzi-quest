@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+// @/lib/db/trophies imports the postgres client at load; mock it so the test
+// doesn't need a real DATABASE_URL (CI has none — tests mock @/db).
+vi.mock('@/db', () => ({ db: {} }));
 import { TROPHIES } from '../../scripts/seed-trophies';
 import { MAP_TO_CHAMPION_TROPHY } from '@/lib/db/trophies';
 
