@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { purchaseShopItemAction } from '@/lib/actions/shop';
+import { useShopPurchase } from '@/lib/hooks/use-shop-purchase';
+import { ShopToast } from '@/components/shop/ShopToast';
 import { FURNITURE_CATALOG, type FurnitureCategory } from '@/lib/home/furniture-catalog';
 import { listSurfaces, type SurfaceKind } from '@/lib/home/surfaces';
 import type { ShopItemRow } from '@/lib/db/shop';
@@ -36,26 +35,12 @@ export function HomeTabBody({
   ownedShopItemIds,
   coinBalance,
 }: Props) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { purchase, pending, feedback, clearFeedback } = useShopPurchase(childId);
 
   // Map slug → shop_items row so we can resolve shopItemId for each catalog entry
   const shopItemBySlug = new Map<string, ShopItemRow>(
     homeShopItems.map((item) => [item.slug, item]),
   );
-
-  const purchase = (shopItemId: string) => {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await purchaseShopItemAction(shopItemId, { childId });
-        router.refresh();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : '购买失败 / Purchase failed');
-      }
-    });
-  };
 
   // Group catalog items by category
   const grouped = CATEGORY_ORDER.map((cat) => ({
@@ -65,11 +50,7 @@ export function HomeTabBody({
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-3 py-4">
-      {error && (
-        <div className="rounded-lg border-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
-          {error}
-        </div>
-      )}
+      <ShopToast feedback={feedback} onDone={clearFeedback} />
 
       {grouped.map(({ cat, items }) => (
         <section key={cat}>
