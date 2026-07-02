@@ -59,10 +59,16 @@ export function MapCard({ childId, map }: Props) {
           👉 你正在这里 / You&apos;re here
         </span>
       )}
-      {map.isLocked && (
+      {map.gated ? (
         <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[var(--color-sand-200)] px-2 py-0.5 text-xs font-bold text-[var(--color-sand-700)]">
-          🔒 即将开放 / Coming soon
+          🔒 先击败上一片海域的霸主 / Defeat the previous overlord first
         </span>
+      ) : (
+        map.isLocked && (
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[var(--color-sand-200)] px-2 py-0.5 text-xs font-bold text-[var(--color-sand-700)]">
+            🔒 即将开放 / Coming soon
+          </span>
+        )
       )}
       {!map.isLocked && (
         <p className="text-xs text-[var(--color-sand-700)]">
