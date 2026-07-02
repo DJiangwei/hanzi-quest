@@ -24,19 +24,22 @@ interface Props {
   packSlug: string;
   /** Ordered by weekNumber; islands[i] occupies stops[i]. */
   islands: VoyageBoardIsland[];
+  /** When present, appends a final-boss lair node after the last stop. */
+  finalBoss?: { unlocked: boolean; cleared: boolean };
 }
 
 /** Vertical room per stop, in px, for the tall phone board. */
 const STOP_GAP_PX = 210;
 
-export function VoyageBoard({ childId, packSlug, islands }: Props) {
+export function VoyageBoard({ childId, packSlug, islands, finalBoss }: Props) {
   const map = getVoyageMap(packSlug);
   const reduced = useReducedMotion();
   const wide = useIsWide();
   if (!map) return null;
 
   const n = map.stops.length;
-  const pos = wide ? voyageLayoutHorizontal(n) : voyageLayout(n);
+  const slots = finalBoss ? n + 1 : n;
+  const pos = wide ? voyageLayoutHorizontal(slots) : voyageLayout(slots);
   const firstActive = islands.findIndex((i) => i.completionPercent < 100);
   const currentIndex = firstActive < 0 ? Math.max(n - 1, 0) : firstActive;
 
@@ -46,7 +49,7 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
       data-layout={wide ? 'landscape' : 'vertical'}
       style={{
         backgroundImage: PARCHMENT_BG,
-        ...(wide ? {} : { height: n * STOP_GAP_PX }),
+        ...(wide ? {} : { height: slots * STOP_GAP_PX }),
       }}
       className={[
         'relative mx-auto w-full overflow-hidden rounded-[28px] border-[10px] border-[#caa24a] p-3 shadow-2xl ring-4 ring-[#7a4a14]/30',
@@ -125,6 +128,17 @@ export function VoyageBoard({ childId, packSlug, islands }: Props) {
           compact={wide}
         />
       ))}
+
+      {/* Final-boss lair node, appended after the last stop */}
+      {finalBoss && (
+        <FinalBossNode
+          childId={childId}
+          packSlug={packSlug}
+          pos={pos[n]}
+          finalBoss={finalBoss}
+          compact={wide}
+        />
+      )}
 
       {/* Sailing ship overlay (matches the medallion coordinate space) */}
       <SailingShip points={pos} currentIndex={currentIndex} />
@@ -211,5 +225,74 @@ function StopNode({
         <span className="block text-[9px] font-medium opacity-85">{stop.labelEn}</span>
       </span>
     </Link>
+  );
+}
+
+function FinalBossNode({
+  childId,
+  packSlug,
+  pos,
+  finalBoss,
+  compact,
+}: {
+  childId: string;
+  packSlug: string;
+  pos: VoyagePoint;
+  finalBoss: { unlocked: boolean; cleared: boolean };
+  compact: boolean;
+}) {
+  const state = finalBoss.cleared ? 'cleared' : finalBoss.unlocked ? 'ready' : 'locked';
+  const emoji = state === 'cleared' ? '👑' : state === 'ready' ? '⚔️' : '🔒';
+  const style = { left: `${pos.xPct}%`, top: `${pos.yPct}%` } as const;
+  const widthClass = compact ? 'w-[13%]' : 'w-[42%]';
+  const emojiClass = compact
+    ? 'text-[clamp(1.4rem,4.5vw,3rem)]'
+    : 'text-[clamp(2.2rem,13vw,4.5rem)]';
+
+  const medallion = (
+    <span
+      className={`relative flex aspect-square w-full items-center justify-center rounded-full border-[5px] ${emojiClass} shadow-xl ${
+        state === 'locked'
+          ? 'border-[#8a6a3a] bg-[#cdbb95] opacity-60'
+          : 'border-[#b8232a] bg-gradient-to-b from-[#f7c8ca] to-[#b8232a]'
+      }`}
+    >
+      {emoji}
+    </span>
+  );
+  const label = (
+    <span className="mt-1 rounded-md bg-black/45 px-2 py-0.5 text-center text-[11px] font-bold leading-tight text-white">
+      终极霸主
+      <span className="block text-[9px] font-medium opacity-85">Final Overlord</span>
+    </span>
+  );
+  const wrapperClass = `absolute z-10 flex ${widthClass} -translate-x-1/2 -translate-y-1/2 flex-col items-center`;
+
+  if (finalBoss.unlocked) {
+    return (
+      <div data-testid="final-boss-node" data-state={state} className={wrapperClass} style={style}>
+        <Link
+          href={`/play/${childId}/final-boss/${packSlug}`}
+          aria-label="Final Overlord"
+          className="flex w-full flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+        >
+          {medallion}
+          {label}
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-testid="final-boss-node"
+      data-state={state}
+      className={wrapperClass}
+      style={style}
+      aria-label="Final Overlord — locked"
+    >
+      {medallion}
+      {label}
+    </div>
   );
 }

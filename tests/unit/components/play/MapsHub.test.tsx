@@ -15,11 +15,11 @@ describe('MapsHub', () => {
     const maps: MapForChild[] = [
       {
         packId: 'pack_1', slug: 'pirate-class-level-1', nameZh: '加勒比海', nameEn: 'Caribbean Sea',
-        weekCount: 10, clearedCount: 3, isCurrent: true, isLocked: false,
+        weekCount: 10, clearedCount: 3, isCurrent: true, gated: false, isLocked: false,
       },
       {
         packId: 'pack_2', slug: 'pirate-class-level-2', nameZh: '印度洋', nameEn: 'Indian Ocean',
-        weekCount: 0, clearedCount: 0, isCurrent: false, isLocked: true,
+        weekCount: 0, clearedCount: 0, isCurrent: false, gated: false, isLocked: true,
       },
     ];
     render(<MapsHub childId="child_1" maps={maps} />);

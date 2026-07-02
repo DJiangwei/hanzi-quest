@@ -34,3 +34,30 @@ export const MAP_TO_CHAMPION_CARD: Record<string, string> = {
 export const CHAMPION_TITLES: Record<string, { zh: string; en: string }> = {
   'pirate-class-level-1': { zh: '加勒比海霸主', en: 'Lord of the Caribbean' },
 };
+
+/**
+ * Pick the champion title for the LATEST (highest map order) beaten map that has
+ * a title. `beatenPackIds` are the packs whose final boss is cleared; `slugFor`
+ * resolves a packId → slug; `orderOf` ranks slugs (higher = later map). Returns
+ * null when no beaten map has a champion title.
+ */
+export function latestChampionTitle(
+  beatenPackIds: string[],
+  slugFor: (packId: string) => string | undefined,
+  orderOf: (slug: string) => number,
+): { zh: string; en: string } | null {
+  let best: { zh: string; en: string } | null = null;
+  let bestOrder = -Infinity;
+  for (const packId of beatenPackIds) {
+    const slug = slugFor(packId);
+    if (!slug) continue;
+    const title = CHAMPION_TITLES[slug];
+    if (!title) continue;
+    const order = orderOf(slug);
+    if (order > bestOrder) {
+      bestOrder = order;
+      best = title;
+    }
+  }
+  return best;
+}
