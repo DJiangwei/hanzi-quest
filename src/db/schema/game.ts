@@ -15,7 +15,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { childProfiles } from './auth';
-import { weeks } from './content';
+import { curriculumPacks, weeks } from './content';
 
 export const sceneType = pgEnum('scene_type', [
   'flashcard',
@@ -142,3 +142,24 @@ export const streaks = pgTable('streaks', {
   lastPlayedDate: date('last_played_date'),
   freezeTokens: integer('freeze_tokens').notNull().default(0),
 });
+
+/**
+ * One row per (child, pack) once the child beats that map's final boss
+ * (海域霸主). Single source of truth for "map beaten" — drives BOTH reward
+ * idempotency (in finishFinalBossAction) AND next-map gating (listMapsForChild).
+ */
+export const finalBossClears = pgTable(
+  'final_boss_clears',
+  {
+    childId: uuid('child_id')
+      .notNull()
+      .references(() => childProfiles.id, { onDelete: 'cascade' }),
+    packId: uuid('pack_id')
+      .notNull()
+      .references(() => curriculumPacks.id, { onDelete: 'cascade' }),
+    clearedAt: timestamp('cleared_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.childId, t.packId] })],
+);

@@ -14,6 +14,7 @@ export const AVATAR_THEMES = [
   'festival',
   'continent',
   'season',
+  'champion',
 ] as const;
 export type AvatarTheme = (typeof AVATAR_THEMES)[number];
 
@@ -25,10 +26,11 @@ export const THEME_DISPLAY_NAMES: Record<AvatarTheme, { zh: string; en: string }
   festival: { zh: '节日', en: 'Festival' },
   continent: { zh: '大洲', en: 'Continent' },
   season: { zh: '夏季航海', en: 'Summer Voyage' },
+  champion: { zh: '霸主', en: 'Champion' },
 };
 
 /** Reward-only themes — earned, never sold; excluded from the shop chip filter. */
-const REWARD_THEMES: readonly AvatarTheme[] = ['festival', 'continent', 'season'];
+const REWARD_THEMES: readonly AvatarTheme[] = ['festival', 'continent', 'season', 'champion'];
 
 /**
  * Themes shown as shop filter chips. Reward-only themes (festival, continent)

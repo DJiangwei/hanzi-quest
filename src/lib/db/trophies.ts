@@ -30,6 +30,7 @@ export type TrophyCheckContext =
   | { kind: 'coin-award' }
   | { kind: 'pack-complete'; packSlug: string }
   | { kind: 'continent-complete' }
+  | { kind: 'map-champion'; packSlug: string }
   | { kind: 'scene-clear'; sceneType: string; score: number }
   | { kind: 'sound-theme-equip'; slug: string | null }
   | { kind: 'decor-purchase' }
@@ -63,6 +64,11 @@ const PACK_TO_TROPHY: Record<string, string> = {
   'sea-creatures-v1': 'collect-sea',
   'dinosaurs-v1': 'collect-dinos',
   'solar-system-v1': 'collect-solar',
+};
+
+/** Map from map pack slug → its champion (final-boss) trophy slug. */
+export const MAP_TO_CHAMPION_TROPHY: Record<string, string> = {
+  'pirate-class-level-1': 'champion-caribbean',
 };
 
 /** Map from scene type → first-perfect-score trophy slug */
@@ -123,6 +129,11 @@ export async function checkAndGrantTrophies(
     case 'continent-complete': {
       const continents = await getCompletedFlagContinents(childId);
       for (const c of continents) slugs.add(CONTINENT_REWARDS[c].trophySlug);
+      break;
+    }
+    case 'map-champion': {
+      const slug = MAP_TO_CHAMPION_TROPHY[context.packSlug];
+      if (slug) slugs.add(slug);
       break;
     }
     case 'scene-clear': {
