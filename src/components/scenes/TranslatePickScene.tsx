@@ -5,6 +5,7 @@ import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
 import type { TranslateDirection } from '@/lib/scenes/configs';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 import { SpeakButton } from '@/components/play/SpeakButton';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface CharacterDetail {
   characterId: string;
@@ -18,10 +19,12 @@ interface Props {
   pool: CharacterDetail[];
   direction: TranslateDirection;
   onComplete: (correct: boolean) => void;
+  /** Telemetry: emits one event per answered question. */
+  onAnswerEvent?: (e: SceneAnswerEvent) => void;
   hintRequested?: boolean;
 }
 
-export function TranslatePickScene({ target, pool, direction, onComplete, hintRequested }: Props) {
+export function TranslatePickScene({ target, pool, direction, onComplete, onAnswerEvent, hintRequested }: Props) {
   const filteredPool = useMemo(
     () => pool.filter((c) => Boolean(c.meaningEn) && c.meaningEn !== target.meaningEn),
     [pool, target.meaningEn],
@@ -71,6 +74,9 @@ export function TranslatePickScene({ target, pool, direction, onComplete, hintRe
       stimulus={stimulus}
       choices={choices}
       onComplete={onComplete}
+      onResult={({ pickedKey, correct }) =>
+        onAnswerEvent?.({ sceneType: 'translate_pick', characterId: target.characterId, correct, pickedKey })
+      }
       hintRequested={hintRequested}
     />
   );

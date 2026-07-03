@@ -5,6 +5,7 @@ import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 import { shuffle } from '@/lib/scenes/sample';
 import { useSpeak } from '@/lib/hooks/useSpeak';
 import { useSpeechSupported } from '@/lib/hooks/useSpeechSupported';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface WordOption {
   wordId: string;
@@ -27,6 +28,8 @@ interface Props {
   correctWord: WordOption;
   distractors: WordOption[];
   onComplete: (correct: boolean) => void;
+  /** Telemetry: emits one event per answered question. */
+  onAnswerEvent?: (e: SceneAnswerEvent) => void;
   hintRequested?: boolean;
 }
 
@@ -88,6 +91,7 @@ export function ImageWordScene({
   correctWord,
   distractors,
   onComplete,
+  onAnswerEvent,
   hintRequested,
 }: Props) {
   const speak = useSpeak();
@@ -143,6 +147,9 @@ export function ImageWordScene({
       stimulus={stimulus}
       choices={choices}
       onComplete={onComplete}
+      onResult={({ pickedKey, correct }) =>
+        onAnswerEvent?.({ sceneType: 'image_word', wordId: correctWord.wordId, correct, pickedKey })
+      }
       hintRequested={hintRequested}
       postRevealAudio={correctWord.text}
     />

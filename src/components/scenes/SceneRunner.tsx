@@ -30,6 +30,7 @@ import { WordMatchScene } from './WordMatchScene';
 import { LianliankanScene } from './LianliankanScene';
 import type { BossQuestionType, Segment, TranslateDirection } from '@/lib/scenes/configs';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 const LevelFanfare = dynamic(
   () => import('./fx/LevelFanfare').then((m) => m.LevelFanfare),
@@ -138,6 +139,11 @@ export function SceneRunner({
   const [starterDismissed, setStarterDismissed] = useState(false);
   const startedAtRef = useRef<number>(0);
   const coinHudRef = useRef<HTMLElement | null>(null);
+  // Per-level answer-event telemetry batch — flushed with finishAttemptAction.
+  const eventsRef = useRef<SceneAnswerEvent[]>([]);
+  const pushEvent = (e: SceneAnswerEvent) => {
+    eventsRef.current.push(e);
+  };
 
   useEffect(() => {
     setAudioMuted(reduced);
@@ -195,6 +201,10 @@ export function SceneRunner({
 
   const advance = (correct: boolean) => {
     if (pending) return;
+    // Capture + clear the telemetry batch synchronously so late pushes can't
+    // leak into the next level's flush.
+    const events = eventsRef.current;
+    eventsRef.current = [];
     startTransition(async () => {
       const result = await finishAttemptAction({
         sessionId,
@@ -204,6 +214,8 @@ export function SceneRunner({
         correctCount: correct ? 1 : 0,
         totalCount: 1,
         hintsUsed: 0,
+        source: section,
+        events,
       });
       setCoinsThisSession((c) => c + result.coinsAwarded);
       if (result.giftPack?.cards?.length) {
@@ -299,6 +311,7 @@ export function SceneRunner({
         <FlashcardScene
           key={currentLevel.id}
           data={{
+            characterId: c.characterId,
             hanzi: c.hanzi,
             hanziAudioUrl: c.audioUrl ?? null,
             pinyin: c.pinyinArray,
@@ -310,6 +323,7 @@ export function SceneRunner({
             firstSentence: c.sentence?.text ?? null,
           }}
           onComplete={() => advance(true)}
+          onAnswerEvent={pushEvent}
         />
       ) : (
         <MissingData />
@@ -320,7 +334,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <AudioPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} hintRequested={hintRequested} />
+        <AudioPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} onAnswerEvent={pushEvent} hintRequested={hintRequested} />
       ) : (
         <MissingData />
       );
@@ -350,6 +364,7 @@ export function SceneRunner({
           imageUrl={stimulusImageUrl}
           pool={pool}
           onComplete={advance}
+          onAnswerEvent={pushEvent}
           hintRequested={hintRequested}
         />
       ) : (
@@ -388,6 +403,7 @@ export function SceneRunner({
           questionTypes={questionTypes}
           pool={pool}
           onComplete={advance}
+          onAnswerEvent={pushEvent}
         />
       );
       break;
@@ -413,6 +429,7 @@ export function SceneRunner({
           pool={pool}
           direction={direction}
           onComplete={advance}
+          onAnswerEvent={pushEvent}
           hintRequested={hintRequested}
         />
       ) : (
@@ -431,6 +448,7 @@ export function SceneRunner({
           sentenceText={c.sentence.text}
           translationEn={c.sentence.translationEn}
           onComplete={advance}
+          onAnswerEvent={pushEvent}
           hintRequested={hintRequested}
         />
       ) : (
@@ -485,6 +503,7 @@ export function SceneRunner({
             audioUrl: w.audioUrl ?? null,
           }))}
           onComplete={advance}
+          onAnswerEvent={pushEvent}
           hintRequested={hintRequested}
         />
       );

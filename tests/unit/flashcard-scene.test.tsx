@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FlashcardScene } from '@/components/scenes/FlashcardScene';
 
 describe('FlashcardScene', () => {
-  const data = { hanzi: '海', pinyin: ['hǎi'], meaningEn: 'sea', meaningZh: '海洋', imageHook: null, firstWord: null, firstSentence: null };
+  const data = { characterId: 'cccccccc-0000-4000-a000-000000000001', hanzi: '海', pinyin: ['hǎi'], meaningEn: 'sea', meaningZh: '海洋', imageHook: null, firstWord: null, firstSentence: null };
 
   it('renders the hanzi + Got-it button', () => {
     render(<FlashcardScene data={data} onComplete={() => undefined} />);
@@ -55,7 +55,7 @@ describe('FlashcardScene speech', () => {
     });
   });
 
-  const data = { hanzi: '海', pinyin: ['hǎi'], meaningEn: 'sea', meaningZh: '海洋', imageHook: null, firstWord: null, firstSentence: null };
+  const data = { characterId: 'cccccccc-0000-4000-a000-000000000001', hanzi: '海', pinyin: ['hǎi'], meaningEn: 'sea', meaningZh: '海洋', imageHook: null, firstWord: null, firstSentence: null };
 
   it('tapping the big hanzi triggers speech with the hanzi text', async () => {
     render(<FlashcardScene data={data} onComplete={() => undefined} />);
@@ -69,6 +69,7 @@ describe('FlashcardScene speech', () => {
 
 describe('FlashcardScene example word + sentence (PR #51)', () => {
   const dataWithExtras = {
+    characterId: 'cccccccc-0000-4000-a000-000000000001',
     hanzi: '海',
     pinyin: ['hǎi'],
     meaningEn: 'sea',

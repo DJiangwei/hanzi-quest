@@ -10,6 +10,8 @@ import { tickQuestProgressSafe } from '@/lib/db/quests';
 import { todayUtcIso } from '@/lib/db/streaks';
 import { STUDY_MIN_OWNED } from '@/lib/play/study';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import { logAnswerEventsSafe } from '@/lib/db/answer-events';
+import { MAX_EVENTS_PER_CALL } from '@/lib/play/answer-events';
 
 const STUDY_PASS_SCORE = 60; // gentle bar for a 6yo (≈4/6)
 const STUDY_XP = 15;
@@ -20,6 +22,8 @@ const FinishStudySchema = z.object({
   childId: z.string().min(1),
   packSlug: z.string(),
   score: z.number().min(0).max(100),
+  /** Per-answer telemetry batch — validated element-wise in logAnswerEventsSafe. */
+  events: z.array(z.unknown()).max(MAX_EVENTS_PER_CALL).optional(),
 });
 
 /**
@@ -78,6 +82,15 @@ export async function finishStudyLessonAction(
       }
     } catch (err) {
       console.error('[finishStudyLessonAction] reward error:', err);
+    }
+  }
+
+  // Answer-event telemetry (write-only) — guarded, after all primary writes.
+  if (parsed.events?.length) {
+    try {
+      await logAnswerEventsSafe(child.id, null, 'study', parsed.events);
+    } catch (err) {
+      console.error('[finishStudyLessonAction] answer-event log failed:', err);
     }
   }
 

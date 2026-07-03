@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { MultipleChoiceQuiz } from '@/components/scenes/MultipleChoiceQuiz';
 import { CardChestReveal } from '@/components/scenes/fx/CardChestReveal';
@@ -11,6 +11,7 @@ import { getPackMeta } from '@/lib/collections/packRegistry';
 import { finishStudyLessonAction, type StudyCardMessage } from '@/lib/actions/study';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { StudyQuestion, StudyCardLite } from '@/lib/play/study';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface Props {
   childId: string;
@@ -31,17 +32,28 @@ export function StudyRunner({ childId, packSlug, packNameZh, packNameEn, questio
   const [revealCards, setRevealCards] = useState<RevealCard[]>([]);
   const [cardMessage, setCardMessage] = useState<StudyCardMessage>(null);
   const [, startTransition] = useTransition();
+  // Per-question answer telemetry — flushed with finishStudyLessonAction.
+  const eventsRef = useRef<SceneAnswerEvent[]>([]);
 
   const q = questions[index];
 
   const onAnswer = (isCorrect: boolean) => {
+    if (q) {
+      eventsRef.current.push({
+        sceneType: `study_${q.type}`,
+        itemKey: q.target.slug,
+        correct: isCorrect,
+      });
+    }
     const nextCorrect = correct + (isCorrect ? 1 : 0);
     setCorrect(nextCorrect);
     const next = index + 1;
     if (next >= questions.length) {
       const score = Math.round((nextCorrect / questions.length) * 100);
+      const events = eventsRef.current;
+      eventsRef.current = [];
       startTransition(async () => {
-        const res = await finishStudyLessonAction({ childId, packSlug, score });
+        const res = await finishStudyLessonAction({ childId, packSlug, score, events });
         if (res.cardGrants.length) setRevealCards(res.cardGrants);
         if (res.cardMessage) setCardMessage(res.cardMessage);
         setDone(true);

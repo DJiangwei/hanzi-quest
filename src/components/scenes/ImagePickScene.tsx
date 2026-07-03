@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface CharacterDetail {
   characterId: string;
@@ -18,10 +19,12 @@ interface Props {
   /** A picture (reused from one of the char's words) shown as the stimulus. */
   imageUrl?: string | null;
   onComplete: (correct: boolean) => void;
+  /** Telemetry: emits one event per answered question. */
+  onAnswerEvent?: (e: SceneAnswerEvent) => void;
   hintRequested?: boolean;
 }
 
-export function ImagePickScene({ target, pool, imageUrl, onComplete, hintRequested }: Props) {
+export function ImagePickScene({ target, pool, imageUrl, onComplete, onAnswerEvent, hintRequested }: Props) {
   // Shuffle ONCE per scene (keyed on the stable characterId, not the target/pool
   // object identity) — otherwise a parent re-render reshuffles the options
   // mid-selection, making them jump around.
@@ -62,6 +65,9 @@ export function ImagePickScene({ target, pool, imageUrl, onComplete, hintRequest
       }
       choices={choices}
       onComplete={onComplete}
+      onResult={({ pickedKey, correct }) =>
+        onAnswerEvent?.({ sceneType: 'image_pick', characterId: target.characterId, correct, pickedKey })
+      }
       hintRequested={hintRequested}
       postRevealAudio={target.hanzi}
       postRevealAudioUrl={target.audioUrl}

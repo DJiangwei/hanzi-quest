@@ -80,6 +80,7 @@ vi.mock('@/lib/play/card-grants', () => ({
   claimWeeklyGiftIfDue: mocks.claimWeeklyGiftIfDue,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/answer-events', () => ({ logAnswerEventsSafe: vi.fn().mockResolvedValue(0) }));
 vi.mock('@/lib/db/continent-rewards', () => ({ grantContinentRewards: vi.fn().mockResolvedValue([]) }));
 vi.mock('@/lib/db/xp', () => ({
   awardXp: mocks.awardXp,

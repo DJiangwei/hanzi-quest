@@ -18,6 +18,8 @@ interface Props {
   stimulus: ReactNode;
   choices: Choice[];
   onComplete: (correct: boolean) => void;
+  /** Telemetry: fired once at tap time with the picked choice key. */
+  onResult?: (r: { pickedKey: string; correct: boolean }) => void;
   hintRequested?: boolean;
   /**
    * zh-CN text to auto-speak once when the answer is revealed (right or wrong).
@@ -41,6 +43,7 @@ export function MultipleChoiceQuiz({
   stimulus,
   choices,
   onComplete,
+  onResult,
   hintRequested,
   postRevealAudio,
   postRevealAudioUrl,
@@ -68,6 +71,7 @@ export function MultipleChoiceQuiz({
     el: HTMLButtonElement,
   ) => {
     if (revealed || (grayedKey !== null && key === grayedKey)) return;
+    onResult?.({ pickedKey: key, correct: isCorrect });
     setRevealed(key);
     setTappedRect(el.getBoundingClientRect());
     if (isCorrect) {

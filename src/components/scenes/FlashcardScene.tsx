@@ -3,11 +3,12 @@
 
 import { useState } from 'react';
 import { TreasureMapBackdrop } from '@/components/ui/TreasureMapBackdrop';
-import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import { SpeakButton } from '@/components/play/SpeakButton';
 import { useSpeak } from '@/lib/hooks/useSpeak';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface FlashcardSceneData {
+  characterId: string;
   hanzi: string;
   hanziAudioUrl?: string | null;
   pinyin: string[];
@@ -22,9 +23,23 @@ interface FlashcardSceneData {
 interface Props {
   data: FlashcardSceneData;
   onComplete: () => void;
+  /** Telemetry: emits the kid's self-rating. Never affects scoring. */
+  onAnswerEvent?: (e: SceneAnswerEvent) => void;
 }
 
-export function FlashcardScene({ data, onComplete }: Props) {
+/**
+ * Self-assessment options. ALL of them complete the scene as success —
+ * review is exposure, not a test; honesty is never punished. The rating
+ * only feeds the answer_events telemetry (write-only, for future review
+ * weighting + parent insights).
+ */
+const RATINGS = [
+  { rating: 'got_it', zh: '认识', en: 'Got it', cls: 'bg-emerald-500 hover:bg-emerald-600' },
+  { rating: 'not_sure', zh: '不确定', en: 'Not sure', cls: 'bg-amber-500 hover:bg-amber-600' },
+  { rating: 'dont_know', zh: '不认识', en: "Don't know", cls: 'bg-rose-500 hover:bg-rose-600' },
+] as const;
+
+export function FlashcardScene({ data, onComplete, onAnswerEvent }: Props) {
   const [pinyinShown, setPinyinShown] = useState(false);
   const [meaningShown, setMeaningShown] = useState(false);
   const [wordShown, setWordShown] = useState(false);
@@ -132,9 +147,26 @@ export function FlashcardScene({ data, onComplete }: Props) {
           ) : null}
         </div>
 
-        <WoodSignButton size="lg" onClick={onComplete}>
-          Got it →
-        </WoodSignButton>
+        <div className="flex w-full max-w-md flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
+          {RATINGS.map(({ rating, zh, en, cls }) => (
+            <button
+              key={rating}
+              type="button"
+              onClick={() => {
+                onAnswerEvent?.({
+                  sceneType: 'flashcard',
+                  characterId: data.characterId,
+                  selfRating: rating,
+                });
+                onComplete();
+              }}
+              className={`min-h-11 flex-1 rounded-xl px-4 py-3 text-white shadow-md transition-transform active:scale-95 ${cls}`}
+            >
+              <span className="font-hanzi text-lg">{zh}</span>
+              <span className="ml-1 text-sm opacity-90">/ {en}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </TreasureMapBackdrop>
   );

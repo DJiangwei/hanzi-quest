@@ -32,6 +32,8 @@ import type { GiftCard } from '@/lib/db/grants';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import { awardXp, type AwardXpResult } from '@/lib/db/xp';
 import { tickQuestProgressSafe } from '@/lib/db/quests';
+import { logAnswerEventsSafe } from '@/lib/db/answer-events';
+import { ANSWER_SOURCES, MAX_EVENTS_PER_CALL } from '@/lib/play/answer-events';
 
 // ─── XP helpers ──────────────────────────────────────────────────────────────
 
@@ -146,6 +148,10 @@ const FinishAttemptSchema = z.object({
   correctCount: z.number().int().min(0),
   totalCount: z.number().int().min(0),
   hintsUsed: z.number().int().min(0).default(0),
+  /** Which section this attempt belongs to (answer-event telemetry context). */
+  source: z.enum(ANSWER_SOURCES).optional(),
+  /** Per-answer telemetry batch — validated element-wise in logAnswerEventsSafe. */
+  events: z.array(z.unknown()).max(MAX_EVENTS_PER_CALL).optional(),
 });
 
 export async function finishAttemptAction(
@@ -299,6 +305,15 @@ export async function finishAttemptAction(
     }
   } catch (err) {
     console.error('[finishAttemptAction] XP/quest tick error:', err);
+  }
+
+  // Answer-event telemetry (write-only) — guarded, after all primary writes.
+  if (parsed.events?.length) {
+    try {
+      await logAnswerEventsSafe(child.id, parsed.weekId, parsed.source ?? 'practice', parsed.events);
+    } catch (err) {
+      console.error('[finishAttemptAction] answer-event log failed:', err);
+    }
   }
 
   return {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { MultipleChoiceQuiz } from '@/components/scenes/MultipleChoiceQuiz';
 import { SentenceOrderScene } from '@/components/scenes/SentenceOrderScene';
@@ -9,6 +9,7 @@ import { CardChestReveal } from '@/components/scenes/fx/CardChestReveal';
 import { finishHomeworkAction } from '@/lib/actions/homework';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { HomeworkItemConfig } from '@/lib/homework/schemas';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface RunnerItem {
   id: string;
@@ -42,14 +43,27 @@ export function HomeworkRunner({ childId, weekId, weekLabel, items }: Props) {
     'review_done_today' | 'daily_cap_reached' | 'homework_done_today' | null
   >(null);
   const [, startTransition] = useTransition();
+  // Per-item answer telemetry — flushed with finishHomeworkAction.
+  const eventsRef = useRef<SceneAnswerEvent[]>([]);
 
   const item = items[index];
+
+  const pushItemEvent = (correct: boolean) => {
+    if (!item) return;
+    eventsRef.current.push({
+      sceneType: `homework_${item.config.type}`,
+      itemKey: item.id,
+      correct,
+    });
+  };
 
   const advance = () => {
     const next = index + 1;
     if (next >= items.length) {
+      const events = eventsRef.current;
+      eventsRef.current = [];
       startTransition(async () => {
-        const res = await finishHomeworkAction({ childId, weekId });
+        const res = await finishHomeworkAction({ childId, weekId, events });
         if (res.cardGrants.length) setRevealCards(res.cardGrants);
         if (res.cardMessage) setCardMessage(res.cardMessage);
         setDone(true);
@@ -84,7 +98,10 @@ export function HomeworkRunner({ childId, weekId, weekLabel, items }: Props) {
         key={item.id}
         tokens={item.config.tokens}
         translationEn={item.config.translationEn ?? null}
-        onComplete={advance}
+        onComplete={(correct) => {
+          pushItemEvent(correct);
+          advance();
+        }}
       />
     );
   }
@@ -109,6 +126,7 @@ export function HomeworkRunner({ childId, weekId, weekLabel, items }: Props) {
         stimulus={cfg.hanzi ? <span className="font-hanzi text-7xl">{cfg.hanzi}</span> : null}
         choices={choices}
         onComplete={advance}
+        onResult={({ correct }) => pushItemEvent(correct)}
       />
     );
   }
@@ -133,6 +151,7 @@ export function HomeworkRunner({ childId, weekId, weekLabel, items }: Props) {
       stimulus={<span className="font-hanzi text-7xl">{cfg.baseChar}</span>}
       choices={choices}
       onComplete={advance}
+      onResult={({ correct }) => pushItemEvent(correct)}
     />
   );
 }
