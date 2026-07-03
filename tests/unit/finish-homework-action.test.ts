@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   awardCoins: vi.fn().mockResolvedValue(undefined),
   awardXp: vi.fn().mockResolvedValue({ totalXp: 30, level: 1, leveledUp: false }),
   tickQuestProgressSafe: vi.fn().mockResolvedValue(undefined),
+  logAnswerEventsSafe: vi.fn().mockResolvedValue(1),
 }));
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild, assertParent: vi.fn() }));
 vi.mock('@/lib/db/weeks', () => ({ getPlayableWeekForChild: mocks.getPlayableWeekForChild, getWeekOwnedBy: vi.fn() }));
@@ -19,6 +20,7 @@ vi.mock('@/lib/db/quests', () => ({ tickQuestProgressSafe: mocks.tickQuestProgre
 vi.mock('@/lib/db/streaks', () => ({ todayUtcIso: () => '2026-06-12' }));
 vi.mock('@/lib/db/homework', () => ({ listHomeworkItems: vi.fn(), weekHasHomework: vi.fn(), createHomeworkItem: vi.fn(), updateHomeworkItem: vi.fn(), deleteHomeworkItem: vi.fn(), reorderHomeworkItems: vi.fn() }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/answer-events', () => ({ logAnswerEventsSafe: mocks.logAnswerEventsSafe }));
 
 import { finishHomeworkAction } from '@/lib/actions/homework';
 
@@ -57,5 +59,14 @@ describe('finishHomeworkAction', () => {
     const res = await finishHomeworkAction({ childId: CHILD_ID, weekId: WEEK_ID });
     expect(mocks.awardCoins).not.toHaveBeenCalled();
     expect(res.cardMessage).toBe('daily_cap_reached');
+  });
+
+  it('forwards answer events with server context (source=homework)', async () => {
+    mocks.pullCardForChild.mockResolvedValue({ granted: false, reason: 'already_granted' });
+    const events = [
+      { sceneType: 'homework_char_quiz', itemKey: 'item-1', correct: true },
+    ];
+    await finishHomeworkAction({ childId: CHILD_ID, weekId: WEEK_ID, events });
+    expect(mocks.logAnswerEventsSafe).toHaveBeenCalledWith('c1', WEEK_ID, 'homework', events);
   });
 });

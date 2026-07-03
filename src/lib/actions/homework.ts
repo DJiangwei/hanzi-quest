@@ -19,6 +19,8 @@ import { tickQuestProgressSafe } from '@/lib/db/quests';
 import { todayUtcIso } from '@/lib/db/streaks';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { CardSkipReason } from '@/lib/actions/play';
+import { logAnswerEventsSafe } from '@/lib/db/answer-events';
+import { MAX_EVENTS_PER_CALL } from '@/lib/play/answer-events';
 
 const HOMEWORK_COMPLETE_COINS = 80;
 const HOMEWORK_XP = 30;
@@ -26,6 +28,8 @@ const HOMEWORK_XP = 30;
 const FinishHomeworkSchema = z.object({
   childId: z.string().uuid(),
   weekId: z.string().uuid(),
+  /** Per-answer telemetry batch — validated element-wise in logAnswerEventsSafe. */
+  events: z.array(z.unknown()).max(MAX_EVENTS_PER_CALL).optional(),
 });
 
 export async function finishHomeworkAction(
@@ -80,6 +84,15 @@ export async function finishHomeworkAction(
     }
   } catch (err) {
     console.error('[finishHomeworkAction] reward error:', err);
+  }
+
+  // Answer-event telemetry (write-only) — guarded, after all primary writes.
+  if (parsed.events?.length) {
+    try {
+      await logAnswerEventsSafe(child.id, parsed.weekId, 'homework', parsed.events);
+    } catch (err) {
+      console.error('[finishHomeworkAction] answer-event log failed:', err);
+    }
   }
 
   revalidatePath(`/play/${child.id}/week/${parsed.weekId}`);

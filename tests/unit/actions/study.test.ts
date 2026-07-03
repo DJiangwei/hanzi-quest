@@ -16,6 +16,10 @@ const awardXp = vi.fn<(...args: unknown[]) => Promise<unknown>>(async () => ({ t
 vi.mock('@/lib/db/xp', () => ({ awardXp: (...a: unknown[]) => awardXp(...a) }));
 vi.mock('@/lib/db/quests', () => ({ tickQuestProgressSafe: vi.fn() }));
 vi.mock('@/lib/db/streaks', () => ({ todayUtcIso: () => '2026-06-20' }));
+const logAnswerEventsSafe = vi.fn<(...args: unknown[]) => Promise<number>>(async () => 1);
+vi.mock('@/lib/db/answer-events', () => ({
+  logAnswerEventsSafe: (...a: unknown[]) => logAnswerEventsSafe(...a),
+}));
 
 import { finishStudyLessonAction } from '@/lib/actions/study';
 
@@ -63,5 +67,13 @@ describe('finishStudyLessonAction', () => {
     listChildCollection.mockResolvedValue([{ id: 'a' }, { id: 'b' }]);
     await finishStudyLessonAction({ childId: 'c1', packSlug: 'animals-v1', score: 100 });
     expect(pullCardForChild).not.toHaveBeenCalled();
+  });
+  it('forwards answer events with server context (source=study, weekId null)', async () => {
+    pullCardForChild.mockResolvedValue({ granted: false, reason: 'already_granted', cardsToday: 3 });
+    const events = [
+      { sceneType: 'study_picture_to_word', itemKey: 'fox', correct: false },
+    ];
+    await finishStudyLessonAction({ childId: 'c1', packSlug: 'animals-v1', score: 100, events });
+    expect(logAnswerEventsSafe).toHaveBeenCalledWith('c1', null, 'study', events);
   });
 });
