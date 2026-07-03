@@ -29,7 +29,24 @@ describe('HomeworkRunner', () => {
     render(<HomeworkRunner childId="c1" weekId="w1" weekLabel="Week 1" items={items} />);
     expect(screen.getByText('「水」是？', { exact: false })).toBeInTheDocument();
     fireEvent.click(screen.getByText(/water/i));
-    await waitFor(() => expect(finishHomeworkAction).toHaveBeenCalledWith({ childId: 'c1', weekId: 'w1' }));
+    await waitFor(() =>
+      expect(finishHomeworkAction).toHaveBeenCalledWith(
+        expect.objectContaining({ childId: 'c1', weekId: 'w1' }),
+      ),
+    );
+  });
+
+  it('sends one answer event per item with correctness + itemKey', async () => {
+    render(<HomeworkRunner childId="c1" weekId="w1" weekLabel="Week 1" items={items} />);
+    // Pick the WRONG option (fire) — the event must record correct: false.
+    fireEvent.click(screen.getByText(/fire/i));
+    await waitFor(() =>
+      expect(finishHomeworkAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          events: [{ sceneType: 'homework_char_quiz', itemKey: 'h1', correct: false }],
+        }),
+      ),
+    );
   });
 
   it('shows the fanfare screen after completing all items', async () => {
