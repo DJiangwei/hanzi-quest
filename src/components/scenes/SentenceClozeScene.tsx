@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
 import { useSpeak } from '@/lib/hooks/useSpeak';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface CharacterDetail {
   characterId: string;
@@ -16,6 +17,8 @@ interface Props {
   sentenceText: string;
   translationEn: string | null;
   onComplete: (correct: boolean) => void;
+  /** Telemetry: emits one event per answered question. */
+  onAnswerEvent?: (e: SceneAnswerEvent) => void;
   hintRequested?: boolean;
 }
 
@@ -29,6 +32,7 @@ export function SentenceClozeScene({
   sentenceText,
   translationEn,
   onComplete,
+  onAnswerEvent,
   hintRequested,
 }: Props) {
   const speak = useSpeak();
@@ -73,6 +77,9 @@ export function SentenceClozeScene({
       stimulus={stimulus}
       choices={choices}
       onComplete={onComplete}
+      onResult={({ pickedKey, correct }) =>
+        onAnswerEvent?.({ sceneType: 'sentence_cloze', characterId: target.characterId, correct, pickedKey })
+      }
       hintRequested={hintRequested}
       postRevealAudio={sentenceText}
       postRevealHoldMs={2500}

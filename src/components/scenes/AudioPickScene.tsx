@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
 import { useSpeak } from '@/lib/hooks/useSpeak';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface CharacterDetail {
   characterId: string;
@@ -16,10 +17,12 @@ interface Props {
   target: CharacterDetail;
   pool: CharacterDetail[];
   onComplete: (correct: boolean) => void;
+  /** Telemetry: emits one event per answered question. */
+  onAnswerEvent?: (e: SceneAnswerEvent) => void;
   hintRequested?: boolean;
 }
 
-export function AudioPickScene({ target, pool, onComplete, hintRequested }: Props) {
+export function AudioPickScene({ target, pool, onComplete, onAnswerEvent, hintRequested }: Props) {
   const speak = useSpeak();
 
   const choices = useMemo(() => {
@@ -51,6 +54,9 @@ export function AudioPickScene({ target, pool, onComplete, hintRequested }: Prop
       }
       choices={choices}
       onComplete={onComplete}
+      onResult={({ pickedKey, correct }) =>
+        onAnswerEvent?.({ sceneType: 'audio_pick', characterId: target.characterId, correct, pickedKey })
+      }
       hintRequested={hintRequested}
     />
   );
