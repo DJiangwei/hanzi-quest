@@ -239,6 +239,13 @@
       "when": 1782935479541,
       "tag": "0033_milky_karma",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1783076897747,
+      "tag": "0034_talented_kingpin",
+      "breakpoints": true
     }
   ]
 }

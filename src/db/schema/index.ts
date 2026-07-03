@@ -17,3 +17,4 @@ export * from './home';
 export * from './homework';
 export * from './season';
 export * from './admin';
+export * from './answer-events';
