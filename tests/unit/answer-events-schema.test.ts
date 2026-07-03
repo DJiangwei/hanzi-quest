@@ -5,7 +5,7 @@ describe('SceneAnswerEventSchema', () => {
   it('accepts a graded MCQ event', () => {
     const r = SceneAnswerEventSchema.safeParse({
       sceneType: 'translate_pick',
-      characterId: '4c9f0d5e-1111-2222-3333-444455556666',
+      characterId: '4c9f0d5e-1111-4222-a333-444455556666',
       correct: false,
       pickedKey: 'some-char-id',
     });
@@ -15,7 +15,7 @@ describe('SceneAnswerEventSchema', () => {
   it('accepts a flashcard self-rating event (correct null)', () => {
     const r = SceneAnswerEventSchema.safeParse({
       sceneType: 'flashcard',
-      characterId: '4c9f0d5e-1111-2222-3333-444455556666',
+      characterId: '4c9f0d5e-1111-4222-a333-444455556666',
       selfRating: 'not_sure',
     });
     expect(r.success).toBe(true);
