@@ -25,7 +25,7 @@
 
 **Evidence check (do first).** Confirm `scene_attempts` still lacks per-item fields; confirm no `answer_events`-like table exists (`ls src/db/schema/`, grep for `characterId` in attempt-write paths). GAME-DESIGN.md §9 lists "Adaptive SRS" as a non-goal — but its stated condition was "we don't have weeks of play data yet" (written Oct 2025). There is now ~1 year of play data across multiple children, and §9 itself blesses the naive alternative: *"review old chars in new-week distractor pools already buys 80% of the benefit."* Proposing A2 is NOT re-litigating a locked decision; full SM-2 SRS would be.
 
-### A1 — Per-answer event logging `[ ]`
+### A1 — Per-answer event logging `[x]` (shipped 2026-07-03, feat/answer-events — includes the flashcard 认识/不确定/不认识 self-assessment David requested)
 Additive migration: `answer_events(id, child_id, character_id nullable, word_id nullable, scene_type, correct boolean, answered_at)`. Write from the scene components' answer handlers via the existing finish/attempt actions (or a small dedicated fire-and-forget action following the XP-tick pattern: guarded, never blocks the primary write). Cover MCQ-family scenes, lianliankan, boss, homework, study mode. No UI in this PR. This unblocks everything below — ship it before A2/A3.
 - Guardrails: additive-only migration; fire-and-forget (a logging failure must never fail a scene); tests mock `@/db`.
 
