@@ -1,6 +1,6 @@
 # Improvement Roadmap — hanzi-quest
 
-> **Audience: future Claude/agent sessions.** This is a prioritized, checkable improvement plan written 2026-07-03 after a whole-project review. Each workstream states *why*, *what evidence to check first*, *a concrete first PR*, and *guardrails*. Before starting ANY workstream: (1) re-verify the evidence claims against current code — this doc rots like any doc; (2) **confirm with David via AskUserQuestion** (CLAUDE.md hard rule: always confirm before starting a new PR); (3) respect the locked decisions in CLAUDE.md §Hard-rules and GAME-DESIGN.md §9 non-goals.
+> **Audience: future Claude/agent sessions.** This is THE bundled improvement + future-direction plan (first written 2026-07-03 after a whole-project review; expanded same day with the vocabulary-growth brainstorm David requested). Each item states *why*, *what evidence to check first*, *a concrete first PR*, and *guardrails*. Before starting ANY item: (1) re-verify its evidence against current code — this doc rots like any doc; (2) **confirm with David via AskUserQuestion** (CLAUDE.md hard rule: always confirm before starting a new PR); (3) respect the locked decisions in CLAUDE.md §Hard-rules and GAME-DESIGN.md §9 non-goals.
 >
 > Status legend: `[ ]` not started · `[~]` in progress · `[x]` done (update in place when you ship a slice).
 
@@ -15,133 +15,171 @@
 
 ---
 
-## P0-A · Learning intelligence (the flagship gap)
+## North star: the growth flywheel
 
-**Why.** The product's mission is *learning Chinese*, but the game currently has no memory of what the child struggles with. `scene_attempts` (src/db/schema/game.ts) stores only aggregate `correctCount/totalCount` per scene — never *which* character/word was missed. Consequences:
+The product's long game is that **the child's known-character set grows every week, and the game must grow with it**. Today (~2026-07) Yinuo knows the ~96 Map-1 characters; Map 2 adds ~100 more; at this pace the set crosses 300 within two school years. Each stage unlocks mechanics that were impossible at the previous one:
 
-- No targeted review: a character Yinuo gets wrong 5 times is treated identically to one she aces.
-- No cross-week retention: once a week's boss is cleared, its characters never appear again until the map final boss (potentially months later). Forgetting curves guarantee decay.
-- David authors homework blind: he can't see per-character error rates when deciding what to drill.
+| Stage | Known chars | What becomes possible | Keystone workstreams |
+|---|---|---|---|
+| **1 — Recognize** (now) | 0–150 | Per-week learning loops (shipped); per-item telemetry (A1, shipped) | A2 review, V1 mastery model |
+| **2 — Discriminate** | 150–300 | Distractors drawn from the FULL learned set; confusable-pair drills (shape/sound/radical); composition play (known char + known char = new word) | V2 smart distractors, V3 word forge |
+| **3 — Read** | 300+ | **Decodable readers**: short stories written ONLY with known characters — the literacy-pedagogy gold standard, and the payoff that makes years of collection grind meaningful | V4 readable stories |
 
-**Evidence check (do first).** Confirm `scene_attempts` still lacks per-item fields; confirm no `answer_events`-like table exists (`ls src/db/schema/`, grep for `characterId` in attempt-write paths). GAME-DESIGN.md §9 lists "Adaptive SRS" as a non-goal — but its stated condition was "we don't have weeks of play data yet" (written Oct 2025). There is now ~1 year of play data across multiple children, and §9 itself blesses the naive alternative: *"review old chars in new-week distractor pools already buys 80% of the benefit."* Proposing A2 is NOT re-litigating a locked decision; full SM-2 SRS would be.
+The flywheel: telemetry (A1) → mastery model (V1) → smarter review + distractors (A2/V2) → faster real learning → more known chars → richer content (V3/V4) → more play data. Every new feature should ask: *does this scale with the known-character set, or is it another fixed-size attraction?* Fixed-size attractions (packs, cosmetics, seasons) are retention seasoning — the flywheel is the meal.
 
-### A1 — Per-answer event logging `[x]` (shipped 2026-07-03, feat/answer-events — includes the flashcard 认识/不确定/不认识 self-assessment David requested)
-Additive migration: `answer_events(id, child_id, character_id nullable, word_id nullable, scene_type, correct boolean, answered_at)`. Write from the scene components' answer handlers via the existing finish/attempt actions (or a small dedicated fire-and-forget action following the XP-tick pattern: guarded, never blocks the primary write). Cover MCQ-family scenes, lianliankan, boss, homework, study mode. No UI in this PR. This unblocks everything below — ship it before A2/A3.
-- Guardrails: additive-only migration; fire-and-forget (a logging failure must never fail a scene); tests mock `@/db`.
+---
+
+## P0-A · Learning intelligence
+
+**Why.** The product's mission is *learning Chinese*, but until 2026-07 the game had no memory of what the child struggles with. Consequences: no targeted review, no cross-week retention loop, and David authors homework blind. GAME-DESIGN.md §9's "no SRS" non-goal was conditioned on "no play data yet" (Oct 2025) — that condition no longer holds, and §9 itself blesses the naive alternative ("old chars in new-week distractor pools buys 80%"). Full SM-2 SRS remains out of scope.
+
+### A1 — Per-answer event logging `[x]` (shipped 2026-07-03, PR #132)
+`answer_events` table (migration 0034): source/scene_type/character/word/item identity, correct, `picked_key` (wrong choice tapped), and the flashcard **认识/不确定/不认识 self-assessment** David requested (log-only; all three advance as success). Write-only in v1. See the CLAUDE.md landmine before touching it.
 
 ### A2 — Cross-week review loop `[ ]`
 Two cheap slices, in order:
-1. **Stale-char distractors**: when compiling a new week, draw some MCQ distractors from *previously cleared weeks'* characters (data already reachable via the pack). Passive re-exposure, zero new UI. Needs `recompile-all-weeks.ts` post-merge (stable level keys preserve attempt linkage).
-2. **温故 / Daily mixed review**: a small home-surface session (5–8 questions) sampled from cleared weeks, weighted by A1 error rates once available (fallback: least-recently-seen). Reuse `MultipleChoiceQuiz` + the study-mode runner pattern; reward via the existing card/XP mechanics (decide consciously: daily-cap-consuming, like study mode's `'study'` source).
-- Guardrails: keep it short and optional — Yinuo is 6; don't gate anything on it. Bilingual chrome rule applies.
+1. **Stale-char distractors**: when compiling a new week, draw some MCQ distractors from *previously cleared weeks'* characters. Passive re-exposure, zero new UI. Needs `recompile-all-weeks.ts` post-merge.
+2. **温故 / Daily mixed review**: a small home-surface session (5–8 questions) sampled from cleared weeks, weighted by A1 error rates + `dont_know`/`not_sure` self-ratings (fallback: least-recently-seen). Reuse `MultipleChoiceQuiz` + the StudyRunner pattern; reward consciously (daily-cap-consuming `'daily_review'` card source, mirroring `'study'`).
+- Guardrails: short and optional — don't gate anything on it. Bilingual chrome rule.
 
 ### A3 — Parent insight page `[ ]`
-A `/parent/children/[id]/insights` page: per-character accuracy, most-missed list, confusion pairs (wrong-answer choices picked), activity trend. Pure read over A1 data + `coin_transactions` activity. This is the loop-closer: David uses it to author homework (`HomeworkEditor` already exists per-child). Parent-facing → bilingual rule exempt.
-- Guardrails: `(secured)` route group; scope by `getChildOwnedBy`.
+`/parent/children/[id]/insights`: per-character accuracy, most-missed list, confusion pairs (from `picked_key`), self-rating distribution, activity trend. Pure read over `answer_events` + `coin_transactions`. Closes the loop into David's homework authoring. Parent-facing → bilingual rule exempt. Guardrails: `(secured)` route group; scope via `getChildOwnedBy`.
+
+---
+
+## V · Evolution workstreams (scaling with vocabulary growth)
+
+These are the "evolve as the user learns more characters" arc. Ordered by dependency, not strict priority — V1 unblocks the rest.
+
+### V1 — Mastery model + visible growth (航海日志 / Captain's Logbook) `[ ]`
+**What:** a derived per-character mastery score (0–3 stars) computed from `answer_events`: accuracy, recency, streak of correct answers, self-ratings. Pure function in `src/lib/mastery/` (e.g. `masteryForChar(events): 0|1|2|3`), NO stored column at first — compute on read, cache later if slow. Surface it kid-first: a **Logbook** page (Backpack hall card) where every learned character is an entry with stars — the collection instinct pointed at the actual learning content. "字 as collectibles" makes vocabulary growth *visible and owned* by the kid.
+**Why now-ish:** cheap once A1 data accumulates (~4–6 weeks of play); it's the substrate for V2 review weighting, the captain's exam (V5), and A3.
+**Guardrails:** mastery is *informational + weighting input*, never a gate (no "you can't play until 3 stars"). Thresholds live in one tunable module. Don't add a DB column until read-time computation is measurably slow (the corpus is tiny — hundreds of chars × thousands of events).
+
+### V2 — Smart distractor selection `[ ]`
+**What:** today distractors are random same-week picks (`sampleDistractors`). As the learned set grows, upgrade selection: (a) draw from ALL learned chars (A2 slice 1); (b) prefer *confusable* distractors — same radical, similar shape (precomputed similarity list, static TS data like flagsData), similar pinyin (initial/final/tone-off-by-one), or empirically-confused pairs from `answer_events.picked_key`. Difficulty then scales naturally with vocabulary — no new mechanics, no UI change.
+**First PR:** a pure `rankDistractors(target, candidatePool, confusionData)` in `src/lib/scenes/`, used by compile-week or runtime pickers; start with pinyin similarity (derivable from existing `pinyinArray`, zero new data).
+**Guardrails:** keep a randomness floor (never 4 maximally-confusable options for a 6yo — blend 1 hard + 2 random); scene shuffle landmine (stable-id keyed memo) still applies.
+
+### V3 — Word forge / composition play (组词工坊) `[ ]`
+**What:** a discovery mechanic over the vocabulary graph: known characters combine into words (我+们→我们). Kid drags/taps two known chars; if the combination is a real curriculum word (or a curated bonus word list), it's "forged" — added to a discovered-words shelf, small reward. Uses existing `words`/`character_word` data; the joy is *"I can make new words from what I know"*, which compounds as the char set grows.
+**Scope guard:** start as a Backpack/home surface (not a compiled scene type — no migration/recompile); validate against the words table + a static bonus list. Confirm appetite with David before building — it's a new mechanic, not a fix.
+
+### V4 — Decodable readers (known-chars-only stories) `[ ]` — **the stage-3 payoff**
+**What:** short readable stories (3–6 sentences) using ONLY characters the child has learned, unlocked as the set grows ("你已经认识 120 个字,能读这个故事啦!"). This is what makes the whole journey pay off — real reading.
+**How, realistically:** Story Mode is HIDDEN (#93) because DeepSeek's ZH quality disappointed, and the "available chars" rule was best-effort (documented landmine: don't strict-validate generative output). So flip the approach for readers: **constraint-checked, not generation-trusted** — either (a) David/agent-curated static story bank tagged with required-char sets (committed TS data, like flags), unlocked when `knownChars ⊇ required`; or (b) AI-drafted then **human-reviewed before publish** through a parent-review flow like week authoring. Start with (a): even 10 hand-written stories beat an unreliable generator. Device TTS read-aloud per sentence (correct-text rule).
+**Guardrails:** don't resurrect `STORY_HIDDEN` paths for this — readers are a separate, simpler surface (no per-child generation, no chapters table needed for v1). Chinese decodable-reader quality is hard: David reviews every story before a kid sees it.
+
+### V5 — Captain's exam / periodic assessment (阶段考核) `[ ]`
+**What:** an opt-in, celebratory assessment every ~5 weeks or at map completion: ~20 questions sampled across ALL learned chars (reuse `buildFinalBossPhases` sampling), producing a mastery snapshot (feeds V1 stars + A3 insights) and a cosmetic reward. Framed as adventure ("船长考核"), never as a test with failure — completing it always rewards; the *data* is the point.
+**Guardrails:** low frequency, always skippable, no gating. Distinct from the map final boss (which is a game challenge, not a measurement).
+
+### V6 — Content pipeline at scale `[ ]`
+Map 2 (印度洋) authoring is prepped (`seed-pirate-class-2.ts`, blocked on David's hanzi list) — **it outranks everything when unblocked**. Beyond it: Maps 3+ need only the documented recipes (voyage entry + overlord + champion set); consider aligning future weekly lists with Yinuo's actual school/textbook sequence (David decision); authoring-time validation script (`verify-week-content.ts`: every char has words, images, audio-able text, sentence) so a half-generated week can't reach a kid.
 
 ---
 
 ## P0-B · Docs & agent-context hygiene (cheap, compounding)
 
-**Why.** CLAUDE.md has grown into a full per-PR history (~15k+ words) and is auto-loaded into *every* session — that's a large recurring context tax, and the narrative history buries the landmines that actually prevent bugs. Meanwhile PLAN.md's shipping log froze at PR #17 (verified 2026-07-03) even though PLAN.md self-describes as "the roadmap + status log."
+**Why.** CLAUDE.md has grown into a full per-PR history auto-loaded into *every* session — a large recurring context tax that buries the landmines. PLAN.md's shipping log froze at PR #17 (verified 2026-07-03) despite self-describing as "the roadmap + status log."
 
 ### B1 — Restructure CLAUDE.md `[ ]`
-Move the per-PR narrative history ("PR #21–#27…", "PR #48…", etc.) into PLAN.md §1's shipped table (one line each) or a new `docs/CHANGELOG.md`. CLAUDE.md keeps: current-state summary (one paragraph per subsystem), ALL landmines (grouped by subsystem), hard rules, triage table, codebase map, workflows. Target: cut CLAUDE.md by 50–70% without losing a single landmine.
-- Guardrails: this is a docs PR but high-blast-radius for future agents — get David's sign-off on the structure first; never delete a landmine, only regroup.
+Move per-PR narrative history into PLAN.md §1's shipped table (one line each) or `docs/CHANGELOG.md`. CLAUDE.md keeps: current-state summary (a paragraph per subsystem), ALL landmines (grouped by subsystem), hard rules, triage table, codebase map, workflows. Target: cut 50–70% without losing a single landmine.
+- Guardrails: high blast-radius docs PR — get David's sign-off on the structure first; never delete a landmine, only regroup.
 
 ### B2 — Keep PLAN.md honest `[ ]`
-Backfill the shipped-PR table #18→current from CLAUDE.md/git log, and add a rule to CLAUDE.md's curation note: new PRs get one line in PLAN.md, prose only for landmines.
+Backfill the shipped-PR table #18→current from CLAUDE.md/git log; add a curation rule: new PRs get one line in PLAN.md, prose only for landmines.
 
 ---
 
-## P1-C · Ops hardening (protect the data, stop the prod-DB footguns)
+## P1-C · Ops & robustness hardening
 
-**Why.** Documented landmine: local `pnpm build` runs `scripts/migrate.ts` against the **prod** Neon DB (`.env.local` = prod; DATABASE_URL shared across all Vercel envs). Also: no backups beyond Neon free-tier retention, and no error monitoring (server errors only visible if someone reads Vercel logs) — for a product now distributed to friends & family.
+**Why.** The scariest standing footgun: local `pnpm build` migrates the **prod** Neon DB (`.env.local` = prod, shared across all Vercel envs). Plus: no backups beyond free-tier retention, no error alerting — for a product now distributed to friends & family.
 
 ### C1 — Separate dev/preview database `[ ]`
-Neon free tier supports branches. Create a `dev` branch DB; point local `.env.local` and Vercel Preview env at it; Production env keeps the main branch. Kills the "feature-branch build migrates prod early" landmine class entirely. Verify with `vercel env ls` + a dry-run migrate.
-- Guardrails: coordinate with David (his `.env.local` changes too); after switch, seed scripts must be told explicitly which env they target.
+Neon free tier supports branches. Create a `dev` branch DB; point local `.env.local` + Vercel Preview at it; Production keeps main. Kills the "feature build migrates prod early" class entirely (it fired again on 2026-07-03, harmlessly).
+- Guardrails: coordinate with David (his `.env.local` changes); seed scripts must then be explicitly told which env they target.
 
 ### C2 — Weekly backup `[ ]`
-The DB is tiny. A `scripts/backup-db.ts` (pg_dump → local file or Blob — mind the 2,000 advanced-ops/month Blob cap; a local/iCloud dump avoids it) + a note in CLAUDE.md. Protects years of Yinuo's progress against a free-tier accident.
+`scripts/backup-db.ts` (pg_dump → local/iCloud file; avoid Blob — advanced-ops budget). The DB is tiny; this protects years of progress against a free-tier accident.
 
 ### C3 — Error visibility `[ ]`
-Lightest option first: Vercel's built-in observability + a log-drain or Sentry free tier (Next.js SDK). Success metric: a thrown server-action error produces an alert David can see, not a silent 500 on a kid's iPad.
+Lightest first: Vercel observability + log drain or Sentry free tier. Success metric: a thrown server-action error produces something David sees, not a silent 500 on a kid's iPad.
+
+### C4 — Data-integrity check script `[ ]`
+Extend the `verify-*.ts` pattern into one `scripts/verify-integrity.ts`: orphaned rows, weeks whose chars lack words/images, shop items without catalog entries, collectible counts vs. registry, enum values without handlers. Run ad-hoc pre-release; catches the "seed script not run post-merge" class (which has bitten repeatedly — avatar slots #59, trophies rule).
 
 ---
 
 ## P1-D · Real E2E safety net
 
-**Why.** Unit tests (900+, excellent) mock every boundary, so the two recurring prod-only bug classes — RSC "functions cannot be passed to client components" and seed/migration drift against the real DB — are invisible to CI by construction (both have bitten repeatedly: PackUiMeta hazard, avatar-slot seed FK violation, story_chapters missing table). Playwright is configured but `tests/e2e/` has a single smoke spec.
+**Why.** Unit tests (1590, excellent) mock every boundary, so the two recurring prod-only bug classes — RSC "functions passed to client components" and seed/migration drift against the real DB — are invisible to CI *by construction* (PackUiMeta hazard, avatar-slot FK violation, missing story_chapters table all reached prod). Playwright is configured; `tests/e2e/` has one smoke spec.
 
 ### D1 — Preview-deploy smoke suite `[ ]`
-5–8 Playwright flows run against a Vercel preview URL (CI job after deploy): sign-in → entry chooser → home renders (exercises voyage board + quests + season RSC surface) → open a week hub → play one scene to completion → open shop + backpack + calendar. A test child on the admin account. Even without assertions beyond "page renders, no error boundary," this catches the RSC class.
-- Guardrails: never against prod data mutations for real children; use a dedicated test child (admin console can provision/clean up).
+5–8 Playwright flows against a Vercel preview URL (CI job post-deploy): sign-in → entry chooser → home (voyage board + quests + season RSC surface) → week hub → one scene to completion → shop + backpack + calendar render. Use a dedicated test child on the admin account (admin console can provision/clean). Even "page renders, no error boundary" assertions catch the RSC class.
+- Guardrails: never mutate real children's data.
 
 ---
 
-## P1-E · Content: the learning-modality gaps
+## P1-E · Learning-modality gaps
 
-All pre-approved as candidates in CLAUDE.md's "Next up" (confirm scope with David per item).
+### E1 — Writing / stroke-order practice `[ ]`
+Biggest untouched modality. Use [hanzi-writer](https://hanziwriter.org) (free, MIT, stroke data, built-in finger-trace quiz — ideal on iPad). Slice 1: a 描字 scene in the review segment, generously scored. Full new-scene-type recipe (ARCHITECTURE.md §8) + recompile. Scales with any vocabulary size — a flywheel modality.
 
-### E1 — Map 2 (印度洋) authoring `[blocked on David]`
-`scripts/seed-pirate-class-2.ts` is prepped; needs David's 10 weeks of hanzi. When it lands: voyage map entry exists (Indian Ocean, 9 stops), accent color shipped (#123), final-boss roster needs an overlord entry + champion card/crown/trophy (see the #129/#130 landmine recipe).
+### E2 — Tone practice mini-game `[ ]`
+Tones are the known weak point (MeloTTS failure; UK-based kid). Listening game: hear a syllable (device TTS — correct by construction), pick tone contour or minimal pair (妈/马). No new audio infra.
 
-### E2 — Writing / stroke-order practice `[ ]`
-The biggest untouched modality. Recommended: [hanzi-writer](https://hanziwriter.org) (free, MIT, stroke-order data for all needed chars, built-in quiz mode with finger tracing — ideal on iPad). Slice 1: a 描字 scene type in the review segment (trace the week's chars, generous scoring). Needs the full new-scene-type recipe (ARCHITECTURE.md §8): enum value + template seed + compile slot + component + recompile.
-- Guardrails: 6yo motor skills — score leniently; reduced-motion + touch targets; new scene type = migration + recompile discipline.
-
-### E3 — Tone practice mini-game `[ ]`
-Tones are the known weak point of the audio story (MeloTTS failed on them; kid is UK-based). A listening game: hear a syllable (device TTS with correct text), pick the tone contour (visual arrows) or pick between minimal pairs (妈/马). No new audio infra — device TTS speaks correct text by construction (see the audio landmine).
-
-### E4 — Audio v2 (verified clips) `[ ]`
-If/when device TTS isn't enough: new provider clips go to `audio/v2/…` Blob path (NEVER `audio/words|chars/` — the chokepoint `usableAudioUrl()` in `useSpeak.ts` deliberately filters those known-bad paths). Azure Speech zh-CN neural voices are the leading candidate. **Human spot-check per batch before shipping** — the MeloTTS lesson: never trust a provider's Mandarin tones unheard. Mind Blob advanced-ops budget (~520 puts ≈ 26% of a month; use the resume-flag pattern).
+### E3 — Audio v2 (verified clips) `[ ]`
+If device TTS ever isn't enough: new provider (Azure Speech zh-CN neural is the candidate) writing to `audio/v2/…` Blob path — NEVER `audio/words|chars/` (the `usableAudioUrl` chokepoint filters those known-bad clips; see CLAUDE.md audio landmine). Human spot-check per batch. Mind the Blob 2,000 advanced-ops/month cap (~520 puts ≈ 26%); resume-flag pattern mandatory.
 
 ---
 
 ## P2-F · Economy health & tuning
 
-**Why.** The economy now has 6+ interlocking currencies/tracks (coins, XP, shards, cards ×13 packs, powerups, trophies, season tiers, quests, festival). It grew feature-by-feature; nobody has looked at it holistically. Risks: coin inflation once the shop is bought out (finite catalog, no repeatable sink except skip powerups), and comprehension load on a 6yo.
+**Why.** Six-plus interlocking systems (coins, XP, shards, 14 card packs, powerups, trophies, season, quests, festival) grew feature-by-feature; nobody has looked holistically. Risks: coin inflation once the shop is bought out; comprehension load on a 6yo; card packs are finite (the collection endgame needs either new packs on a cadence — the KS1-pack recipe makes this cheap — or V1's Logbook as the infinite collection).
 
 ### F1 — Economy dashboard on `/admin` `[ ]`
-Read-only: per-child coin earn/spend by reason over time (all in `coin_transactions`), XP by source, card acquisition rate vs. the 10/day cap, shop-catalog exhaustion %. Zero migration — the ledgers already exist. Decide tuning *from data*, not vibes.
+Read-only: per-child coin earn/spend by reason over time, XP by source, card acquisition vs. the 10/day cap, shop exhaustion %. Zero migration — ledgers exist. Tune from data, not vibes.
 
 ### F2 — Coin sinks `[ ]`
-Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item via `maxOwned` on `FurnitureDef`; surfaces stay 1; needs count-based ownership + dropping the own-1 unique on `home_placements`; PR #128's `PurchaseOutcome` is the groundwork). Other candidates only if F1 shows real inflation.
+Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item via `maxOwned` on `FurnitureDef`; surfaces stay 1; needs count-based ownership + dropping `home_placements`' own-1 unique; PR #128's `PurchaseOutcome` is groundwork). Other sinks only if F1 shows real inflation.
 
 ---
 
-## P2-G · Code-health cleanup backlog (bundle into one chore PR)
+## P2-G · Code-health cleanup backlog (one chore PR)
 
-- `[ ]` Delete `pullPaid` + `GachaPullButton` (deprecated since PR #52, "drop in #53+" — long overdue).
+- `[ ]` Delete `pullPaid` + `GachaPullButton` (deprecated since PR #52; "drop in #53+" long overdue).
 - `[ ]` `pnpm remove @types/bcryptjs` (redundant stub, documented).
-- `[ ]` Audit `next-intl`: only imported in `src/app/page.tsx` + `src/i18n/request.ts` while the app's real i18n is the hand-rolled `bi()` helper — either use it properly or remove the dep + config.
-- `[ ]` `ChapterAudioButton` → `SpeakButton` wrapper refactor (pending follow-up from PR #50; story hidden, so low urgency).
-- `[ ]` Sweep for other `@deprecated` markers and dead-but-kept items whose "keep one release" grace expired (keep dead *tables* — append-only rule — this is about dead *code*).
+- `[ ]` Audit `next-intl`: only touched in `src/app/page.tsx` + `src/i18n/request.ts` while real i18n is the hand-rolled `bi()` — use it properly or remove dep + config.
+- `[ ]` `ChapterAudioButton` → `SpeakButton` wrapper (pending PR #50 follow-up; story hidden, low urgency).
+- `[ ]` Sweep expired `@deprecated` code (keep dead *tables* — append-only rule; this is dead *code*).
 
 ---
 
-## P2-H · UX polish candidates (validate with playtest before building)
+## P2-H · UX polish candidates (validate via playtest first)
 
-- **Home-render side effects**: `/play/[childId]/page.tsx` awaits `syncSeasonProgress` + `generateDailyQuests` on every render — works, but serializes writes into the hottest read path. If home feels slow on iPad, move these to fire-and-forget or a post-login action. Measure first.
-- **Session pacing**: GAME-DESIGN §10 open question ("express replay mode") is still open — check with David whether replays feel long.
-- **Offline/PWA**: manifest exists, no offline play. Only pursue if David reports car-trip demand.
+- **Home-render side effects**: `/play/[childId]/page.tsx` awaits `syncSeasonProgress` + `generateDailyQuests` on every render — works, but serializes writes into the hottest read path. If home feels slow on iPad, restructure; measure first.
+- **Session pacing**: GAME-DESIGN §10's "express replay mode" question is still open — ask David whether replays feel long.
+- **Offline/PWA**: manifest exists, no offline play. Only if David reports car-trip demand.
 
 ---
 
 ## Priority summary
 
-| Rank | Item | Effort | Why now |
+| Rank | Item | Effort | Why |
 |---|---|---|---|
-| 1 | A1 answer logging | S | Unblocks all learning intelligence; pure additive |
+| — | ~~A1 answer logging~~ | — | ✅ shipped 2026-07-03 (PR #132) |
+| 1 | V6 Map 2 authoring | S (blocked on David's hanzi) | Content is king; everything is prepped |
 | 2 | B1/B2 docs restructure | S | Every future session gets cheaper + sharper |
 | 3 | C1 dev DB branch | S | Kills the scariest standing footgun |
-| 4 | A2 review loop | M | The actual pedagogy win; GAME-DESIGN pre-blessed |
-| 5 | D1 e2e smoke | M | Catches the only bug class CI can't see |
-| 6 | E2 stroke practice | M | Biggest missing learning modality |
-| 7 | A3 parent insights | M | Closes the David→homework loop (needs A1 data) |
-| 8 | C2/C3 backup + errors | S | Cheap insurance |
-| 9 | F1 economy dashboard | M | Data before tuning |
-| 10 | E3 tone game / F2 sinks / G cleanup | S–M | As playtests demand |
-
-E1 (Map 2) slots in whenever David delivers the hanzi — it outranks everything above when unblocked.
+| 4 | A2 review loop | M | The pedagogy win; GAME-DESIGN pre-blessed; A1 data is accumulating |
+| 5 | V1 mastery model + Logbook | M | Substrate for V2/V5/A3; makes growth visible (wait ~4–6 weeks for A1 data) |
+| 6 | D1 e2e smoke | M | Catches the only bug class CI can't see |
+| 7 | E1 stroke practice | M | Biggest missing modality; scales forever |
+| 8 | A3 parent insights | M | Closes the David→homework loop |
+| 9 | C2/C3/C4 backup + errors + integrity | S | Cheap insurance |
+| 10 | V2 smart distractors | M | Natural difficulty scaling (needs V1) |
+| 11 | F1 economy dashboard → F2 sinks | M | Data before tuning |
+| 12 | E2 tone game / G cleanup / H polish | S–M | As playtests demand |
+| 13 | V3 word forge · V5 captain's exam | M | New mechanics — confirm appetite with David |
+| 14 | V4 decodable readers | L | The stage-3 payoff; start curated, not generated |
