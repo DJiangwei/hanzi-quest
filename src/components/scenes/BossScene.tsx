@@ -11,6 +11,7 @@ import { PinyinPickScene } from './PinyinPickScene';
 import { SentenceClozeScene } from './SentenceClozeScene';
 import { TranslatePickScene } from './TranslatePickScene';
 import { VisualPickScene } from './VisualPickScene';
+import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface CharacterDetail {
   characterId: string;
@@ -29,6 +30,8 @@ interface Props {
   questionTypes: BossQuestionType[];
   pool: CharacterDetail[];
   onComplete: (won: boolean) => void;
+  /** Telemetry: emits one event per answered boss question (no pickedKey in v1). */
+  onAnswerEvent?: (e: SceneAnswerEvent) => void;
 }
 
 type Phase = 'intro' | 'fighting' | 'defeating' | 'defeated' | 'victory';
@@ -58,7 +61,7 @@ function buildQuestions(
     .filter((q): q is Question => q !== null);
 }
 
-export function BossScene({ weekNumber, characterIds, questionTypes, pool, onComplete }: Props) {
+export function BossScene({ weekNumber, characterIds, questionTypes, pool, onComplete, onAnswerEvent }: Props) {
   const questions = useMemo(
     () => buildQuestions(characterIds, questionTypes, pool),
     [characterIds, questionTypes, pool],
@@ -106,6 +109,15 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
   };
 
   const handleAnswer = (correct: boolean) => {
+    // Telemetry — fires for wrong answers too, before any phase change.
+    const answered = questions[currentIdx];
+    if (answered) {
+      onAnswerEvent?.({
+        sceneType: 'boss_question',
+        characterId: answered.target.characterId,
+        correct,
+      });
+    }
     if (correct) {
       const next = currentIdx + 1;
       if (next >= totalQuestions) {

@@ -52,6 +52,7 @@ vi.mock('@/lib/db/trophies', () => ({
   checkAndGrantTrophies: mocks.checkAndGrantTrophies,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/answer-events', () => ({ logAnswerEventsSafe: vi.fn().mockResolvedValue(0) }));
 vi.mock('@/lib/db/continent-rewards', () => ({ grantContinentRewards: vi.fn().mockResolvedValue([]) }));
 vi.mock('@/lib/db/weeks', () => ({
   getPlayableWeekForChild: vi.fn().mockResolvedValue({ id: 'w1' }),

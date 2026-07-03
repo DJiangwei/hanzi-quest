@@ -29,6 +29,7 @@ vi.mock('@/lib/db/xp', () => ({ awardXp: vi.fn() }));
 vi.mock('@/lib/db/quests', () => ({ tickQuestProgressSafe: vi.fn() }));
 vi.mock('@/lib/db/streaks', () => ({ todayUtcIso: () => '2026-06-12' }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/answer-events', () => ({ logAnswerEventsSafe: vi.fn().mockResolvedValue(0) }));
 
 import { addHomeworkItemAction, deleteHomeworkItemAction } from '@/lib/actions/homework';
 
