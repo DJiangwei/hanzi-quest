@@ -83,11 +83,11 @@ Map 2 (印度洋) authoring is prepped (`seed-pirate-class-2.ts`, blocked on Dav
 
 **Why.** CLAUDE.md has grown into a full per-PR history auto-loaded into *every* session — a large recurring context tax that buries the landmines. PLAN.md's shipping log froze at PR #17 (verified 2026-07-03) despite self-describing as "the roadmap + status log."
 
-### B1 — Restructure CLAUDE.md `[ ]`
+### B1 — Restructure CLAUDE.md `[x]` (shipped 2026-07-03: 20.8k → ~10.8k words; history → docs/CHANGELOG.md; landmines grouped, all preserved)
 Move per-PR narrative history into PLAN.md §1's shipped table (one line each) or `docs/CHANGELOG.md`. CLAUDE.md keeps: current-state summary (a paragraph per subsystem), ALL landmines (grouped by subsystem), hard rules, triage table, codebase map, workflows. Target: cut 50–70% without losing a single landmine.
 - Guardrails: high blast-radius docs PR — get David's sign-off on the structure first; never delete a landmine, only regroup.
 
-### B2 — Keep PLAN.md honest `[ ]`
+### B2 — Keep PLAN.md honest `[x]` (shipped 2026-07-03: shipped table backfilled #18→#132 from git log; status blurb refreshed)
 Backfill the shipped-PR table #18→current from CLAUDE.md/git log; add a curation rule: new PRs get one line in PLAN.md, prose only for landmines.
 
 ---
