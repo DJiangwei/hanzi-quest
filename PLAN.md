@@ -15,7 +15,7 @@
 
 ## 1. Status
 
-Production at <https://hanzi-adventure.vercel.app>. One real test user (David / banbanhu4ever@gmail.com), one child profile (小板), enrolled in `pirate-class-level-1` (10/10 lessons published).
+Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & family (multiple accounts/children); primary learner Yinuo plus 小板 on the admin account (banbanhu4ever@gmail.com, role=admin). Map 1 `pirate-class-level-1` (加勒比海) fully published (10 weeks); Map 2 (印度洋) awaits David's character lists. **Per-PR narratives live in `docs/CHANGELOG.md`; future work is ranked in `docs/IMPROVEMENT-ROADMAP.md`.** (Status last refreshed 2026-07-03, through PR #132.)
 
 ### Shipped
 
@@ -39,10 +39,124 @@ Production at <https://hanzi-adventure.vercel.app>. One real test user (David / 
 | #15 | Pirate polish layer (PR #14 implementation) | treasure-map flashcard backdrop · coin-shower + shake + Web Audio · WoodSignButton CTAs on /play and /parent · Lottie level fanfare · prefers-reduced-motion fully respected |
 | #16 | PR #16 spec — boss + gacha design doc + implementation plan | brainstorming + writing-plans skill output |
 | #17 | Boss kraken + treasure-chest gacha (PR #16 implementation) | Phase 4 + Phase 5 entry: 10q/3l boss · /collection page · 12 zodiac SVG set · free pull on boss clear · paid pull 500 coins · shard accrual on dupes |
+| #18 | fix(actions): finishLevelAction works for shared pack weeks | |
+| #19 | chore(scripts): one-off recompile-pirate-class.ts | |
+| #20 | fix(play): hanzi size + zodiac SVG defs mounting | |
+| #21 | docs(pr21): shop expansion design spec | |
+| #22 | feat: PR #21 — shop hub + avatar cosmetics | |
+| #23 | docs(pr23): collector's atlas + flags pack design spec | |
+| #24 | feat: PR #23 — collector's atlas hub + flags pack | |
+| #25 | feat: PR #25 — sea creatures collection pack | |
+| #26 | feat: PR #26 — dinosaurs collection pack | |
+| #27 | feat: PR #27 — solar system collection pack | |
+| #28 | feat: PR #28 — coin economy expansion (daily login + streaks + perfect week) | |
+| #29 | fix(collection): per-pack page crash — don't pass PackUiMeta across server→client boundary | |
+| #30 | feat: PR #30 — 4-segment weekly structure + 3 new scene types | |
+| #31 | feat: PR #31 — sound / FX themes | |
+| #32 | feat: PR #32 — achievements / trophies | |
+| #33 | feat: PR #33 — static pet companion | |
+| #34 | feat: PR #34 — island decorations + shop purchase dispatch fix | |
+| #35 | feat: PR #35 — week hub restructure + pinyin removal + practice 2x | |
+| #36 | feat: PR #36 — image-prompted word formation (text-stimulus, image-ready) | |
+| #37 | feat: PR #37 — consumable powerups (Hint / Skip / Streak-Freeze) + Shop 5-of-5 | |
+| #38 | feat: PR #38 — kid-first surface refresh (bottom nav, PIN gate, view transitions, calendar, backpack) | |
+| #39 | docs(claude.md): record PR #38 (kid-first surface refresh) | |
+| #40 | feat: PR #40 — multi-map chapter system (加勒比海 + 印度洋 placeholder) | |
+| #41 | docs(claude.md): record PR #40 (multi-map chapter system) | |
+| #42 | feat(pr42): Pollinations.ai image backfill + authoring integration | |
+| #43 | docs(claude.md): record PR #42 (Pollinations image backfill) | |
+| #44 | fix(pr44): Pollinations free-tier — model=turbo, drop enhance=true | |
+| #45 | fix(pr45): Pollinations concurrency=1 (free tier allows 1 queued request) | |
+| #46 | docs(claude.md): record PR #44 + PR #45 (Pollinations free-tier corrections) | |
+| #47 | docs(claude.md): document PR #42 backfill aftermath + image-gen blockers | |
+| #50 | feat(pr50): Scene voice/TTS — zh-CN pronunciation buttons | |
+| #51 | feat(pr51): playtest polish — flashcard + visual_pick + boss-chest + sound preview | |
+| #48 | feat(pr48): Story Mode — Yinuo-as-protagonist generative narrative | |
+| #52 | feat(pr52): gacha economy redesign — play-to-earn cards + shard swap | |
+| #53 | fix(prod): auto-apply Drizzle migrations on Vercel build | |
+| #54 | chore: ChapterAudioButton wraps SpeakButton | |
+| #55 | feat: auto-enroll new children in the default shared pack | |
+| #56 | feat: post-reveal TTS — auto-pronounce the correct answer | |
+| #57 | feat(pr57): Lianliankan replacement for WordMatchScene | |
+| #58 | feat(pr58): avatar expansion + multi-theme (Pirate + Caribbean) | |
+| #59 | fix(pr58): seed script must upsert all 7 avatar_slots | |
+| #60 | docs(claude.md): landmine — seed SLOTS array must track AVATAR_SLOT_IDS | |
+| #61 | docs(codex): refresh image-backfill handoff — 143 left, quick-start | |
+| #62 | feat(card-economy-v2): daily cap + visible swap + weekly check-in 大礼包 | |
+| #63 | chore(card-economy-v2): address final-review nits | |
+| #64 | feat(boss-animations): 10 per-week boss creatures with intro/damage/defeat | |
+| #65 | feat(voyage-board): procedural treasure-map home UI (vertical numbered voyage) | |
+| #66 | feat(card-reveal): unified tap-to-open chest reveal for all card grants | |
+| #67 | feat(xp-quests): XP foundation + daily quests (retention Phase 1) | |
+| #68 | feat(avatar-themes): Space (太空) + Unicorn (独角兽彩虹) avatar themes | |
+| #69 | docs: consolidate — image backfill complete (426/426); track Season-Pass draft | |
+| #70 | feat(home): 家/Home module — decoratable 3-room home | |
+| #71 | feat(flags): World Flags by continent (30→193) + generic grouped render | |
+| #72 | fix: pack trophy + universal shard wallet + free practice hint | |
+| #73 | feat(i18n): bilingual UI sweep — all kid-facing chrome 中文 / English | |
+| #74 | feat(shop): avatar try-on — big preview + tap-to-try, Buy bar to confirm | |
+| #75 | feat(backpack): tap-to-open card detail + World Landmarks pack | |
+| #76 | feat(backpack): real cartoon art on 62 collectible cards (Cloudflare-generated) | |
+| #77 | feat(pr-1): landscape 16:9 shell + key surfaces | |
+| #78 | feat(pr-2): landscape-fit illustrated voyage board + sailing ship | |
+| #79 | feat(pr-3): lunar calendar + festival Monthly Challenge (Phase A) | |
+| #80 | feat(pr-3b): festival avatar cosmetics (Phase B of PR-3) | |
+| #81 | fix: backpack recent-obtained URL-as-text + bilingual home furniture | |
+| #82 | feat: wire illustrated voyage map backdrops | |
+| #83 | feat(home): polish 2.5D depth + swappable wallpaper/flooring | |
+| #84 | feat(home): yard room + room-art polish + bigger canvas | |
+| #85 | docs(claude.md): record PR #84 (home yard + room polish); refresh date | |
+| #86 | feat(shop): 节日衣橱 / festival wardrobe — re-equip past festival cosmetics | |
+| #87 | feat(play): card-grant rebalance — review/practice card sources + section-aware boss | |
+| #88 | feat(backpack): continent completion trophies + scroll-jump nav (PR-A) | |
+| #89 | feat(backpack): continent avatar cosmetics + generalized rewards wardrobe (PR-B) | |
+| #90 | feat(homework): pirate homework — parent-authored weekly exercises | |
+| #91 | docs(claude.md): record Pirate Homework feature (#90) + landmines; refresh date | |
+| #92 | fix(parent): break /parent/unlock infinite redirect loop (PIN gate) | |
+| #93 | feat: hide story mode + remove hardcoded child-name leaks | |
+| #94 | feat(homework): per-child homework + simplified parent admin | |
+| #95 | docs(claude.md): record #92/#93/#94 (per-child homework, parent route group, story hidden, name privacy) + landmines | |
+| #96 | feat: Season Pass — Summer Voyage 30-tier reward track | |
+| #97 | feat(avatar): gender at child creation + gendered default heads + ears on all heads | |
+| #98 | docs(claude.md): avatar gender + ears (#97) + Blob-token blocker note | |
+| #99 | fix(scripts): pass Blob RW token explicitly to put() (dotenvx override:false leaves stale env) | |
+| #100 | feat(shards): elevated swap cost for festival/season limited cards | |
+| #101 | docs(claude.md): limited-card art + Blob-token fix (#99) + elevated shard cost (#100) | |
+| #102 | feat(scenes): 看图找字 real pictures + ×3 count + easier 图和词配对 | |
+| #103 | docs(claude.md): 看图找字 word-picture reuse + ×3 / image_word scaffolds (#102) + practice-count landmine | |
+| #104 | fix(scenes): stable option order (no jumping) + 🔊 audio (not pinyin) in image_word | |
+| #105 | docs(claude.md): scene shuffle-stability + 🔊-audio fix (#104); correct #102 pinyin→audio | |
+| #106 | chore(map2): prep authoring pipeline (waiting on David's 10 weeks) | |
+| #107 | feat(audio): pre-recorded pronunciation (CF MeloTTS) replacing browser TTS | |
+| #108 | polish: unify 🔊 read-aloud affordance + align scene stimulus cards | |
+| #109 | chore(art): unified-style word-image regenerator (CF flux) | |
+| #110 | chore(art): shared UNIFIED_ART_STYLE for word + card art; collectible FORCE mode | |
+| #111 | feat(audio): TranslatePickScene 🔊 plays the char clip too (completes the rollout) | |
+| #112 | Distribution-readiness audit (friends & family) | |
+| #113 | docs(claude.md): PR #112 distribution-readiness audit + 'use server' RPC-endpoint landmine | |
+| #114 | chore(art): resumable word-image regen + NSFW overrides | |
+| #115 | docs(claude.md): Vercel Blob free-tier guardrail (2k advanced ops/mo) | |
+| #116 | feat: edit a child's gender after creation | |
+| #117 | Admin grant console (god-mode grants + undo) | |
+| #118 | docs(claude.md): admin grant console (#117) + gender-edit (#116) + assertAdmin landmine | |
+| #119 | chore(art): fix 花生 prompt + collectible resume flag + NSFW overrides | |
+| #120 | fix(audio): revert single-character pronunciation to device zh-CN voice | |
+| #121 | feat(login): Kid/Parent entry chooser with "remember last choice" | |
+| #122 | feat(art): real cartoon art for the 12 festival reward cards | |
+| #123 | feat(maps): per-map chrome accent colour | |
+| #125 | fix(audio): disable word MeloTTS clips too — use device zh-CN voice everywhere | |
+| #124 | feat: 4 KS1 vocab packs + Study Mode | |
+| #126 | fix(art): NSFW-override for instruments 'gong' (锣) | |
+| #127 | docs(claude.md): vocab packs + Study Mode shipped; refresh 2026-06-20 | |
+| #128 | fix(shop): clear purchase feedback (toast + friendly already-owned) | |
+| #129 | feat(final-boss): map overlord battle + champion rewards (PR 1 of 2) | |
+| #130 | feat(final-boss): map gating + voyage lair node + champion title (PR 2 of 2) | |
+| #131 | docs(claude.md): map final boss + shop feedback shipped; refresh 2026-07-03 | |
+| #132 | feat: answer_events telemetry + flashcard self-assessment (A1) | |
 
 ### Next up
 
-(art_direction phased PRs #10/#12/#15/#17 all shipped. Future PR ideas in PLAN §2 phase plan; no specific PR is queued.)
+See `docs/IMPROVEMENT-ROADMAP.md` (2026-07-03) — the prioritized plan (growth flywheel, A2 review loop, V-series evolution). Map 2 authoring outranks everything once David delivers the hanzi. Always confirm with David before starting a PR.
 
 ### Loose ends to land at convenience
 - (none currently — `/parent` redirect, branch protection, and Preview `DEEPSEEK_API_KEY` all landed 2026-05-14)
