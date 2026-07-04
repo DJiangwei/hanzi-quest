@@ -114,9 +114,8 @@ Extend the `verify-*.ts` pattern into one `scripts/verify-integrity.ts`: orphane
 
 **Why.** Unit tests (1590, excellent) mock every boundary, so the two recurring prod-only bug classes — RSC "functions passed to client components" and seed/migration drift against the real DB — are invisible to CI *by construction* (PackUiMeta hazard, avatar-slot FK violation, missing story_chapters table all reached prod). Playwright is configured; `tests/e2e/` has one smoke spec.
 
-### D1 — Preview-deploy smoke suite `[ ]`
-5–8 Playwright flows against a Vercel preview URL (CI job post-deploy): sign-in → entry chooser → home (voyage board + quests + season RSC surface) → week hub → one scene to completion → shop + backpack + calendar render. Use a dedicated test child on the admin account (admin console can provision/clean). Even "page renders, no error boundary" assertions catch the RSC class.
-- Guardrails: never mutate real children's data.
+### D1 — Preview-deploy smoke suite `[x]` (shipped 2026-07-04)
+Auth setup + 6 flows on every Vercel Preview deployment (`.github/workflows/e2e-preview.yml`, `deployment_status`-triggered): sign-in (Clerk testing token, email_code 424242) → parent provision (self-creates child "E2E测试") → kid home (voyage board) → week hub → flashcard play (real `finishAttemptAction` + answer-events write) → backpack/shop/calendar → maps. Runs against the dev DB branch (C1). See the CLAUDE.md e2e landmine.
 
 ---
 
