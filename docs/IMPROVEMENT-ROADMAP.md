@@ -96,9 +96,8 @@ Backfill the shipped-PR table #18→current from CLAUDE.md/git log; add a curati
 
 **Why.** The scariest standing footgun: local `pnpm build` migrates the **prod** Neon DB (`.env.local` = prod, shared across all Vercel envs). Plus: no backups beyond free-tier retention, no error alerting — for a product now distributed to friends & family.
 
-### C1 — Separate dev/preview database `[ ]`
-Neon free tier supports branches. Create a `dev` branch DB; point local `.env.local` + Vercel Preview at it; Production keeps main. Kills the "feature build migrates prod early" class entirely (it fired again on 2026-07-03, harmlessly).
-- Guardrails: coordinate with David (his `.env.local` changes); seed scripts must then be explicitly told which env they target.
+### C1 — Separate dev/preview database `[x]` (done 2026-07-04)
+Neon `dev` branch (`ep-dry-bird-…`) created from prod; local `.env.local` + Vercel Preview/Development now point at it, Production keeps prod (`ep-steep-feather-…`). See the CLAUDE.md "DB environment topology" landmine for the prod-ops swap procedure, the sensitive-vs-encrypted CLI gotcha, and dev-branch data-reset instructions.
 
 ### C2 — Weekly backup `[ ]`
 `scripts/backup-db.ts` (pg_dump → local/iCloud file; avoid Blob — advanced-ops budget). The DB is tiny; this protects years of progress against a free-tier accident.
@@ -157,6 +156,22 @@ Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item v
 ---
 
 ## P2-H · UX polish candidates (validate via playtest first)
+
+### H1 — "Juice pass" menu (art effects + sounds, brainstormed with David 2026-07-04) `[ ]`
+All procedural-first (no asset generation → no Blob ops), `useReducedMotion`-safe, and audio must never compete with the TTS voice (duck/suspend). David picks 3–4 after a playtest; recommended default bundle = **S1 + S2 + A1 + A4**.
+
+**Sound** (today there are exactly 3 procedural sounds — the biggest untapped lever):
+- **S1 · Streak pitch-ramp**: consecutive correct answers step the ding's pitch up (reset on miss). ~10 lines in the WebAudio layer, works across all 4 sound themes.
+- **S2 · Per-boss signature sounds**: procedural intro growl / damage hit / defeat per creature type (bubbly kraken, eel zap, clam clack…). Boss fights currently reuse the generic ding/buzz.
+- **S3 · Reveal stingers**: differentiated chest-open audio for new card vs. dupe vs. pack-complete vs. limited (festival/season/champion).
+- **S4 · Ambient sea soundscape** on the voyage board only (filtered-noise waves + occasional gull), auto-suspended on scene entry, mute toggle.
+
+**Art / visual effects:**
+- **A1 · Holo/foil shimmer on limited cards** (festival/season/champion): CSS gradient-mask sheen — makes reward-only cards FEEL limited, supports the shard-cost FOMO design.
+- **A2 · Voyage board ambient life**: drifting clouds, occasional whale spout, ship wake trail (SVG + framer-motion loops; static under reduced-motion).
+- **A3 · Boss hit feedback**: 2-frame white hit-flash + viewport micro-shake on damage (reuse `ShakeWrap`), slow-motion beat before the defeat animation.
+- **A4 · Avatar idle life**: blink + gentle bob on the home HUD avatar (pure CSS keyframes).
+- **A5 · Mastery sparkle**: star-pop when a character's mastery tier rises (pairs with V1 Logbook — build together).
 
 - **Home-render side effects**: `/play/[childId]/page.tsx` awaits `syncSeasonProgress` + `generateDailyQuests` on every render — works, but serializes writes into the hottest read path. If home feels slow on iPad, restructure; measure first.
 - **Session pacing**: GAME-DESIGN §10's "express replay mode" question is still open — ask David whether replays feel long.
