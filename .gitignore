@@ -54,3 +54,4 @@ data/
 .superpowers/
 tmp/
 tests/e2e/.auth/
+backups/
