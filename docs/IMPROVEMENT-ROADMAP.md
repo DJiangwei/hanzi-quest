@@ -136,8 +136,8 @@ If device TTS ever isn't enough: new provider (Azure Speech zh-CN neural is the 
 
 **Why.** Six-plus interlocking systems (coins, XP, shards, 14 card packs, powerups, trophies, season, quests, festival) grew feature-by-feature; nobody has looked holistically. Risks: coin inflation once the shop is bought out; comprehension load on a 6yo; card packs are finite (the collection endgame needs either new packs on a cadence — the KS1-pack recipe makes this cheap — or V1's Logbook as the infinite collection).
 
-### F1 — Economy dashboard on `/admin` `[ ]`
-Read-only: per-child coin earn/spend by reason over time, XP by source, card acquisition vs. the 10/day cap, shop exhaustion %. Zero migration — ledgers exist. Tune from data, not vibes.
+### F1 — Economy dashboard on `/admin` `[x]` (shipped 2026-07-05)
+`/admin/economy`: all-children outlier strip + per-child coin flow (by reason + 8-week net), XP by source, 14-day card rate vs the 10/day cap, pack completion, shop exhaustion (incl. the "balance can buy out the shop" F2-urgency flag). Read-only aggregations in `src/lib/db/economy-stats.ts` (pure shapers, unit-tested). Use it to decide F2.
 
 ### F2 — Coin sinks `[ ]`
 Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item via `maxOwned` on `FurnitureDef`; surfaces stay 1; needs count-based ownership + dropping `home_placements`' own-1 unique; PR #128's `PurchaseOutcome` is groundwork). Other sinks only if F1 shows real inflation.
