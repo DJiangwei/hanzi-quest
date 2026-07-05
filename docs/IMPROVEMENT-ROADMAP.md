@@ -99,14 +99,14 @@ Backfill the shipped-PR table #18→current from CLAUDE.md/git log; add a curati
 ### C1 — Separate dev/preview database `[x]` (done 2026-07-04)
 Neon `dev` branch (`ep-dry-bird-…`) created from prod; local `.env.local` + Vercel Preview/Development now point at it, Production keeps prod (`ep-steep-feather-…`). See the CLAUDE.md "DB environment topology" landmine for the prod-ops swap procedure, the sensitive-vs-encrypted CLI gotcha, and dev-branch data-reset instructions.
 
-### C2 — Weekly backup `[ ]`
-`scripts/backup-db.ts` (pg_dump → local/iCloud file; avoid Blob — advanced-ops budget). The DB is tiny; this protects years of progress against a free-tier accident.
+### C2 — Weekly backup `[x]` (shipped 2026-07-05)
+`scripts/backup-db.ts` — pure-TS dump (no pg_dump needed): every public table → gzipped JSONL in `backups/` (gitignored), tables auto-discovered via information_schema. ~330KB for the whole DB. Targets `DATABASE_URL` (dev by default; swap to the `# PROD_DATABASE_URL` line for the real weekly prod backup). David: run it for prod on a loose weekly cadence.
 
 ### C3 — Error visibility `[ ]`
 Lightest first: Vercel observability + log drain or Sentry free tier. Success metric: a thrown server-action error produces something David sees, not a silent 500 on a kid's iPad.
 
-### C4 — Data-integrity check script `[ ]`
-Extend the `verify-*.ts` pattern into one `scripts/verify-integrity.ts`: orphaned rows, weeks whose chars lack words/images, shop items without catalog entries, collectible counts vs. registry, enum values without handlers. Run ad-hoc pre-release; catches the "seed script not run post-merge" class (which has bitten repeatedly — avatar slots #59, trophies rule).
+### C4 — Data-integrity check script `[x]` (shipped 2026-07-05)
+`scripts/verify-integrity.ts` — 7 read-only code⟷DB drift checks (packs⟷registry both ways, avatar slots, trophies seed, reward cosmetics seed, shard-exclusive⟺gacha_eligible alignment, word art). Exit 1 on failure. Run after any PR whose post-merge ops include a seed script. 7/7 passing against the prod snapshot at ship time.
 
 ---
 
