@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { ensureUserBootstrapped } from '@/lib/auth/bootstrap';
 import { listChildrenForUser } from '@/lib/db/children';
 import { EntryChooser } from '@/components/EntryChooser';
@@ -36,8 +35,6 @@ export default async function HomePage({
     );
   }
 
-  const t = await getTranslations('Home');
-
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 bg-[var(--color-sand-50)] px-6 py-12 text-center">
       <div className="flex flex-col items-center gap-3">
@@ -45,10 +42,10 @@ export default async function HomePage({
           Weekly characters, made playable
         </span>
         <h1 className="font-hanzi text-6xl font-bold tracking-tight text-[var(--color-ocean-900)]">
-          {t('title')}
+          Hanzi Quest
         </h1>
         <p className="max-w-md text-base text-[var(--color-sand-700)]">
-          {t('subtitle')}
+          Make your school&apos;s weekly characters playable.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-3">

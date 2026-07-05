@@ -71,8 +71,6 @@ export interface PackUiMeta {
   /** Tailwind classes for the hall card banner background + accent. */
   themeBannerClass: string;
   themeAccentClass: string;
-  /** 300 for cheap packs, 500 for the prestige zodiac. */
-  paidPullCost: number;
   /** Grid columns on the per-pack page (mobile default). */
   gridColumns: number;
   /** Per-item renderer. */
@@ -97,7 +95,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeBannerClass:
       'bg-gradient-to-br from-amber-200 via-amber-300 to-amber-500',
     themeAccentClass: 'text-amber-900',
-    paidPullCost: 500,
     gridColumns: 3,
     ItemCard: ZodiacGridItem,
   },
@@ -110,7 +107,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeBannerClass:
       'bg-gradient-to-br from-sky-200 via-sky-300 to-indigo-500',
     themeAccentClass: 'text-sky-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: FlagCard,
     resolveRevealEmoji: (slug) => FLAGS_BY_SLUG[slug]?.emoji ?? null,
@@ -129,7 +125,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeBannerClass:
       'bg-gradient-to-br from-cyan-200 via-teal-300 to-sky-500',
     themeAccentClass: 'text-teal-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: SeaCreatureCard,
     resolveRevealEmoji: (slug) => SEA_CREATURES_BY_SLUG[slug]?.emoji ?? null,
@@ -143,7 +138,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeBannerClass:
       'bg-gradient-to-br from-amber-200 via-orange-300 to-rose-400',
     themeAccentClass: 'text-amber-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: DinosaurCard,
     resolveRevealEmoji: (slug) => DINOSAURS_BY_SLUG[slug]?.emoji ?? null,
@@ -157,7 +151,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeBannerClass:
       'bg-gradient-to-br from-indigo-300 via-purple-400 to-fuchsia-500',
     themeAccentClass: 'text-indigo-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: SolarBodyCard,
     resolveRevealEmoji: (slug) => SOLAR_BODIES_BY_SLUG[slug]?.emoji ?? null,
@@ -181,7 +174,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeBannerClass:
       'bg-gradient-to-br from-amber-200 via-orange-300 to-rose-400',
     themeAccentClass: 'text-amber-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: LandmarkCard,
     resolveRevealEmoji: (slug) => LANDMARKS_BY_SLUG[slug]?.emoji ?? null,
@@ -200,7 +192,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeBannerClass:
       'bg-gradient-to-br from-rose-200 via-amber-200 to-red-300',
     themeAccentClass: 'text-rose-900',
-    paidPullCost: 0, // reward-only — never sold / pulled via gacha
     gridColumns: 3,
     ItemCard: FestivalCard,
     resolveRevealEmoji: (slug) => FESTIVALS_BY_SLUG[slug]?.emoji ?? null,
@@ -214,7 +205,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeBannerClass:
       'bg-gradient-to-br from-cyan-200 via-teal-300 to-sky-500',
     themeAccentClass: 'text-teal-900',
-    paidPullCost: 0, // reward-only — never sold / pulled via gacha
     gridColumns: 3,
     ItemCard: SeasonCard,
     resolveRevealEmoji: (slug) => SEASON_CARDS_BY_SLUG[slug]?.emoji ?? null,
@@ -227,7 +217,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeEmoji: '👑',
     themeBannerClass: 'bg-gradient-to-br from-amber-300 via-yellow-400 to-orange-500',
     themeAccentClass: 'text-amber-900',
-    paidPullCost: 0, // reward-only — never sold / pulled via gacha
     gridColumns: 3,
     ItemCard: ChampionCard,
     resolveRevealEmoji: (slug) => CHAMPIONS_BY_SLUG[slug]?.emoji ?? null,
@@ -240,7 +229,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeEmoji: '🚒',
     themeBannerClass: 'bg-gradient-to-br from-red-200 via-orange-300 to-amber-400',
     themeAccentClass: 'text-red-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: TransportCard,
     resolveRevealEmoji: (slug) => TRANSPORT_BY_SLUG[slug]?.emoji ?? null,
@@ -258,7 +246,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeEmoji: '🦋',
     themeBannerClass: 'bg-gradient-to-br from-lime-200 via-green-300 to-emerald-400',
     themeAccentClass: 'text-emerald-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: MinibeastCard,
     resolveRevealEmoji: (slug) => MINIBEASTS_BY_SLUG[slug]?.emoji ?? null,
@@ -271,7 +258,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeEmoji: '🎻',
     themeBannerClass: 'bg-gradient-to-br from-violet-200 via-purple-300 to-fuchsia-400',
     themeAccentClass: 'text-purple-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: InstrumentCard,
     resolveRevealEmoji: (slug) => INSTRUMENTS_BY_SLUG[slug]?.emoji ?? null,
@@ -289,7 +275,6 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     themeEmoji: '🦊',
     themeBannerClass: 'bg-gradient-to-br from-amber-200 via-orange-200 to-yellow-300',
     themeAccentClass: 'text-amber-900',
-    paidPullCost: 300,
     gridColumns: 3,
     ItemCard: AnimalCard,
     resolveRevealEmoji: (slug) => ANIMALS_BY_SLUG[slug]?.emoji ?? null,
