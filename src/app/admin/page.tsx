@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { collectibleItems, collectionPacks, shopItems } from '@/db/schema';
@@ -92,6 +93,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <p className="mt-1 text-sm text-[var(--color-sand-700)]">
             Cross-account grant console. Grants are logged and undoable.
           </p>
+          <nav className="mt-3 flex gap-2 text-sm">
+            <span className="rounded-full bg-[var(--color-ocean-100)] px-3 py-1 font-semibold text-[var(--color-ocean-800)]">
+              🛠️ 控制台 Console
+            </span>
+            <Link
+              href="/admin/economy"
+              className="rounded-full border border-[var(--color-sand-300)] px-3 py-1 hover:bg-[var(--color-sand-100)]"
+            >
+              📊 经济 Economy
+            </Link>
+          </nav>
         </div>
       </header>
 
