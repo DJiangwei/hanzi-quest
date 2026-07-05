@@ -30,7 +30,6 @@ describe('season pack registry', () => {
   it('registers season-summer-v1 as reward-only with a reveal emoji', () => {
     const meta = getPackMeta('season-summer-v1');
     expect(meta).not.toBeNull();
-    expect(meta?.paidPullCost).toBe(0);
     expect(meta?.resolveRevealEmoji?.('season-tortoise')).toBe('🐢');
   });
 });

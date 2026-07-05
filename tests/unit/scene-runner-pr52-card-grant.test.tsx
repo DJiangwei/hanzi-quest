@@ -67,7 +67,6 @@ vi.mock('@/components/scenes/BossScene', () => ({
   ),
 }));
 vi.mock('@/lib/actions/gacha', () => ({
-  pullFreeFromBoss: vi.fn(),
   AlreadyClaimedError: class extends Error {},
 }));
 vi.mock('@/components/scenes/fx/TreasureChestReveal', () => ({

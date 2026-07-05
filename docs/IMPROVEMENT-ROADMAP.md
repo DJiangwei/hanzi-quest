@@ -144,13 +144,12 @@ Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item v
 
 ---
 
-## P2-G · Code-health cleanup backlog (one chore PR)
+## P2-G · Code-health cleanup backlog `[x]` (chore PR shipped 2026-07-05)
 
-- `[ ]` Delete `pullPaid` + `GachaPullButton` (deprecated since PR #52; "drop in #53+" long overdue).
-- `[ ]` `pnpm remove @types/bcryptjs` (redundant stub, documented).
-- `[ ]` Audit `next-intl`: only touched in `src/app/page.tsx` + `src/i18n/request.ts` while real i18n is the hand-rolled `bi()` — use it properly or remove dep + config.
-- `[ ]` `ChapterAudioButton` → `SpeakButton` wrapper (pending PR #50 follow-up; story hidden, low urgency).
-- `[ ]` Sweep expired `@deprecated` code (keep dead *tables* — append-only rule; this is dead *code*).
+- `[x]` Deleted `pullPaid` + `pullFreeFromBoss` + `GachaPullButton` + the old `pull`/`pullInTx` engine (`db/gacha.ts` is now just the error re-export point) + `paidPullCost` from `PackUiMeta`. Tables stay (append-only).
+- `[x]` `pnpm remove @types/bcryptjs`.
+- `[x]` `next-intl` removed entirely (dep + config plugin + `src/i18n/`) — the landing's 3 strings inlined; real i18n remains the hand-rolled `bi()`.
+- `[x]` `ChapterAudioButton` → `SpeakButton` wrapper: found already done (no change needed).
 
 ---
 
