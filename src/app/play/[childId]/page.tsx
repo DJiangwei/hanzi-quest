@@ -182,12 +182,15 @@ export default async function PlayHomePage({ params }: PageProps) {
       <div className="flex flex-col gap-5">
       <section className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <AvatarRender
-            equipped={equippedRefs}
-            size={64}
-            label={`${child.displayName} 的形象 / ${child.displayName}'s avatar`}
-            className="shrink-0"
-          />
+          {/* A4 juice: gentle idle bob — home HUD only, CSS-only, reduced-motion safe */}
+          <div className="animate-avatar-idle shrink-0">
+            <AvatarRender
+              equipped={equippedRefs}
+              size={64}
+              label={`${child.displayName} 的形象 / ${child.displayName}'s avatar`}
+              className="shrink-0"
+            />
+          </div>
           <PetCompanion
             pet={
               pet

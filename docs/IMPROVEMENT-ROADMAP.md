@@ -155,8 +155,8 @@ Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item v
 
 ## P2-H · UX polish candidates (validate via playtest first)
 
-### H1 — "Juice pass" menu (art effects + sounds, brainstormed with David 2026-07-04) `[ ]`
-All procedural-first (no asset generation → no Blob ops), `useReducedMotion`-safe, and audio must never compete with the TTS voice (duck/suspend). David picks 3–4 after a playtest; recommended default bundle = **S1 + S2 + A1 + A4**.
+### H1 — "Juice pass" menu (art effects + sounds, brainstormed with David 2026-07-04) `[~]`
+All procedural-first (no asset generation → no Blob ops), `useReducedMotion`-safe, and audio must never compete with the TTS voice (duck/suspend). **Shipped 2026-07-06: S1 + S2 + A1 + A4** (spec `docs/superpowers/specs/2026-07-06-juice-pass-design.md`). Remaining menu items (S3/S4/A2/A3/A5) below for a future round.
 
 **Sound** (today there are exactly 3 procedural sounds — the biggest untapped lever):
 - **S1 · Streak pitch-ramp**: consecutive correct answers step the ding's pitch up (reset on miss). ~10 lines in the WebAudio layer, works across all 4 sound themes.
