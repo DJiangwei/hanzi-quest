@@ -5,7 +5,7 @@ import { nauticalTheme } from './nautical';
 import { fanfarePlusTheme } from './fanfare-plus';
 
 export interface ThemeHandlers {
-  ding: (ctx: AudioContext) => void;
+  ding: (ctx: AudioContext, pitchMult?: number) => void;
   buzz: (ctx: AudioContext) => void;
   fanfare: (ctx: AudioContext) => void;
 }

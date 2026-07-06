@@ -20,15 +20,16 @@ function scheduleNote(
   osc.stop(t0 + duration + 0.02);
 }
 
-/** Three-tone triangle arpeggio C5-E5-G5 — pleasant "correct" chime. */
-export function playDing(ctx: AudioContext): void {
+/** Three-tone triangle arpeggio C5-E5-G5 — pleasant "correct" chime.
+ *  `pitchMult` shifts the whole arpeggio up (S1 streak pitch-ramp). */
+export function playDing(ctx: AudioContext, pitchMult = 1): void {
   const notes: Array<[number, number]> = [
     [523, 0],
     [659, 0.08],
     [784, 0.16],
   ];
   for (const [freq, offset] of notes) {
-    scheduleNote(ctx, freq, offset, 0.18, 'triangle', 0.15);
+    scheduleNote(ctx, freq * pitchMult, offset, 0.18, 'triangle', 0.15);
   }
 }
 
