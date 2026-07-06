@@ -20,9 +20,9 @@ function bellTone(
 }
 
 export const musicBoxTheme: ThemeHandlers = {
-  ding(ctx) {
-    bellTone(ctx, 1200, 0, 0.8, 0.12);
-    bellTone(ctx, 1800, 0, 0.8, 0.08);
+  ding(ctx, pitchMult = 1) {
+    bellTone(ctx, 1200 * pitchMult, 0, 0.8, 0.12);
+    bellTone(ctx, 1800 * pitchMult, 0, 0.8, 0.08);
   },
   buzz(ctx) {
     const osc = ctx.createOscillator();

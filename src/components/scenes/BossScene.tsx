@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { BossQuestionType } from '@/lib/scenes/configs';
 import { getBossCreature } from '@/lib/scenes/boss-roster';
+import { playBossCue } from '@/lib/audio/boss';
 import type { BossAnimState } from './fx/bosses/types';
 import { AudioPickScene } from './AudioPickScene';
 import { ImagePickScene } from './ImagePickScene';
@@ -82,12 +83,13 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
   // Re-arms on reset (which sets phase back to 'intro').
   useEffect(() => {
     if (phase !== 'intro') return;
+    playBossCue(creature.key, 'intro');
     const t = setTimeout(() => {
       setPhase('fighting');
       setAnim('idle');
     }, INTRO_MS);
     return () => clearTimeout(t);
-  }, [phase]);
+  }, [phase, creature.key]);
 
   // Cleanup pending timers on unmount (so onComplete can't fire for an
   // abandoned fight if the kid leaves during the defeat animation).
@@ -97,12 +99,14 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
   }, []);
 
   const win = () => {
+    playBossCue(creature.key, 'defeat');
     setPhase('defeating');
     setAnim('defeat');
     winTimer.current = setTimeout(() => onComplete(true), DEFEAT_MS);
   };
 
   const flinch = () => {
+    playBossCue(creature.key, 'damage');
     setAnim('damage');
     if (damageTimer.current) clearTimeout(damageTimer.current);
     damageTimer.current = setTimeout(() => setAnim('idle'), DAMAGE_MS);

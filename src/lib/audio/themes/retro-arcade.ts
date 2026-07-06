@@ -20,9 +20,9 @@ function blip(
 }
 
 export const retroArcadeTheme: ThemeHandlers = {
-  ding(ctx) {
-    blip(ctx, 1320, 0, 0.06, 0.1);
-    blip(ctx, 1760, 0.06, 0.06, 0.1);
+  ding(ctx, pitchMult = 1) {
+    blip(ctx, 1320 * pitchMult, 0, 0.06, 0.1);
+    blip(ctx, 1760 * pitchMult, 0.06, 0.06, 0.1);
   },
   buzz(ctx) {
     blip(ctx, 200, 0, 0.2, 0.12);

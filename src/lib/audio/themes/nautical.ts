@@ -28,9 +28,9 @@ function foghorn(ctx: AudioContext, startOffset: number, duration: number, peak:
 }
 
 export const nauticalTheme: ThemeHandlers = {
-  ding(ctx) {
-    bell(ctx, 880, 0, 1.2, 0.12);
-    bell(ctx, 1320, 0, 1.2, 0.08);
+  ding(ctx, pitchMult = 1) {
+    bell(ctx, 880 * pitchMult, 0, 1.2, 0.12);
+    bell(ctx, 1320 * pitchMult, 0, 1.2, 0.08);
   },
   buzz(ctx) {
     foghorn(ctx, 0, 0.4, 0.1);

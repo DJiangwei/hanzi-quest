@@ -12,6 +12,7 @@ import type { GrantedTrophy } from '@/lib/actions/play';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { swapShardsForItem, convertDuplicateToShard } from '@/lib/actions/gacha';
 import { shardSwapCostForPack } from '@/lib/economy/shards';
+import { HoloShimmer, isLimitedPack } from '@/components/play/items/HoloShimmer';
 import { STUDY_MIN_OWNED } from '@/lib/play/study';
 
 interface Props {
@@ -109,7 +110,9 @@ export function PackPageBody({
           }
         }}
       >
-        <Card item={item} owned={isOwned} size="md" compact={false} />
+        <HoloShimmer active={isOwned && isLimitedPack(packSlug)}>
+          <Card item={item} owned={isOwned} size="md" compact={false} />
+        </HoloShimmer>
         {count > 1 && (
           <span className="absolute right-0.5 top-0.5 z-10 rounded-full bg-sky-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white">
             ×{count}
