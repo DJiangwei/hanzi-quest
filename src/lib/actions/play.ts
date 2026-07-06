@@ -448,21 +448,15 @@ export async function finishLevelAction(
     if (r.skip) cardMessage = r.skip; // boss never returns 'already_granted'
   }
 
-  // Per-section card grant for review / practice (boss handled above).
-  //  • review   → once per (week, day): refId = `${weekId}:${dayUtc}`. A repeat of
-  //    the SAME week's review the same day reports 'review_done_today'.
-  //  • practice → every full completion: refId = sessionId (only the daily cap
-  //    bounds it). Both still consume the shared daily card cap.
+  // Per-section card grant for review (boss handled above; practice moved to
+  // finishAttemptAction's daily-cumulative threshold — anti-avoidance rebalance
+  // 2026-07-06).
+  //  • review → once per UTC day GLOBAL: refId = dayUtc. Farming multiple old
+  //    weeks' reviews the same day yields exactly one card; any repeat reports
+  //    'review_done_today'. Still consumes the shared daily card cap.
   let sectionCard: RevealCard | null = null;
-  if (
-    allScenesCleared &&
-    (parsed.section === 'review' || parsed.section === 'practice')
-  ) {
-    const refId =
-      parsed.section === 'review'
-        ? `${parsed.weekId}:${todayUtcIso()}`
-        : parsed.sessionId;
-    const r = await pullSectionCard(child.id, parsed.section, refId);
+  if (allScenesCleared && parsed.section === 'review') {
+    const r = await pullSectionCard(child.id, 'review', todayUtcIso());
     sectionCard = r.card;
     if (r.skip) cardMessage = r.skip;
   }
