@@ -5,6 +5,7 @@ import { getPackMeta } from '@/lib/collections/packRegistry';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import { TreasureChestReveal } from './TreasureChestReveal';
+import { HoloShimmer, isLimitedPack } from '@/components/play/items/HoloShimmer';
 
 interface Props {
   cards: RevealCard[];
@@ -46,21 +47,23 @@ export function CardChestReveal({ cards, onDone }: Props) {
         </>
       ) : (
         <>
-          <div className="rounded-3xl bg-white/95 px-4 py-2 shadow-xl">
-            <TreasureChestReveal
-              item={{
-                id: card.id,
-                slug: card.slug,
-                nameZh: card.nameZh,
-                nameEn: card.nameEn,
-                loreZh: card.loreZh,
-                loreEn: card.loreEn,
-                emoji: emojiFor(card),
-              }}
-              wasDuplicate={card.isDupe}
-              shardsAfter={card.shardsAfter}
-            />
-          </div>
+          <HoloShimmer active={isLimitedPack(card.packSlug)}>
+            <div className="rounded-3xl bg-white/95 px-4 py-2 shadow-xl">
+              <TreasureChestReveal
+                item={{
+                  id: card.id,
+                  slug: card.slug,
+                  nameZh: card.nameZh,
+                  nameEn: card.nameEn,
+                  loreZh: card.loreZh,
+                  loreEn: card.loreEn,
+                  emoji: emojiFor(card),
+                }}
+                wasDuplicate={card.isDupe}
+                shardsAfter={card.shardsAfter}
+              />
+            </div>
+          </HoloShimmer>
           {isLast ? (
             <WoodSignButton size="lg" onClick={onDone}>
               继续 / Continue

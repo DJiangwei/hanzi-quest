@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import type { CollectibleItem } from '@/lib/db/collections';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { SpeakButton } from '@/components/play/SpeakButton';
+import { HoloShimmer, isLimitedPack } from '@/components/play/items/HoloShimmer';
 
 interface Props {
   /**
@@ -50,7 +51,9 @@ export function CardDetailDialog({ packSlug, item, owned, onClose }: Props) {
         className="flex w-full max-w-sm flex-col items-center gap-3 rounded-3xl border-4 border-amber-300 bg-amber-50 p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <Card item={item} owned={owned} size="lg" />
+        <HoloShimmer active={owned && isLimitedPack(packSlug)}>
+          <Card item={item} owned={owned} size="lg" />
+        </HoloShimmer>
 
         <SpeakButton text={item.nameZh} size="md" label="读一读 / Read aloud" />
 
