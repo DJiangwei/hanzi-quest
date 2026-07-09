@@ -16,6 +16,7 @@ const REASON_ICON: Record<EconomyBonus['reason'], string> = {
   streak_milestone: '🔥',
   perfect_week: '🏆',
   streak_freeze: '🧊',
+  boss_courage: '🛡️',
 };
 
 /**

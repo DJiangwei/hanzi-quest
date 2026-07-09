@@ -12,7 +12,8 @@ export type XpSource =
   | 'streak_milestone'
   | 'homework'
   | 'study'
-  | 'admin_grant';
+  | 'admin_grant'
+  | 'boss_courage';
 
 export interface AwardXpResult { totalXp: number; level: number; leveledUp: boolean; }
 

@@ -114,6 +114,35 @@ export async function hasPriorAttempt(
 }
 
 /**
+ * Anti-avoidance rebalance (R3): DISTINCT practice scenes of `weekId` cleared
+ * (score=100) by `childId` since 00:00 UTC of `dayUtcIso` — cumulative across
+ * sessions, so partial practice runs still count toward the daily card.
+ */
+export async function countPracticeClearedToday(
+  childId: string,
+  weekId: string,
+  dayUtcIso: string,
+): Promise<number> {
+  const [row] = await db
+    .select({
+      n: sql<number>`COUNT(DISTINCT ${sceneAttempts.weekLevelId})`,
+    })
+    .from(sceneAttempts)
+    .innerJoin(playSessions, eq(playSessions.id, sceneAttempts.sessionId))
+    .innerJoin(weekLevels, eq(weekLevels.id, sceneAttempts.weekLevelId))
+    .where(
+      and(
+        eq(playSessions.childId, childId),
+        eq(weekLevels.weekId, weekId),
+        sql`${weekLevels.levelKey} LIKE 'practice:%'`,
+        eq(sceneAttempts.score, 100),
+        sql`${sceneAttempts.completedAt} >= ${`${dayUtcIso}T00:00:00Z`}::timestamptz`,
+      ),
+    );
+  return Number(row?.n ?? 0);
+}
+
+/**
  * True iff every weekLevel for `weekId` has at least one sceneAttempt by
  * `childId` with score=100. Powers the +200 perfect_week bonus.
  */

@@ -214,6 +214,7 @@ describe('SceneRunner CardChestReveal surfacing (Card Economy v2)', () => {
     vi.mocked(finishAttemptAction).mockResolvedValueOnce({
       coinsAwarded: 10,
       perfect: false,
+      cardGrants: [],
       bonuses: [],
       trophies: [],
       giftPack: null,

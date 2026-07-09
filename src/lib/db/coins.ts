@@ -21,11 +21,13 @@ export type AwardCoinReason =
   | 'perfect_week'
   | 'daily_chest'
   | 'homework_complete'
-  | 'season_reward';
+  | 'season_reward'
+  | 'boss_courage';
 
 export const DAILY_LOGIN_AWARD = 20;
 export const STREAK_MILESTONE_AWARD = 100;
 export const PERFECT_WEEK_AWARD = 200;
+export const BOSS_COURAGE_AWARD = 30;
 
 interface AwardInput {
   childId: string;
@@ -141,6 +143,27 @@ export async function awardDailyLoginIfDue(
     refId: todayIsoDate,
   });
   return { awarded: true, delta: DAILY_LOGIN_AWARD };
+}
+
+/**
+ * Anti-avoidance rebalance (R2a): the day's FIRST failed boss attempt still
+ * pays — trying must never feel like zero. Idempotent per (child, UTC day).
+ */
+export async function awardBossCourageIfDue(
+  childId: string,
+  todayIsoDate: string,
+): Promise<{ awarded: boolean; delta: number }> {
+  if (await hasExistingAward(childId, 'boss_courage', 'utc_date', todayIsoDate)) {
+    return { awarded: false, delta: 0 };
+  }
+  await awardCoins({
+    childId,
+    delta: BOSS_COURAGE_AWARD,
+    reason: 'boss_courage',
+    refType: 'utc_date',
+    refId: todayIsoDate,
+  });
+  return { awarded: true, delta: BOSS_COURAGE_AWARD };
 }
 
 /**
