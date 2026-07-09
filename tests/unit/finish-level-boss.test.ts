@@ -402,7 +402,7 @@ describe('finishLevelAction section card grants (review / practice)', () => {
     mocks.getWeekProgress.mockResolvedValue(null);
   });
 
-  it('review completion pulls a "review" card keyed by week+day, and never boss reward', async () => {
+  it('review completion pulls a "review" card keyed by DAY ONLY (global 1/day), never boss reward', async () => {
     mocks.pullCardForChild.mockResolvedValue(grantedResult);
 
     const result = await finishLevelAction({
@@ -415,11 +415,9 @@ describe('finishLevelAction section card grants (review / practice)', () => {
       durationSeconds: 60,
     });
 
-    expect(mocks.pullCardForChild).toHaveBeenCalledWith(
-      'c1',
-      'review',
-      `${WEEK_ID}:2026-05-19`,
-    );
+    // Anti-avoidance rebalance: refId is the UTC day alone — reviewing a
+    // DIFFERENT week the same day must dedupe to the same grant.
+    expect(mocks.pullCardForChild).toHaveBeenCalledWith('c1', 'review', '2026-05-19');
     expect(result.cardGrants).toHaveLength(1);
     expect(result.bossCleared).toBe(false);
     expect(mocks.awardCoins).not.toHaveBeenCalled();
@@ -442,9 +440,7 @@ describe('finishLevelAction section card grants (review / practice)', () => {
     expect(result.cardMessage).toBe('review_done_today');
   });
 
-  it('practice completion pulls a "practice" card keyed by session (cap-only)', async () => {
-    mocks.pullCardForChild.mockResolvedValue(grantedResult);
-
+  it('practice completion no longer grants a section card here (moved to the daily-cumulative threshold in finishAttemptAction)', async () => {
     const result = await finishLevelAction({
       sessionId: SESSION_ID,
       childId: CHILD_ID,
@@ -455,8 +451,8 @@ describe('finishLevelAction section card grants (review / practice)', () => {
       durationSeconds: 200,
     });
 
-    expect(mocks.pullCardForChild).toHaveBeenCalledWith('c1', 'practice', SESSION_ID);
-    expect(result.cardGrants).toHaveLength(1);
+    expect(mocks.pullCardForChild).not.toHaveBeenCalled();
+    expect(result.cardGrants).toEqual([]);
   });
 
   it('reports daily_cap_reached when the pull is capped', async () => {
@@ -466,7 +462,7 @@ describe('finishLevelAction section card grants (review / practice)', () => {
       sessionId: SESSION_ID,
       childId: CHILD_ID,
       weekId: WEEK_ID,
-      section: 'practice',
+      section: 'review',
       totalScenesPassed: 13,
       totalScenesInWeek: 13,
       durationSeconds: 200,

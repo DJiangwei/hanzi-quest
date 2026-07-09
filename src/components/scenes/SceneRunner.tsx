@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import type { EconomyBonus, GrantedTrophy, CardSkipReason } from '@/lib/actions/play';
 import type { PowerupCounts } from '@/lib/db/powerups';
 import {
+  claimBossCourageAction,
   finishAttemptAction,
   finishLevelAction,
   startSessionAction,
@@ -199,6 +200,26 @@ export function SceneRunner({
     );
   }
 
+  // Anti-avoidance rebalance (R2a): a boss defeat still pays a once-per-day
+  // courage bonus. Fire-and-forget — the award is idempotent server-side.
+  const handleBossDefeated = () => {
+    claimBossCourageAction(childId)
+      .then((r) => {
+        if (r.awarded) {
+          setActiveBonuses((prev) => [
+            ...prev,
+            {
+              reason: 'boss_courage',
+              delta: r.delta,
+              labelZh: '勇敢挑战奖!虽败犹荣',
+              labelEn: 'Brave try — bonus!',
+            },
+          ]);
+        }
+      })
+      .catch((err) => console.error('[SceneRunner] boss courage claim failed:', err));
+  };
+
   const advance = (correct: boolean) => {
     if (pending) return;
     // Capture + clear the telemetry batch synchronously so late pushes can't
@@ -218,6 +239,11 @@ export function SceneRunner({
         events,
       });
       setCoinsThisSession((c) => c + result.coinsAwarded);
+      // R3: the daily-cumulative practice card arrives mid-session — same
+      // tap-to-open chest as gift-pack cards.
+      if (result.cardGrants?.length) {
+        setRevealCards((q) => [...q, ...result.cardGrants]);
+      }
       if (result.giftPack?.cards?.length) {
         setRevealCards((q) => [
           ...q,
@@ -404,6 +430,7 @@ export function SceneRunner({
           pool={pool}
           onComplete={advance}
           onAnswerEvent={pushEvent}
+          onDefeated={handleBossDefeated}
         />
       );
       break;

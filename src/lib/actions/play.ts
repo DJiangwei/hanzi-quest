@@ -4,12 +4,14 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireChild } from '@/lib/auth/guards';
 import {
+  awardBossCourageIfDue,
   awardCoins,
   awardDailyLoginIfDue,
   awardPerfectWeekIfDue,
   awardStreakMilestoneIfDue,
 } from '@/lib/db/coins';
 import {
+  countPracticeClearedToday,
   endPlaySession,
   getLevelById,
   getWeekProgress,
@@ -19,6 +21,7 @@ import {
   startPlaySession,
   upsertWeekProgress,
 } from '@/lib/db/play';
+import { PRACTICE_CARD_DAILY_THRESHOLD } from '@/lib/scenes/configs';
 import { checkAndGrantTrophies, type GrantedTrophy } from '@/lib/db/trophies';
 import { grantContinentRewards } from '@/lib/db/continent-rewards';
 export type { GrantedTrophy } from '@/lib/db/trophies';
@@ -27,7 +30,11 @@ import {
   getPlayableWeekForChild,
   listCharactersForWeek,
 } from '@/lib/db/weeks';
-import { pullCardForChild, claimWeeklyGiftIfDue } from '@/lib/play/card-grants';
+import {
+  pullCardForChild,
+  claimWeeklyGiftIfDue,
+  safePackCompleteTrophy,
+} from '@/lib/play/card-grants';
 import type { GiftCard } from '@/lib/db/grants';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import { awardXp, type AwardXpResult } from '@/lib/db/xp';
@@ -122,7 +129,8 @@ export type EconomyBonusReason =
   | 'daily_login'
   | 'streak_milestone'
   | 'perfect_week'
-  | 'streak_freeze';
+  | 'streak_freeze'
+  | 'boss_courage';
 
 export interface EconomyBonus {
   reason: EconomyBonusReason;
@@ -162,6 +170,8 @@ export async function finishAttemptAction(
   bonuses: EconomyBonus[];
   trophies: GrantedTrophy[];
   giftPack: { cards: GiftCard[] } | null;
+  /** R3: the daily-cumulative practice card, granted mid-session at the threshold. */
+  cardGrants: RevealCard[];
   xp: { gained: number; level: number; leveledUp: boolean };
 }> {
   const parsed = FinishAttemptSchema.parse(input);
@@ -316,12 +326,47 @@ export async function finishAttemptAction(
     }
   }
 
+  // ─── R3 practice card (anti-avoidance rebalance) ─────────────────────────
+  // Granted the moment the child's DISTINCT practice scenes cleared TODAY for
+  // this week reaches the threshold — cumulative across sessions, so partial
+  // runs count. Once per (week, day) via the grants log; consumes the daily
+  // cap. Guarded: a grant failure must never fail the attempt.
+  const attemptCardGrants: RevealCard[] = [];
+  if (parsed.source === 'practice' && score === 100) {
+    try {
+      const clearedToday = await countPracticeClearedToday(
+        child.id,
+        parsed.weekId,
+        todayUtcIso(),
+      );
+      if (clearedToday >= PRACTICE_CARD_DAILY_THRESHOLD) {
+        const res = await pullCardForChild(
+          child.id,
+          'practice',
+          `${parsed.weekId}:${todayUtcIso()}`,
+        );
+        const card = toRevealCard(res);
+        if (card) {
+          attemptCardGrants.push(card);
+          void tickQuestProgressSafe(child.id, 'earn_card', 1);
+          void safePackCompleteTrophy(child.id, card.packSlug);
+          if (card.packSlug === 'flags-v1') {
+            collectedTrophies.push(...(await grantContinentRewards(child.id)));
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[finishAttemptAction] practice card grant failed:', err);
+    }
+  }
+
   return {
     coinsAwarded,
     perfect,
     bonuses,
     trophies: collectedTrophies,
     giftPack,
+    cardGrants: attemptCardGrants,
     xp: { gained: xpGained, level: lastXpResult.level, leveledUp: lastXpResult.leveledUp },
   };
 }
@@ -336,6 +381,24 @@ const FinishLevelSchema = z.object({
   totalScenesInWeek: z.number().int().min(1),
   durationSeconds: z.number().int().min(0),
 });
+
+/**
+ * Anti-avoidance rebalance (R2a): the day's FIRST failed boss attempt pays a
+ * courage bonus — coins + a little XP — so trying never feels like zero.
+ * Idempotent per (child, UTC day) server-side; the client may call it on
+ * every defeat without over-granting.
+ */
+export async function claimBossCourageAction(
+  childId: string,
+): Promise<{ awarded: boolean; delta: number }> {
+  const { child } = await requireChild(childId);
+  const today = todayUtcIso();
+  const result = await awardBossCourageIfDue(child.id, today);
+  if (result.awarded) {
+    void safeAwardXp(child.id, 10, 'boss_courage', today);
+  }
+  return result;
+}
 
 export async function finishLevelAction(
   input: z.input<typeof FinishLevelSchema>,
@@ -448,21 +511,15 @@ export async function finishLevelAction(
     if (r.skip) cardMessage = r.skip; // boss never returns 'already_granted'
   }
 
-  // Per-section card grant for review / practice (boss handled above).
-  //  • review   → once per (week, day): refId = `${weekId}:${dayUtc}`. A repeat of
-  //    the SAME week's review the same day reports 'review_done_today'.
-  //  • practice → every full completion: refId = sessionId (only the daily cap
-  //    bounds it). Both still consume the shared daily card cap.
+  // Per-section card grant for review (boss handled above; practice moved to
+  // finishAttemptAction's daily-cumulative threshold — anti-avoidance rebalance
+  // 2026-07-06).
+  //  • review → once per UTC day GLOBAL: refId = dayUtc. Farming multiple old
+  //    weeks' reviews the same day yields exactly one card; any repeat reports
+  //    'review_done_today'. Still consumes the shared daily card cap.
   let sectionCard: RevealCard | null = null;
-  if (
-    allScenesCleared &&
-    (parsed.section === 'review' || parsed.section === 'practice')
-  ) {
-    const refId =
-      parsed.section === 'review'
-        ? `${parsed.weekId}:${todayUtcIso()}`
-        : parsed.sessionId;
-    const r = await pullSectionCard(child.id, parsed.section, refId);
+  if (allScenesCleared && parsed.section === 'review') {
+    const r = await pullSectionCard(child.id, 'review', todayUtcIso());
     sectionCard = r.card;
     if (r.skip) cardMessage = r.skip;
   }

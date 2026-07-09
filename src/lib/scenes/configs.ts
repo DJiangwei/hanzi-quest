@@ -108,3 +108,8 @@ export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 7;
 // image-scenes PR: 看图找字 bumped 1 → 3 → 15 (3 audio + 3 image_pick + 1
 // lianliankan + 2 image_word + 6 meaning). PR #51: visual_pick retired (was 13/14).
 export const PRACTICE_SCENE_COUNT = 15;
+
+// Anti-avoidance rebalance (R3, 2026-07-06): the practice card is granted the
+// moment the child's DISTINCT practice scenes cleared TODAY for a week reaches
+// this threshold (cumulative across sessions — resumable), once per (week, day).
+export const PRACTICE_CARD_DAILY_THRESHOLD = 8;

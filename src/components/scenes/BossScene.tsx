@@ -33,6 +33,8 @@ interface Props {
   onComplete: (won: boolean) => void;
   /** Telemetry: emits one event per answered boss question (no pickedKey in v1). */
   onAnswerEvent?: (e: SceneAnswerEvent) => void;
+  /** Fired once each time the kid runs out of lives (courage-award hook). */
+  onDefeated?: () => void;
 }
 
 type Phase = 'intro' | 'fighting' | 'defeating' | 'defeated' | 'victory';
@@ -62,7 +64,7 @@ function buildQuestions(
     .filter((q): q is Question => q !== null);
 }
 
-export function BossScene({ weekNumber, characterIds, questionTypes, pool, onComplete, onAnswerEvent }: Props) {
+export function BossScene({ weekNumber, characterIds, questionTypes, pool, onComplete, onAnswerEvent, onDefeated }: Props) {
   const questions = useMemo(
     () => buildQuestions(characterIds, questionTypes, pool),
     [characterIds, questionTypes, pool],
@@ -134,6 +136,7 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
       const remaining = lives - 1;
       setLives(remaining);
       if (remaining === 0) {
+        onDefeated?.();
         setPhase('defeated');
         setAnim('idle');
       } else {
@@ -149,7 +152,9 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
   };
 
   const reset = () => {
-    setCurrentIdx(0);
+    // Anti-avoidance rebalance (R2b): retry restores lives but KEEPS progress
+    // — one loss no longer wipes the whole gauntlet. The fear being removed
+    // is "everything is lost"; persistence now beats the boss.
     setLives(3);
     setAnim('intro');
     setPhase('intro');

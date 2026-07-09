@@ -153,6 +153,12 @@ Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item v
 
 ---
 
+## P0-X · Anti-avoidance rebalance `[x]` (shipped 2026-07-09, from David's playtest finding)
+
+David observed the child farming the zero-risk review card across all published weeks while avoiding practice + boss (畏难). Root cause was incentive design (review paid best per minute with zero failure risk). Shipped R1+R2+R3 (spec `docs/superpowers/specs/2026-07-06-anti-avoidance-rebalance-design.md`): review card 1/day GLOBAL · boss courage bonus on first daily loss + retry keeps progress · practice card at 8 cumulative scenes/day (resumable). **Follow-up: check `/admin/economy` card-source split ~2 weeks after ship** — expect `review` share to drop and `practice`/`boss_clear` to rise; if avoidance persists, next levers are the daily-quest chest granting a card and boss difficulty scaffolding (V2 smart distractors starting gentle).
+
+---
+
 ## P2-H · UX polish candidates (validate via playtest first)
 
 ### H1 — "Juice pass" menu (art effects + sounds, brainstormed with David 2026-07-04) `[~]`

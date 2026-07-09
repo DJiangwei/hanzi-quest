@@ -125,6 +125,7 @@ describe('SceneRunner XpGainToast', () => {
     vi.mocked(finishAttemptAction).mockResolvedValueOnce({
       coinsAwarded: 5,
       perfect: false,
+      cardGrants: [],
       bonuses: [],
       trophies: [],
       giftPack: null,
@@ -163,6 +164,7 @@ describe('SceneRunner XpGainToast', () => {
     vi.mocked(finishAttemptAction).mockResolvedValueOnce({
       coinsAwarded: 50,
       perfect: false,
+      cardGrants: [],
       bonuses: [],
       trophies: [],
       giftPack: null,
