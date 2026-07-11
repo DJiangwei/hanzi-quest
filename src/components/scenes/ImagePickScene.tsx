@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
+import { HintBubble } from './HintBubble';
 import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface CharacterDetail {
@@ -18,13 +19,16 @@ interface Props {
   pool: CharacterDetail[];
   /** A picture (reused from one of the char's words) shown as the stimulus. */
   imageUrl?: string | null;
+  /** English description of the picture (the stimulus word's imageHook) —
+   *  revealed by the free 💡 hint. */
+  imageHint?: string | null;
   onComplete: (correct: boolean) => void;
   /** Telemetry: emits one event per answered question. */
   onAnswerEvent?: (e: SceneAnswerEvent) => void;
   hintRequested?: boolean;
 }
 
-export function ImagePickScene({ target, pool, imageUrl, onComplete, onAnswerEvent, hintRequested }: Props) {
+export function ImagePickScene({ target, pool, imageUrl, imageHint, onComplete, onAnswerEvent, hintRequested }: Props) {
   // Shuffle ONCE per scene (keyed on the stable characterId, not the target/pool
   // object identity) — otherwise a parent re-render reshuffles the options
   // mid-selection, making them jump around.
@@ -48,14 +52,17 @@ export function ImagePickScene({ target, pool, imageUrl, onComplete, onAnswerEve
       prompt="看图找字 / Find the character"
       stimulus={
         imageUrl ? (
-          <div className="h-48 w-72 overflow-hidden rounded-2xl border-4 border-amber-800/30 bg-amber-50 shadow-lg">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt={target.imageHook ?? target.hanzi}
-              className="h-full w-full object-cover"
-              loading="eager"
-            />
+          <div className="flex flex-col items-center">
+            <div className="h-48 w-72 overflow-hidden rounded-2xl border-4 border-amber-800/30 bg-amber-50 shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt={target.imageHook ?? target.hanzi}
+                className="h-full w-full object-cover"
+                loading="eager"
+              />
+            </div>
+            {hintRequested && imageHint ? <HintBubble text={imageHint} /> : null}
           </div>
         ) : (
           <div className="flex h-48 w-72 items-center justify-center rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 text-center text-base text-amber-900 shadow-sm">

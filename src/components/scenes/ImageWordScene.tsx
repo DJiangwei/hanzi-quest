@@ -5,6 +5,7 @@ import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 import { shuffle } from '@/lib/scenes/sample';
 import { useSpeak } from '@/lib/hooks/useSpeak';
 import { useSpeechSupported } from '@/lib/hooks/useSpeechSupported';
+import { HintBubble } from './HintBubble';
 import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface WordOption {
@@ -121,14 +122,19 @@ export function ImageWordScene({
   const stimulusText = correctWord.imageHook ?? correctWord.meaningEn ?? correctWord.text;
 
   const stimulus = correctWord.imageUrl ? (
-    <div className="h-48 w-72 overflow-hidden rounded-2xl border-4 border-amber-800/30 bg-amber-50 shadow-lg">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={correctWord.imageUrl}
-        alt={stimulusText}
-        className="h-full w-full object-cover"
-        loading="eager"
-      />
+    <div className="flex flex-col items-center">
+      <div className="h-48 w-72 overflow-hidden rounded-2xl border-4 border-amber-800/30 bg-amber-50 shadow-lg">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={correctWord.imageUrl}
+          alt={stimulusText}
+          className="h-full w-full object-cover"
+          loading="eager"
+        />
+      </div>
+      {hintRequested && (correctWord.imageHook ?? correctWord.meaningEn) ? (
+        <HintBubble text={(correctWord.imageHook ?? correctWord.meaningEn)!} />
+      ) : null}
     </div>
   ) : (
     <div className="flex h-48 w-72 items-center justify-center rounded-2xl border-4 border-amber-800/30 bg-gradient-to-br from-amber-50 via-sky-50 to-amber-50 p-5 text-center shadow-lg">

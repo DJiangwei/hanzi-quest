@@ -381,13 +381,18 @@ export function SceneRunner({
       const c = characterId ? charactersById[characterId] : undefined;
       // 看图找字: show a picture from one of the char's words (reusing the word
       // images) and ask which character it is. Falls back to the imageHook text
-      // card inside ImagePickScene when no word image exists.
-      const stimulusImageUrl = c?.words.find((w) => w.imageUrl)?.imageUrl ?? null;
+      // card inside ImagePickScene when no word image exists. The stimulus
+      // word's imageHook doubles as the free-💡 English description hint.
+      const stimulusWord = c?.words.find((w) => w.imageUrl) ?? null;
+      const stimulusImageUrl = stimulusWord?.imageUrl ?? null;
+      const stimulusHint =
+        stimulusWord?.imageHook ?? stimulusWord?.meaningEn ?? c?.imageHook ?? null;
       body = c ? (
         <ImagePickScene
           key={currentLevel.id}
           target={c}
           imageUrl={stimulusImageUrl}
+          imageHint={stimulusHint}
           pool={pool}
           onComplete={advance}
           onAnswerEvent={pushEvent}
