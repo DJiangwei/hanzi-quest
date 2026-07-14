@@ -196,6 +196,34 @@ describe('T1: frontier double treasure', () => {
     expect(mocks.tickQuestProgressSafe).not.toHaveBeenCalledWith('c1', 'frontier_practice', 1);
   });
 
+  it('ledger split: scene_complete pays the base ONLY; the perfect bonus is its own row (no double credit)', async () => {
+    // Regression: pre-fix, scene_complete was paid (base + bonus) AND the
+    // bonus was paid again as scene_perfect_bonus — 100 total instead of 75.
+    const res = await finishAttemptAction({ ...BASE, source: 'practice' });
+    expect(res.coinsAwarded).toBe(75);
+    const sceneRows = mocks.awardCoins.mock.calls
+      .map(([arg]) => arg)
+      .filter((a) => a.refType === 'scene_attempt');
+    expect(sceneRows).toEqual([
+      expect.objectContaining({ delta: 50, reason: 'scene_complete' }),
+      expect.objectContaining({ delta: 25, reason: 'scene_perfect_bonus' }),
+    ]);
+    expect(sceneRows.reduce((s, a) => s + a.delta, 0)).toBe(res.coinsAwarded);
+  });
+
+  it('ledger split on the frontier: both rows double, sum stays = coinsAwarded (150)', async () => {
+    mocks.isFrontierWeek.mockResolvedValue(true);
+    const res = await finishAttemptAction({ ...BASE, source: 'practice' });
+    expect(res.coinsAwarded).toBe(150);
+    const sceneRows = mocks.awardCoins.mock.calls
+      .map(([arg]) => arg)
+      .filter((a) => a.refType === 'scene_attempt');
+    expect(sceneRows).toEqual([
+      expect.objectContaining({ delta: 100, reason: 'scene_complete' }),
+      expect.objectContaining({ delta: 50, reason: 'scene_perfect_bonus' }),
+    ]);
+  });
+
   it('an isFrontierWeek failure degrades to no bonus, never breaks the attempt', async () => {
     mocks.isFrontierWeek.mockRejectedValue(new Error('db down'));
     const res = await finishAttemptAction({ ...BASE, source: 'practice' });
