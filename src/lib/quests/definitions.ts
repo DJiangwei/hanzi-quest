@@ -1,4 +1,4 @@
-export interface QuestContext { bossUnlocked: boolean; }
+export interface QuestContext { bossUnlocked: boolean; hasFrontier: boolean; }
 export interface QuestDef {
   key: string; labelZh: string; labelEn: string; emoji: string;
   target: number; xp: number; feasible: (ctx: QuestContext) => boolean;
@@ -13,6 +13,8 @@ export const QUEST_DEFS: QuestDef[] = [
   { key: 'practice_scenes',   labelZh: '练习生',     labelEn: 'Trainee',       emoji: '✍️', target: 2, xp: 20, feasible: always },
   { key: 'review_flashcards', labelZh: '复习时间',   labelEn: 'Reviewer',      emoji: '🔁', target: 3, xp: 15, feasible: always },
   { key: 'full_level',        labelZh: '大冒险家',   labelEn: 'Adventurer',    emoji: '🏝️', target: 1, xp: 30, feasible: always },
+  // T1 frontier steering: practice on the newest (double-treasure) island.
+  { key: 'frontier_practice', labelZh: '新岛先锋',   labelEn: 'Trailblazer',   emoji: '🚩', target: 3, xp: 25, feasible: (c) => c.hasFrontier },
 ];
 export const QUEST_BY_KEY = new Map(QUEST_DEFS.map((q) => [q.key, q]));
 export function getQuestDef(key: string): QuestDef | undefined { return QUEST_BY_KEY.get(key); }

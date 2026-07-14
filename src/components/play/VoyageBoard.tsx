@@ -16,6 +16,8 @@ import { SailingShip } from './SailingShip';
 export interface VoyageBoardIsland {
   weekId: string;
   completionPercent: number;
+  /** T1: 🏴 means the BOSS is beaten, not merely "some section reached 100%". */
+  bossCleared: boolean;
 }
 
 interface Props {
@@ -40,7 +42,9 @@ export function VoyageBoard({ childId, packSlug, islands, finalBoss }: Props) {
   const n = map.stops.length;
   const slots = finalBoss ? n + 1 : n;
   const pos = wide ? voyageLayoutHorizontal(slots) : voyageLayout(slots);
-  const firstActive = islands.findIndex((i) => i.completionPercent < 100);
+  // Current ⛵ = the FRONTIER: first island whose boss is unbeaten (T1). It
+  // carries the ✨2× double-treasure badge.
+  const firstActive = islands.findIndex((i) => !i.bossCleared);
   const currentIndex = firstActive < 0 ? Math.max(n - 1, 0) : firstActive;
 
   return (
@@ -192,12 +196,12 @@ function StopNode({
     );
   }
 
-  const cleared = island.completionPercent >= 100;
+  const cleared = island.bossCleared;
   return (
     <Link
       data-testid="voyage-stop-link"
       href={`/play/${childId}/week/${island.weekId}`}
-      aria-label={`${stop.labelEn} — week ${num}${cleared ? ' cleared' : isCurrent ? ' current' : ''}`}
+      aria-label={`${stop.labelEn} — week ${num}${cleared ? ' cleared' : isCurrent ? ' current — 双倍宝藏 double treasure' : ''}`}
       style={{ ...style, viewTransitionName: `island-${island.weekId}` }}
       className={`absolute z-10 flex ${widthClass} -translate-x-1/2 -translate-y-1/2 flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-white`}
     >
@@ -214,6 +218,15 @@ function StopNode({
         {isCurrent && (
           <span className="absolute bottom-0 right-0 text-2xl drop-shadow" aria-hidden="true">
             ⛵
+          </span>
+        )}
+        {isCurrent && (
+          <span
+            data-testid="frontier-badge"
+            className={`absolute -right-2 -top-2 rounded-full border-2 border-amber-200 bg-gradient-to-b from-amber-400 to-amber-600 px-1.5 py-0.5 text-xs font-extrabold text-white shadow-md ${reduced ? '' : 'animate-pulse'}`}
+            aria-hidden="true"
+          >
+            ✨2×
           </span>
         )}
         {isCurrent && !reduced && (

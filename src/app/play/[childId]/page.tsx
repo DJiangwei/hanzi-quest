@@ -134,21 +134,28 @@ export default async function PlayHomePage({ params }: PageProps) {
   const progressByWeek = new Map(
     progressRows.map((p) => [p.weekId, p.completionPercent]),
   );
+  const bossClearedByWeek = new Map(
+    progressRows.map((p) => [p.weekId, p.bossCleared]),
+  );
 
   const islands = playableWeeks.map((w) => ({
     weekId: w.id,
     weekNumber: w.weekNumber,
     label: w.label,
     completionPercent: progressByWeek.get(w.id) ?? 0,
+    // T1: 🏴 on the board means the BOSS is beaten (not just a section done).
+    bossCleared: bossClearedByWeek.get(w.id) ?? false,
   }));
 
-  const clearedCount = islands.filter((i) => i.completionPercent >= 100).length;
+  const clearedCount = islands.filter((i) => i.bossCleared).length;
 
   // Derive bossUnlocked: true if the child has ever cleared a boss (proxy for
   // "boss is currently reachable in their play history"). Defaults to false when
   // no progress rows exist — worst case the boss_clear quest won't be assigned.
   const bossUnlocked = progressRows.some((p) => p.bossCleared);
-  const questCtx = { bossUnlocked };
+  // T1: the 新岛先锋 frontier quest is only assignable while an un-bossed week exists.
+  const hasFrontier = islands.some((i) => !i.bossCleared);
+  const questCtx = { bossUnlocked, hasFrontier };
 
   // Generate today's quests (idempotent: no-ops when rows exist for today).
   await generateDailyQuests(child.id, questCtx);
@@ -274,7 +281,7 @@ export default async function PlayHomePage({ params }: PageProps) {
         <VoyageBoard
           childId={childId}
           packSlug={currentMap!.slug}
-          islands={islands.map((i) => ({ weekId: i.weekId, completionPercent: i.completionPercent }))}
+          islands={islands.map((i) => ({ weekId: i.weekId, completionPercent: i.completionPercent, bossCleared: i.bossCleared }))}
           finalBoss={finalBossState ?? undefined}
         />
       ) : (

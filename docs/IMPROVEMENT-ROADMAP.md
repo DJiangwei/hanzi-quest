@@ -153,6 +153,10 @@ Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item v
 
 ---
 
+## P0-Y · Frontier double treasure (T1) `[x]` (shipped 2026-07-14) + wanted-poster bounties (T2) `[ ]`
+
+Round 2 of anti-avoidance, from prod telemetry (child replays weeks 1–2 + farms their easy bosses; weeks 4+ bosses unbeaten; weeks 7/9 untouched). **T1 shipped:** frontier week (lowest un-bossed) pays 2× coins + 2 cards on first boss clear, ✨2× badge on the voyage board (whose 🏴 now honestly means boss-cleared), hub banner, 新岛先锋 daily quest. **T2 approved, pending:** 通缉令 wanted-character bounties — daily challenge chars from answer_events weak/unseen set, pirate-poster UI, bounty rewards; doubles as the A2 engine seed. Design T2 fresh when picked up.
+
 ## P0-X · Anti-avoidance rebalance `[x]` (shipped 2026-07-09, from David's playtest finding)
 
 David observed the child farming the zero-risk review card across all published weeks while avoiding practice + boss (畏难). Root cause was incentive design (review paid best per minute with zero failure risk). Shipped R1+R2+R3 (spec `docs/superpowers/specs/2026-07-06-anti-avoidance-rebalance-design.md`): review card 1/day GLOBAL · boss courage bonus on first daily loss + retry keeps progress · practice card at 8 cumulative scenes/day (resumable). **Follow-up: check `/admin/economy` card-source split ~2 weeks after ship** — expect `review` share to drop and `practice`/`boss_clear` to rise; if avoidance persists, next levers are the daily-quest chest granting a card and boss difficulty scaffolding (V2 smart distractors starting gentle).

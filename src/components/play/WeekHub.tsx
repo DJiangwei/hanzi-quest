@@ -21,6 +21,8 @@ interface Props {
   /** weekId for View Transitions API morph with the island Link on the map */
   weekId?: string;
   homework?: { present: boolean; doneToday: boolean; count: number };
+  /** T1: this week is the frontier — double coins + double first-boss cards. */
+  frontier?: boolean;
 }
 
 function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cleared' {
@@ -30,7 +32,7 @@ function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cle
   return 'idle';
 }
 
-export function WeekHub({ childId, week, sections, weekId, homework }: Props) {
+export function WeekHub({ childId, week, sections, weekId, homework, frontier }: Props) {
   const reviewState = deriveState(sections.review.done, sections.review.total);
   const practiceState = deriveState(sections.practice.done, sections.practice.total);
   const bossState: 'idle' | 'in-progress' | 'cleared' | 'locked' = sections.boss.locked
@@ -56,6 +58,20 @@ export function WeekHub({ childId, week, sections, weekId, homework }: Props) {
           <div className="text-base font-extrabold text-amber-950">{week.label}</div>
         </div>
       </header>
+
+      {frontier && (
+        <div
+          data-testid="frontier-banner"
+          className="rounded-xl border-2 border-amber-400 bg-gradient-to-r from-amber-100 to-yellow-50 px-4 py-2.5 text-center shadow-sm"
+        >
+          <span className="font-hanzi text-sm font-extrabold text-amber-900">
+            ✨ 双倍宝藏周!金币 ×2 · Boss 首通双卡
+          </span>
+          <span className="block text-xs font-medium text-amber-800/80">
+            Double treasure island! 2× coins · 2 cards for the first boss win
+          </span>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <SectionCard
