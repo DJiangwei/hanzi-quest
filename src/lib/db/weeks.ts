@@ -4,6 +4,7 @@ import {
   characters,
   childProfiles,
   weekCharacters,
+  weekProgress,
   weeks,
   type weekStatus,
 } from '@/db/schema';
@@ -174,3 +175,47 @@ export async function listChildPlayableWeeks(
 }
 
 void max;
+
+/**
+ * Frontier (T1 双倍宝藏): the lowest week_number among the given weeks whose
+ * boss the child has NOT cleared. Pure — tested directly.
+ */
+export function frontierWeekNumber(
+  candidates: { id: string; weekNumber: number }[],
+  bossClearedWeekIds: ReadonlySet<string>,
+): number | null {
+  const open = candidates.filter((w) => !bossClearedWeekIds.has(w.id));
+  if (open.length === 0) return null;
+  return Math.min(...open.map((w) => w.weekNumber));
+}
+
+/**
+ * True iff `weekId` is the child's FRONTIER week: the lowest-numbered
+ * published week (same visibility set as getPlayableWeekForChild, scoped to
+ * the target week's pack / per-family group) whose boss is not yet cleared.
+ * Drives the double-treasure bonus — server-authoritative, never trust the
+ * client's claim of "this is the frontier".
+ */
+export async function isFrontierWeek(childId: string, weekId: string): Promise<boolean> {
+  const week = await getPlayableWeekForChild(childId, weekId);
+  if (!week) return false;
+
+  const siblingCondition = week.curriculumPackId
+    ? and(
+        eq(weeks.status, 'published'),
+        eq(weeks.curriculumPackId, week.curriculumPackId),
+        or(eq(weeks.childId, childId), isNull(weeks.childId)),
+      )
+    : and(eq(weeks.status, 'published'), eq(weeks.childId, childId));
+
+  const [siblings, cleared] = await Promise.all([
+    db.select({ id: weeks.id, weekNumber: weeks.weekNumber }).from(weeks).where(siblingCondition),
+    db
+      .select({ weekId: weekProgress.weekId })
+      .from(weekProgress)
+      .where(and(eq(weekProgress.childId, childId), eq(weekProgress.bossCleared, true))),
+  ]);
+
+  const frontier = frontierWeekNumber(siblings, new Set(cleared.map((c) => c.weekId)));
+  return frontier !== null && frontier === week.weekNumber;
+}

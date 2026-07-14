@@ -5,8 +5,8 @@ import { VoyageBoard } from '@/components/play/VoyageBoard';
 vi.mock('@/lib/hooks/use-reduced-motion', () => ({ useReducedMotion: () => true }));
 
 const islands = [
-  { weekId: 'w1', completionPercent: 100 },
-  { weekId: 'w2', completionPercent: 40 },
+  { weekId: 'w1', completionPercent: 100, bossCleared: 100 >= 100 },
+  { weekId: 'w2', completionPercent: 40, bossCleared: 40 >= 100 },
 ];
 
 describe('VoyageBoard', () => {

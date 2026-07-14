@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { QUEST_DEFS, QUEST_BY_KEY, getQuestDef } from '@/lib/quests/definitions';
 
 describe('quest definitions', () => {
-  it('has 8 quests', () => {
-    expect(QUEST_DEFS).toHaveLength(8);
+  it('has 9 quests', () => {
+    expect(QUEST_DEFS).toHaveLength(9);
   });
 
   it('each def has required fields', () => {
@@ -26,15 +26,15 @@ describe('quest definitions', () => {
   it('boss_clear is not feasible when bossUnlocked=false', () => {
     const def = QUEST_BY_KEY.get('boss_clear');
     expect(def).toBeDefined();
-    expect(def!.feasible({ bossUnlocked: false })).toBe(false);
-    expect(def!.feasible({ bossUnlocked: true })).toBe(true);
+    expect(def!.feasible({ bossUnlocked: false, hasFrontier: true })).toBe(false);
+    expect(def!.feasible({ bossUnlocked: true, hasFrontier: true })).toBe(true);
   });
 
   it('complete_scenes is always feasible', () => {
     const def = QUEST_BY_KEY.get('complete_scenes');
     expect(def).toBeDefined();
-    expect(def!.feasible({ bossUnlocked: false })).toBe(true);
-    expect(def!.feasible({ bossUnlocked: true })).toBe(true);
+    expect(def!.feasible({ bossUnlocked: false, hasFrontier: true })).toBe(true);
+    expect(def!.feasible({ bossUnlocked: true, hasFrontier: true })).toBe(true);
   });
 
   it('getQuestDef returns the def by key', () => {

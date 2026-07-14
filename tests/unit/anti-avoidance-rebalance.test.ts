@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
     .mockResolvedValue({ granted: false, reason: 'already_granted' }),
   claimWeeklyGiftIfDue: vi.fn().mockResolvedValue(null),
   safePackCompleteTrophy: vi.fn().mockResolvedValue(undefined),
+  isFrontierWeek: vi.fn().mockResolvedValue(false),
   getPlayableWeekForChild: vi.fn().mockResolvedValue({ id: 'w1', childId: 'c1' }),
   listLevelsForWeek: vi.fn().mockResolvedValue([]),
   getWeekProgress: vi.fn().mockResolvedValue(null),
@@ -69,6 +70,7 @@ vi.mock('@/lib/db/trophies', () => ({
 vi.mock('@/lib/db/weeks', () => ({
   getPlayableWeekForChild: mocks.getPlayableWeekForChild,
   listCharactersForWeek: vi.fn(),
+  isFrontierWeek: mocks.isFrontierWeek,
 }));
 vi.mock('@/lib/play/card-grants', () => ({
   pullCardForChild: mocks.pullCardForChild,
@@ -83,7 +85,7 @@ vi.mock('@/lib/db/xp', () => ({ awardXp: mocks.awardXp }));
 vi.mock('@/lib/db/quests', () => ({ tickQuestProgressSafe: mocks.tickQuestProgressSafe }));
 vi.mock('@/lib/db/answer-events', () => ({ logAnswerEventsSafe: mocks.logAnswerEventsSafe }));
 
-import { claimBossCourageAction, finishAttemptAction } from '@/lib/actions/play';
+import { claimBossCourageAction, finishAttemptAction, finishLevelAction } from '@/lib/actions/play';
 
 const SESSION = '11111111-2222-4333-a444-555555555555';
 const CHILD = '22222222-3333-4444-a555-666666666666';
@@ -122,6 +124,9 @@ beforeEach(() => {
   mocks.countPracticeClearedToday.mockResolvedValue(0);
   mocks.pullCardForChild.mockResolvedValue({ granted: false, reason: 'already_granted' });
   mocks.awardBossCourageIfDue.mockResolvedValue({ awarded: true, delta: 30 });
+  mocks.isFrontierWeek.mockResolvedValue(false);
+  mocks.getPlayableWeekForChild.mockResolvedValue({ id: 'w1', childId: 'c1' });
+  mocks.getWeekProgress.mockResolvedValue(null);
 });
 
 describe('R3: practice card via daily-cumulative threshold', () => {
@@ -164,6 +169,80 @@ describe('R3: practice card via daily-cumulative threshold', () => {
     const res = await finishAttemptAction({ ...BASE, source: 'practice' });
     expect(res.coinsAwarded).toBeGreaterThanOrEqual(0);
     expect(res.cardGrants).toEqual([]);
+  });
+});
+
+describe('T1: frontier double treasure', () => {
+  it('doubles scene coins on the frontier week only', async () => {
+    mocks.isFrontierWeek.mockResolvedValue(true);
+    const res = await finishAttemptAction({ ...BASE, source: 'practice' });
+    // First-play perfect scene: (50 + 25) × 2 = 150
+    expect(res.coinsAwarded).toBe(150);
+
+    mocks.isFrontierWeek.mockResolvedValue(false);
+    const normal = await finishAttemptAction({ ...BASE, source: 'practice' });
+    expect(normal.coinsAwarded).toBe(75);
+  });
+
+  it('ticks the 新岛先锋 quest only for frontier practice', async () => {
+    mocks.isFrontierWeek.mockResolvedValue(true);
+    mocks.getLevelById.mockResolvedValue({ id: LEVEL, weekId: WEEK, sceneType: 'audio_pick' });
+    await finishAttemptAction({ ...BASE, source: 'practice' });
+    expect(mocks.tickQuestProgressSafe).toHaveBeenCalledWith('c1', 'frontier_practice', 1);
+
+    mocks.tickQuestProgressSafe.mockClear();
+    mocks.isFrontierWeek.mockResolvedValue(false);
+    await finishAttemptAction({ ...BASE, source: 'practice' });
+    expect(mocks.tickQuestProgressSafe).not.toHaveBeenCalledWith('c1', 'frontier_practice', 1);
+  });
+
+  it('an isFrontierWeek failure degrades to no bonus, never breaks the attempt', async () => {
+    mocks.isFrontierWeek.mockRejectedValue(new Error('db down'));
+    const res = await finishAttemptAction({ ...BASE, source: 'practice' });
+    expect(res.coinsAwarded).toBe(75);
+  });
+
+  it('frontier boss FIRST clear: double coins (600) + an extra card', async () => {
+    mocks.isFrontierWeek.mockResolvedValue(true);
+    mocks.pullCardForChild.mockResolvedValue(granted);
+
+    const res = await finishLevelAction({
+      sessionId: SESSION,
+      childId: CHILD,
+      weekId: WEEK,
+      section: 'boss',
+      totalScenesPassed: 1,
+      totalScenesInWeek: 1,
+      durationSeconds: 30,
+    });
+
+    expect(mocks.awardCoins).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'boss_clear', delta: 600 }),
+    );
+    expect(mocks.pullCardForChild).toHaveBeenCalledWith('c1', 'boss_clear', SESSION);
+    expect(mocks.pullCardForChild).toHaveBeenCalledWith('c1', 'boss_clear', `${SESSION}:frontier`);
+    expect(res.cardGrants.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('frontier boss REPEAT clear: no double coins, no extra card', async () => {
+    mocks.isFrontierWeek.mockResolvedValue(true);
+    mocks.getWeekProgress.mockResolvedValue({ bossCleared: true, freePullClaimed: false });
+    mocks.pullCardForChild.mockResolvedValue(granted);
+
+    await finishLevelAction({
+      sessionId: SESSION,
+      childId: CHILD,
+      weekId: WEEK,
+      section: 'boss',
+      totalScenesPassed: 1,
+      totalScenesInWeek: 1,
+      durationSeconds: 30,
+    });
+
+    expect(mocks.awardCoins).not.toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'boss_clear' }),
+    );
+    expect(mocks.pullCardForChild).not.toHaveBeenCalledWith('c1', 'boss_clear', `${SESSION}:frontier`);
   });
 });
 

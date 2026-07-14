@@ -28,6 +28,7 @@ export type { GrantedTrophy } from '@/lib/db/trophies';
 import { tickStreak, todayUtcIso } from '@/lib/db/streaks';
 import {
   getPlayableWeekForChild,
+  isFrontierWeek,
   listCharactersForWeek,
 } from '@/lib/db/weeks';
 import {
@@ -56,6 +57,16 @@ async function safeAwardXp(
   } catch (err) {
     console.error('[play] safeAwardXp error:', err);
     return { totalXp: 0, level: 1, leveledUp: false };
+  }
+}
+
+/** Guarded frontier check — a lookup failure (or an un-mocked helper in old
+ *  test suites) must never break a finish action; degrade to "not frontier". */
+async function safeIsFrontierWeek(childId: string, weekId: string): Promise<boolean> {
+  try {
+    return await isFrontierWeek(childId, weekId);
+  } catch {
+    return false;
   }
 }
 
@@ -182,7 +193,10 @@ export async function finishAttemptAction(
   const perfect =
     parsed.totalCount > 0 && parsed.correctCount === parsed.totalCount;
   const sceneBonus = perfect && !isReplay ? PERFECT_BONUS : 0;
-  const coinsAwarded = baseAward + sceneBonus;
+  // T1 双倍宝藏: the frontier week (lowest un-bossed week) pays double coins.
+  // Server-authoritative; guarded so a lookup failure never breaks the attempt.
+  const frontier = await safeIsFrontierWeek(child.id, parsed.weekId);
+  const coinsAwarded = (baseAward + sceneBonus) * (frontier ? 2 : 1);
 
   const score = parsed.totalCount > 0
     ? Math.round((parsed.correctCount / parsed.totalCount) * 100)
@@ -303,6 +317,8 @@ export async function finishAttemptAction(
       void tickQuestProgressSafe(child.id, 'review_flashcards', 1);
     } else if (levelRow && levelRow.sceneType !== 'boss') {
       void tickQuestProgressSafe(child.id, 'practice_scenes', 1);
+      // T1: steer toward the frontier week (新岛先锋 quest).
+      if (frontier) void tickQuestProgressSafe(child.id, 'frontier_practice', 1);
     }
     void tickQuestProgressSafe(child.id, 'complete_scenes', 1);
 
@@ -441,6 +457,13 @@ export async function finishLevelAction(
   const existing = await getWeekProgress(child.id, parsed.weekId);
   const alreadyAwarded = existing?.bossCleared === true;
 
+  // T1 双倍宝藏: MUST be computed BEFORE the upsert marks this boss cleared —
+  // afterwards the frontier would already point at the NEXT week.
+  const frontier =
+    parsed.section === 'boss'
+      ? await safeIsFrontierWeek(child.id, parsed.weekId)
+      : false;
+
   await upsertWeekProgress({
     childId: child.id,
     weekId: parsed.weekId,
@@ -452,9 +475,10 @@ export async function finishLevelAction(
   const bonuses: EconomyBonus[] = [];
   let perfectCard: RevealCard | null = null;
   if (bossCleared && !alreadyAwarded) {
+    // Frontier first-clear pays double treasure (T1).
     await awardCoins({
       childId: child.id,
-      delta: BOSS_CLEAR_REWARD,
+      delta: BOSS_CLEAR_REWARD * (frontier ? 2 : 1),
       reason: 'boss_clear',
       refType: 'week',
       refId: parsed.weekId,
@@ -505,10 +529,16 @@ export async function finishLevelAction(
   );
 
   let bossCard: RevealCard | null = null;
+  let frontierBonusCard: RevealCard | null = null;
   if (bossCleared) {
     const r = await pullSectionCard(child.id, 'boss_clear', parsed.sessionId);
     bossCard = r.card;
     if (r.skip) cardMessage = r.skip; // boss never returns 'already_granted'
+    // T1 双倍宝藏: the frontier boss's FIRST clear pays one extra card.
+    if (frontier && !alreadyAwarded) {
+      const extra = await pullSectionCard(child.id, 'boss_clear', `${parsed.sessionId}:frontier`);
+      frontierBonusCard = extra.card;
+    }
   }
 
   // Per-section card grant for review (boss handled above; practice moved to
@@ -524,7 +554,7 @@ export async function finishLevelAction(
     if (r.skip) cardMessage = r.skip;
   }
 
-  const cardGrants: RevealCard[] = [bossCard, perfectCard, sectionCard].filter(
+  const cardGrants: RevealCard[] = [bossCard, frontierBonusCard, perfectCard, sectionCard].filter(
     (c): c is RevealCard => c !== null,
   );
 

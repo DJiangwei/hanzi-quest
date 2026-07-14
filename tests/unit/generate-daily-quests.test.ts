@@ -51,7 +51,7 @@ describe('generateDailyQuests', () => {
     // First select: today's rows → already exist
     mocks.selectFn.mockReturnValueOnce(makeSelectReturning(existingRows));
 
-    const result = await generateDailyQuests(CHILD_ID, { bossUnlocked: false });
+    const result = await generateDailyQuests(CHILD_ID, { bossUnlocked: false, hasFrontier: true });
     expect(result).toHaveLength(3);
     expect(mocks.insertFn).not.toHaveBeenCalled();
   });
@@ -69,7 +69,7 @@ describe('generateDailyQuests', () => {
     ];
     mockInsertOnConflictOk(newRows);
 
-    const result = await generateDailyQuests(CHILD_ID, { bossUnlocked: false });
+    const result = await generateDailyQuests(CHILD_ID, { bossUnlocked: false, hasFrontier: true });
     expect(result).toHaveLength(3);
     expect(mocks.insertFn).toHaveBeenCalledTimes(1);
   });
@@ -88,7 +88,7 @@ describe('generateDailyQuests', () => {
     ];
     mockInsertOnConflictOk(newRows);
 
-    const result = await generateDailyQuests(CHILD_ID, { bossUnlocked: false });
+    const result = await generateDailyQuests(CHILD_ID, { bossUnlocked: false, hasFrontier: true });
     // boss_clear should not be picked (bossUnlocked=false) and complete_scenes excluded (yesterday)
     const questIds = result.map((r) => r.questId);
     expect(questIds).not.toContain('complete_scenes');

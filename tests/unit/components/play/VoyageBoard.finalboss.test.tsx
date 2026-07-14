@@ -18,7 +18,7 @@ describe('VoyageBoard final-boss lair', () => {
       <VoyageBoard
         childId="c1"
         packSlug="pirate-class-level-1"
-        islands={[{ weekId: 'w1', completionPercent: 100 }]}
+        islands={[{ weekId: 'w1', completionPercent: 100, bossCleared: 100 >= 100 }]}
         finalBoss={{ unlocked: false, cleared: false }}
       />,
     );
@@ -30,7 +30,7 @@ describe('VoyageBoard final-boss lair', () => {
       <VoyageBoard
         childId="c1"
         packSlug="pirate-class-level-1"
-        islands={[{ weekId: 'w1', completionPercent: 100 }]}
+        islands={[{ weekId: 'w1', completionPercent: 100, bossCleared: 100 >= 100 }]}
         finalBoss={{ unlocked: true, cleared: false }}
       />,
     );
