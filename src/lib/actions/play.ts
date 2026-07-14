@@ -196,7 +196,12 @@ export async function finishAttemptAction(
   // T1 双倍宝藏: the frontier week (lowest un-bossed week) pays double coins.
   // Server-authoritative; guarded so a lookup failure never breaks the attempt.
   const frontier = await safeIsFrontierWeek(child.id, parsed.weekId);
-  const coinsAwarded = (baseAward + sceneBonus) * (frontier ? 2 : 1);
+  const coinMult = frontier ? 2 : 1;
+  // Ledger split: the base and the perfect bonus are SEPARATE rows that sum to
+  // coinsAwarded — never fold the bonus into the scene_complete row too.
+  const basePaid = baseAward * coinMult;
+  const perfectBonusPaid = sceneBonus * coinMult;
+  const coinsAwarded = basePaid + perfectBonusPaid;
 
   const score = parsed.totalCount > 0
     ? Math.round((parsed.correctCount / parsed.totalCount) * 100)
@@ -215,15 +220,15 @@ export async function finishAttemptAction(
   if (coinsAwarded > 0) {
     await awardCoins({
       childId: child.id,
-      delta: coinsAwarded,
+      delta: basePaid,
       reason: isReplay ? 'scene_replay' : 'scene_complete',
       refType: 'scene_attempt',
       refId: attempt.id,
     });
-    if (sceneBonus > 0) {
+    if (perfectBonusPaid > 0) {
       await awardCoins({
         childId: child.id,
-        delta: sceneBonus,
+        delta: perfectBonusPaid,
         reason: 'scene_perfect_bonus',
         refType: 'scene_attempt',
         refId: attempt.id,
