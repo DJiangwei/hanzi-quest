@@ -10,6 +10,7 @@ import { getPackMeta } from '@/lib/collections/packRegistry';
 import { TrophiesHallCard } from '@/components/play/TrophiesHallCard';
 import { listAllTrophies, listEarnedTrophies } from '@/lib/db/trophies';
 import { getRecentlyObtainedForChild } from '@/lib/db/recent-obtained';
+import { getGlobalShards } from '@/lib/db/grants';
 
 export default async function CollectionAtlasPage({
   params,
@@ -19,11 +20,12 @@ export default async function CollectionAtlasPage({
   const { childId } = await params;
   await requireChild(childId);
 
-  const [packs, allTrophies, earnedTrophies, recentItems] = await Promise.all([
+  const [packs, allTrophies, earnedTrophies, recentItems, shards] = await Promise.all([
     listActivePacks(),
     listAllTrophies(),
     listEarnedTrophies(childId),
     getRecentlyObtainedForChild(childId, 3),
+    getGlobalShards(childId),
   ]);
   const halls: AtlasHallSummary[] = (
     await Promise.all(
@@ -50,6 +52,7 @@ export default async function CollectionAtlasPage({
         childId={childId}
         halls={halls}
         recentItems={recentItems}
+        shards={shards}
         // Server-side render-time snapshot for the "NEW" sticker cutoff in
         // RecentlyObtainedStrip. Each request re-renders so impurity is bounded.
         // eslint-disable-next-line react-hooks/purity
