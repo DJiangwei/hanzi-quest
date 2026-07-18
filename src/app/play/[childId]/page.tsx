@@ -40,6 +40,8 @@ import {
 import { latestChampionTitle } from '@/lib/collections/championsData';
 import { mapOrderIndex } from '@/lib/play/map-order';
 import { ChampionTitleChip } from '@/components/play/ChampionTitleChip';
+import { TravelingMerchant } from '@/components/play/TravelingMerchant';
+import { getMerchantOffer, hasBoughtMerchantToday } from '@/lib/db/merchant';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -75,6 +77,8 @@ export default async function PlayHomePage({ params }: PageProps) {
     maps,
     xpData,
     seasonBanner,
+    merchantOffer,
+    merchantBought,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -87,6 +91,8 @@ export default async function PlayHomePage({ params }: PageProps) {
     listMapsForChild(child.id),
     getChildXp(child.id),
     getSeasonBannerState(child.id),
+    getMerchantOffer(child.id, todayIso),
+    hasBoughtMerchantToday(child.id, todayIso),
   ]);
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
@@ -257,6 +263,13 @@ export default async function PlayHomePage({ params }: PageProps) {
           initialChestClaimed={chestClaimed}
         />
       )}
+
+      <TravelingMerchant
+        childId={childId}
+        offer={merchantOffer}
+        boughtToday={merchantBought}
+        balance={balance.balance}
+      />
 
       <SeasonBanner childId={childId} state={seasonBanner} />
       </div>

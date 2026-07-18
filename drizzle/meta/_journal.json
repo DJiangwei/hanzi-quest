@@ -253,6 +253,13 @@
       "when": 1783376207047,
       "tag": "0035_nasty_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1784373301093,
+      "tag": "0036_rare_proteus",
+      "breakpoints": true
     }
   ]
 }

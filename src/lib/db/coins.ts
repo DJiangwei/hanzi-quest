@@ -22,7 +22,8 @@ export type AwardCoinReason =
   | 'daily_chest'
   | 'homework_complete'
   | 'season_reward'
-  | 'boss_courage';
+  | 'boss_courage'
+  | 'merchant_purchase';
 
 export const DAILY_LOGIN_AWARD = 20;
 export const STREAK_MILESTONE_AWARD = 100;
