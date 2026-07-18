@@ -157,13 +157,13 @@ Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item v
 
 Round 2 of anti-avoidance, from prod telemetry (child replays weeks 1–2 + farms their easy bosses; weeks 4+ bosses unbeaten; weeks 7/9 untouched). **T1 shipped:** frontier week (lowest un-bossed) pays 2× coins + 2 cards on first boss clear, ✨2× badge on the voyage board (whose 🏴 now honestly means boss-cleared), hub banner, 新岛先锋 daily quest. **T2 approved, pending:** 通缉令 wanted-character bounties — daily challenge chars from answer_events weak/unseen set, pirate-poster UI, bounty rewards; doubles as the A2 engine seed. Design T2 fresh when picked up.
 
-## P0-W · Economy rebalance: coin→collection bridge `[~]` (round 1 shipped 2026-07-18)
+## P0-W · Economy rebalance: coin→collection bridge `[x]` (shipped 2026-07-18)
 
 From the 2026-07-18 prod economy review (David: "她明显对收集更感兴趣,金币反馈一般"): 12.5k idle coins rising 300+/day, her favorite sink (home furniture) nearly exhausted, cards clearly the real motivator (hit the 10/day cap on 07-14), 23 shards idle with zero dupes. David approved all three levers. Spec: `docs/superpowers/specs/2026-07-18-merchant-shard-nudge-design.md`.
 
 - `[x]` **Shard nudge** — Backpack banner when the wallet can afford a swap (≥3), pointing at the pack-page 换卡.
 - `[x]` **旅行商人 Traveling Merchant** — daily deterministic fixed-price unowned card for coins (800/1200/1800 by rarity), once/day via `card_grants_log ('merchant', dayUtc)`, bypasses the daily card cap (coin-funded, like the shard swap). NOT a coin gacha — no randomness at purchase.
-- `[ ]` **Multi-buy furniture (un-parked)** — cap 3 copies per furniture item (wallpaper/floor stay 1), extending her favorite sink. Next PR.
+- `[x]` **Multi-buy furniture** — shipped 2026-07-18 (PR #145): cap 3 copies per furniture item (wallpaper/floor stay 1), per-copy placement identity, tray ×N badges.
 - Follow-up ~2026-08-01: `/admin/economy` — expect `merchant_purchase` to become the top spend reason and the balance to flatten; if she ignores the stall, try surfacing it post-session instead of on home.
 
 ## P0-X · Anti-avoidance rebalance `[x]` (shipped 2026-07-09, from David's playtest finding)

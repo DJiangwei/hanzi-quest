@@ -20,13 +20,18 @@ interface Props {
   mode: 'view' | 'edit';
   /** Slug of item currently selected for placement (null = nothing). */
   selectedSlug: string | null;
-  /** Currently lifted slug (placed item being moved). */
-  liftedSlug: string | null;
+  /** Currently lifted placement key `slug#copyIndex` (placed item being moved). */
+  liftedKey: string | null;
   /** Equipped wallpaper / floor slug for this room (falls back to room default). */
   wallpaperSlug?: string;
   floorSlug?: string;
-  onPlacedTap: (slug: string) => void;
+  onPlacedTap: (slug: string, copyIndex: number) => void;
   onCellTap: (x: number, y: number) => void;
+}
+
+/** Stable per-copy identity — must match HomeRoomView.placementKey. */
+function keyOf(p: { slug: string; copyIndex: number }): string {
+  return `${p.slug}#${p.copyIndex}`;
 }
 
 /**
@@ -38,7 +43,7 @@ export function RoomCanvas({
   placements,
   mode,
   selectedSlug,
-  liftedSlug,
+  liftedKey,
   wallpaperSlug,
   floorSlug,
   onPlacedTap,
@@ -57,7 +62,7 @@ export function RoomCanvas({
     if (!room) return new Set<string>();
     const set = new Set<string>();
     for (const p of roomPlacements) {
-      if (p.slug === liftedSlug) continue; // being moved — treat as unoccupied
+      if (keyOf(p) === liftedKey) continue; // being moved — treat as unoccupied
       const def = getFurniture(p.slug);
       if (!def) continue;
       for (const c of cellsForFootprint(p.x, p.y, def.footprint)) {
@@ -65,7 +70,7 @@ export function RoomCanvas({
       }
     }
     return set;
-  }, [room, roomPlacements, liftedSlug]);
+  }, [room, roomPlacements, liftedKey]);
 
   // Valid target cells for the selected item
   const validCellSet = useMemo(() => {
@@ -208,13 +213,13 @@ export function RoomCanvas({
       {/* Placed furniture */}
       {roomPlacements.map((p) => (
         <PlacedFurniture
-          key={p.slug}
+          key={keyOf(p)}
           slug={p.slug}
           x={p.x}
           y={p.y}
           editMode={mode === 'edit'}
-          selected={p.slug === liftedSlug}
-          onTap={() => onPlacedTap(p.slug)}
+          selected={keyOf(p) === liftedKey}
+          onTap={() => onPlacedTap(p.slug, p.copyIndex)}
         />
       ))}
     </svg>

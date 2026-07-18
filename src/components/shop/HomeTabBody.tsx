@@ -2,7 +2,11 @@
 
 import { useShopPurchase } from '@/lib/hooks/use-shop-purchase';
 import { ShopToast } from '@/components/shop/ShopToast';
-import { FURNITURE_CATALOG, type FurnitureCategory } from '@/lib/home/furniture-catalog';
+import {
+  FURNITURE_CATALOG,
+  HOME_FURNITURE_COPY_CAP,
+  type FurnitureCategory,
+} from '@/lib/home/furniture-catalog';
 import { listSurfaces, type SurfaceKind } from '@/lib/home/surfaces';
 import type { ShopItemRow } from '@/lib/db/shop';
 
@@ -10,6 +14,8 @@ interface Props {
   childId: string;
   homeShopItems: ShopItemRow[];
   ownedShopItemIds: Set<string>;
+  /** E3 multi-buy: shopItemId → owned copies (absent = 0). */
+  ownedShopItemCounts?: Record<string, number>;
   coinBalance: number;
 }
 
@@ -33,6 +39,7 @@ export function HomeTabBody({
   childId,
   homeShopItems,
   ownedShopItemIds,
+  ownedShopItemCounts = {},
   coinBalance,
 }: Props) {
   const { purchase, pending, feedback, clearFeedback } = useShopPurchase(childId);
@@ -60,7 +67,9 @@ export function HomeTabBody({
           <div className="flex flex-col gap-3">
             {items.map((furniture) => {
               const shopItem = shopItemBySlug.get(furniture.slug);
-              const isOwned = shopItem ? ownedShopItemIds.has(shopItem.id) : false;
+              // E3 multi-buy: furniture can be bought up to the copy cap.
+              const ownedCount = shopItem ? (ownedShopItemCounts[shopItem.id] ?? 0) : 0;
+              const atCap = ownedCount >= HOME_FURNITURE_COPY_CAP;
               const affordable = shopItem ? coinBalance >= shopItem.priceCoins : false;
 
               let actionLabel: string;
@@ -71,14 +80,17 @@ export function HomeTabBody({
                 // seed not yet run — show placeholder
                 actionLabel = '即将上线 / Coming soon';
                 actionDisabled = true;
-              } else if (isOwned) {
-                actionLabel = '已购买 / Owned';
+              } else if (atCap) {
+                actionLabel = `已满 ×${HOME_FURNITURE_COPY_CAP} / Max owned`;
                 actionDisabled = true;
               } else if (!affordable) {
                 actionLabel = `🪙 ${shopItem.priceCoins}`;
                 actionDisabled = true;
               } else {
-                actionLabel = `购买 / Buy 🪙 ${shopItem.priceCoins}`;
+                actionLabel =
+                  ownedCount > 0
+                    ? `再买一个 / Buy another 🪙 ${shopItem.priceCoins}`
+                    : `购买 / Buy 🪙 ${shopItem.priceCoins}`;
                 onAction = () => purchase(shopItem.id);
               }
 
@@ -143,9 +155,9 @@ export function HomeTabBody({
                       {actionLabel}
                     </button>
                   </div>
-                  {isOwned && (
-                    <p className="text-xs text-emerald-800">
-                      已添加到你的房间 / Added to your home
+                  {ownedCount > 0 && (
+                    <p className="text-xs text-emerald-800" data-testid={`owned-count-${furniture.slug}`}>
+                      已拥有 ×{ownedCount} / Owned ×{ownedCount} — 去房间摆放吧!
                     </p>
                   )}
                 </article>

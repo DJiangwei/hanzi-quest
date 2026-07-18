@@ -6,7 +6,7 @@ describe('FurnitureTray', () => {
   it('labels each furniture chip bilingually (中文 + English)', () => {
     render(
       <FurnitureTray
-        unplacedSlugs={['poster-stars']}
+        items={[{ slug: 'poster-stars', count: 1 }]}
         selectedSlug={null}
         onSelect={vi.fn()}
       />,
@@ -18,8 +18,29 @@ describe('FurnitureTray', () => {
 
   it('shows the bilingual empty state when nothing to place', () => {
     render(
-      <FurnitureTray unplacedSlugs={[]} selectedSlug={null} onSelect={vi.fn()} />,
+      <FurnitureTray items={[]} selectedSlug={null} onSelect={vi.fn()} />,
     );
     expect(screen.getByText(/全部已摆放 \/ All placed/)).toBeInTheDocument();
+  });
+});
+
+describe('FurnitureTray — E3 multi-buy badges', () => {
+  it('shows a ×N badge only when more than one spare copy exists', () => {
+    const { rerender } = render(
+      <FurnitureTray
+        items={[{ slug: 'chair-wood', count: 2 }]}
+        selectedSlug={null}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('tray-count-chair-wood').textContent).toBe('×2');
+    rerender(
+      <FurnitureTray
+        items={[{ slug: 'chair-wood', count: 1 }]}
+        selectedSlug={null}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('tray-count-chair-wood')).toBeNull();
   });
 });

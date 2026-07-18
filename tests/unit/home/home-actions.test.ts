@@ -78,6 +78,7 @@ describe('placeFurnitureAction', () => {
       'rug-round',
       1,
       4,
+      0,
     );
   });
 
@@ -141,6 +142,7 @@ describe('removeFurnitureAction', () => {
       expect.anything(),
       CHILD_ID,
       'rug-round',
+      0,
     );
   });
 

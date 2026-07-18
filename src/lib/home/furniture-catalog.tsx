@@ -3,6 +3,13 @@ import type { ReactElement } from 'react';
 export type FurnitureCategory = 'wall_art' | 'window_light' | 'furniture' | 'rug' | 'plant_toy';
 export type Surface = 'wall' | 'floor';
 
+/**
+ * E3 multi-buy: how many copies of one FURNITURE item a child may own and
+ * place (wallpapers/floors stay 1 — equipping is per-room, not per-copy).
+ * Client-safe: the shop UI and the placement validator both read this.
+ */
+export const HOME_FURNITURE_COPY_CAP = 3;
+
 export interface FurnitureDef {
   slug: string;
   category: FurnitureCategory;

@@ -2,9 +2,15 @@
 
 import { getFurniture } from '@/lib/home/furniture-catalog';
 
+export interface TrayItem {
+  slug: string;
+  /** Spare (owned − placed) copies of this slug — always ≥ 1 in the tray. */
+  count: number;
+}
+
 interface Props {
-  /** Slugs that are owned but NOT currently placed in any room. */
-  unplacedSlugs: string[];
+  /** Owned-but-unplaced furniture, one entry per slug with a spare count. */
+  items: TrayItem[];
   /** Currently tapped slug (null = nothing selected). */
   selectedSlug: string | null;
   onSelect: (slug: string) => void;
@@ -12,10 +18,11 @@ interface Props {
 
 /**
  * Horizontal scrollable tray of owned-but-unplaced furniture items.
- * Tap a chip to select it for placement on the canvas.
+ * Tap a chip to select it for placement on the canvas. Multi-buy copies
+ * collapse into one chip with a ×N badge.
  * Each chip is ≥44px tall to satisfy touch-target requirements.
  */
-export function FurnitureTray({ unplacedSlugs, selectedSlug, onSelect }: Props) {
+export function FurnitureTray({ items, selectedSlug, onSelect }: Props) {
   return (
     <div
       data-testid="furniture-tray"
@@ -23,12 +30,12 @@ export function FurnitureTray({ unplacedSlugs, selectedSlug, onSelect }: Props) 
       role="listbox"
       aria-label="Furniture to place"
     >
-      {unplacedSlugs.length === 0 ? (
+      {items.length === 0 ? (
         <p className="px-2 py-3 text-xs text-[var(--color-sand-600)]">
           全部已摆放 / All placed
         </p>
       ) : (
-        unplacedSlugs.map((slug) => {
+        items.map(({ slug, count }) => {
           const def = getFurniture(slug);
           if (!def) return null;
           const isSelected = slug === selectedSlug;
@@ -40,12 +47,20 @@ export function FurnitureTray({ unplacedSlugs, selectedSlug, onSelect }: Props) 
               data-testid={`tray-item-${slug}`}
               onClick={() => onSelect(slug)}
               className={[
-                'flex min-h-[44px] min-w-[52px] shrink-0 flex-col items-center justify-center rounded-xl border-2 px-2 py-1.5 text-xs transition-colors',
+                'relative flex min-h-[44px] min-w-[52px] shrink-0 flex-col items-center justify-center rounded-xl border-2 px-2 py-1.5 text-xs transition-colors',
                 isSelected
                   ? 'border-[var(--color-treasure-500)] bg-[var(--color-treasure-50)] shadow-md'
                   : 'border-[var(--color-sand-200)] bg-white/80 hover:bg-white',
               ].join(' ')}
             >
+              {count > 1 && (
+                <span
+                  data-testid={`tray-count-${slug}`}
+                  className="absolute -right-1.5 -top-1.5 rounded-full bg-[var(--color-treasure-500)] px-1.5 py-0.5 text-[9px] font-bold text-white shadow"
+                >
+                  ×{count}
+                </span>
+              )}
               {/* Tiny SVG preview */}
               <svg
                 width={32}

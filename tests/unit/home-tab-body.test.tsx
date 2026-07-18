@@ -58,18 +58,31 @@ describe('HomeTabBody', () => {
     expect(screen.getByText('星空海报')).toBeInTheDocument();
   });
 
-  it('shows 已购买 and disables button for owned items', () => {
-    render(
+  it('E3 multi-buy: an owned item offers 再买一个 until the cap, then 已满 disables', () => {
+    const { rerender } = render(
       <HomeTabBody
         childId="child-1"
         homeShopItems={homeShopItems}
         ownedShopItemIds={new Set(['shop-bed-cozy'])}
+        ownedShopItemCounts={{ 'shop-bed-cozy': 1 }}
         coinBalance={500}
       />,
     );
-    const ownedBtns = screen.getAllByRole('button', { name: /已购买/i });
-    expect(ownedBtns.length).toBeGreaterThan(0);
-    expect(ownedBtns[0]).toBeDisabled();
+    const buyAgain = screen.getByRole('button', { name: /再买一个/i });
+    expect(buyAgain).toBeEnabled();
+    expect(screen.getByTestId('owned-count-bed-cozy').textContent).toContain('×1');
+
+    rerender(
+      <HomeTabBody
+        childId="child-1"
+        homeShopItems={homeShopItems}
+        ownedShopItemIds={new Set(['shop-bed-cozy'])}
+        ownedShopItemCounts={{ 'shop-bed-cozy': 3 }}
+        coinBalance={500}
+      />,
+    );
+    const maxed = screen.getByRole('button', { name: /已满/i });
+    expect(maxed).toBeDisabled();
   });
 
   it('disables buy button when balance is insufficient', () => {

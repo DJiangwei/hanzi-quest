@@ -37,6 +37,8 @@ interface Props {
   initialCoinBalance: number;
   listings: AvatarShopListing[];
   initialOwnedShopItemIds: string[];
+  /** E3 multi-buy: shopItemId → owned copies (server snapshot). */
+  initialOwnedShopItemCounts?: Record<string, number>;
   initialEquipped: EquippedAvatar;
   soundListings: SoundThemeListing[];
   initialEquippedSoundThemeSlug: string | null;
@@ -54,6 +56,7 @@ export function ShopBody({
   initialCoinBalance,
   listings,
   initialOwnedShopItemIds,
+  initialOwnedShopItemCounts = {},
   initialEquipped,
   soundListings,
   initialEquippedSoundThemeSlug,
@@ -324,6 +327,7 @@ export function ShopBody({
           childId={childId}
           homeShopItems={homeShopItems}
           ownedShopItemIds={ownedIds}
+          ownedShopItemCounts={initialOwnedShopItemCounts}
           coinBalance={coinBalance}
         />
       )}

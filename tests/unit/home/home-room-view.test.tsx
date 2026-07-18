@@ -33,6 +33,7 @@ const CHILD_ID = 'child_1';
 const BEDROOM_PLACEMENT: HomePlacement = {
   room: 'bedroom',
   slug: 'chair-wood',
+  copyIndex: 0,
   x: 2,
   y: 3,
 };
@@ -41,6 +42,7 @@ const BEDROOM_PLACEMENT: HomePlacement = {
 const LIVING_PLACEMENT: HomePlacement = {
   room: 'living',
   slug: 'rug-round',
+  copyIndex: 0,
   x: 1,
   y: 4,
 };
@@ -292,6 +294,49 @@ describe('HomeRoomView — placing furniture', () => {
 // Suite 7: Lifting a placed item calls removeFurnitureAction
 // ─────────────────────────────────────────────────────────────────────────────
 
+describe('HomeRoomView — E3 multi-buy tray counting', () => {
+  it('collapses spare copies into one chip with the spare count', async () => {
+    const user = userEvent.setup();
+    render(
+      <HomeRoomView
+        childId={CHILD_ID}
+        ownedSlugs={['chair-wood', 'chair-wood']}
+        placements={[]}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /edit room/i }));
+    expect(screen.getAllByTestId('tray-item-chair-wood')).toHaveLength(1);
+    expect(screen.getByTestId('tray-count-chair-wood').textContent).toBe('×2');
+  });
+
+  it('a placed copy reduces the spare count; all placed → empty tray', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(
+      <HomeRoomView
+        childId={CHILD_ID}
+        ownedSlugs={['chair-wood', 'chair-wood']}
+        placements={[BEDROOM_PLACEMENT]}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /edit room/i }));
+    // One spare left — chip stays, badge (×1) hidden
+    expect(screen.getByTestId('tray-item-chair-wood')).toBeDefined();
+    expect(screen.queryByTestId('tray-count-chair-wood')).toBeNull();
+    unmount();
+
+    render(
+      <HomeRoomView
+        childId={CHILD_ID}
+        ownedSlugs={['chair-wood', 'chair-wood']}
+        placements={[BEDROOM_PLACEMENT, { ...BEDROOM_PLACEMENT, copyIndex: 1, x: 4 }]}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /edit room/i }));
+    expect(screen.queryByTestId('tray-item-chair-wood')).toBeNull();
+    expect(screen.getByText(/全部已摆放/)).toBeDefined();
+  });
+});
+
 describe('HomeRoomView — removing furniture', () => {
   it('shows the Put Away button when a placed item is tapped in edit mode', async () => {
     const user = userEvent.setup();
@@ -336,7 +381,7 @@ describe('HomeRoomView — removing furniture', () => {
       await user.click(putAwayBtn);
     });
 
-    expect(mockRemoveFurnitureAction).toHaveBeenCalledWith(CHILD_ID, 'chair-wood');
+    expect(mockRemoveFurnitureAction).toHaveBeenCalledWith(CHILD_ID, 'chair-wood', 0);
 
     // Optimistic: item no longer shows in placed
     const placedAfter = screen.queryAllByTestId('placed-furniture');

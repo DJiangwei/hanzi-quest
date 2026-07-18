@@ -5,7 +5,11 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { homePlacements, shopItems, shopPurchases } from '@/db/schema';
-import { getFurniture, type Surface } from '@/lib/home/furniture-catalog';
+import {
+  getFurniture,
+  HOME_FURNITURE_COPY_CAP,
+  type Surface,
+} from '@/lib/home/furniture-catalog';
 import { getRoom } from '@/lib/home/rooms';
 import { cellsForFootprint, cellKey } from '@/lib/home/grid';
 import { cellZone } from '@/lib/home/rooms';
@@ -20,6 +24,8 @@ export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export interface HomePlacement {
   room: string;
   slug: string;
+  /** Which owned copy this is (0..HOME_FURNITURE_COPY_CAP-1). */
+  copyIndex: number;
   x: number;
   y: number;
 }
@@ -56,6 +62,7 @@ export async function getHomeState(childId: string): Promise<HomeState> {
       .select({
         room: homePlacements.room,
         slug: homePlacements.furnitureSlug,
+        copyIndex: homePlacements.copyIndex,
         x: homePlacements.gridX,
         y: homePlacements.gridY,
       })
@@ -80,14 +87,24 @@ export async function placeFurnitureInTx(
   slug: string,
   x: number,
   y: number,
+  copyIndex = 0,
 ): Promise<void> {
-  // 1. Validate furniture exists
+  // 1. Validate furniture exists + the copy index is sane
   const def = getFurniture(slug);
   if (!def) {
     throw new InvalidPlacementError(`Unknown furniture slug: "${slug}"`);
   }
+  if (
+    !Number.isInteger(copyIndex) ||
+    copyIndex < 0 ||
+    copyIndex >= HOME_FURNITURE_COPY_CAP
+  ) {
+    throw new InvalidPlacementError(
+      `copyIndex ${copyIndex} out of range 0..${HOME_FURNITURE_COPY_CAP - 1}`,
+    );
+  }
 
-  // 2. Validate child owns it
+  // 2. Validate child owns copy #copyIndex (placing copy k needs ≥ k+1 owned)
   const owned = await tx
     .select({ count: sql<number>`count(*)` })
     .from(shopPurchases)
@@ -100,7 +117,7 @@ export async function placeFurnitureInTx(
       ),
     );
   const ownedCount = Number(owned[0]?.count ?? 0);
-  if (ownedCount === 0) {
+  if (ownedCount <= copyIndex) {
     throw new FurnitureNotOwnedError(slug);
   }
 
@@ -133,6 +150,7 @@ export async function placeFurnitureInTx(
   const existingPlacements = await tx
     .select({
       slug: homePlacements.furnitureSlug,
+      copyIndex: homePlacements.copyIndex,
       x: homePlacements.gridX,
       y: homePlacements.gridY,
     })
@@ -144,10 +162,11 @@ export async function placeFurnitureInTx(
       ),
     );
 
-  // Build occupied cell set from OTHER items (skip the item being moved)
+  // Build occupied cell set from OTHER items (skip only the copy being moved —
+  // a second copy of the same slug still blocks cells)
   const occupiedByOther = new Set<string>();
   for (const p of existingPlacements) {
-    if (p.slug === slug) continue; // this item is being moved — skip
+    if (p.slug === slug && p.copyIndex === copyIndex) continue; // being moved — skip
     const otherDef = getFurniture(p.slug);
     if (!otherDef) continue;
     const otherCells = cellsForFootprint(p.x, p.y, otherDef.footprint);
@@ -162,18 +181,23 @@ export async function placeFurnitureInTx(
     }
   }
 
-  // 7. Upsert on (childId, furnitureSlug) unique key
+  // 7. Upsert on (childId, furnitureSlug, copyIndex) unique key
   await tx
     .insert(homePlacements)
     .values({
       childId,
       room,
       furnitureSlug: slug,
+      copyIndex,
       gridX: x,
       gridY: y,
     })
     .onConflictDoUpdate({
-      target: [homePlacements.childId, homePlacements.furnitureSlug],
+      target: [
+        homePlacements.childId,
+        homePlacements.furnitureSlug,
+        homePlacements.copyIndex,
+      ],
       set: {
         room,
         gridX: x,
@@ -190,6 +214,7 @@ export async function removeFurnitureInTx(
   tx: Tx,
   childId: string,
   slug: string,
+  copyIndex = 0,
 ): Promise<void> {
   await tx
     .delete(homePlacements)
@@ -197,6 +222,7 @@ export async function removeFurnitureInTx(
       and(
         eq(homePlacements.childId, childId),
         eq(homePlacements.furnitureSlug, slug),
+        eq(homePlacements.copyIndex, copyIndex),
       ),
     );
 }
