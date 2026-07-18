@@ -38,6 +38,7 @@ const mocks = vi.hoisted(() => ({
   awardXp: vi.fn().mockResolvedValue({ totalXp: 10, level: 1, leveledUp: false }),
   tickQuestProgressSafe: vi.fn().mockResolvedValue(undefined),
   logAnswerEventsSafe: vi.fn().mockResolvedValue(0),
+  tickBountyProgress: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
@@ -84,6 +85,7 @@ vi.mock('@/lib/db/continent-rewards', () => ({
 vi.mock('@/lib/db/xp', () => ({ awardXp: mocks.awardXp }));
 vi.mock('@/lib/db/quests', () => ({ tickQuestProgressSafe: mocks.tickQuestProgressSafe }));
 vi.mock('@/lib/db/answer-events', () => ({ logAnswerEventsSafe: mocks.logAnswerEventsSafe }));
+vi.mock('@/lib/db/bounties', () => ({ tickBountyProgress: mocks.tickBountyProgress }));
 
 import { claimBossCourageAction, finishAttemptAction, finishLevelAction } from '@/lib/actions/play';
 
@@ -285,5 +287,42 @@ describe('R2a: claimBossCourageAction', () => {
     mocks.awardBossCourageIfDue.mockResolvedValue({ awarded: false, delta: 0 });
     const res = await claimBossCourageAction(CHILD);
     expect(res.awarded).toBe(false);
+  });
+});
+
+describe('T2: bounty tick from answer events', () => {
+  const CHAR = '44444444-5555-4666-a777-888888888888';
+  const correctEvent = {
+    sceneType: 'audio_pick',
+    characterId: CHAR,
+    itemKey: null,
+    correct: true,
+  };
+
+  it('ticks today\'s posters for correct events only (repeats count)', async () => {
+    await finishAttemptAction({
+      ...BASE,
+      source: 'practice',
+      events: [
+        correctEvent,
+        correctEvent,
+        { ...correctEvent, correct: false },
+        { sceneType: 'flashcard', characterId: CHAR, selfRating: 'dont_know' },
+      ],
+    });
+    expect(mocks.tickBountyProgress).toHaveBeenCalledWith('c1', '2026-07-06', [CHAR, CHAR]);
+  });
+
+  it('no events → no tick; a tick failure never breaks the attempt', async () => {
+    await finishAttemptAction({ ...BASE, source: 'practice' });
+    expect(mocks.tickBountyProgress).not.toHaveBeenCalled();
+
+    mocks.tickBountyProgress.mockRejectedValue(new Error('db down'));
+    const res = await finishAttemptAction({
+      ...BASE,
+      source: 'practice',
+      events: [correctEvent],
+    });
+    expect(res.coinsAwarded).toBeGreaterThan(0);
   });
 });

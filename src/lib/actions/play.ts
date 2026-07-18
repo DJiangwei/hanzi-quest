@@ -41,7 +41,12 @@ import type { RevealCard } from '@/lib/play/reveal-card';
 import { awardXp, type AwardXpResult } from '@/lib/db/xp';
 import { tickQuestProgressSafe } from '@/lib/db/quests';
 import { logAnswerEventsSafe } from '@/lib/db/answer-events';
-import { ANSWER_SOURCES, MAX_EVENTS_PER_CALL } from '@/lib/play/answer-events';
+import {
+  ANSWER_SOURCES,
+  MAX_EVENTS_PER_CALL,
+  SceneAnswerEventSchema,
+} from '@/lib/play/answer-events';
+import { tickBountyProgress } from '@/lib/db/bounties';
 
 // ─── XP helpers ──────────────────────────────────────────────────────────────
 
@@ -344,6 +349,19 @@ export async function finishAttemptAction(
       await logAnswerEventsSafe(child.id, parsed.weekId, parsed.source ?? 'practice', parsed.events);
     } catch (err) {
       console.error('[finishAttemptAction] answer-event log failed:', err);
+    }
+    // T2 通缉令: correct answers tick today's wanted posters (repeats count).
+    // Guarded — bounty bookkeeping must never break the attempt.
+    try {
+      const bountyHits = parsed.events
+        .map((e) => SceneAnswerEventSchema.safeParse(e))
+        .filter((r) => r.success && r.data.correct === true && r.data.characterId)
+        .map((r) => (r as { data: { characterId: string } }).data.characterId);
+      if (bountyHits.length > 0) {
+        await tickBountyProgress(child.id, today, bountyHits);
+      }
+    } catch (err) {
+      console.error('[finishAttemptAction] bounty tick failed:', err);
     }
   }
 

@@ -153,9 +153,9 @@ Ship the **parked multi-buy furniture** (David-approved 2026-07-01; cap 3/item v
 
 ---
 
-## P0-Y · Frontier double treasure (T1) `[x]` (shipped 2026-07-14) + wanted-poster bounties (T2) `[ ]`
+## P0-Y · Frontier double treasure (T1) `[x]` (2026-07-14) + wanted-poster bounties (T2) `[x]` (2026-07-18)
 
-Round 2 of anti-avoidance, from prod telemetry (child replays weeks 1–2 + farms their easy bosses; weeks 4+ bosses unbeaten; weeks 7/9 untouched). **T1 shipped:** frontier week (lowest un-bossed) pays 2× coins + 2 cards on first boss clear, ✨2× badge on the voyage board (whose 🏴 now honestly means boss-cleared), hub banner, 新岛先锋 daily quest. **T2 approved, pending:** 通缉令 wanted-character bounties — daily challenge chars from answer_events weak/unseen set, pirate-poster UI, bounty rewards; doubles as the A2 engine seed. Design T2 fresh when picked up.
+Round 2 of anti-avoidance, from prod telemetry (child replays weeks 1–2 + farms their easy bosses; weeks 4+ bosses unbeaten; weeks 7/9 untouched). **T1 shipped:** frontier week (lowest un-bossed) pays 2× coins + 2 cards on first boss clear, ✨2× badge on the voyage board (whose 🏴 now honestly means boss-cleared), hub banner, 新岛先锋 daily quest. **T2 shipped (PR #146):** 3 daily 通缉令 posters (unseen-later-weeks first, then weak by miss rate; 3-day cooldown; `bounty_posters` migration 0038); correct answers anywhere tick them; +40🪙+10XP per poster, all-3 → a cap-consuming `'bounty'` card. Spec `docs/superpowers/specs/2026-07-18-wanted-bounties-design.md`. The ranking engine is the A2 seed — the 温故 daily-review session can reuse `bountyScore` weighting directly.
 
 ## P0-W · Economy rebalance: coin→collection bridge `[x]` (shipped 2026-07-18)
 
