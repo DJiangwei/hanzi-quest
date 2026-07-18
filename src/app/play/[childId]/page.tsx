@@ -42,6 +42,8 @@ import { mapOrderIndex } from '@/lib/play/map-order';
 import { ChampionTitleChip } from '@/components/play/ChampionTitleChip';
 import { TravelingMerchant } from '@/components/play/TravelingMerchant';
 import { getMerchantOffer, hasBoughtMerchantToday } from '@/lib/db/merchant';
+import { WantedPosters } from '@/components/play/WantedPosters';
+import { generateDailyBounties, listTodayBounties } from '@/lib/db/bounties';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -163,11 +165,15 @@ export default async function PlayHomePage({ params }: PageProps) {
   const hasFrontier = islands.some((i) => !i.bossCleared);
   const questCtx = { bossUnlocked, hasFrontier };
 
-  // Generate today's quests (idempotent: no-ops when rows exist for today).
-  await generateDailyQuests(child.id, questCtx);
-  const [todayQuests, chestClaimed] = await Promise.all([
+  // Generate today's quests + bounty posters (both idempotent on render).
+  await Promise.all([
+    generateDailyQuests(child.id, questCtx),
+    generateDailyBounties(child.id, todayIso),
+  ]);
+  const [todayQuests, chestClaimed, bounties] = await Promise.all([
     getTodayQuests(child.id),
     getDailyChestClaimed(child.id),
+    listTodayBounties(child.id, todayIso),
   ]);
 
   const allDone =
@@ -263,6 +269,8 @@ export default async function PlayHomePage({ params }: PageProps) {
           initialChestClaimed={chestClaimed}
         />
       )}
+
+      <WantedPosters childId={childId} posters={bounties} />
 
       <TravelingMerchant
         childId={childId}

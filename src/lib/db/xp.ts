@@ -13,7 +13,8 @@ export type XpSource =
   | 'homework'
   | 'study'
   | 'admin_grant'
-  | 'boss_courage';
+  | 'boss_courage'
+  | 'bounty_claim';
 
 export interface AwardXpResult { totalXp: number; level: number; leveledUp: boolean; }
 

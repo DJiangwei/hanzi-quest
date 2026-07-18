@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
+vi.mock('@/lib/db/bounties', () => ({ tickBountyProgress: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('@/lib/db/weeks', () => ({
   getPlayableWeekForChild: mocks.getPlayableWeekForChild,
   listCharactersForWeek: vi.fn(),

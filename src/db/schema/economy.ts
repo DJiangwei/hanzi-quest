@@ -30,6 +30,7 @@ export const coinReason = pgEnum('coin_reason', [
   'season_reward',
   'boss_courage',
   'merchant_purchase',
+  'bounty_claim',
 ]);
 
 export const shopItemKind = pgEnum('shop_item_kind', [
