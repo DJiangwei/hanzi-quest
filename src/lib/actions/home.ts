@@ -38,12 +38,13 @@ export async function placeFurnitureAction(
   slug: string,
   x: number,
   y: number,
+  copyIndex = 0,
 ): Promise<PlaceFurnitureResult> {
   const { child } = await requireChild(childId);
 
   try {
     await db.transaction((tx) =>
-      placeFurnitureInTx(tx, child.id, room, slug, x, y),
+      placeFurnitureInTx(tx, child.id, room, slug, x, y, copyIndex),
     );
   } catch (err) {
     if (
@@ -98,11 +99,12 @@ export async function setRoomSurfaceAction(
 export async function removeFurnitureAction(
   childId: string,
   slug: string,
+  copyIndex = 0,
 ): Promise<PlaceFurnitureResult> {
   const { child } = await requireChild(childId);
 
   try {
-    await db.transaction((tx) => removeFurnitureInTx(tx, child.id, slug));
+    await db.transaction((tx) => removeFurnitureInTx(tx, child.id, slug, copyIndex));
   } catch (err) {
     if (
       err instanceof FurnitureNotOwnedError ||

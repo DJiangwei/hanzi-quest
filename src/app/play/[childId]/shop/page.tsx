@@ -44,6 +44,7 @@ export default async function ShopPage({ params }: PageProps) {
         initialCoinBalance={shop.coinBalance}
         listings={shop.listings}
         initialOwnedShopItemIds={shop.ownedShopItemIds}
+        initialOwnedShopItemCounts={shop.ownedShopItemCounts}
         initialEquipped={shop.equipped}
         soundListings={sounds}
         initialEquippedSoundThemeSlug={settings?.soundThemeSlug ?? null}

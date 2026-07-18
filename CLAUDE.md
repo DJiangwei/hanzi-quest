@@ -14,7 +14,7 @@ It is **not** a multi-tenant SaaS. Optimize for the kids' daily fun and actual l
 
 ---
 
-## Current state — subsystem snapshot (last refreshed 2026-07-18, through PR #144)
+## Current state — subsystem snapshot (last refreshed 2026-07-18, through PR #145)
 
 **Play loop.** Home (`/play/[childId]`) shows an illustrated **voyage board** (vertical zigzag on phones, landscape 16:10 at `lg:` via `useIsWide()`) of the current map's weeks. Tapping an island → **week hub** (`/week/[weekId]`) with 3 sections served at `/level/[weekId]/[section]`: **回顾** (flashcards, now ending in a 3-way 认识/不确定/不认识 self-assessment), **练习** (15 practice scenes per 10-char week: 3 audio_pick + 3 image_pick + 1 lianliankan + 2 image_word + 6 meaning; `PRACTICE_SCENE_COUNT=15`), and **Boss战** (locked until 7 practice scenes cleared; 10 bespoke procedural-SVG creatures rotate by weekNumber, phase machine intro→idle→damage→defeat). Active scene types: flashcard, audio_pick, image_pick, image_word, translate_pick, sentence_cloze, lianliankan, boss. Retired-but-kept (is_active=false, components remain for old attempts): pinyin_pick, visual_pick, word_match. Scenes are compiled into `week_levels` by `compileWeekIntoLevels` with **stable level keys** (`review:flashcard:<charId>`, `practice:<type>:<slot>`, `boss:boss:0`); compile changes need `scripts/recompile-all-weeks.ts` post-merge. Powerups: 💡 hint is a free local toggle (practice only, never boss), ⏭️ skip is a paid consumable (skipped scenes score 0 and don't count toward boss unlock), 🧊 streak-freeze auto-burns.
 
@@ -26,7 +26,7 @@ It is **not** a multi-tenant SaaS. Optimize for the kids' daily fun and actual l
 
 **Avatar & shop.** 7-slot layered SVG avatar (background→decor→head→pants→top→hair→hat; order = `AVATAR_SLOT_IDS`), ~63 shop items across pirate/caribbean/space/unicorn themes + reward-only festival/continent/season/champion cosmetics (`REWARD_THEMES`, surfaced in the 奖励衣橱 wardrobe). Gendered default heads by `child_profiles.gender`. Shop (`/shop`, 6 tabs): avatar (try-on preview + Buy bar, no confirm dialog), sounds (4 procedural Web-Audio themes), pets (8, island-map companion with speech bubbles), island decor (10, auto-placed at TS-anchored positions), powerups, home furniture/surfaces. Purchases return a discriminated `PurchaseOutcome` (never throw for expected cases) surfaced via `ShopToast`; `purchaseShopItemInTx` dispatches by `kind` switch.
 
-**Home (家).** `/home`: 4 rooms (卧室/客厅/游戏室/院子) on an 8×6 grid with 2.5D depth overlays; ~25 flat-SVG furniture items + swappable wallpapers/floors (`home_room_surfaces`, room defaults free); tap-to-place editor with server-authoritative validation (`placeFurnitureInTx`). Own-1-place-1 (multi-buy is approved but PARKED).
+**Home (家).** `/home`: 4 rooms (卧室/客厅/游戏室/院子) on an 8×6 grid with 2.5D depth overlays; ~25 flat-SVG furniture items + swappable wallpapers/floors (`home_room_surfaces`, room defaults free); tap-to-place editor with server-authoritative validation (`placeFurnitureInTx`). **Multi-buy (E3, 2026-07-18):** furniture can be owned/placed up to 3 copies (`HOME_FURNITURE_COPY_CAP`); wallpapers/floors stay own-1; placement identity is `(slug, copyIndex)`.
 
 **Maps & final boss.** Multi-map chart system: Map 1 加勒比海 (10 weeks, complete), Map 2 印度洋 (placeholder, awaiting David's hanzi; `seed-pirate-class-2.ts` prepped). `/maps` gateway with per-map accent colors; linear gating — next map locks until the previous map's **final boss** (👑 lair node appears when every week is cleared; 3-phase 18-question gauntlet vs. a per-map overlord) is beaten. `final_boss_clears` is the single source of truth for map-beaten (rewards idempotency AND gating); win grants a champions-v1 card + trophy + auto-equipped crown + home title chip.
 
@@ -40,11 +40,11 @@ It is **not** a multi-tenant SaaS. Optimize for the kids' daily fun and actual l
 
 ## Recent changes (window: last 3 PRs — full log in docs/CHANGELOG.md)
 
+- **PR #145 (2026-07-18)** — E3 multi-buy furniture: up to 3 copies per furniture item (migration 0037 `copy_index`), placement identity `(slug, copyIndex)`, tray ×N badges, shop "再买一个" until the cap; wallpapers/floors stay own-1.
 - **PR #144 (2026-07-18)** — E1+E2 economy bridge: 旅行商人 daily fixed-price card stall (migration 0036 `merchant_purchase`) + Backpack shard-nudge banner. Driven by the 07-18 economy review: 12.5k idle coins, exhausted home catalog, cards = the real motivator.
 - **PR #143 (2026-07-16)** — fix: perfect-scene bonus was double-credited in the coin ledger (perfect first-try paid 100 instead of 75).
-- **PR #142 (2026-07-14)** — T1 frontier 双倍宝藏: lowest un-bossed week pays 2× coins + double first-boss cards; voyage 🏴 now = boss-cleared; ✨2× badge + hub banner + 新岛先锋 quest.
 
-**Next up:** **`docs/IMPROVEMENT-ROADMAP.md` is the prioritized plan** (growth-flywheel north star + V-series evolution + A2 review loop / A3 parent insights now that A1 telemetry is accumulating). **E3 multi-buy furniture (un-parked, approved 2026-07-18, cap 3/item)** and **T2 通缉令 wanted-poster bounties** are the approved next PRs. **Map 2 (印度洋) authoring** outranks everything once David delivers the hanzi. Story Mode redesign PAUSED. ALWAYS confirm with David before starting a new PR.
+**Next up:** **`docs/IMPROVEMENT-ROADMAP.md` is the prioritized plan** (growth-flywheel north star + V-series evolution + A2 review loop / A3 parent insights now that A1 telemetry is accumulating). **T2 通缉令 wanted-poster bounties** is the approved next PR. **Map 2 (印度洋) authoring** outranks everything once David delivers the hanzi. Story Mode redesign PAUSED. ALWAYS confirm with David before starting a new PR.
 
 ---
 
@@ -253,7 +253,7 @@ docs/superpowers/       Spec + plan docs from brainstorming/writing-plans skills
 
 ### Home (家)
 
-**Landmine:** *Home furniture: owned ≠ placed.* Ownership = a `shop_purchases` row (kind `home`); a placement = a `home_placements` row. The tray shows owned-but-unplaced; UNIQUE `(child_id, furniture_slug)` means each owned item is placed at most once (own-1-place-1; moving updates the row, 收起 deletes it). Rooms + furniture catalog + grid dims are CODE-only (like decor anchors / avatar catalog). Distinct from the island `decor` shop tab — don't conflate.
+**Landmine:** *Home furniture: owned ≠ placed, and identity is per-COPY since E3 multi-buy.* Ownership = `shop_purchases` rows (kind `home`, up to `HOME_FURNITURE_COPY_CAP=3` rows per furniture item — the cap lives in the client-safe `furniture-catalog.tsx`, enforced in `purchaseGenericInTx`; wallpapers/floors and all other generic kinds stay own-1). A placement = a `home_placements` row keyed UNIQUE `(child_id, furniture_slug, copy_index)`; placing copy k requires owning ≥ k+1 rows; the collision check skips ONLY the copy being moved (a second copy of the same slug still blocks cells). The editor tray collapses spares into one chip with a ×N badge and hands out the lowest free copyIndex; `getOwnedFurnitureSlugs` returns slugs WITH multiplicity (dup entries) — don't "dedupe" it. Rooms + furniture catalog + grid dims are CODE-only (like decor anchors / avatar catalog). Distinct from the island `decor` shop tab — don't conflate.
 
 **Landmine:** *Home surfaces are `kind='home'` shop_items + a per-room equipped table; defaults are free.* Buyable wallpapers/floors seed as `shop_items(kind='home')` (same generic purchase path as furniture — `getOwnedFurnitureSlugs` returns BOTH; filter by `getSurface(slug)` to get surface slugs). Equipped state lives in `home_room_surfaces` (absent → `ROOM_DEFAULT_SURFACES`); `setRoomSurface` allows a slug that `isDefault` OR owned (never require buying a default). Surface `render()` fills ONLY its zone (wallpaper y0..25, floor y25..75) with slug-scoped gradient ids (unique per page). The `RoomCanvas` depth overlay uses `useId`-scoped ids — don't hardcode gradient ids there (two rooms/shop swatches collide).
 

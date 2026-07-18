@@ -16,7 +16,7 @@ const state = vi.hoisted(() => ({
   //   call 1 = ownership count check
   //   call 2 = existing placements in room
   ownedCount: 0,
-  existingRoomPlacements: [] as Array<{ slug: string; x: number; y: number }>,
+  existingRoomPlacements: [] as Array<{ slug: string; copyIndex?: number; x: number; y: number }>,
 
   // for getHomeState db.select calls:
   //   call 1 = owned slugs
@@ -337,7 +337,7 @@ describe('placeFurnitureInTx — validation failures', () => {
   it('throws CellOccupiedError when another item occupies the target cell', async () => {
     state.ownedCount = 1; // chair-wood owned
     // Existing 'table-round' at (2,3) — 1×1 floor, same cell
-    state.existingRoomPlacements = [{ slug: 'table-round', x: 2, y: 3 }];
+    state.existingRoomPlacements = [{ slug: 'table-round', copyIndex: 0, x: 2, y: 3 }];
     await expect(
       placeFurnitureInTx(tx as never, 'c1', 'bedroom', 'chair-wood', 2, 3),
     ).rejects.toThrow(CellOccupiedError);
@@ -378,7 +378,7 @@ describe('placeFurnitureInTx — happy path', () => {
   it('allows moving the same item to a new position — skips self in collision check', async () => {
     state.ownedCount = 1;
     // Same slug 'chair-wood' already placed at (0,2) — should be skipped in collision check
-    state.existingRoomPlacements = [{ slug: 'chair-wood', x: 0, y: 2 }];
+    state.existingRoomPlacements = [{ slug: 'chair-wood', copyIndex: 0, x: 0, y: 2 }];
     // Move to (1,2) — no collision with self
     await expect(
       placeFurnitureInTx(tx as never, 'c1', 'bedroom', 'chair-wood', 1, 2),
@@ -401,6 +401,46 @@ describe('placeFurnitureInTx — happy path', () => {
 // ────────────────────────────────────────────────────────────────────────────
 // removeFurnitureInTx
 // ────────────────────────────────────────────────────────────────────────────
+
+describe('placeFurnitureInTx — E3 multi-buy copies', () => {
+  it('rejects a copyIndex outside 0..cap-1', async () => {
+    state.ownedCount = 3;
+    await expect(
+      placeFurnitureInTx(tx as never, 'c1', 'bedroom', 'chair-wood', 0, 2, 3),
+    ).rejects.toThrow(InvalidPlacementError);
+  });
+
+  it('placing copy #1 requires owning 2 copies', async () => {
+    state.ownedCount = 1;
+    await expect(
+      placeFurnitureInTx(tx as never, 'c1', 'bedroom', 'chair-wood', 0, 2, 1),
+    ).rejects.toThrow(FurnitureNotOwnedError);
+  });
+
+  it('places a second owned copy with its copyIndex persisted', async () => {
+    state.ownedCount = 2;
+    state.existingRoomPlacements = [{ slug: 'chair-wood', copyIndex: 0, x: 0, y: 2 }];
+    await placeFurnitureInTx(tx as never, 'c1', 'bedroom', 'chair-wood', 1, 2, 1);
+    expect(state.insertValues).toMatchObject({
+      furnitureSlug: 'chair-wood',
+      copyIndex: 1,
+      gridX: 1,
+      gridY: 2,
+    });
+  });
+
+  it('a second copy of the same slug still blocks cells (only the moved copy is skipped)', async () => {
+    state.ownedCount = 2;
+    state.existingRoomPlacements = [
+      { slug: 'chair-wood', copyIndex: 0, x: 2, y: 3 },
+      { slug: 'chair-wood', copyIndex: 1, x: 3, y: 3 },
+    ];
+    // Move copy 0 onto copy 1's cell → collision (self-skip must be per-copy)
+    await expect(
+      placeFurnitureInTx(tx as never, 'c1', 'bedroom', 'chair-wood', 3, 3, 0),
+    ).rejects.toThrow(CellOccupiedError);
+  });
+});
 
 describe('removeFurnitureInTx', () => {
   it('calls delete on homePlacements for the given child + slug', async () => {

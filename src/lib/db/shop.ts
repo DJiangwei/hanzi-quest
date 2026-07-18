@@ -11,6 +11,10 @@ import {
   shopPurchases,
 } from '@/db/schema';
 import { defaultHeadForGender } from '@/lib/avatar/defaultLook';
+import {
+  getFurniture,
+  HOME_FURNITURE_COPY_CAP,
+} from '@/lib/home/furniture-catalog';
 import { awardCoinsInTx } from './coins';
 import type { GrantedTrophy } from './trophies';
 import {
@@ -90,6 +94,22 @@ export async function listChildOwnedShopItemIds(
     .from(shopPurchases)
     .where(eq(shopPurchases.childId, childId));
   return new Set(rows.map((r) => r.shopItemId));
+}
+
+/**
+ * shopItemId → number of purchase rows (E3 multi-buy: home furniture may have
+ * up to HOME_FURNITURE_COPY_CAP rows; everything else 0/1).
+ */
+export async function listChildOwnedShopItemCounts(
+  childId: string,
+): Promise<Record<string, number>> {
+  const rows = await db
+    .select({ shopItemId: shopPurchases.shopItemId })
+    .from(shopPurchases)
+    .where(eq(shopPurchases.childId, childId));
+  const counts: Record<string, number> = {};
+  for (const r of rows) counts[r.shopItemId] = (counts[r.shopItemId] ?? 0) + 1;
+  return counts;
 }
 
 /**
@@ -372,17 +392,23 @@ async function purchaseGenericInTx(
 ): Promise<PurchaseResult> {
   // Ownership for sound_theme / pet / decor / home = presence of a shop_purchases row.
   // No per-kind inventory side-effect (unlike avatar).
-  const [existing] = await tx
-    .select()
+  const existing = await tx
+    .select({ id: shopPurchases.id })
     .from(shopPurchases)
     .where(
       and(
         eq(shopPurchases.childId, childId),
         eq(shopPurchases.shopItemId, shopItem.id),
       ),
-    )
-    .limit(1);
-  if (existing) throw new AlreadyOwnedError(shopItem.id);
+    );
+  // E3 multi-buy: home FURNITURE may be owned up to the copy cap; surfaces
+  // (wallpaper/floor — not in the furniture catalog) and every other generic
+  // kind stay strictly own-1.
+  const copyCap =
+    shopItem.kind === 'home' && getFurniture(shopItem.slug)
+      ? HOME_FURNITURE_COPY_CAP
+      : 1;
+  if (existing.length >= copyCap) throw new AlreadyOwnedError(shopItem.id);
 
   await debitAndRecordInTx(tx, childId, shopItem);
 
@@ -631,12 +657,14 @@ export async function listSoundThemeListings(): Promise<SoundThemeListing[]> {
 export async function getShopPageData(childId: string): Promise<{
   listings: AvatarShopListing[];
   ownedShopItemIds: string[];
+  /** shopItemId → owned copies (multi-buy aware; absent = 0). */
+  ownedShopItemCounts: Record<string, number>;
   equipped: EquippedAvatar;
   coinBalance: number;
 }> {
-  const [listings, ownedSet, equipped, balRow] = await Promise.all([
+  const [listings, ownedCounts, equipped, balRow] = await Promise.all([
     listAvatarShopListings(),
-    listChildOwnedShopItemIds(childId),
+    listChildOwnedShopItemCounts(childId),
     getEquippedAvatar(childId),
     db
       .select({ balance: coinBalances.balance })
@@ -647,7 +675,8 @@ export async function getShopPageData(childId: string): Promise<{
   ]);
   return {
     listings,
-    ownedShopItemIds: Array.from(ownedSet),
+    ownedShopItemIds: Object.keys(ownedCounts),
+    ownedShopItemCounts: ownedCounts,
     equipped,
     coinBalance: balRow?.balance ?? 0,
   };

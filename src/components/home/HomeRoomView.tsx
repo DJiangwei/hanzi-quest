@@ -19,10 +19,18 @@ import type { RoomSurface } from '@/lib/db/home-surfaces';
 interface Selected {
   source: 'tray' | 'placed';
   slug: string;
+  /** E3 multi-buy: which owned copy is in hand. */
+  copyIndex: number;
+}
+
+/** Stable per-copy identity used for keys + lifted checks. */
+export function placementKey(slug: string, copyIndex: number): string {
+  return `${slug}#${copyIndex}`;
 }
 
 interface Props {
   childId: string;
+  /** Owned furniture slugs WITH multiplicity (a slug appears once per copy). */
   ownedSlugs: string[];
   placements: HomePlacement[];
   /** Equipped wallpaper/floor per room (defaults applied server-side). */
@@ -81,13 +89,26 @@ export function HomeRoomView({
     [activeRoom, childId],
   );
 
-  // Slugs placed in ANY room (to filter tray)
-  const placedSlugs = new Set(localPlacements.map((p) => p.slug));
-  const unplacedSlugs = ownedSlugs.filter((s) => !placedSlugs.has(s));
+  // E3 multi-buy: owned copies per slug (ownedSlugs carries multiplicity) vs
+  // placed copies per slug (any room) → the tray shows per-slug spare counts.
+  const ownedCountBySlug = new Map<string, number>();
+  for (const s of ownedSlugs) ownedCountBySlug.set(s, (ownedCountBySlug.get(s) ?? 0) + 1);
+  const placedKeySet = new Set(localPlacements.map((p) => placementKey(p.slug, p.copyIndex)));
+  const placedCountBySlug = new Map<string, number>();
+  for (const p of localPlacements) {
+    placedCountBySlug.set(p.slug, (placedCountBySlug.get(p.slug) ?? 0) + 1);
+  }
+  const trayItems = Array.from(ownedCountBySlug.entries())
+    .map(([slug, owned]) => ({
+      slug,
+      count: owned - (placedCountBySlug.get(slug) ?? 0),
+    }))
+    .filter((t) => t.count > 0);
 
-  // Lifted slug: when source='placed', the item is logically "in hand" so
-  // remove from occupied cells during valid-cell computation
-  const liftedSlug = selected?.source === 'placed' ? selected.slug : null;
+  // Lifted key: when source='placed', that copy is logically "in hand" so
+  // remove it from occupied cells during valid-cell computation
+  const liftedKey =
+    selected?.source === 'placed' ? placementKey(selected.slug, selected.copyIndex) : null;
 
   function enterEdit() {
     setMode('edit');
@@ -98,17 +119,32 @@ export function HomeRoomView({
     setSelected(null);
   }
 
-  /** Tap a tray item → select it for placement. */
-  const handleTraySelect = useCallback((slug: string) => {
-    setSelected((prev) =>
-      prev?.slug === slug && prev.source === 'tray' ? null : { source: 'tray', slug },
-    );
-  }, []);
+  /** Tap a tray item → select its first spare copy for placement. */
+  const handleTraySelect = useCallback(
+    (slug: string) => {
+      setSelected((prev) => {
+        if (prev?.slug === slug && prev.source === 'tray') return null;
+        // First copy index not currently placed (0..owned-1).
+        const owned = ownedCountBySlug.get(slug) ?? 0;
+        for (let i = 0; i < owned; i++) {
+          if (!placedKeySet.has(placementKey(slug, i))) {
+            return { source: 'tray', slug, copyIndex: i };
+          }
+        }
+        return prev;
+      });
+    },
+    // Maps are rebuilt each render from localPlacements/ownedSlugs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [localPlacements, ownedSlugs],
+  );
 
   /** Tap a placed item in edit mode → lift it (select for move/remove). */
-  const handlePlacedTap = useCallback((slug: string) => {
+  const handlePlacedTap = useCallback((slug: string, copyIndex: number) => {
     setSelected((prev) =>
-      prev?.slug === slug && prev.source === 'placed' ? null : { source: 'placed', slug },
+      prev?.slug === slug && prev.copyIndex === copyIndex && prev.source === 'placed'
+        ? null
+        : { source: 'placed', slug, copyIndex },
     );
   }, []);
 
@@ -116,20 +152,20 @@ export function HomeRoomView({
   const handleCellTap = useCallback(
     (x: number, y: number) => {
       if (!selected) return;
-      const { slug } = selected;
+      const { slug, copyIndex } = selected;
       const def = getFurniture(slug);
       if (!def) return;
 
-      // Optimistic update: remove old placement + add new
+      // Optimistic update: remove this copy's old placement + add new
       setLocalPlacements((prev) => {
-        const without = prev.filter((p) => !(p.slug === slug));
-        return [...without, { room: activeRoom, slug, x, y }];
+        const without = prev.filter((p) => !(p.slug === slug && p.copyIndex === copyIndex));
+        return [...without, { room: activeRoom, slug, copyIndex, x, y }];
       });
       setSelected(null);
 
       // Server action (fire-and-forget; server revalidation syncs on next nav)
       startTransition(async () => {
-        await placeFurnitureAction(childId, activeRoom, slug, x, y);
+        await placeFurnitureAction(childId, activeRoom, slug, x, y, copyIndex);
       });
     },
     [selected, activeRoom, childId],
@@ -138,14 +174,16 @@ export function HomeRoomView({
   /** "Put away" button → remove placement entirely. */
   const handlePutAway = useCallback(() => {
     if (!selected || selected.source !== 'placed') return;
-    const { slug } = selected;
+    const { slug, copyIndex } = selected;
 
     // Optimistic update
-    setLocalPlacements((prev) => prev.filter((p) => p.slug !== slug));
+    setLocalPlacements((prev) =>
+      prev.filter((p) => !(p.slug === slug && p.copyIndex === copyIndex)),
+    );
     setSelected(null);
 
     startTransition(async () => {
-      await removeFurnitureAction(childId, slug);
+      await removeFurnitureAction(childId, slug, copyIndex);
     });
   }, [selected, childId]);
 
@@ -179,7 +217,7 @@ export function HomeRoomView({
         placements={localPlacements}
         mode={mode}
         selectedSlug={selected?.slug ?? null}
-        liftedSlug={liftedSlug}
+        liftedKey={liftedKey}
         wallpaperSlug={activeSurface?.wallpaperSlug}
         floorSlug={activeSurface?.floorSlug}
         onPlacedTap={handlePlacedTap}
@@ -223,7 +261,7 @@ export function HomeRoomView({
 
           {/* Furniture tray */}
           <FurnitureTray
-            unplacedSlugs={unplacedSlugs}
+            items={trayItems}
             selectedSlug={selected?.source === 'tray' ? selected.slug : null}
             onSelect={handleTraySelect}
           />

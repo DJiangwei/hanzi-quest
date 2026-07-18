@@ -260,6 +260,13 @@
       "when": 1784373301093,
       "tag": "0036_rare_proteus",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1784375276527,
+      "tag": "0037_chief_nick_fury",
+      "breakpoints": true
     }
   ]
 }

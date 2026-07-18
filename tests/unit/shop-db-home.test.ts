@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   shopItemRow: null as null | Record<string, unknown>,
-  alreadyOwned: false,
+  ownedRows: 0,
   balance: 500,
   awardCoinsInTx: vi.fn(),
   insertCalls: [] as string[],
@@ -59,8 +59,10 @@ vi.mock('@/db', () => {
         return makeChain(mocks.shopItemRow ? [mocks.shopItemRow] : []);
       }
       if (selectCallIdx === 2) {
-        // shop_purchases ownership check
-        return makeChain(mocks.alreadyOwned ? [{ id: 'p1' }] : []);
+        // shop_purchases ownership check (E3 multi-buy: row count vs copy cap)
+        return makeChain(
+          Array.from({ length: mocks.ownedRows }, (_, i) => ({ id: `p${i}` })),
+        );
       }
       // calls 3+ → coin_balances
       return makeChain([{ balance: mocks.balance }]);
@@ -114,7 +116,7 @@ beforeEach(() => {
     isActive: true,
     metadata: { rarity: 'rare', category: 'furniture' },
   };
-  mocks.alreadyOwned = false;
+  mocks.ownedRows = 0;
   mocks.balance = 500;
   mocks.awardCoinsInTx.mockReset();
 });
@@ -154,8 +156,14 @@ describe('purchaseShopItem — home kind', () => {
     expect(mocks.awardCoinsInTx).not.toHaveBeenCalled();
   });
 
-  it('throws AlreadyOwnedError when child already purchased the item', async () => {
-    mocks.alreadyOwned = true;
+  it('E3 multi-buy: an owned furniture item can be bought again below the cap', async () => {
+    mocks.ownedRows = 1;
+    const result = await purchaseShopItem('child-1', 's-home-1');
+    expect(result).toMatchObject({ shopItemId: 's-home-1' });
+  });
+
+  it('throws AlreadyOwnedError at the furniture copy cap', async () => {
+    mocks.ownedRows = 3; // HOME_FURNITURE_COPY_CAP
     await expect(purchaseShopItem('child-1', 's-home-1')).rejects.toThrow(
       AlreadyOwnedError,
     );
