@@ -15,6 +15,12 @@ vi.mock('@/lib/auth/bootstrap', () => ({
 vi.mock('@/lib/db/parent-settings', () => ({
   getParentSettings: vi.fn(),
 }));
+vi.mock('@/lib/db/children', () => ({
+  listChildrenForUser: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('@/lib/actions/entry', () => ({
+  chooseKidEntryAction: vi.fn(),
+}));
 vi.mock('@clerk/nextjs', () => ({ UserButton: () => null }));
 
 import { cookies } from 'next/headers';
@@ -81,5 +87,18 @@ describe('SecuredParentLayout PIN gate', () => {
     const result = await SecuredParentLayout({ children: 'kids' as unknown as React.ReactNode });
     expect(redirect).not.toHaveBeenCalled();
     expect(result).toBeDefined();
+  });
+
+  it('renders a Play button linking straight into the game (single child)', async () => {
+    get.mockReturnValue({ value: '1' });
+    mockSettings({ parentPinHash: '$2b$10$abc', failedAttempts: 0, lockedUntil: null });
+    const { listChildrenForUser } = await import('@/lib/db/children');
+    (listChildrenForUser as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      { id: 'child_1', displayName: 'Yinuo' },
+    ]);
+    const { render, screen } = await import('@testing-library/react');
+    const result = await SecuredParentLayout({ children: 'kids' as unknown as React.ReactNode });
+    render(result as React.ReactElement);
+    expect(screen.getByRole('button', { name: /进入游戏/ })).toBeTruthy();
   });
 });

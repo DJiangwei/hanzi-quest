@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ensureUserBootstrapped } from '@/lib/auth/bootstrap';
 import { getParentSettings } from '@/lib/db/parent-settings';
+import { listChildrenForUser } from '@/lib/db/children';
+import { chooseKidEntryAction } from '@/lib/actions/entry';
 
 /**
  * Secured parent layout — wraps every parent page EXCEPT `/parent/unlock`.
@@ -21,7 +23,10 @@ export default async function SecuredParentLayout({
 
   const jar = await cookies();
   const unlocked = jar.get('parent_unlocked')?.value === '1';
-  const settings = await getParentSettings(user.id);
+  const [settings, childProfiles] = await Promise.all([
+    getParentSettings(user.id),
+    listChildrenForUser(user.id),
+  ]);
 
   if (settings?.parentPinHash && !unlocked) {
     redirect('/parent/unlock');
@@ -61,12 +66,23 @@ export default async function SecuredParentLayout({
           >
             Children
           </Link>
-          <Link
-            href="/?choose=1"
-            className="font-medium text-[var(--color-sand-700)] hover:text-[var(--color-ocean-700)]"
-          >
-            切换 / Switch
-          </Link>
+          {childProfiles.length === 1 ? (
+            <form action={chooseKidEntryAction.bind(null, childProfiles[0].id)}>
+              <button
+                type="submit"
+                className="rounded-full bg-[var(--color-ocean-500)] px-3 py-1.5 font-semibold text-white shadow-sm transition-colors hover:bg-[var(--color-ocean-700)]"
+              >
+                🎮 进入游戏 / Play
+              </button>
+            </form>
+          ) : (
+            <Link
+              href="/?choose=1"
+              className="rounded-full bg-[var(--color-ocean-500)] px-3 py-1.5 font-semibold text-white shadow-sm transition-colors hover:bg-[var(--color-ocean-700)]"
+            >
+              🎮 进入游戏 / Play
+            </Link>
+          )}
           <UserButton />
         </nav>
       </header>
