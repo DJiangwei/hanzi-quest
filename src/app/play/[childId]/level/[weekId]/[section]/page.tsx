@@ -9,7 +9,7 @@ import {
   segmentToSection,
   type WeekSection,
 } from '@/lib/db/play';
-import { getPlayableWeekForChild } from '@/lib/db/weeks';
+import { getPlayableWeekForChild, getWeekGateState } from '@/lib/db/weeks';
 import { BOSS_UNLOCK_PRACTICE_THRESHOLD } from '@/lib/scenes/configs';
 import { grantStarterPowerupsIfNeeded, getPowerupCounts } from '@/lib/db/powerups';
 
@@ -30,6 +30,12 @@ export default async function SectionPage({ params }: PageProps) {
   const { child } = await requireChild(childId);
   const week = await getPlayableWeekForChild(child.id, weekId);
   if (!week) notFound();
+
+  // T3 linear gating — an island past the frontier isn't playable at all, so
+  // bounce before doing any of the (expensive) scene loading below. Checked
+  // here as well as on the hub because this route is directly linkable.
+  const gate = await getWeekGateState(child.id, weekId);
+  if (!gate.isUnlocked) redirect(`/play/${childId}`);
 
   // Boss is gated behind practice progress.
   if (typedSection === 'boss') {

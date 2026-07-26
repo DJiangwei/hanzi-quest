@@ -23,6 +23,8 @@ interface Props {
   homework?: { present: boolean; doneToday: boolean; count: number };
   /** T1: this week is the frontier — double coins + double first-boss cards. */
   frontier?: boolean;
+  /** T3: 🗝️ keys earned / available on this map — drives the first-clear promise. */
+  keys?: { earned: number; total: number };
 }
 
 function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cleared' {
@@ -32,7 +34,7 @@ function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cle
   return 'idle';
 }
 
-export function WeekHub({ childId, week, sections, weekId, homework, frontier }: Props) {
+export function WeekHub({ childId, week, sections, weekId, homework, frontier, keys }: Props) {
   const reviewState = deriveState(sections.review.done, sections.review.total);
   const practiceState = deriveState(sections.practice.done, sections.practice.total);
   const bossState: 'idle' | 'in-progress' | 'cleared' | 'locked' = sections.boss.locked
@@ -59,17 +61,46 @@ export function WeekHub({ childId, week, sections, weekId, homework, frontier }:
         </div>
       </header>
 
+      {/* T3: the first-clear promise, spelled out BEFORE she fights — the
+          rewards used to only reveal themselves after the win, which is no help
+          to a kid deciding whether the boss is worth attempting. */}
       {frontier && (
         <div
           data-testid="frontier-banner"
-          className="rounded-xl border-2 border-amber-400 bg-gradient-to-r from-amber-100 to-yellow-50 px-4 py-2.5 text-center shadow-sm"
+          className="rounded-xl border-2 border-amber-400 bg-gradient-to-r from-amber-100 to-yellow-50 px-4 py-2.5 shadow-sm"
         >
-          <span className="font-hanzi text-sm font-extrabold text-amber-900">
-            ✨ 双倍宝藏周!金币 ×2 · Boss 首通双卡
-          </span>
-          <span className="block text-xs font-medium text-amber-800/80">
-            Double treasure island! 2× coins · 2 cards for the first boss win
-          </span>
+          <div className="text-center">
+            <span className="font-hanzi text-sm font-extrabold text-amber-900">
+              ✨ 双倍宝藏岛 · 首次打通 Boss 可得
+            </span>
+            <span className="block text-xs font-medium text-amber-800/80">
+              Double treasure island — beat the boss for the first time and get
+            </span>
+          </div>
+          <ul className="mt-2 flex flex-col gap-1 text-xs font-semibold text-amber-900">
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden="true">🪙</span>
+              <span className="font-hanzi">金币 ×2</span>
+              <span className="font-normal text-amber-800/80">/ Double coins</span>
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden="true">🎴</span>
+              <span className="font-hanzi">额外卡片 ×1</span>
+              <span className="font-normal text-amber-800/80">/ 1 extra card</span>
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden="true">🗝️</span>
+              <span className="font-hanzi">
+                钥匙碎片 ×1{keys && keys.total > 0 ? `（${keys.earned}/${keys.total}）` : ''}
+              </span>
+              <span className="font-normal text-amber-800/80">/ 1 key shard</span>
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden="true">🏝️</span>
+              <span className="font-hanzi">解锁下一座岛</span>
+              <span className="font-normal text-amber-800/80">/ Unlocks the next island</span>
+            </li>
+          </ul>
         </div>
       )}
 

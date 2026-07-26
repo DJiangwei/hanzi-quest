@@ -14,6 +14,8 @@ import { InstrumentCard } from '@/components/play/items/InstrumentCard';
 import { AnimalCard } from '@/components/play/items/AnimalCard';
 import { ChampionCard } from '@/components/play/items/ChampionCard';
 import { CHAMPIONS_BY_SLUG } from '@/lib/collections/championsData';
+import { VaultTreasureCard } from '@/components/play/items/VaultTreasureCard';
+import { VAULT_TREASURES_BY_SLUG } from '@/lib/collections/keyVaultData';
 import {
   TRANSPORT_BY_SLUG,
   TRANSPORT_GROUP_ORDER,
@@ -220,6 +222,18 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: ChampionCard,
     resolveRevealEmoji: (slug) => CHAMPIONS_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'key-vault-v1': {
+    displayNameZh: '钥匙宝库',
+    displayNameEn: 'The Key Vault',
+    sloganZh: '集齐一片海域的全部钥匙才能打开。',
+    sloganEn: 'Opened only by collecting every key on a map.',
+    themeEmoji: '🗝️',
+    themeBannerClass: 'bg-gradient-to-br from-teal-300 via-emerald-400 to-cyan-500',
+    themeAccentClass: 'text-emerald-900',
+    gridColumns: 3,
+    ItemCard: VaultTreasureCard,
+    resolveRevealEmoji: (slug) => VAULT_TREASURES_BY_SLUG[slug]?.emoji ?? null,
   },
   'transport-v1': {
     displayNameZh: '交通工具',

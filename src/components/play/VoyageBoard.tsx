@@ -18,6 +18,8 @@ export interface VoyageBoardIsland {
   completionPercent: number;
   /** T1: 🏴 means the BOSS is beaten, not merely "some section reached 100%". */
   bossCleared: boolean;
+  /** T3: published but still 🔒 — its predecessor's boss is unbeaten. */
+  locked?: boolean;
 }
 
 interface Props {
@@ -176,13 +178,22 @@ function StopNode({
     ? 'text-[clamp(1.4rem,4.5vw,3rem)]'
     : 'text-[clamp(2.2rem,13vw,4.5rem)]';
 
-  if (!island) {
+  // Two distinct locked states share this medallion: `!island` = no such week
+  // is published yet, and `island.locked` = published but gated behind the
+  // previous island's boss (T3). Only the latter gets the "beat the boss
+  // before it" explanation — for an unpublished stop there's nothing to do.
+  const gated = Boolean(island?.locked);
+  if (!island || gated) {
     return (
       <div
-        data-testid="voyage-stop-locked"
+        data-testid={gated ? 'voyage-stop-gated' : 'voyage-stop-locked'}
         className={`absolute z-10 flex ${widthClass} -translate-x-1/2 -translate-y-1/2 flex-col items-center`}
         style={style}
-        aria-label={`${stop.labelEn} — locked`}
+        aria-label={
+          gated
+            ? `${stop.labelEn} — locked, beat the previous island's boss first`
+            : `${stop.labelEn} — locked`
+        }
       >
         <span className={`relative flex aspect-square w-full items-center justify-center rounded-full border-[5px] border-[#8a6a3a] bg-[#cdbb95] ${emojiClass} opacity-60 shadow-lg`}>
           {stop.emoji}
@@ -191,6 +202,12 @@ function StopNode({
         <span className="mt-1 rounded-md bg-black/40 px-2 py-0.5 text-center text-[11px] font-semibold leading-tight text-white">
           {stop.labelZh}
           <span className="block text-[9px] opacity-80">{stop.labelEn}</span>
+          {gated && (
+            <span className="mt-0.5 block text-[9px] font-bold text-amber-200">
+              打通上一关 Boss 解锁
+              <span className="block font-medium opacity-90">Beat the boss before it</span>
+            </span>
+          )}
         </span>
       </div>
     );
@@ -236,6 +253,19 @@ function StopNode({
       <span className="mt-1 rounded-md bg-black/45 px-2 py-0.5 text-center text-[11px] font-bold leading-tight text-white">
         {stop.labelZh}
         <span className="block text-[9px] font-medium opacity-85">{stop.labelEn}</span>
+        {/* T3: name the first-clear prize on the board itself, so the reward is
+            visible BEFORE the fight rather than only after it. */}
+        {isCurrent && (
+          <span
+            data-testid="frontier-reward-hint"
+            className="mt-0.5 block text-[9px] font-extrabold text-amber-200"
+          >
+            首通 Boss：🪙×2 🎴+1 🗝️+1
+            <span className="block font-semibold opacity-90">
+              First boss win: 2× coins, +1 card, +1 key
+            </span>
+          </span>
+        )}
       </span>
     </Link>
   );

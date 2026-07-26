@@ -190,15 +190,59 @@ export function frontierWeekNumber(
 }
 
 /**
- * True iff `weekId` is the child's FRONTIER week: the lowest-numbered
- * published week (same visibility set as getPlayableWeekForChild, scoped to
- * the target week's pack / per-family group) whose boss is not yet cleared.
- * Drives the double-treasure bonus — server-authoritative, never trust the
- * client's claim of "this is the frontier".
+ * Linear island gating (T3): a week is playable up to and including the
+ * FRONTIER. Everything past it stays 🔒 until its predecessor's boss falls.
+ * `frontier === null` means every boss is beaten, so nothing is locked.
+ *
+ * `bossCleared` is an escape hatch that matters for real save data: a week the
+ * child has ALREADY beaten stays open even if it sits past the frontier (she
+ * beat a later island before the gate existed). Gating is there to push
+ * progress forward, never to confiscate an island she already earned — and a
+ * cleared week holds no new content to skip ahead to anyway.
+ *
+ * Pure — tested directly.
  */
-export async function isFrontierWeek(childId: string, weekId: string): Promise<boolean> {
+export function isWeekUnlockedFrom(
+  weekNumber: number,
+  frontier: number | null,
+  bossCleared = false,
+): boolean {
+  return bossCleared || frontier === null || weekNumber <= frontier;
+}
+
+export interface WeekGateState {
+  /** The 双倍宝藏 frontier — lowest week whose boss is unbeaten (T1). */
+  isFrontier: boolean;
+  /** Whether the child may enter this week at all (T3 linear gating). */
+  isUnlocked: boolean;
+  /** Keys earned = bosses cleared in this week's pack (T3 derived key track). */
+  keysEarned: number;
+  /** Total keys available = published weeks in this week's pack. */
+  keysTotal: number;
+}
+
+/**
+ * One query pass answering every gate question about `weekId`, scoped to the
+ * same visibility set as getPlayableWeekForChild (the target week's pack, or
+ * the per-family group). Server-authoritative — never trust a client claim of
+ * "this is the frontier" or "this island is open".
+ *
+ * Returns a fully-locked state for a week the child can't see at all, so a
+ * caller that forgets to check `getPlayableWeekForChild` still fails closed.
+ */
+export async function getWeekGateState(
+  childId: string,
+  weekId: string,
+): Promise<WeekGateState> {
+  const locked: WeekGateState = {
+    isFrontier: false,
+    isUnlocked: false,
+    keysEarned: 0,
+    keysTotal: 0,
+  };
+
   const week = await getPlayableWeekForChild(childId, weekId);
-  if (!week) return false;
+  if (!week) return locked;
 
   const siblingCondition = week.curriculumPackId
     ? and(
@@ -216,6 +260,23 @@ export async function isFrontierWeek(childId: string, weekId: string): Promise<b
       .where(and(eq(weekProgress.childId, childId), eq(weekProgress.bossCleared, true))),
   ]);
 
-  const frontier = frontierWeekNumber(siblings, new Set(cleared.map((c) => c.weekId)));
-  return frontier !== null && frontier === week.weekNumber;
+  const clearedSet = new Set(cleared.map((c) => c.weekId));
+  const frontier = frontierWeekNumber(siblings, clearedSet);
+
+  return {
+    isFrontier: frontier !== null && frontier === week.weekNumber,
+    isUnlocked: isWeekUnlockedFrom(week.weekNumber, frontier, clearedSet.has(week.id)),
+    keysEarned: siblings.filter((w) => clearedSet.has(w.id)).length,
+    keysTotal: siblings.length,
+  };
+}
+
+/**
+ * True iff `weekId` is the child's FRONTIER week: the lowest-numbered
+ * published week (same visibility set as getPlayableWeekForChild, scoped to
+ * the target week's pack / per-family group) whose boss is not yet cleared.
+ * Drives the double-treasure bonus.
+ */
+export async function isFrontierWeek(childId: string, weekId: string): Promise<boolean> {
+  return (await getWeekGateState(childId, weekId)).isFrontier;
 }

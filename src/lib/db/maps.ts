@@ -61,6 +61,17 @@ export async function getCurrentPackId(childId: string): Promise<string | null> 
   return rows[0]?.packId ?? null;
 }
 
+/** Slug for a curriculum pack id (the key for per-map lookup tables such as
+ *  MAP_TO_VAULT_CARD / MAP_TO_CHAMPION_CARD). Null when the pack is gone. */
+export async function getPackSlugById(packId: string): Promise<string | null> {
+  const rows = await db
+    .select({ slug: curriculumPacks.slug })
+    .from(curriculumPacks)
+    .where(eq(curriculumPacks.id, packId))
+    .limit(1);
+  return rows[0]?.slug ?? null;
+}
+
 export async function listMapsForChild(childId: string): Promise<MapForChild[]> {
   const currentPackId = await getCurrentPackId(childId);
 

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getSectionStatsForChild: vi.fn(),
   listLevelsForWeek: vi.fn(),
   getCharactersWithDetailsForWeek: vi.fn(),
+  getWeekGateState: vi.fn(),
   redirect: vi.fn((path: string) => {
     throw new Error(`__REDIRECT__${path}`);
   }),
@@ -17,7 +18,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/db', () => ({ db: { select: vi.fn(), insert: vi.fn(), update: vi.fn() } }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
-vi.mock('@/lib/db/weeks', () => ({ getPlayableWeekForChild: mocks.getPlayableWeekForChild }));
+vi.mock('@/lib/db/weeks', () => ({
+  getPlayableWeekForChild: mocks.getPlayableWeekForChild,
+  getWeekGateState: mocks.getWeekGateState,
+}));
 vi.mock('@/lib/db/play', async (importOriginal) => {
   const orig = await importOriginal<typeof import('@/lib/db/play')>();
   return {
@@ -65,6 +69,50 @@ beforeEach(() => {
     { id: 'l3', position: 12, sceneType: 'boss', sceneConfig: { segment: 'boss' } },
   ]);
   mocks.getCharactersWithDetailsForWeek.mockResolvedValue([]);
+  // Unlocked by default; the T3 gating cases below opt into the locked state.
+  mocks.getWeekGateState.mockResolvedValue({
+    isFrontier: true,
+    isUnlocked: true,
+    keysEarned: 4,
+    keysTotal: 10,
+  });
+});
+
+describe('SectionPage island gate (T3)', () => {
+  it('redirects to the voyage board when the island is still locked', async () => {
+    mocks.getWeekGateState.mockResolvedValue({
+      isFrontier: false,
+      isUnlocked: false,
+      keysEarned: 2,
+      keysTotal: 10,
+    });
+    mocks.getSectionStatsForChild.mockResolvedValue({
+      review: { done: 0, total: 10 },
+      practice: { done: 0, total: 12 },
+      boss: { done: 0, total: 1 },
+    });
+    await expect(
+      SectionPage({
+        params: Promise.resolve({ childId: 'c1', weekId: 'w1', section: 'review' }),
+      }),
+    ).rejects.toThrow('__REDIRECT__/play/c1');
+  });
+
+  it('bounces a locked island before loading any scene data', async () => {
+    mocks.getWeekGateState.mockResolvedValue({
+      isFrontier: false,
+      isUnlocked: false,
+      keysEarned: 0,
+      keysTotal: 10,
+    });
+    await expect(
+      SectionPage({
+        params: Promise.resolve({ childId: 'c1', weekId: 'w1', section: 'practice' }),
+      }),
+    ).rejects.toThrow('__REDIRECT__/play/c1');
+    expect(mocks.listLevelsForWeek).not.toHaveBeenCalled();
+    expect(mocks.getCharactersWithDetailsForWeek).not.toHaveBeenCalled();
+  });
 });
 
 describe('SectionPage boss route guard', () => {

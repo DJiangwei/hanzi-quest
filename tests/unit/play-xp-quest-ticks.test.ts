@@ -68,6 +68,17 @@ vi.mock('@/lib/db/streaks', () => ({
 vi.mock('@/lib/db/trophies', () => ({
   checkAndGrantTrophies: mocks.checkAndGrantTrophies,
 }));
+// T3 key vault: finishLevelAction now imports these @/lib/db/* modules, each of
+// which loads @/db at module scope — mock them or the suite dies on DATABASE_URL.
+vi.mock('@/lib/db/key-vault', () => ({
+  claimKeyVaultPrize: vi.fn().mockResolvedValue({ card: null, coins: 0 }),
+}));
+vi.mock('@/lib/db/final-boss', () => ({
+  isMapFullyCleared: vi.fn().mockResolvedValue(false),
+}));
+vi.mock('@/lib/db/maps', () => ({
+  getPackSlugById: vi.fn().mockResolvedValue(null),
+}));
 vi.mock('@/lib/db/weeks', () => ({
   getPlayableWeekForChild: mocks.getPlayableWeekForChild,
   listCharactersForWeek: vi.fn(),

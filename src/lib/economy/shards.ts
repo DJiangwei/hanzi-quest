@@ -26,6 +26,7 @@ export const SHARD_SWAP_EXCLUSIVE_PACKS: ReadonlySet<string> = new Set([
   'festivals-v1',
   'season-summer-v1',
   'champions-v1',
+  'key-vault-v1',
 ]);
 
 /** The shard cost to swap for a card in the given pack. */

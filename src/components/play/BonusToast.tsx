@@ -17,6 +17,8 @@ const REASON_ICON: Record<EconomyBonus['reason'], string> = {
   perfect_week: '🏆',
   streak_freeze: '🧊',
   boss_courage: '🛡️',
+  key_shard: '🗝️',
+  key_vault: '💎',
 };
 
 /**
