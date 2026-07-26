@@ -13,18 +13,23 @@ export interface CardArtProps {
   alt: string;
 }
 
-/** Pixel box for the rendered `<img>` per card size. */
+/**
+ * Box for the rendered `<img>` per card size. Fluid (`w-full` + a max cap)
+ * rather than a fixed square: the art used to sit at a fixed 64px inside a
+ * ~110px-wide grid tile, which read as tiny on a phone. Filling the tile width
+ * and capping keeps it large on small screens without ballooning on tablets.
+ */
 const imgSize: Record<CardArtProps['size'], string> = {
-  sm: 'h-12 w-12',
-  md: 'h-16 w-16',
-  lg: 'h-28 w-28',
+  sm: 'aspect-square w-full max-w-[56px]',
+  md: 'aspect-square w-full max-w-[104px]',
+  lg: 'aspect-square w-full max-w-[168px]',
 };
 
-/** Emoji font-size per card size (matches the legacy inline emoji blocks). */
+/** Emoji font-size per card size (the glyph fallback tracks the image box). */
 const emojiSize: Record<CardArtProps['size'], string> = {
   sm: 'text-3xl',
-  md: 'text-4xl',
-  lg: 'text-7xl',
+  md: 'text-5xl',
+  lg: 'text-8xl',
 };
 
 const HTTP_URL = /^https?:\/\//i;

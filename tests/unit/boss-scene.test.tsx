@@ -166,6 +166,45 @@ describe('BossScene — new question types', () => {
     expect(screen.getByText(/我喜欢吃 ____ 果/)).toBeInTheDocument();
   });
 
+  it('renders the word picture for an image_pick question (not the text fallback)', () => {
+    render(
+      <BossScene
+        weekNumber={1}
+        characterIds={['c1']}
+        questionTypes={['image_pick']}
+        pool={[
+          {
+            ...basePool[0],
+            words: [
+              { id: 'w1', text: '苹果', imageHook: 'a red apple', meaningEn: 'apple', imageUrl: 'https://blob.example.com/words/w1.png' },
+            ],
+          },
+          basePool[1],
+        ]}
+        onComplete={() => {}}
+      />,
+    );
+    act(() => { vi.advanceTimersByTime(1300); });
+    const img = screen.getByAltText('a red apple');
+    expect(img.tagName).toBe('IMG');
+    expect(img).toHaveAttribute('src', 'https://blob.example.com/words/w1.png');
+  });
+
+  it('keeps the text fallback for image_pick when no word has a picture', () => {
+    render(
+      <BossScene
+        weekNumber={1}
+        characterIds={['c1']}
+        questionTypes={['image_pick']}
+        pool={[{ ...basePool[0], words: [] }, basePool[1]]}
+        onComplete={() => {}}
+      />,
+    );
+    act(() => { vi.advanceTimersByTime(1300); });
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getByText('a red apple')).toBeInTheDocument();
+  });
+
   it('falls back to translate_pick when sentence_cloze target has no sentence', () => {
     render(
       <BossScene

@@ -153,6 +153,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #130 | feat(final-boss): map gating + voyage lair node + champion title (PR 2 of 2) | |
 | #131 | docs(claude.md): map final boss + shop feedback shipped; refresh 2026-07-03 | |
 | #132 | feat: answer_events telemetry + flashcard self-assessment (A1) | |
+| #148 | fix(play): boss 看图找字 had no picture; zoom 80 undersized collectible cards | |
 
 ### Next up
 
