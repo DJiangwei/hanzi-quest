@@ -249,9 +249,13 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
       bossId,
       {
         characterIds: shuffled.map((c) => c.id),
+        // `visual_pick` was dropped here (2026-07-27) for the same reason
+        // `pinyin_pick` was in PR #35: its CHOICES are the pinyin, and pinyin is
+        // hidden by default. The template stayed retired (is_active=false)
+        // everywhere else, but the boss kept serving it — 2 of every 10
+        // gauntlet questions were pinyin multiple-choice.
         questionTypes: [
           'audio_pick',
-          'visual_pick',
           'image_pick',
           'translate_pick',
           'sentence_cloze',

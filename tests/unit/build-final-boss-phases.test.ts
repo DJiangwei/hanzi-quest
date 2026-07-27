@@ -44,4 +44,16 @@ describe('buildFinalBossPhases', () => {
     const phases = buildFinalBossPhases(pool, seq([0.2, 0.7]));
     expect(phases.flat()).toHaveLength(FINAL_BOSS_PHASES * FINAL_BOSS_PER_PHASE);
   });
+
+  it('never serves a pinyin-revealing question type', () => {
+    // visual_pick's choices ARE the pinyin; pinyin is hidden by default, and the
+    // template is retired everywhere else in the game.
+    const pool = Array.from({ length: 12 }, (_, i) => ch(i));
+    const types = buildFinalBossPhases(pool, seq([0.3])).flat().map((q) => q.type);
+    expect(types).not.toContain('visual_pick');
+    expect(types).not.toContain('pinyin_pick');
+    expect(new Set(types)).toEqual(
+      new Set(['audio_pick', 'image_pick', 'translate_pick', 'sentence_cloze']),
+    );
+  });
 });

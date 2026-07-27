@@ -155,6 +155,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #132 | feat: answer_events telemetry + flashcard self-assessment (A1) | |
 | #148 | fix(play): boss 看图找字 had no picture; zoom 80 undersized collectible cards | |
 | #149 | feat(play): linear island gating + 🗝️ key ring + Key Vault grand prize (T3) | |
+| #150 | fix(boss): drop pinyin `visual_pick` from both gauntlets; final boss shows pictures | |
 
 ### Next up
 
