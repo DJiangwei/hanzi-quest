@@ -137,15 +137,16 @@ describe('compileWeekIntoLevels — segments + caps', () => {
     );
     expect(bossRow).toBeDefined();
     const qTypes = bossRow.sceneConfig.questionTypes as string[];
-    expect(qTypes).toHaveLength(5);
+    expect(qTypes).toHaveLength(4);
     expect(qTypes).toEqual([
       'audio_pick',
-      'visual_pick',
       'image_pick',
       'translate_pick',
       'sentence_cloze',
     ]);
+    // Both pinyin-revealing types are retired from the rotation.
     expect(qTypes).not.toContain('pinyin_pick');
+    expect(qTypes).not.toContain('visual_pick');
   });
 
   it('alternates translate_pick directions (cn_to_en then en_to_cn) for the first two slots', async () => {

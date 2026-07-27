@@ -25,8 +25,9 @@ export default async function FinalBossPage({ params }: PageProps) {
   }
 
   // Aggregate the whole map's characters into the boss pool (FinalBossCharacter
-  // shape — same subset BossScene's CharacterDetail uses). image_pick falls back
-  // to the imageHook description card here (no word-picture threading in v1).
+  // shape — same subset BossScene's CharacterDetail uses). `words` is threaded
+  // so image_pick can borrow a word picture; without it the whole gauntlet's
+  // 看图找字 falls back to the text description card.
   const weeks = (await listChildPlayableWeeks(childId)).filter(
     (w) => w.curriculumPackId === pack.id,
   );
@@ -41,6 +42,13 @@ export default async function FinalBossPage({ params }: PageProps) {
     meaningZh: c.meaningZh ?? null,
     imageHook: c.imageHook ?? null,
     firstWord: c.words[0]?.text ?? null,
+    words: c.words.map((w) => ({
+      id: w.id,
+      text: w.text,
+      imageHook: w.imageHook ?? null,
+      meaningEn: w.meaningEn ?? null,
+      imageUrl: w.imageUrl ?? null,
+    })),
     sentence: c.sentence
       ? { id: c.sentence.id, text: c.sentence.text, translationEn: c.sentence.meaningEn ?? null }
       : null,

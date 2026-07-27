@@ -10,6 +10,15 @@ export interface FinalBossCharacter {
   meaningZh: string | null;
   imageHook: string | null;
   firstWord: string | null;
+  /** The char's words — an `image_pick` question borrows a picture from one.
+   *  Optional so older callers/tests building a bare pool still type-check. */
+  words?: {
+    id: string;
+    text: string;
+    imageHook: string | null;
+    meaningEn: string | null;
+    imageUrl: string | null;
+  }[];
   sentence: { id: string; text: string; translationEn: string | null } | null;
 }
 
@@ -21,13 +30,15 @@ export interface FinalBossQuestion {
 export const FINAL_BOSS_PHASES = 3;
 export const FINAL_BOSS_PER_PHASE = 6;
 
-// Reuse the boss rotation (word_match excluded — it's a multi-char round).
+// Reuse the boss rotation (word_match excluded — it's a multi-char round;
+// visual_pick dropped 2026-07-27 — its choices ARE the pinyin, and pinyin is
+// hidden by default). Unlike the weekly boss these types are chosen at RUNTIME,
+// so changing this list needs no recompile.
 const QUESTION_TYPES: BossQuestionType[] = [
   'audio_pick',
   'image_pick',
   'translate_pick',
   'sentence_cloze',
-  'visual_pick',
 ];
 
 function shuffle<T>(arr: T[], rng: () => number): T[] {

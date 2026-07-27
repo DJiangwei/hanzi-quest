@@ -67,14 +67,26 @@ describe('compileWeekIntoLevels boss emission', () => {
     const last = insertedRows[insertedRows.length - 1];
     expect(last.sceneTemplateId).toBe('tpl-boss');
     expect(last.sceneConfig.characterIds).toHaveLength(10);
-    // PR #35: 5 question types, no pinyin_pick
+    // PR #35 dropped pinyin_pick; this PR drops visual_pick (pinyin choices —
+    // pinyin is hidden by default, and the template is retired everywhere else).
     expect(last.sceneConfig.questionTypes).toEqual([
       'audio_pick',
-      'visual_pick',
       'image_pick',
       'translate_pick',
       'sentence_cloze',
     ]);
+  });
+
+  it('never emits a pinyin-revealing question type in the boss rotation', async () => {
+    mocks.getCharsForWeekMock.mockResolvedValue(makeChars(10));
+    await compileWeekIntoLevels('week-1');
+    const insertedRows = (mocks.insertValuesMock.mock.calls[0]?.[0] ?? []) as Array<{
+      sceneTemplateId: string;
+      sceneConfig: { questionTypes?: string[] };
+    }>;
+    const boss = insertedRows.find((r) => r.sceneTemplateId === 'tpl-boss');
+    expect(boss?.sceneConfig.questionTypes).not.toContain('visual_pick');
+    expect(boss?.sceneConfig.questionTypes).not.toContain('pinyin_pick');
   });
 
   it('does NOT emit boss when chars.length < 10', async () => {

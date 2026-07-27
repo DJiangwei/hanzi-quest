@@ -119,7 +119,7 @@ describe('compileWeekIntoLevels — PR #35 structure', () => {
     expect(inserted.every((r) => r.sceneTemplateId !== 't-pinyin_pick')).toBe(true);
   });
 
-  it('boss question types are exactly 5, none pinyin_pick', async () => {
+  it('boss question types are exactly 4, no pinyin-revealing types', async () => {
     charsMock.getCharactersWithDetailsForWeek.mockResolvedValue(
       Array.from({ length: 10 }, (_, i) => makeChar(i + 1)),
     );
@@ -127,8 +127,9 @@ describe('compileWeekIntoLevels — PR #35 structure', () => {
     captureInsertedRows(inserted);
     await compileWeekIntoLevels('w-test');
     const boss = inserted.find((r) => r.sceneConfig.segment === 'boss');
-    expect(boss?.sceneConfig.questionTypes).toHaveLength(5);
+    expect(boss?.sceneConfig.questionTypes).toHaveLength(4);
     expect(boss?.sceneConfig.questionTypes).not.toContain('pinyin_pick');
+    expect(boss?.sceneConfig.questionTypes).not.toContain('visual_pick');
   });
 });
 
