@@ -28,9 +28,14 @@ export type { GrantedTrophy } from '@/lib/db/trophies';
 import { tickStreak, todayUtcIso } from '@/lib/db/streaks';
 import {
   getPlayableWeekForChild,
+  getWeekGateState,
   isFrontierWeek,
   listCharactersForWeek,
+  type WeekGateState,
 } from '@/lib/db/weeks';
+import { claimKeyVaultPrize, type KeyVaultPrize } from '@/lib/db/key-vault';
+import { isMapFullyCleared } from '@/lib/db/final-boss';
+import { getPackSlugById } from '@/lib/db/maps';
 import {
   pullCardForChild,
   claimWeeklyGiftIfDue,
@@ -72,6 +77,40 @@ async function safeIsFrontierWeek(childId: string, weekId: string): Promise<bool
     return await isFrontierWeek(childId, weekId);
   } catch {
     return false;
+  }
+}
+
+const LOCKED_GATE: WeekGateState = {
+  isFrontier: false,
+  isUnlocked: false,
+  keysEarned: 0,
+  keysTotal: 0,
+};
+
+/** Guarded gate lookup — same contract as safeIsFrontierWeek: a failure (or an
+ *  un-mocked helper in an older suite) degrades to "no bonuses", never throws.
+ *  `isUnlocked` is irrelevant here (the route guards own entry); this is only
+ *  read for the frontier flag + the 🗝️ key counts. */
+async function safeWeekGateState(childId: string, weekId: string): Promise<WeekGateState> {
+  try {
+    return await getWeekGateState(childId, weekId);
+  } catch {
+    return LOCKED_GATE;
+  }
+}
+
+/** Guarded vault claim — the 🗝️ grand prize is a bonus on top of a boss clear.
+ *  A failure (unseeded pack, transient DB error) must never break the clear. */
+async function safeClaimKeyVault(
+  childId: string,
+  packId: string,
+  packSlug: string,
+): Promise<KeyVaultPrize> {
+  try {
+    return await claimKeyVaultPrize(childId, packId, packSlug);
+  } catch (err) {
+    console.error('[finishLevelAction] key vault claim failed:', err);
+    return { card: null, coins: 0 };
   }
 }
 
@@ -146,7 +185,11 @@ export type EconomyBonusReason =
   | 'streak_milestone'
   | 'perfect_week'
   | 'streak_freeze'
-  | 'boss_courage';
+  | 'boss_courage'
+  // T3: 'key_shard' is NOT a coin award — its `delta` is 1 key, shown as a
+  // toast so the kid sees the island-unlock currency tick up.
+  | 'key_shard'
+  | 'key_vault';
 
 export interface EconomyBonus {
   reason: EconomyBonusReason;
@@ -480,12 +523,14 @@ export async function finishLevelAction(
   const existing = await getWeekProgress(child.id, parsed.weekId);
   const alreadyAwarded = existing?.bossCleared === true;
 
-  // T1 双倍宝藏: MUST be computed BEFORE the upsert marks this boss cleared —
-  // afterwards the frontier would already point at the NEXT week.
-  const frontier =
+  // T1 双倍宝藏 + T3 key track: MUST be read BEFORE the upsert marks this boss
+  // cleared — afterwards the frontier would already point at the NEXT week and
+  // the key count would already include this clear.
+  const gate =
     parsed.section === 'boss'
-      ? await safeIsFrontierWeek(child.id, parsed.weekId)
-      : false;
+      ? await safeWeekGateState(child.id, parsed.weekId)
+      : LOCKED_GATE;
+  const frontier = gate.isFrontier;
 
   await upsertWeekProgress({
     childId: child.id,
@@ -564,6 +609,42 @@ export async function finishLevelAction(
     }
   }
 
+  // ─── T3 🗝️ key track ────────────────────────────────────────────────────
+  // A key IS a beaten weekly boss — nothing is stored, the count is derived
+  // (see getWeekGateState). A FIRST clear therefore mints one key and unlocks
+  // the next island; the last key opens the map's vault.
+  let keysEarned = gate.keysEarned;
+  const keysTotal = gate.keysTotal;
+  let vaultCard: RevealCard | null = null;
+  if (bossCleared && !alreadyAwarded) {
+    keysEarned = Math.min(gate.keysEarned + 1, keysTotal);
+    bonuses.push({
+      reason: 'key_shard',
+      delta: 1,
+      labelZh: `钥匙碎片（${keysEarned}/${keysTotal}）`,
+      labelEn: `Key shard (${keysEarned}/${keysTotal})`,
+    });
+
+    // Last key → the vault. Re-verified server-side against the DB rather than
+    // trusting the derived count, and idempotent per (child, map) inside
+    // claimKeyVaultPrize, so a repeat clear can never re-open it.
+    if (week.curriculumPackId && (await isMapFullyCleared(child.id, week.curriculumPackId))) {
+      const packSlug = await getPackSlugById(week.curriculumPackId);
+      if (packSlug) {
+        const prize = await safeClaimKeyVault(child.id, week.curriculumPackId, packSlug);
+        vaultCard = prize.card;
+        if (prize.coins > 0) {
+          bonuses.push({
+            reason: 'key_vault',
+            delta: prize.coins,
+            labelZh: '集齐所有钥匙！宝库开启！',
+            labelEn: 'All keys collected — the vault opens!',
+          });
+        }
+      }
+    }
+  }
+
   // Per-section card grant for review (boss handled above; practice moved to
   // finishAttemptAction's daily-cumulative threshold — anti-avoidance rebalance
   // 2026-07-06).
@@ -577,9 +658,13 @@ export async function finishLevelAction(
     if (r.skip) cardMessage = r.skip;
   }
 
-  const cardGrants: RevealCard[] = [bossCard, frontierBonusCard, perfectCard, sectionCard].filter(
-    (c): c is RevealCard => c !== null,
-  );
+  const cardGrants: RevealCard[] = [
+    bossCard,
+    frontierBonusCard,
+    vaultCard,
+    perfectCard,
+    sectionCard,
+  ].filter((c): c is RevealCard => c !== null);
 
   // A boss/perfect-week card may have completed a pack — surface the trophy in
   // this response so the toast fires the moment the pack is finished.

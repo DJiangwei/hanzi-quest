@@ -28,6 +28,8 @@ interface IslandInput {
   weekNumber: number;
   label: string;
   completionPercent: number;
+  /** T3: published but gated behind the previous island's boss. */
+  locked?: boolean;
 }
 
 interface Props {
@@ -157,6 +159,7 @@ export function IslandMap({ childId, islands, ownedCount, totalCount, decoration
               palmCount={palmCount}
               done={done}
               isActive={isActive}
+              locked={Boolean(island.locked)}
             />
           );
         })}
@@ -170,6 +173,9 @@ export function IslandMap({ childId, islands, ownedCount, totalCount, decoration
           const { x, y } = positionFor(idx);
           const xPct = (x / SVG_WIDTH) * 100;
           const yPct = (y / svgHeight) * 100;
+          // T3: a gated island has no hit region at all — tapping it would only
+          // bounce off the hub's server-side guard.
+          if (island.locked) return null;
           return (
             <Link
               key={island.weekId}
@@ -204,9 +210,10 @@ interface IslandNodeProps {
   palmCount: number;
   done: boolean;
   isActive: boolean;
+  locked?: boolean;
 }
 
-function IslandNode({ x, y, weekNumber, palmCount, done, isActive }: IslandNodeProps) {
+function IslandNode({ x, y, weekNumber, palmCount, done, isActive, locked }: IslandNodeProps) {
   const sandFill = done ? 'var(--color-treasure-400)' : 'var(--color-sunset-100)';
   const sandStroke = done
     ? 'var(--color-treasure-700)'
@@ -218,7 +225,11 @@ function IslandNode({ x, y, weekNumber, palmCount, done, isActive }: IslandNodeP
   const scale = isActive ? 1.08 : 1;
 
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+    <g
+      transform={`translate(${x} ${y}) scale(${scale})`}
+      opacity={locked ? 0.45 : 1}
+      data-locked={locked ? 'true' : undefined}
+    >
       {/* Pulse ring when active */}
       {isActive ? (
         <circle
@@ -277,7 +288,7 @@ function IslandNode({ x, y, weekNumber, palmCount, done, isActive }: IslandNodeP
           fill={numberColor}
           fontFamily="system-ui, sans-serif"
         >
-          {done ? '⭐' : weekNumber}
+          {locked ? '🔒' : done ? '⭐' : weekNumber}
         </text>
       </g>
     </g>

@@ -154,6 +154,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #131 | docs(claude.md): map final boss + shop feedback shipped; refresh 2026-07-03 | |
 | #132 | feat: answer_events telemetry + flashcard self-assessment (A1) | |
 | #148 | fix(play): boss 看图找字 had no picture; zoom 80 undersized collectible cards | |
+| #149 | feat(play): linear island gating + 🗝️ key ring + Key Vault grand prize (T3) | |
 
 ### Next up
 

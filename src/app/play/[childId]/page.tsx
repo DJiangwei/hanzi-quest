@@ -18,7 +18,16 @@ import {
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { listProgressByChild } from '@/lib/db/play';
 import { getEquippedAvatar } from '@/lib/db/shop';
-import { listChildPlayableWeeks } from '@/lib/db/weeks';
+import {
+  frontierWeekNumber,
+  isWeekUnlockedFrom,
+  listChildPlayableWeeks,
+} from '@/lib/db/weeks';
+import { KeyTrack } from '@/components/play/KeyTrack';
+import {
+  MAP_TO_VAULT_CARD,
+  VAULT_TREASURES_BY_SLUG,
+} from '@/lib/collections/keyVaultData';
 import { PetCompanion } from '@/components/play/PetCompanion';
 import { getEquippedPet } from '@/lib/db/pets';
 import { listOwnedDecorationsForChild } from '@/lib/db/decor';
@@ -146,6 +155,14 @@ export default async function PlayHomePage({ params }: PageProps) {
     progressRows.map((p) => [p.weekId, p.bossCleared]),
   );
 
+  // T3 linear gating: everything past the frontier is 🔒. Derived here from the
+  // same rule the server-side route guards enforce (isWeekUnlockedFrom), so the
+  // board can never advertise an island the hub would bounce her out of.
+  const frontierNumber = frontierWeekNumber(
+    playableWeeks.map((w) => ({ id: w.id, weekNumber: w.weekNumber })),
+    new Set(progressRows.filter((p) => p.bossCleared).map((p) => p.weekId)),
+  );
+
   const islands = playableWeeks.map((w) => ({
     weekId: w.id,
     weekNumber: w.weekNumber,
@@ -153,9 +170,29 @@ export default async function PlayHomePage({ params }: PageProps) {
     completionPercent: progressByWeek.get(w.id) ?? 0,
     // T1: 🏴 on the board means the BOSS is beaten (not just a section done).
     bossCleared: bossClearedByWeek.get(w.id) ?? false,
+    locked: !isWeekUnlockedFrom(
+      w.weekNumber,
+      frontierNumber,
+      bossClearedByWeek.get(w.id) ?? false,
+    ),
   }));
 
   const clearedCount = islands.filter((i) => i.bossCleared).length;
+
+  // T3 🗝️ key ring — one key per beaten boss on the CURRENT map (scoped to the
+  // pack, mirroring getWeekGateState / isMapFullyCleared). Fully derived: a key
+  // is never stored, so it can't drift from the week progress it represents.
+  const mapWeeks = currentMap
+    ? playableWeeks.filter((w) => w.curriculumPackId === currentMap.packId)
+    : [];
+  const vaultSlug = currentMap ? MAP_TO_VAULT_CARD[currentMap.slug] : undefined;
+  const vaultTreasure = vaultSlug ? VAULT_TREASURES_BY_SLUG[vaultSlug] : undefined;
+  const keys = {
+    earned: mapWeeks.filter((w) => bossClearedByWeek.get(w.id)).length,
+    total: mapWeeks.length,
+    prizeZh: vaultTreasure?.nameZh ?? '神秘宝藏',
+    prizeEn: vaultTreasure?.nameEn ?? 'a mystery treasure',
+  };
 
   // Derive bossUnlocked: true if the child has ever cleared a boss (proxy for
   // "boss is currently reachable in their play history"). Defaults to false when
@@ -270,6 +307,14 @@ export default async function PlayHomePage({ params }: PageProps) {
         />
       )}
 
+      <KeyTrack
+        earned={keys.earned}
+        total={keys.total}
+        prizeZh={keys.prizeZh}
+        prizeEn={keys.prizeEn}
+        opened={keys.total > 0 && keys.earned >= keys.total}
+      />
+
       <WantedPosters childId={childId} posters={bounties} />
 
       <TravelingMerchant
@@ -302,7 +347,12 @@ export default async function PlayHomePage({ params }: PageProps) {
         <VoyageBoard
           childId={childId}
           packSlug={currentMap!.slug}
-          islands={islands.map((i) => ({ weekId: i.weekId, completionPercent: i.completionPercent, bossCleared: i.bossCleared }))}
+          islands={islands.map((i) => ({
+            weekId: i.weekId,
+            completionPercent: i.completionPercent,
+            bossCleared: i.bossCleared,
+            locked: i.locked,
+          }))}
           finalBoss={finalBossState ?? undefined}
         />
       ) : (

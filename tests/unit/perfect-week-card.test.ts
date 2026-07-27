@@ -35,6 +35,17 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
 vi.mock('@/lib/db/bounties', () => ({ tickBountyProgress: vi.fn().mockResolvedValue(undefined) }));
+// T3 key vault: finishLevelAction now imports these @/lib/db/* modules, each of
+// which loads @/db at module scope — mock them or the suite dies on DATABASE_URL.
+vi.mock('@/lib/db/key-vault', () => ({
+  claimKeyVaultPrize: vi.fn().mockResolvedValue({ card: null, coins: 0 }),
+}));
+vi.mock('@/lib/db/final-boss', () => ({
+  isMapFullyCleared: vi.fn().mockResolvedValue(false),
+}));
+vi.mock('@/lib/db/maps', () => ({
+  getPackSlugById: vi.fn().mockResolvedValue(null),
+}));
 vi.mock('@/lib/db/weeks', () => ({
   getPlayableWeekForChild: mocks.getPlayableWeekForChild,
   listCharactersForWeek: vi.fn(),

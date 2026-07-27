@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
-import { getPlayableWeekForChild, isFrontierWeek } from '@/lib/db/weeks';
+import { getPlayableWeekForChild, getWeekGateState } from '@/lib/db/weeks';
 import { getSectionStatsForChild } from '@/lib/db/play';
 import { listHomeworkItems } from '@/lib/db/homework';
 import { BOSS_UNLOCK_PRACTICE_THRESHOLD } from '@/lib/scenes/configs';
@@ -17,11 +17,17 @@ export default async function WeekHubPage({ params }: PageProps) {
   const week = await getPlayableWeekForChild(childId, weekId);
   if (!week) notFound();
 
-  const [stats, homeworkItems, frontier] = await Promise.all([
+  const [stats, homeworkItems, gate] = await Promise.all([
     getSectionStatsForChild(childId, weekId),
     listHomeworkItems(childId, weekId),
-    isFrontierWeek(childId, weekId),
+    getWeekGateState(childId, weekId),
   ]);
+
+  // T3 linear gating — server-authoritative. A locked island must not be
+  // reachable by typing the URL, so bounce back to the voyage board rather
+  // than rendering a hub the kid can't play.
+  if (!gate.isUnlocked) redirect(`/play/${childId}`);
+
   const bossLocked = stats.practice.done < BOSS_UNLOCK_PRACTICE_THRESHOLD;
 
   return (
@@ -35,7 +41,8 @@ export default async function WeekHubPage({ params }: PageProps) {
         boss: { ...stats.boss, locked: bossLocked },
       }}
       homework={{ present: homeworkItems.length > 0, doneToday: false, count: homeworkItems.length }}
-      frontier={frontier}
+      frontier={gate.isFrontier}
+      keys={{ earned: gate.keysEarned, total: gate.keysTotal }}
     />
   );
 }
