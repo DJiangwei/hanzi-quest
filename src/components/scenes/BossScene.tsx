@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { BossQuestionType } from '@/lib/scenes/configs';
 import { getBossCreature } from '@/lib/scenes/boss-roster';
+import { pickStimulusImage } from '@/lib/scenes/stimulus';
 import { playBossCue } from '@/lib/audio/boss';
 import type { BossAnimState } from './fx/bosses/types';
 import { AudioPickScene } from './AudioPickScene';
@@ -14,6 +15,14 @@ import { TranslatePickScene } from './TranslatePickScene';
 import { VisualPickScene } from './VisualPickScene';
 import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
+interface CharacterWord {
+  id: string;
+  text: string;
+  imageHook: string | null;
+  meaningEn: string | null;
+  imageUrl: string | null;
+}
+
 interface CharacterDetail {
   characterId: string;
   hanzi: string;
@@ -22,6 +31,9 @@ interface CharacterDetail {
   meaningZh: string | null;
   imageHook: string | null;
   firstWord: string | null;
+  /** The char's words — an `image_pick` question borrows a picture from one.
+   *  Optional so older callers/tests that build a bare pool still type-check. */
+  words?: CharacterWord[];
   sentence: { id: string; text: string; translationEn: string | null } | null;
 }
 
@@ -238,6 +250,10 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             key={`boss-${currentIdx}`}
             target={q.target}
             pool={pool}
+            // Without this the boss rendered EVERY 看图找字 as the text-only
+            // fallback card. No `imageHint` on purpose — the 💡 hint is never
+            // available in a boss fight, so the description must stay hidden.
+            imageUrl={pickStimulusImage(q.target.words, q.target.imageHook).imageUrl}
             onComplete={handleAnswer}
           />
         )}

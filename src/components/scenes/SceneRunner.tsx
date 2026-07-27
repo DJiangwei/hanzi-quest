@@ -30,6 +30,7 @@ import { VisualPickScene } from './VisualPickScene';
 import { WordMatchScene } from './WordMatchScene';
 import { LianliankanScene } from './LianliankanScene';
 import type { BossQuestionType, Segment, TranslateDirection } from '@/lib/scenes/configs';
+import { pickStimulusImage } from '@/lib/scenes/stimulus';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
@@ -383,10 +384,9 @@ export function SceneRunner({
       // images) and ask which character it is. Falls back to the imageHook text
       // card inside ImagePickScene when no word image exists. The stimulus
       // word's imageHook doubles as the free-💡 English description hint.
-      const stimulusWord = c?.words.find((w) => w.imageUrl) ?? null;
-      const stimulusImageUrl = stimulusWord?.imageUrl ?? null;
-      const stimulusHint =
-        stimulusWord?.imageHook ?? stimulusWord?.meaningEn ?? c?.imageHook ?? null;
+      // Shared with BossScene via pickStimulusImage so the two can't drift.
+      const { imageUrl: stimulusImageUrl, imageHint: stimulusHint } =
+        pickStimulusImage(c?.words, c?.imageHook ?? null);
       body = c ? (
         <ImagePickScene
           key={currentLevel.id}
