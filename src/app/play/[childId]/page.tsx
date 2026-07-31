@@ -21,6 +21,7 @@ import { getEquippedAvatar } from '@/lib/db/shop';
 import {
   frontierWeekNumber,
   isWeekUnlockedFrom,
+  listBossWeekIds,
   listChildPlayableWeeks,
 } from '@/lib/db/weeks';
 import { KeyTrack } from '@/components/play/KeyTrack';
@@ -158,8 +159,15 @@ export default async function PlayHomePage({ params }: PageProps) {
   // T3 linear gating: everything past the frontier is 🔒. Derived here from the
   // same rule the server-side route guards enforce (isWeekUnlockedFrom), so the
   // board can never advertise an island the hub would bounce her out of.
+  // `hasBoss` matters: a bossless week can never be cleared, so leaving it in
+  // the candidate set would pin the frontier there and lock the rest forever.
+  const bossWeekIds = await listBossWeekIds(playableWeeks.map((w) => w.id));
   const frontierNumber = frontierWeekNumber(
-    playableWeeks.map((w) => ({ id: w.id, weekNumber: w.weekNumber })),
+    playableWeeks.map((w) => ({
+      id: w.id,
+      weekNumber: w.weekNumber,
+      hasBoss: bossWeekIds.has(w.id),
+    })),
     new Set(progressRows.filter((p) => p.bossCleared).map((p) => p.weekId)),
   );
 
@@ -182,8 +190,12 @@ export default async function PlayHomePage({ params }: PageProps) {
   // T3 🗝️ key ring — one key per beaten boss on the CURRENT map (scoped to the
   // pack, mirroring getWeekGateState / isMapFullyCleared). Fully derived: a key
   // is never stored, so it can't drift from the week progress it represents.
+  // Only BOSSED weeks mint a key — otherwise the ring could never fill and the
+  // vault would advertise a prize the child has no way to reach.
   const mapWeeks = currentMap
-    ? playableWeeks.filter((w) => w.curriculumPackId === currentMap.packId)
+    ? playableWeeks.filter(
+        (w) => w.curriculumPackId === currentMap.packId && bossWeekIds.has(w.id),
+      )
     : [];
   const vaultSlug = currentMap ? MAP_TO_VAULT_CARD[currentMap.slug] : undefined;
   const vaultTreasure = vaultSlug ? VAULT_TREASURES_BY_SLUG[vaultSlug] : undefined;
@@ -198,8 +210,10 @@ export default async function PlayHomePage({ params }: PageProps) {
   // "boss is currently reachable in their play history"). Defaults to false when
   // no progress rows exist — worst case the boss_clear quest won't be assigned.
   const bossUnlocked = progressRows.some((p) => p.bossCleared);
-  // T1: the 新岛先锋 frontier quest is only assignable while an un-bossed week exists.
-  const hasFrontier = islands.some((i) => !i.bossCleared);
+  // T1: the 新岛先锋 frontier quest is only assignable while a frontier exists.
+  // (Not "some week is uncleared" — a bossless week is uncleared forever, which
+  // would keep handing out a quest that pays no double treasure.)
+  const hasFrontier = frontierNumber !== null;
   const questCtx = { bossUnlocked, hasFrontier };
 
   // Generate today's quests + bounty posters (both idempotent on render).

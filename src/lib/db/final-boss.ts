@@ -9,7 +9,7 @@ import {
   childAvatarInventory,
   childAvatarEquipped,
 } from '@/db/schema';
-import { listChildPlayableWeeks } from '@/lib/db/weeks';
+import { listBossWeekIds, listChildPlayableWeeks } from '@/lib/db/weeks';
 import { listProgressByChild } from '@/lib/db/play';
 import { grantSpecificCardInTx } from '@/lib/db/admin-grants';
 import {
@@ -30,13 +30,25 @@ interface ProgressLite {
   bossCleared: boolean;
 }
 
-/** Pure core: true iff the pack has ≥1 week and every one is bossCleared. */
+/**
+ * Pure core: true iff the pack has ≥1 BOSSED week and every one is bossCleared.
+ *
+ * `bossWeekIds` filters out weeks that never compiled a boss (too few chars —
+ * see listBossWeekIds). Without it, one short week made the map permanently
+ * un-clearable: the final boss never unlocked and the Key Vault never opened.
+ * Omitted means "every week has a boss" so older callers keep their meaning.
+ */
 export function isMapFullyClearedFrom(
   packId: string,
   weeks: WeekLite[],
   progress: ProgressLite[],
+  bossWeekIds?: ReadonlySet<string>,
 ): boolean {
-  const packWeeks = weeks.filter((w) => w.curriculumPackId === packId);
+  const packWeeks = weeks.filter(
+    (w) =>
+      w.curriculumPackId === packId &&
+      (bossWeekIds === undefined || bossWeekIds.has(w.id)),
+  );
   if (packWeeks.length === 0) return false;
   const clearedSet = new Set(
     progress.filter((p) => p.bossCleared).map((p) => p.weekId),
@@ -52,10 +64,12 @@ export async function isMapFullyCleared(
     listChildPlayableWeeks(childId),
     listProgressByChild(childId),
   ]);
+  const bossWeekIds = await listBossWeekIds(weeks.map((w) => w.id));
   return isMapFullyClearedFrom(
     packId,
     weeks as WeekLite[],
     progress as ProgressLite[],
+    bossWeekIds,
   );
 }
 

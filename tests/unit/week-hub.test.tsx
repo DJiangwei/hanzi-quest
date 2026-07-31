@@ -71,6 +71,24 @@ describe('WeekHub', () => {
     expect(screen.getAllByText(/✨/).length).toBeGreaterThanOrEqual(2);
   });
 
+  it('hides the boss card on a week that compiled no boss', () => {
+    // Short weeks (< BOSS_MIN_CHARS chars) have no boss level, so the section
+    // route notFound()s — advertising the card was a dead end.
+    render(
+      <WeekHub
+        {...baseProps}
+        sections={{
+          review:   { done: 8, total: 8 },
+          practice: { done: 12, total: 12 },
+          boss:     { done: 0, total: 0, locked: false },
+        }}
+      />,
+    );
+    expect(screen.queryByRole('link', { name: /Boss/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/回顾/)).toBeInTheDocument();
+    expect(screen.getByText(/练习/)).toBeInTheDocument();
+  });
+
   it('back link points to /play/[childId]', () => {
     render(
       <WeekHub

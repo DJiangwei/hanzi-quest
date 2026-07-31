@@ -119,7 +119,6 @@ describe('finishLevelAction — 🗝️ key shard (T3)', () => {
     mocks.getWeekProgress.mockResolvedValue({ bossCleared: true });
     const res = await finishLevelAction(BOSS_RUN);
     expect(res.bonuses.find((b) => b.reason === 'key_shard')).toBeUndefined();
-    expect(mocks.claimKeyVaultPrize).not.toHaveBeenCalled();
   });
 
   it('pays no key when a non-boss section finishes', async () => {
@@ -144,6 +143,22 @@ describe('finishLevelAction — 💎 key vault grand prize (T3)', () => {
     expect(res.bonuses).toContainEqual(
       expect.objectContaining({ reason: 'key_vault', delta: 1000 }),
     );
+  });
+
+  it('opens the vault on a REPEAT clear when the ring is already full', async () => {
+    // The real save this fixes: every boss on Map 1 was beaten BEFORE the vault
+    // existed, so no future clear is a "first" one. Gating the claim on a first
+    // clear left a full 8/8 ring that could never be cashed in.
+    mocks.getWeekProgress.mockResolvedValue({ bossCleared: true });
+    mocks.isMapFullyCleared.mockResolvedValue(true);
+    mocks.claimKeyVaultPrize.mockResolvedValue({ card: VAULT_CARD, coins: 1000 });
+
+    const res = await finishLevelAction(BOSS_RUN);
+
+    expect(mocks.claimKeyVaultPrize).toHaveBeenCalled();
+    expect(res.cardGrants).toContainEqual(VAULT_CARD);
+    // …but still no second key for a boss she already beat.
+    expect(res.bonuses.find((b) => b.reason === 'key_shard')).toBeUndefined();
   });
 
   it('does not touch the vault while keys are still missing', async () => {

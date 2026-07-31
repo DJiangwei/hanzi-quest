@@ -14,6 +14,7 @@ import type {
   TranslatePickConfig,
   VisualPickConfig,
 } from './configs';
+import { BOSS_LEVEL_KEY, BOSS_MIN_CHARS } from './configs';
 import { shuffle } from './sample';
 
 type AnyConfig =
@@ -243,7 +244,7 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
 
   // ── BOSS ────────────────────────────────────────────────────────────────
   const bossId = tmplByType.get('boss');
-  if (bossId && N >= 10) {
+  if (bossId && N >= BOSS_MIN_CHARS) {
     const shuffled = shuffle(chars).slice(0, 10);
     push(
       bossId,
@@ -262,7 +263,7 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
         ],
       },
       'boss',
-      'boss:boss:0',
+      BOSS_LEVEL_KEY,
     );
   }
 
