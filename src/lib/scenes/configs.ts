@@ -103,6 +103,13 @@ export type ImageWordConfig = z.infer<typeof ImageWordConfigSchema>;
 // constant; the WeekHub UI and the boss route guard both read it.
 export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 7;
 
+// A week only gets a boss when it has at least this many characters — a shorter
+// week (Map 1's weeks 9 and 10 have 8 chars each) is BOSSLESS by design.
+// `compile-week.ts` enforces it; the gating/key code reads the compiled
+// `boss:boss:0` row rather than re-deriving from the char count.
+export const BOSS_MIN_CHARS = 10;
+export const BOSS_LEVEL_KEY = 'boss:boss:0';
+
 // Total practice scenes per week for full-size (N >= 10 chars) weeks.
 // Smaller-N weeks scale down per compile-week.ts.
 // image-scenes PR: 看图找字 bumped 1 → 3 → 15 (3 audio + 3 image_pick + 1

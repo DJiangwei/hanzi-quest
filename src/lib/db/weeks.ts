@@ -1,13 +1,15 @@
-import { and, asc, desc, eq, isNull, max, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, max, or, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   characters,
   childProfiles,
   weekCharacters,
+  weekLevels,
   weekProgress,
   weeks,
   type weekStatus,
 } from '@/db/schema';
+import { BOSS_LEVEL_KEY } from '@/lib/scenes/configs';
 
 export type WeekRow = typeof weeks.$inferSelect;
 export type WeekStatus = (typeof weekStatus.enumValues)[number];
@@ -177,14 +179,46 @@ export async function listChildPlayableWeeks(
 void max;
 
 /**
+ * Which of the given weeks actually compiled a BOSS level.
+ *
+ * Not every published week has one: `compile-week.ts` only emits the boss when
+ * the week has >= BOSS_MIN_CHARS characters, so a short week (Map 1's weeks 9
+ * and 10 have 8 chars each) is bossless by design. Reading the compiled row is
+ * the only honest answer — re-deriving it from the character count would drift
+ * the moment the threshold or the week's content changes.
+ */
+export async function listBossWeekIds(
+  weekIds: string[],
+): Promise<Set<string>> {
+  if (weekIds.length === 0) return new Set();
+  const rows = await db
+    .select({ weekId: weekLevels.weekId })
+    .from(weekLevels)
+    .where(
+      and(
+        inArray(weekLevels.weekId, weekIds),
+        eq(weekLevels.levelKey, BOSS_LEVEL_KEY),
+      ),
+    );
+  return new Set(rows.map((r) => r.weekId));
+}
+
+/**
  * Frontier (T1 双倍宝藏): the lowest week_number among the given weeks whose
  * boss the child has NOT cleared. Pure — tested directly.
+ *
+ * A candidate with `hasBoss: false` is skipped entirely: it has no boss to
+ * clear, so it can never be "beaten" and would pin the frontier there forever —
+ * which under T3 gating (below) would permanently lock every week after it.
+ * `hasBoss` omitted means "assume it has one" so pre-T3 callers keep working.
  */
 export function frontierWeekNumber(
-  candidates: { id: string; weekNumber: number }[],
+  candidates: { id: string; weekNumber: number; hasBoss?: boolean }[],
   bossClearedWeekIds: ReadonlySet<string>,
 ): number | null {
-  const open = candidates.filter((w) => !bossClearedWeekIds.has(w.id));
+  const open = candidates.filter(
+    (w) => w.hasBoss !== false && !bossClearedWeekIds.has(w.id),
+  );
   if (open.length === 0) return null;
   return Math.min(...open.map((w) => w.weekNumber));
 }
@@ -217,7 +251,7 @@ export interface WeekGateState {
   isUnlocked: boolean;
   /** Keys earned = bosses cleared in this week's pack (T3 derived key track). */
   keysEarned: number;
-  /** Total keys available = published weeks in this week's pack. */
+  /** Total keys available = published BOSSED weeks in this week's pack. */
   keysTotal: number;
 }
 
@@ -261,13 +295,19 @@ export async function getWeekGateState(
   ]);
 
   const clearedSet = new Set(cleared.map((c) => c.weekId));
-  const frontier = frontierWeekNumber(siblings, clearedSet);
+  // A bossless week can neither block the frontier nor mint a key.
+  const bossWeekIds = await listBossWeekIds(siblings.map((w) => w.id));
+  const bossable = siblings.filter((w) => bossWeekIds.has(w.id));
+  const frontier = frontierWeekNumber(
+    siblings.map((w) => ({ ...w, hasBoss: bossWeekIds.has(w.id) })),
+    clearedSet,
+  );
 
   return {
     isFrontier: frontier !== null && frontier === week.weekNumber,
     isUnlocked: isWeekUnlockedFrom(week.weekNumber, frontier, clearedSet.has(week.id)),
-    keysEarned: siblings.filter((w) => clearedSet.has(w.id)).length,
-    keysTotal: siblings.length,
+    keysEarned: bossable.filter((w) => clearedSet.has(w.id)).length,
+    keysTotal: bossable.length,
   };
 }
 

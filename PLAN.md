@@ -156,6 +156,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #148 | fix(play): boss 看图找字 had no picture; zoom 80 undersized collectible cards | |
 | #149 | feat(play): linear island gating + 🗝️ key ring + Key Vault grand prize (T3) | |
 | #150 | fix(boss): drop pinyin `visual_pick` from both gauntlets; final boss shows pictures | |
+| #151 | fix(play): bossless weeks deadlocked gating — week 10 locked, final boss + vault unreachable | |
 
 ### Next up
 

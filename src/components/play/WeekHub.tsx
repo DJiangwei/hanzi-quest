@@ -121,23 +121,27 @@ export function WeekHub({ childId, week, sections, weekId, homework, frontier, k
           progressText={`${sections.practice.done}/${sections.practice.total}`}
           state={practiceState}
         />
-        <SectionCard
-          href={`/play/${childId}/level/${week.id}/boss`}
-          emoji="🐙"
-          titleZh="Boss 战"
-          titleEn="Final Battle"
-          progressText={
-            sections.boss.locked
-              ? '未解锁 / Locked'
-              : `${sections.boss.done}/${sections.boss.total}`
-          }
-          state={bossState}
-          lockedReason={
-            sections.boss.locked
-              ? `通过 ${BOSS_UNLOCK_PRACTICE_THRESHOLD} 关即可开启 / Beat ${BOSS_UNLOCK_PRACTICE_THRESHOLD} scenes to unlock`
-              : undefined
-          }
-        />
+        {/* A short week compiles no boss at all (see BOSS_MIN_CHARS). The route
+            404s in that case, so don't offer a card that leads nowhere. */}
+        {sections.boss.total > 0 ? (
+          <SectionCard
+            href={`/play/${childId}/level/${week.id}/boss`}
+            emoji="🐙"
+            titleZh="Boss 战"
+            titleEn="Final Battle"
+            progressText={
+              sections.boss.locked
+                ? '未解锁 / Locked'
+                : `${sections.boss.done}/${sections.boss.total}`
+            }
+            state={bossState}
+            lockedReason={
+              sections.boss.locked
+                ? `通过 ${BOSS_UNLOCK_PRACTICE_THRESHOLD} 关即可开启 / Beat ${BOSS_UNLOCK_PRACTICE_THRESHOLD} scenes to unlock`
+                : undefined
+            }
+          />
+        ) : null}
         {homework?.present ? (
           <SectionCard
             href={`/play/${childId}/homework/${week.id}`}

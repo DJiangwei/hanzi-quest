@@ -624,23 +624,32 @@ export async function finishLevelAction(
       labelZh: `钥匙碎片（${keysEarned}/${keysTotal}）`,
       labelEn: `Key shard (${keysEarned}/${keysTotal})`,
     });
+  }
 
-    // Last key → the vault. Re-verified server-side against the DB rather than
-    // trusting the derived count, and idempotent per (child, map) inside
-    // claimKeyVaultPrize, so a repeat clear can never re-open it.
-    if (week.curriculumPackId && (await isMapFullyCleared(child.id, week.curriculumPackId))) {
-      const packSlug = await getPackSlugById(week.curriculumPackId);
-      if (packSlug) {
-        const prize = await safeClaimKeyVault(child.id, week.curriculumPackId, packSlug);
-        vaultCard = prize.card;
-        if (prize.coins > 0) {
-          bonuses.push({
-            reason: 'key_vault',
-            delta: prize.coins,
-            labelZh: '集齐所有钥匙！宝库开启！',
-            labelEn: 'All keys collected — the vault opens!',
-          });
-        }
+  // Last key → the vault. Deliberately OUTSIDE the first-clear branch: the ring
+  // can reach full WITHOUT a first clear happening (a child who had already
+  // beaten every boss before the vault shipped, or a map whose key total shrank
+  // when a bossless week stopped being counted) — gating the claim on a first
+  // clear left her with a full ring and no way to open it. `isMapFullyCleared`
+  // stays the ONE authority (never the derived count — two sources of truth is
+  // what caused this), and claimKeyVaultPrize is idempotent per (child, map),
+  // so a repeat clear can never re-open it.
+  if (
+    bossCleared &&
+    week.curriculumPackId &&
+    (await isMapFullyCleared(child.id, week.curriculumPackId))
+  ) {
+    const packSlug = await getPackSlugById(week.curriculumPackId);
+    if (packSlug) {
+      const prize = await safeClaimKeyVault(child.id, week.curriculumPackId, packSlug);
+      vaultCard = prize.card;
+      if (prize.coins > 0) {
+        bonuses.push({
+          reason: 'key_vault',
+          delta: prize.coins,
+          labelZh: '集齐所有钥匙！宝库开启！',
+          labelEn: 'All keys collected — the vault opens!',
+        });
       }
     }
   }
