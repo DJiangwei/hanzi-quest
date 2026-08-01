@@ -123,7 +123,7 @@ describe('compileWeekIntoLevels — segments + caps', () => {
     expect(meaningRows.every((r: { sceneTemplateId: string }) => r.sceneTemplateId === 'tmpl_translate')).toBe(true);
   });
 
-  it('emits boss with 5 question types when N >= 10 (pinyin_pick removed in PR #35)', async () => {
+  it('emits boss with 4 question types at full week size (pinyin types all retired)', async () => {
     const chars = Array.from({ length: 10 }, (_, i) =>
       makeFullChar('c' + i, String.fromCharCode(0x4eba + i), true),
     );
