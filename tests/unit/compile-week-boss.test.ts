@@ -56,7 +56,7 @@ describe('compileWeekIntoLevels boss emission', () => {
     mocks.selectWhereMock.mockResolvedValue(TEMPLATES);
   });
 
-  it('emits boss as the FINAL level when chars.length >= 10', async () => {
+  it('emits boss as the FINAL level when chars.length >= BOSS_MIN_CHARS', async () => {
     mocks.getCharsForWeekMock.mockResolvedValue(makeChars(10));
     await compileWeekIntoLevels('week-1');
     const insertedRows = (mocks.insertValuesMock.mock.calls[0]?.[0] ?? []) as Array<{
@@ -89,8 +89,26 @@ describe('compileWeekIntoLevels boss emission', () => {
     expect(boss?.sceneConfig.questionTypes).not.toContain('pinyin_pick');
   });
 
-  it('does NOT emit boss when chars.length < 10', async () => {
+  it('emits a shorter boss for an 8-char week (Map 1 weeks 9 + 10)', async () => {
+    // Those weeks teach 8 characters by curriculum design. At the old 10-char
+    // threshold they compiled no boss, which deadlocked T3's frontier on week 9
+    // and locked week 10 forever. One question per character — no padding.
     mocks.getCharsForWeekMock.mockResolvedValue(makeChars(8));
+    await compileWeekIntoLevels('week-9');
+    const insertedRows = (mocks.insertValuesMock.mock.calls[0]?.[0] ?? []) as Array<{
+      sceneTemplateId: string;
+      levelKey: string;
+      sceneConfig: { characterIds?: string[] };
+    }>;
+    const boss = insertedRows.find((r) => r.sceneTemplateId === 'tpl-boss');
+    expect(boss).toBeDefined();
+    expect(boss!.levelKey).toBe('boss:boss:0');
+    expect(boss!.sceneConfig.characterIds).toHaveLength(8);
+    expect(insertedRows[insertedRows.length - 1]).toBe(boss);
+  });
+
+  it('does NOT emit boss below BOSS_MIN_CHARS', async () => {
+    mocks.getCharsForWeekMock.mockResolvedValue(makeChars(7));
     await compileWeekIntoLevels('week-1');
     const insertedRows = (mocks.insertValuesMock.mock.calls[0]?.[0] ?? []) as Array<{ sceneTemplateId: string }>;
     expect(insertedRows.some((r) => r.sceneTemplateId === 'tpl-boss')).toBe(false);

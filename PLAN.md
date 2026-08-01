@@ -157,6 +157,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #149 | feat(play): linear island gating + 🗝️ key ring + Key Vault grand prize (T3) | |
 | #150 | fix(boss): drop pinyin `visual_pick` from both gauntlets; final boss shows pictures | |
 | #151 | fix(play): bossless weeks deadlocked gating — week 10 locked, final boss + vault unreachable | |
+| #152 | feat(play): `BOSS_MIN_CHARS` 10 → 8 so Map 1's 8-char weeks 9 + 10 get real bosses | |
 
 ### Next up
 

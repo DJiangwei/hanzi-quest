@@ -103,11 +103,18 @@ export type ImageWordConfig = z.infer<typeof ImageWordConfigSchema>;
 // constant; the WeekHub UI and the boss route guard both read it.
 export const BOSS_UNLOCK_PRACTICE_THRESHOLD = 7;
 
-// A week only gets a boss when it has at least this many characters — a shorter
-// week (Map 1's weeks 9 and 10 have 8 chars each) is BOSSLESS by design.
-// `compile-week.ts` enforces it; the gating/key code reads the compiled
-// `boss:boss:0` row rather than re-deriving from the char count.
-export const BOSS_MIN_CHARS = 10;
+// A week only gets a boss when it has at least this many characters.
+// 8, not 10: Map 1's weeks 9 and 10 teach 8 characters each BY CURRICULUM
+// DESIGN — there are no extra characters to pad them with — and at 10 they
+// compiled no boss, which under T3 gating deadlocked the frontier on week 9 and
+// locked week 10 forever (PR #151/#152). The bossless machinery stays as the
+// safety net for any genuinely tiny future week; the gating/key code reads the
+// compiled `boss:boss:0` row rather than re-deriving from the char count.
+export const BOSS_MIN_CHARS = 8;
+
+// A boss gauntlet asks one question per character, capped here. A short week
+// simply gets a shorter fight (8 questions) rather than repeating characters.
+export const BOSS_MAX_QUESTIONS = 10;
 export const BOSS_LEVEL_KEY = 'boss:boss:0';
 
 // Total practice scenes per week for full-size (N >= 10 chars) weeks.

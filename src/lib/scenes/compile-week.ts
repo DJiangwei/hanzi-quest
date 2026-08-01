@@ -14,7 +14,7 @@ import type {
   TranslatePickConfig,
   VisualPickConfig,
 } from './configs';
-import { BOSS_LEVEL_KEY, BOSS_MIN_CHARS } from './configs';
+import { BOSS_LEVEL_KEY, BOSS_MAX_QUESTIONS, BOSS_MIN_CHARS } from './configs';
 import { shuffle } from './sample';
 
 type AnyConfig =
@@ -36,7 +36,8 @@ type AnyConfig =
  *   sound:    K × audio_pick (3 for N>=10; 2 for 4-9; 1 for 2-3; 0 for <2)
  *   sight:    image_pick + word_match (count scales same as sound)
  *   meaning:  translate_pick + sentence_cloze (alternating direction; cloze->translate fallback)
- *   boss:     1 × boss (N>=10), 5 rotating question types
+ *   boss:     1 × boss (N >= BOSS_MIN_CHARS), 4 rotating question types,
+ *             one question per character up to BOSS_MAX_QUESTIONS
  *
  * Upserts by (weekId, levelKey). Stable keys preserve scene_attempts.weekLevelId
  * across recompiles. Keys absent from the new compile are deleted at end-of-tx.
@@ -245,7 +246,7 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
   // ── BOSS ────────────────────────────────────────────────────────────────
   const bossId = tmplByType.get('boss');
   if (bossId && N >= BOSS_MIN_CHARS) {
-    const shuffled = shuffle(chars).slice(0, 10);
+    const shuffled = shuffle(chars).slice(0, BOSS_MAX_QUESTIONS);
     push(
       bossId,
       {
