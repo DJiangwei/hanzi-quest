@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
-import { getPackBySlug } from '@/lib/db/collections';
+import { getSharedCurriculumPackBySlug } from '@/lib/db/curriculum';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { isMapFullyCleared } from '@/lib/db/final-boss';
 import { listChildPlayableWeeks } from '@/lib/db/weeks';
@@ -16,7 +16,9 @@ export default async function FinalBossPage({ params }: PageProps) {
   const { childId, packSlug } = await params;
   await requireChild(childId);
 
-  const pack = await getPackBySlug(packSlug);
+  // A map slug lives in curriculum_packs, NOT collection_packs — see the helper's
+  // docstring. Using the collectible lookup here made every final boss 404.
+  const pack = await getSharedCurriculumPackBySlug(packSlug);
   const meta = getPackMeta(packSlug);
   if (!pack) notFound();
 

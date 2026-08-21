@@ -17,13 +17,14 @@ vi.mock('next/navigation', () => ({
   redirect: (...a: unknown[]) => redirect(...a),
   notFound: () => notFound(),
 }));
-const getPackBySlug = vi.fn<(...a: unknown[]) => unknown>(async () => ({
+const getSharedCurriculumPackBySlug = vi.fn<(...a: unknown[]) => unknown>(async () => ({
   id: 'pk',
   slug: 'pirate-class-level-1',
-  name: 'Caribbean',
+  name: '海盗班 Level 1',
 }));
-vi.mock('@/lib/db/collections', () => ({
-  getPackBySlug: (...a: unknown[]) => getPackBySlug(...a),
+vi.mock('@/lib/db/curriculum', () => ({
+  getSharedCurriculumPackBySlug: (...a: unknown[]) =>
+    getSharedCurriculumPackBySlug(...a),
 }));
 const isMapFullyCleared = vi.fn<(...a: unknown[]) => unknown>();
 vi.mock('@/lib/db/final-boss', () => ({
@@ -59,10 +60,10 @@ import FinalBossPage from '@/app/play/[childId]/final-boss/[packSlug]/page';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  getPackBySlug.mockResolvedValue({
+  getSharedCurriculumPackBySlug.mockResolvedValue({
     id: 'pk',
     slug: 'pirate-class-level-1',
-    name: 'Caribbean',
+    name: '海盗班 Level 1',
   });
 });
 
@@ -91,5 +92,15 @@ describe('final-boss route', () => {
     const { render, screen } = await import('@testing-library/react');
     render(ui);
     expect(screen.getByTestId('fb-runner')).toBeInTheDocument();
+  });
+
+  it('looks the map up in curriculum_packs, not collection_packs', async () => {
+    isMapFullyCleared.mockResolvedValue(true);
+    await FinalBossPage({
+      params: Promise.resolve({ childId: 'c1', packSlug: 'pirate-class-level-1' }),
+    });
+    // Regression guard: `pirate-class-level-1` has no row in collection_packs,
+    // so resolving it there returned null and the route 404'd in production.
+    expect(getSharedCurriculumPackBySlug).toHaveBeenCalledWith('pirate-class-level-1');
   });
 });

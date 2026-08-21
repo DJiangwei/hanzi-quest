@@ -31,6 +31,34 @@ export async function getDefaultSharedPackId(): Promise<string | null> {
   return row?.id ?? null;
 }
 
+/**
+ * Look up a SHARED curriculum pack (a "map") by slug.
+ *
+ * `curriculum_packs.slug` is NOT unique on its own — `school-custom` has one row
+ * per family, keyed by `owner_user_id` — so this restricts to shared rows
+ * (`owner_user_id IS NULL`), which is what every map is. Without the
+ * restriction, one family's custom pack would be addressable by slug alone.
+ *
+ * Use this, NOT `getPackBySlug` from `@/lib/db/collections`: that one queries
+ * `collection_packs` (the COLLECTIBLE packs, `*-v1`), a completely separate
+ * slug namespace. The final-boss route and action used it for months, so the
+ * lookup always returned null and the final boss 404'd.
+ */
+export async function getSharedCurriculumPackBySlug(
+  slug: string,
+): Promise<{ id: string; slug: string; name: string } | null> {
+  const [row] = await db
+    .select({
+      id: curriculumPacks.id,
+      slug: curriculumPacks.slug,
+      name: curriculumPacks.name,
+    })
+    .from(curriculumPacks)
+    .where(and(eq(curriculumPacks.slug, slug), isNull(curriculumPacks.ownerUserId)))
+    .limit(1);
+  return row ?? null;
+}
+
 export type CurriculumPackRow = typeof curriculumPacks.$inferSelect;
 
 /**
