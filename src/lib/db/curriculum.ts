@@ -44,14 +44,20 @@ export async function getDefaultSharedPackId(): Promise<string | null> {
  * slug namespace. The final-boss route and action used it for months, so the
  * lookup always returned null and the final boss 404'd.
  */
-export async function getSharedCurriculumPackBySlug(
-  slug: string,
-): Promise<{ id: string; slug: string; name: string } | null> {
+export async function getSharedCurriculumPackBySlug(slug: string): Promise<{
+  id: string;
+  slug: string;
+  name: string;
+  nameZh: string | null;
+  nameEn: string | null;
+} | null> {
   const [row] = await db
     .select({
       id: curriculumPacks.id,
       slug: curriculumPacks.slug,
       name: curriculumPacks.name,
+      nameZh: curriculumPacks.nameZh,
+      nameEn: curriculumPacks.nameEn,
     })
     .from(curriculumPacks)
     .where(and(eq(curriculumPacks.slug, slug), isNull(curriculumPacks.ownerUserId)))

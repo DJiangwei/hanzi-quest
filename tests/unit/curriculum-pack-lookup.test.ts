@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  rows: [] as { id: string; slug: string; name: string }[],
+  rows: [] as {
+    id: string;
+    slug: string;
+    name: string;
+    nameZh: string | null;
+    nameEn: string | null;
+  }[],
   whereArgs: [] as unknown[],
 }));
 
@@ -26,10 +32,44 @@ beforeEach(() => {
 });
 
 describe('getSharedCurriculumPackBySlug', () => {
-  it('returns the shared curriculum pack row for a map slug', async () => {
-    mocks.rows = [{ id: 'pk1', slug: 'pirate-class-level-1', name: '海盗班 Level 1' }];
+  it('returns the shared curriculum pack row for a map slug, including bilingual names', async () => {
+    mocks.rows = [
+      {
+        id: 'pk1',
+        slug: 'pirate-class-level-1',
+        name: '海盗班 Level 1',
+        nameZh: '加勒比海',
+        nameEn: 'Caribbean Sea',
+      },
+    ];
     const pack = await getSharedCurriculumPackBySlug('pirate-class-level-1');
-    expect(pack).toEqual({ id: 'pk1', slug: 'pirate-class-level-1', name: '海盗班 Level 1' });
+    expect(pack).toEqual({
+      id: 'pk1',
+      slug: 'pirate-class-level-1',
+      name: '海盗班 Level 1',
+      nameZh: '加勒比海',
+      nameEn: 'Caribbean Sea',
+    });
+  });
+
+  it('returns null bilingual names as-is for rows never backfilled (e.g. school-custom)', async () => {
+    mocks.rows = [
+      {
+        id: 'pk2',
+        slug: 'school-custom',
+        name: 'School (custom)',
+        nameZh: null,
+        nameEn: null,
+      },
+    ];
+    const pack = await getSharedCurriculumPackBySlug('school-custom');
+    expect(pack).toEqual({
+      id: 'pk2',
+      slug: 'school-custom',
+      name: 'School (custom)',
+      nameZh: null,
+      nameEn: null,
+    });
   });
 
   it('returns null when no shared pack has that slug', async () => {
