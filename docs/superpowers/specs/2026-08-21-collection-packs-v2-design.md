@@ -146,11 +146,10 @@ globally, so `transport-v1/bicycle` and `olympics-v1/cycling` coexist.
 | lookout-tower | 瞭望塔 | The Lookout | 🗼 | 汪汪队的家，站得高看得远。 | The pups' home — tall enough to see everything. |
 | paw-patroller | 巡逻车 | Paw Patroller | 🚚 | 装得下全队的大卡车。 | The big rig that carries the whole team. |
 
-> **Open item for David (content only, not a blocker):** the Chinese names above
-> follow the mainland dub, but some vary by region (大耳狗 is 玉桂狗 in
-> HK/TW; 大眼蛙 is also sold as 青蛙王子). David watches these with Yinuo and
-> should correct any that read wrong before the seed runs. Editing the data
-> file and re-running the (idempotent) seed is a one-line change.
+> **Resolved 2026-08-21 (David):** use the mainland dub names exactly as listed
+> above. Regional variants (大耳狗 = 玉桂狗 in HK/TW, 大眼蛙 = 青蛙王子) are
+> not needed. If any name ever needs changing it is a data-file edit plus an
+> idempotent re-seed.
 
 ---
 
@@ -334,11 +333,11 @@ and deliberately bypasses the 10/day cap. Pack count today is 10, so the gift is
 | after this PR | 11 | 11 |
 | after a child beats Map 1 | 13 | 13 |
 
-Accepted as-is: it is once per week, it is the payoff for five check-ins, and a
-larger burst is motivating rather than harmful for this audience. **Follow-up
-signal:** watch the card-source split and cards-vs-cap chart on
-`/admin/economy`; if the weekly spike distorts the curve, cap the gift in a
-separate PR rather than shrinking the packs.
+**Accepted by David 2026-08-21, no cap in this work.** It is once per week, it
+is the payoff for five check-ins, and a larger burst is motivating rather than
+harmful for this audience. **Follow-up signal:** watch the card-source split and
+cards-vs-cap chart on `/admin/economy`; if the weekly spike distorts the curve,
+cap the gift in a separate PR rather than shrinking the packs.
 
 Second-order effect: 48 more cards in the pool means fewer duplicates in the
 near term, which means fewer shards, which slows the shard-swap loop slightly.
@@ -469,10 +468,11 @@ No migration, no `recompile-all-weeks.ts` — this PR touches no `week_levels`.
 
 ---
 
-## 13. Suggested PR sequencing
+## 13. PR sequencing (decided 2026-08-21: two separate PRs)
 
-Two PRs, in this order. They are independently shippable and the first is a
-pure-additive warm-up that de-risks the second.
+Two PRs, in this order, each merged and its prod ops run before the next
+starts. They are independently shippable and the first is a pure-additive
+warm-up that de-risks the second.
 
 **PR A — `olympics-v1` (data + card + registry + seed + art).** Touches no
 shared logic. Follows the `landmarks-v1` recipe exactly. Ships the Olympics pack
@@ -483,9 +483,9 @@ still works before the gating PR depends on it.
 points, the `finishFinalBossAction` return field, the unlock banner, and the
 pre-fight anticipation copy. This is where the review attention belongs.
 
-A single combined PR is acceptable if David prefers one round of post-merge prod
-ops instead of two — the seeds and the art run are the only serialised cost, and
-they can be batched by merging A and B back to back before running either.
+Each PR carries its own slice of §11's prod ops: PR A seeds and generates art
+for `olympics-v1` only; PR B seeds and generates art for the two IP packs.
+`verify-integrity.ts` runs after each.
 
 ---
 
