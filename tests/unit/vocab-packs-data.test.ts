@@ -3,6 +3,12 @@ import { TRANSPORT, TRANSPORT_BY_SLUG, TRANSPORT_GROUP_ORDER } from '@/lib/colle
 import { MINIBEASTS, MINIBEASTS_BY_SLUG } from '@/lib/collections/minibeastsData';
 import { INSTRUMENTS, INSTRUMENTS_BY_SLUG, INSTRUMENT_GROUP_ORDER } from '@/lib/collections/instrumentsData';
 import { ANIMALS, ANIMALS_BY_SLUG } from '@/lib/collections/animalsData';
+import {
+  OLYMPIC_SPORTS,
+  OLYMPICS_BY_SLUG,
+  OLYMPIC_GROUP_ORDER,
+  OLYMPIC_GROUP_LABELS,
+} from '@/lib/collections/olympicsData';
 
 const ZODIAC_ZH = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
 
@@ -62,5 +68,37 @@ describe('animals data', () => {
       slugs.add(a.slug);
     }
     expect(ANIMALS_BY_SLUG['fox']?.nameZh).toBe('狐狸');
+  });
+});
+
+describe('olympics data', () => {
+  it('has 20 bilingual items with emoji + valid group + unique slugs', () => {
+    expect(OLYMPIC_SPORTS).toHaveLength(20);
+    const slugs = new Set<string>();
+    for (const s of OLYMPIC_SPORTS) {
+      expect(s.nameZh, s.slug).toBeTruthy();
+      expect(s.nameEn, s.slug).toBeTruthy();
+      expect(s.emoji, s.slug).toBeTruthy();
+      expect(s.loreZh, s.slug).toBeTruthy();
+      expect(s.loreEn, s.slug).toBeTruthy();
+      expect(OLYMPIC_GROUP_ORDER, s.slug).toContain(s.group);
+      expect(slugs.has(s.slug), s.slug).toBe(false);
+      slugs.add(s.slug);
+    }
+  });
+
+  it('every group in the order has a bilingual label, and every group is used', () => {
+    const used = new Set(OLYMPIC_SPORTS.map((s) => s.group));
+    for (const g of OLYMPIC_GROUP_ORDER) {
+      expect(OLYMPIC_GROUP_LABELS[g]?.zh, g).toBeTruthy();
+      expect(OLYMPIC_GROUP_LABELS[g]?.en, g).toBeTruthy();
+      expect(OLYMPIC_GROUP_LABELS[g]?.emoji, g).toBeTruthy();
+      expect(used.has(g), `group '${g}' has no sports`).toBe(true);
+    }
+  });
+
+  it('BY_SLUG resolves', () => {
+    expect(OLYMPICS_BY_SLUG['table-tennis']?.nameZh).toBe('乒乓球');
+    expect(OLYMPICS_BY_SLUG['climbing']?.group).toBe('skill');
   });
 });
