@@ -198,7 +198,7 @@ It selects `curriculum_packs.slug` joined through `final_boss_clears` for the
 child, then delegates to the pure `lockedPackSlugsFrom`. The `tx` parameter
 exists so the two grant paths can call it **inside** their transaction.
 
-### 4.3 Six enforcement points
+### 4.3 Eight enforcement points
 
 Each is the same one-line shape: add
 `...(locked.length ? [notInArray(collectionPacks.slug, locked)] : [])` to an
@@ -212,6 +212,8 @@ Each is the same one-line shape: add
 | 4 | `grantGiftPackInTx` pack loop (`src/lib/db/grants.ts` ~line 254) | exclude — weekly 大礼包 must not hand out locked cards |
 | 5 | `getMerchantOffer` pool (`src/lib/db/merchant.ts` ~line 66) | exclude — the daily offer must be buyable |
 | 6 | `swapShardsInTx` (`src/lib/db/grants.ts` ~line 386) | return the existing `{ ok: false, reason: 'item_not_found' }` |
+| 7 | `src/app/play/[childId]/collection/[packSlug]/study/page.tsx` | `notFound()` when locked — it is its OWN route, not reached through #2 |
+| 8 | `finishStudyAction` (`src/lib/actions/study.ts` ~line 57) | fold into the existing `eligible` boolean |
 
 For #6, reuse `'item_not_found'` rather than adding a `'pack_locked'` reason: the
 result type is already a discriminated union with three reasons wired to UI copy,
@@ -230,11 +232,21 @@ security boundary; the check belongs at the SQL boundary.
 One query inside `pullCardInTx` — the same place the catalog is already
 built — keeps the rule in exactly one place.
 
-### 4.4 Study mode
+### 4.4 Study mode is a THIRD card-delivery path, not a sub-page
 
-`src/lib/actions/study.ts` gates its reward on `pack.gachaEligible`, and the
-study lesson is launched from the per-pack page, which #2 already 404s. No
-change needed; a test asserts the route guard covers it.
+Study mode looks like it rides on the pack page, but
+`/collection/[packSlug]/study` is a **separate route** with its own
+`getPackBySlug`, and `finishStudyAction` is its own exported server action that
+grants a pack-scoped card. Neither is reached through #2, so both need the gate
+(#7 and #8 above).
+
+Without #8, a locked-pack study finish would reach `pullCardInTx` with
+`packSlug` scoped to a pack that #3 has just filtered out of the catalog —
+leaving `weightedRandomPick` with zero rows, which it deliberately **throws**
+on. The failure rolls back inside the transaction, so nothing is granted, but a
+thrown action is the wrong shape for an expected case. Folding the check into
+the existing `eligible` boolean keeps it a quiet no-reward, which is what the
+`gachaEligible` check beside it already does.
 
 ### 4.5 `is_active` stays a global kill switch
 
@@ -370,8 +382,7 @@ src/lib/db/pack-unlocks.ts                  (server-only)
 src/components/play/items/OlympicCard.tsx   (makeVocabCard, grouped)
 src/components/play/items/HelloKittyCard.tsx
 src/components/play/items/PawPatrolCard.tsx
-scripts/seed-olympics-pack.ts
-scripts/seed-ip-packs.ts
+scripts/seed-unlockable-packs.ts            (PR B; olympics reuses seed-vocab-packs.ts)
 tests/unit/pack-unlocks.test.ts
 tests/unit/pack-unlocks-db.test.ts
 tests/unit/collection-packs-v2-data.test.ts
@@ -384,6 +395,8 @@ tests/unit/gacha-locked-packs.test.ts
 src/lib/collections/packRegistry.ts               +3 entries
 src/lib/db/grants.ts                               3 sites (catalog, gift, swap)
 src/lib/db/merchant.ts                             1 site (offer pool)
+src/lib/actions/study.ts                           fold into the `eligible` boolean
+src/app/play/[childId]/collection/[packSlug]/study/page.tsx  notFound when locked
 src/lib/actions/final-boss.ts                      + unlockedPackSlugs
 src/components/scenes/FinalBossRunner.tsx          + unlock banner
 src/app/play/[childId]/collection/page.tsx         filter halls
@@ -441,13 +454,23 @@ line in `.env.local`, swap back after):
 
 ```bash
 pnpm tsx scripts/backup-db.ts                     # first, always
-pnpm tsx scripts/seed-olympics-pack.ts
-pnpm tsx scripts/seed-ip-packs.ts
+
+# PR A
+pnpm tsx scripts/seed-vocab-packs.ts              # now also seeds olympics-v1
+# PR B
+pnpm tsx scripts/seed-unlockable-packs.ts
+
+# both PRs, after their seed
 CF_ACCOUNT_ID=… CF_API_TOKEN=… pnpm tsx scripts/generate-collectible-art-cloudflare.ts
-ONLY_PACK=olympics-v1 pnpm tsx scripts/zoom-collectible-art.ts   # then the other two
+ONLY_PACK=<the pack> pnpm tsx scripts/zoom-collectible-art.ts
 pnpm tsx scripts/verify-collectible-images.ts
 pnpm tsx scripts/verify-integrity.ts              # expect 7/7
 ```
+
+`seed-vocab-packs.ts` only inserts collectible items whose slug is missing, so
+re-running it for olympics leaves the four existing vocab packs untouched.
+Likewise the art generator runs **non-`FORCE`**, so it only fills rows whose
+`image_url` is still an emoji.
 
 No migration, no `recompile-all-weeks.ts` — this PR touches no `week_levels`.
 
@@ -459,7 +482,7 @@ No migration, no `recompile-all-weeks.ts` — this PR touches no `week_levels`.
    one who has not (14 today + olympics), and the two IP packs are unreachable
    by URL for the latter.
 2. A locked pack's cards never appear from a boss clear, practice card, weekly
-   大礼包, merchant offer, or shard swap.
+   大礼包, merchant offer, shard swap, or study lesson.
 3. Beating the Caribbean final boss surfaces the bilingual unlock banner, and
    the two packs start dropping on the very next card grant.
 4. All 48 new cards carry real flux art at ~88 % subject fill.
