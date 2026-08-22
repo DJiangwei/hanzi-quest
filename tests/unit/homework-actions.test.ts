@@ -31,7 +31,11 @@ vi.mock('@/lib/db/streaks', () => ({ todayUtcIso: () => '2026-06-12' }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/db/answer-events', () => ({ logAnswerEventsSafe: vi.fn().mockResolvedValue(0) }));
 
-import { addHomeworkItemAction, deleteHomeworkItemAction } from '@/lib/actions/homework';
+import {
+  addHomeworkItemAction,
+  updateHomeworkItemAction,
+  deleteHomeworkItemAction,
+} from '@/lib/actions/homework';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -59,8 +63,18 @@ describe('homework parent actions (per-child)', () => {
     expect(mocks.createHomeworkItem).not.toHaveBeenCalled();
   });
 
-  it('deleteHomeworkItemAction calls the db', async () => {
+  it('updateHomeworkItemAction scopes the db call by childId + weekId + id', async () => {
+    await updateHomeworkItemAction('c1', 'w1', 'h1', 'sentence_order', { tokens: ['我', '爱'] });
+    expect(mocks.updateHomeworkItem).toHaveBeenCalledWith(
+      'c1',
+      'w1',
+      'h1',
+      expect.objectContaining({ tokens: ['我', '爱'] }),
+    );
+  });
+
+  it('deleteHomeworkItemAction scopes the db call by childId + weekId + id', async () => {
     await deleteHomeworkItemAction('c1', 'w1', 'h1');
-    expect(mocks.deleteHomeworkItem).toHaveBeenCalledWith('h1');
+    expect(mocks.deleteHomeworkItem).toHaveBeenCalledWith('c1', 'w1', 'h1');
   });
 });
