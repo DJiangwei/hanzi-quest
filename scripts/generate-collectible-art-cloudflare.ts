@@ -40,6 +40,7 @@ const TARGET_PACK_SLUGS = [
   'minibeasts-v1',
   'instruments-v1',
   'animals-v1',
+  'olympics-v1',
 ];
 
 /** Per-slug subject prompts for the 节日 / Festivals reward cards. */
@@ -79,6 +80,35 @@ const SEASON_SUBJECT: Record<string, string> = {
     'a happy grey dolphin leaping above sunny ocean waves, full body, centered, plain light background',
   'season-kraken':
     'a friendly golden cartoon kraken octopus with big eyes, full body, centered, plain light background',
+};
+
+/** Per-slug subject prompts for the 奥运会 / Olympics pack. Written out in full
+ *  rather than derived from nameEn: "a child doing Fencing" renders as a random
+ *  crowd scene, whereas naming the kit and the object makes flux composable.
+ *  `boxing` deliberately describes gloves + head guard and no opponent — a
+ *  punching-a-person prompt is a likely NSFW false positive (cf. the `gong`
+ *  and `Uranus` overrides above). */
+const OLYMPIC_SUBJECT: Record<string, string> = {
+  swimming: 'a cute cartoon child swimming front crawl in a blue swimming pool lane, wearing goggles and a swim cap, centered, plain light background',
+  diving: 'a cute cartoon child diving off a high diving board towards blue water, centered, plain light background',
+  kayaking: 'a cute cartoon child paddling a bright kayak with a double-bladed paddle on calm water, centered, plain light background',
+  football: 'a cute cartoon child in a football kit kicking a black-and-white football, full body, centered, plain light background',
+  basketball: 'a cute cartoon child jumping to shoot an orange basketball into a hoop, full body, centered, plain light background',
+  'table-tennis': 'a cute cartoon child holding a table tennis bat about to hit a small white ball over a net, centered, plain light background',
+  badminton: 'a cute cartoon child swinging a badminton racket at a white shuttlecock, full body, centered, plain light background',
+  volleyball: 'a cute cartoon child jumping to hit a volleyball over a net, full body, centered, plain light background',
+  tennis: 'a cute cartoon child swinging a tennis racket at a yellow tennis ball, full body, centered, plain light background',
+  fencing: 'a cute cartoon child in a white fencing jacket and mesh mask holding a thin sport sword, full body, centered, plain light background',
+  judo: 'a cute cartoon child in a white judo suit with a coloured belt standing in a ready stance, full body, centered, plain light background',
+  boxing: 'a cute cartoon child wearing big red sport gloves and a padded head guard, standing in a ready stance, full body, centered, plain light background',
+  weightlifting: 'a cute cartoon child lifting a barbell with round weight plates above their head, full body, centered, plain light background',
+  running: 'a cute cartoon child sprinting on a red running track, full body, side view, centered, plain light background',
+  gymnastics: 'a cute cartoon child doing a handstand on a blue gymnastics mat, full body, centered, plain light background',
+  archery: 'a cute cartoon child drawing a bow and arrow aiming at a round target, full body, centered, plain light background',
+  cycling: 'a cute cartoon child riding a racing bicycle wearing a helmet, full body, side view, centered, plain light background',
+  equestrian: 'a cute cartoon child riding a brown horse jumping over a low fence, full body, side view, centered, plain light background',
+  skateboarding: 'a cute cartoon child jumping on a skateboard wearing a helmet, full body, centered, plain light background',
+  climbing: 'a cute cartoon child climbing a colourful climbing wall wearing a harness, full body, centered, plain light background',
 };
 
 // Unified style shared with the word-image regen (src/lib/ai/art-style.ts) so
@@ -167,6 +197,8 @@ function buildPrompt(
       return `${STYLE_PREAMBLE}a ${nameEn}, a musical instrument, full body, centered, plain light background`;
     case 'animals-v1':
       return `${STYLE_PREAMBLE}a ${nameEn}, a cute friendly cartoon animal, full body, centered, plain light background`;
+    case 'olympics-v1':
+      return `${STYLE_PREAMBLE}${OLYMPIC_SUBJECT[slug] ?? `a cute cartoon child athlete doing ${nameEn}, full body, centered, plain light background`}`;
     default:
       return `${STYLE_PREAMBLE}${nameEn}`;
   }
