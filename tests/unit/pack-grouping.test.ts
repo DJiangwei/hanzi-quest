@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { FLAGS } from '@/lib/collections/flagsData';
 import { SOLAR_BODIES } from '@/lib/collections/solarSystemData';
+import { OLYMPIC_SPORTS } from '@/lib/collections/olympicsData';
 
 describe('pack grouping config', () => {
   it('flags-v1 groups every flag into a continent in its order', () => {
@@ -32,5 +33,16 @@ describe('pack grouping config', () => {
 
   it('resolveGroup returns null for an unknown slug', () => {
     expect(getPackMeta('flags-v1')!.grouping!.resolveGroup('nope')).toBeNull();
+  });
+
+  it('olympics-v1 groups every sport into a section in its order', () => {
+    const g = getPackMeta('olympics-v1')!.grouping!;
+    for (const s of OLYMPIC_SPORTS) {
+      const key = g.resolveGroup(s.slug);
+      expect(key, s.slug).not.toBeNull();
+      expect(g.order, s.slug).toContain(key);
+      expect(g.labels[key!], s.slug).toBeDefined();
+    }
+    expect(g.resolveGroup('not-a-sport')).toBeNull();
   });
 });
