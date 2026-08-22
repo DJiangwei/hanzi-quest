@@ -30,7 +30,7 @@ export default async function ReviewWeekPage({ params }: PageProps) {
           </p>
         </div>
         <Link
-          href="/parent"
+          href="/admin"
           className="text-sm font-semibold text-[var(--color-ocean-700)] hover:underline"
         >
           ← Back

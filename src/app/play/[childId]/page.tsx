@@ -345,16 +345,19 @@ export default async function PlayHomePage({ params }: PageProps) {
       <div className="flex flex-col">
       {islands.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--color-sunset-400)] bg-white/70 p-8 text-center text-sm text-[var(--color-sand-900)]">
-          <p className="font-semibold">No islands yet, captain.</p>
+          <p className="font-semibold">
+            还没有岛屿哦，船长！ / No islands yet, captain.
+          </p>
           <p className="mt-1 text-[var(--color-sand-700)]">
-            A parent needs to publish a week first. Visit{' '}
+            家长需要先发布一周的内容，请前往{' '}
             <Link
-              href="/parent/stage/new"
+              href="/parent"
               className="font-semibold text-[var(--color-ocean-700)] underline"
             >
-              parent dashboard
+              家长面板 / parent dashboard
             </Link>
-            .
+            。 / A parent needs to publish a week first — visit the parent
+            dashboard.
           </p>
         </div>
       ) : voyage ? (

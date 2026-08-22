@@ -8,9 +8,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 const requireChildMock = vi.fn();
-const assertParentMock = vi.fn();
+const assertAdminMock = vi.fn();
 vi.mock('@/lib/auth/guards', () => ({
-  assertParent: () => assertParentMock(),
+  assertAdmin: () => assertAdminMock(),
   requireChild: (id: string) => requireChildMock(id),
 }));
 
@@ -77,7 +77,7 @@ function fd(entries: Record<string, string>): FormData {
 
 beforeEach(() => {
   requireChildMock.mockReset();
-  assertParentMock.mockReset();
+  assertAdminMock.mockReset().mockResolvedValue({ id: 'user_admin', role: 'admin' });
   ensureSchoolCustomPackMock.mockReset().mockResolvedValue('pack_1');
   createWeekMock.mockReset();
   getWeekOwnedByMock.mockReset();
@@ -156,7 +156,7 @@ describe('createStageAction', () => {
 
 describe('generateWeekAction', () => {
   it('errors when week not found', async () => {
-    assertParentMock.mockResolvedValue(parentRow);
+    assertAdminMock.mockResolvedValue(parentRow);
     getWeekOwnedByMock.mockResolvedValue(undefined);
 
     const res = await generateWeekAction('week_x');
@@ -164,7 +164,7 @@ describe('generateWeekAction', () => {
   });
 
   it('errors when no characters stored', async () => {
-    assertParentMock.mockResolvedValue(parentRow);
+    assertAdminMock.mockResolvedValue(parentRow);
     getWeekOwnedByMock.mockResolvedValue({ id: 'week_1', label: 'L 1' });
     listCharactersForWeekMock.mockResolvedValue([]);
 
@@ -173,7 +173,7 @@ describe('generateWeekAction', () => {
   });
 
   it('flips week to ai_generating then calls generateWeekContent', async () => {
-    assertParentMock.mockResolvedValue(parentRow);
+    assertAdminMock.mockResolvedValue(parentRow);
     getWeekOwnedByMock.mockResolvedValue({ id: 'week_1', label: 'L 1' });
     listCharactersForWeekMock.mockResolvedValue([
       { character: { hanzi: '人' }, position: 0 },
@@ -182,7 +182,7 @@ describe('generateWeekAction', () => {
     generateWeekContentMock.mockResolvedValue({});
 
     await expect(generateWeekAction('week_1')).rejects.toThrow(
-      '__REDIRECT__:/parent/week/week_1/review',
+      '__REDIRECT__:/admin/week/week_1/review',
     );
 
     expect(setWeekStatusMock).toHaveBeenCalledWith('week_1', 'ai_generating');
@@ -195,7 +195,7 @@ describe('generateWeekAction', () => {
   });
 
   it('returns AI error and does not redirect', async () => {
-    assertParentMock.mockResolvedValue(parentRow);
+    assertAdminMock.mockResolvedValue(parentRow);
     getWeekOwnedByMock.mockResolvedValue({ id: 'week_1', label: 'L 1' });
     listCharactersForWeekMock.mockResolvedValue([
       { character: { hanzi: '人' }, position: 0 },
