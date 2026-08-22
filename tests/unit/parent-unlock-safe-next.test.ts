@@ -31,6 +31,29 @@ describe('safeNext', () => {
     expect(safeNext('/\\evil.example')).toBe('/parent');
   });
 
+  // Fix (CRITICAL): the WHATWG URL parser strips ASCII tab/LF/CR *before*
+  // parsing a URL, so "/\t/evil.example" resolves to "//evil.example" —
+  // protocol-relative and off-site — even though the raw string starts with
+  // "/\t", which the naive `/^\/[^/\\]/` regex accepted. Reachable via
+  // `/parent/unlock?next=%2F%09%2Fevil.example` (URLSearchParams decodes
+  // %09 to a real tab). safeNext must strip these bytes before testing, and
+  // return the cleaned value (never the raw one).
+  it('strips an embedded tab and rejects the resulting protocol-relative URL', () => {
+    expect(safeNext('/\t/evil.example')).toBe('/parent');
+  });
+
+  it('strips an embedded newline and rejects the resulting protocol-relative URL', () => {
+    expect(safeNext('/\n/evil.example')).toBe('/parent');
+  });
+
+  it('strips an embedded carriage return and rejects the resulting protocol-relative URL', () => {
+    expect(safeNext('/\r/evil.example')).toBe('/parent');
+  });
+
+  it('strips whitespace bytes from an otherwise-safe path and keeps the cleaned result', () => {
+    expect(safeNext('/parent/\tchildren')).toBe('/parent/children');
+  });
+
   it('falls back to /parent when next is missing', () => {
     expect(safeNext(undefined)).toBe('/parent');
   });

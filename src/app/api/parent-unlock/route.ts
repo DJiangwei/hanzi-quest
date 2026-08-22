@@ -17,7 +17,12 @@ const COOKIE_MAX_AGE_SECONDS = 15 * 60;
  * value carrying a scheme. Falls back to `/parent` for anything else.
  */
 export function safeNext(next: unknown): string {
-  return typeof next === 'string' && /^\/[^/\\]/.test(next) ? next : '/parent';
+  if (typeof next !== 'string') return '/parent';
+  // The WHATWG URL parser strips ASCII tab/LF/CR before parsing, so
+  // "/\t/evil.example" resolves to "//evil.example" — protocol-relative and
+  // off-site. Strip them before testing, not after.
+  const cleaned = next.replace(/[\t\n\r]/g, '');
+  return /^\/[^/\\]/.test(cleaned) ? cleaned : '/parent';
 }
 
 export async function POST(req: Request): Promise<Response> {
