@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {
   chooseKidEntryAction,
   chooseParentEntryAction,
@@ -62,7 +63,23 @@ export function EntryChooser({ players }: { players: ChooserChild[] }) {
               </form>
             ))}
           </section>
-        ) : null}
+        ) : (
+          /* Zero children — the very first screen after signup. Without this
+             branch the whole block rendered null, leaving only the padlocked
+             Parent button and no hint that a child has to exist first. */
+          <Link
+            href="/parent/children"
+            className="flex w-full flex-col items-center gap-1 rounded-3xl bg-[var(--color-ocean-500)] px-6 py-7 text-white shadow-lg transition-transform hover:bg-[var(--color-ocean-700)] active:scale-[0.98]"
+          >
+            <span className="text-3xl" aria-hidden>
+              👶
+            </span>
+            <span className="font-hanzi text-xl font-bold">先添加孩子</span>
+            <span className="text-sm font-medium opacity-90">
+              Add your child to start
+            </span>
+          </Link>
+        )}
 
         {/* Parent entry — PIN-gated downstream. */}
         <form action={chooseParentEntryAction}>
@@ -80,10 +97,19 @@ export function EntryChooser({ players }: { players: ChooserChild[] }) {
         </form>
       </div>
 
-      <p className="max-w-xs text-xs text-[var(--color-sand-700)]">
-        <span className="font-hanzi">下次自动进入这里 · </span>
-        <span>We&apos;ll remember your choice next time</span>
-      </p>
+      {players.length > 0 ? (
+        <p className="max-w-xs text-xs text-[var(--color-sand-700)]">
+          <span className="font-hanzi">下次自动进入这里 · </span>
+          <span>We&apos;ll remember your choice next time</span>
+        </p>
+      ) : (
+        /* With no children there is no choice to remember — saying so would be
+           a lie on the one screen a new parent most needs to trust. */
+        <p className="max-w-xs text-xs text-[var(--color-sand-700)]">
+          <span className="font-hanzi">添加孩子后就能开始玩了 · </span>
+          <span>Once a child is added, they can play right away</span>
+        </p>
+      )}
     </main>
   );
 }
