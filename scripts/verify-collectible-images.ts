@@ -2,9 +2,11 @@
  * Read-only audit of collectible-card art backfill progress.
  *
  * Reports, per target pack (sea-creatures / dinosaurs / solar-system /
- * landmarks), how many `collectible_items.image_url` values are real http(s)
- * URLs vs. still emoji glyphs. Used by the Codex art backfill handoff
- * (`docs/codex-collectible-art-backfill.md`) to confirm completion.
+ * landmarks / season-summer / festivals / transport / minibeasts /
+ * instruments / animals / olympics), how many `collectible_items.image_url`
+ * values are real http(s) URLs vs. still emoji glyphs. Used by the Codex art
+ * backfill handoff (`docs/codex-collectible-art-backfill.md`) to confirm
+ * completion.
  *
  * Mirrors scripts/verify-image-url-column.ts. NEVER mutates.
  *
@@ -19,6 +21,11 @@ const TARGET_PACK_SLUGS = [
   'landmarks-v1',
   'season-summer-v1',
   'festivals-v1',
+  'transport-v1',
+  'minibeasts-v1',
+  'instruments-v1',
+  'animals-v1',
+  'olympics-v1',
 ];
 
 async function main() {

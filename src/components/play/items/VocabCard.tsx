@@ -30,7 +30,7 @@ const sizeClasses: Record<NonNullable<VocabCardProps['size']>, string> = {
 /**
  * Factory producing a per-pack collectible card. Mirrors LandmarkCard: emoji /
  * real art via CardArt, bilingual name, an optional group badge (陆地/水上/天空,
- * 西洋/民族…), and a bilingual lore line at lg+owned. Keeps all 4 vocab packs
+ * 西洋/民族…), and a bilingual lore line at lg+owned. Keeps all 5 vocab packs
  * DRY — each pack file is a 3-line factory call.
  */
 export function makeVocabCard(opts: {

@@ -12,6 +12,7 @@ import { TransportCard } from '@/components/play/items/TransportCard';
 import { MinibeastCard } from '@/components/play/items/MinibeastCard';
 import { InstrumentCard } from '@/components/play/items/InstrumentCard';
 import { AnimalCard } from '@/components/play/items/AnimalCard';
+import { OlympicCard } from '@/components/play/items/OlympicCard';
 import { ChampionCard } from '@/components/play/items/ChampionCard';
 import { CHAMPIONS_BY_SLUG } from '@/lib/collections/championsData';
 import { VaultTreasureCard } from '@/components/play/items/VaultTreasureCard';
@@ -28,6 +29,11 @@ import {
   INSTRUMENT_GROUP_LABELS,
 } from '@/lib/collections/instrumentsData';
 import { ANIMALS_BY_SLUG } from '@/lib/collections/animalsData';
+import {
+  OLYMPICS_BY_SLUG,
+  OLYMPIC_GROUP_ORDER,
+  OLYMPIC_GROUP_LABELS,
+} from '@/lib/collections/olympicsData';
 import { FESTIVALS_BY_SLUG } from '@/lib/collections/festivalsData';
 import { SEASON_CARDS_BY_SLUG } from '@/lib/collections/seasonCardsData';
 import { DINOSAURS_BY_SLUG } from '@/lib/collections/dinosaursData';
@@ -292,6 +298,23 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     gridColumns: 3,
     ItemCard: AnimalCard,
     resolveRevealEmoji: (slug) => ANIMALS_BY_SLUG[slug]?.emoji ?? null,
+  },
+  'olympics-v1': {
+    displayNameZh: '奥运会',
+    displayNameEn: 'Olympics',
+    sloganZh: '收集夏季奥运会的比赛项目。',
+    sloganEn: 'Collect the sports of the Summer Games.',
+    themeEmoji: '🏅',
+    themeBannerClass: 'bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400',
+    themeAccentClass: 'text-blue-900',
+    gridColumns: 3,
+    ItemCard: OlympicCard,
+    resolveRevealEmoji: (slug) => OLYMPICS_BY_SLUG[slug]?.emoji ?? null,
+    grouping: {
+      resolveGroup: (slug) => OLYMPICS_BY_SLUG[slug]?.group ?? null,
+      order: OLYMPIC_GROUP_ORDER,
+      labels: OLYMPIC_GROUP_LABELS,
+    },
   },
 };
 
