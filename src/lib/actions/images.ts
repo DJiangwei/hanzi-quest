@@ -1,7 +1,7 @@
 'use server';
 
 import { and, eq, isNotNull, isNull } from 'drizzle-orm';
-import { assertParent } from '@/lib/auth/guards';
+import { assertAdmin } from '@/lib/auth/guards';
 import { db } from '@/db';
 import { characterWord, weekCharacters, words } from '@/db/schema';
 import { fetchAndUploadImage } from '@/lib/ai/pollinations';
@@ -16,7 +16,7 @@ export async function generateMissingImagesForWeek(weekId: string): Promise<{
   succeeded: number;
   failed: number;
 }> {
-  await assertParent();
+  await assertAdmin();
 
   // Join words ← character_word ← week_characters; scoped to this week, only
   // rows missing imageUrl but having a non-null imageHook (the prompt).

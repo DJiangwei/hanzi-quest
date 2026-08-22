@@ -8,9 +8,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 const requireChildMock = vi.fn();
-const assertParentMock = vi.fn();
+const assertAdminMock = vi.fn();
 vi.mock('@/lib/auth/guards', () => ({
-  assertParent: () => assertParentMock(),
+  assertAdmin: () => assertAdminMock(),
   requireChild: (id: string) => requireChildMock(id),
 }));
 
@@ -58,7 +58,7 @@ vi.mock('@/lib/ai/generate-content', () => ({
   regenerateCharacter: vi.fn(),
 }));
 
-import { createStageAction, generateWeekAction } from '@/lib/actions/weeks';
+import { createWeekAction, createStageAction, generateWeekAction } from '@/lib/actions/weeks';
 
 const parentRow = { id: 'user_p', email: 'p@b.com', role: 'parent' as const };
 const childRow = {
@@ -77,7 +77,7 @@ function fd(entries: Record<string, string>): FormData {
 
 beforeEach(() => {
   requireChildMock.mockReset();
-  assertParentMock.mockReset();
+  assertAdminMock.mockReset().mockResolvedValue({ id: 'user_admin', role: 'admin' });
   ensureSchoolCustomPackMock.mockReset().mockResolvedValue('pack_1');
   createWeekMock.mockReset();
   getWeekOwnedByMock.mockReset();
@@ -140,7 +140,7 @@ describe('createStageAction', () => {
           rawText: '人 口 大\n爸 妈 天\n云 火 水',
         }),
       ),
-    ).rejects.toThrow('__REDIRECT__:/parent');
+    ).rejects.toThrow('__REDIRECT__:/admin');
 
     expect(createWeekMock).toHaveBeenCalledTimes(3);
     expect(createWeekMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
@@ -152,11 +152,82 @@ describe('createStageAction', () => {
     }));
     expect(linkWeekCharactersMock).toHaveBeenCalledTimes(3);
   });
+
+  // Fix B (Finding 5, MEDIUM): a child is always auto-enrolled in the shared
+  // curriculum pack, so `child.currentCurriculumPackId ?? ensureSchoolCustomPack(...)`
+  // never fell through to the family pack. Assert the shared pack id is never
+  // used even though it's present on the child row.
+  it('authors weeks into the school-custom pack, never the child current (shared) pack', async () => {
+    requireChildMock.mockResolvedValue({
+      parent: parentRow,
+      child: { ...childRow, currentCurriculumPackId: 'shared_pack_1' },
+    });
+    ensureSchoolCustomPackMock.mockResolvedValue('school_custom_pack_1');
+    let createdCount = 0;
+    createWeekMock.mockImplementation(async () => ({
+      id: `week_${++createdCount}`,
+      label: '...',
+    }));
+    upsertSimplifiedCharacterMock.mockImplementation(async (input) => ({
+      id: `char_${input.hanzi}`,
+      hanzi: input.hanzi,
+    }));
+
+    await expect(
+      createStageAction(
+        {},
+        fd({
+          childId: '11111111-2222-4333-a444-555555555555',
+          labelPrefix: 'Stage A',
+          rawText: '人 口 大',
+        }),
+      ),
+    ).rejects.toThrow('__REDIRECT__:/admin');
+
+    expect(ensureSchoolCustomPackMock).toHaveBeenCalledWith('user_p');
+    expect(createWeekMock).toHaveBeenCalledWith(
+      expect.objectContaining({ curriculumPackId: 'school_custom_pack_1' }),
+    );
+    expect(createWeekMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ curriculumPackId: 'shared_pack_1' }),
+    );
+  });
+});
+
+describe('createWeekAction', () => {
+  it('authors the week into the school-custom pack, never the child current (shared) pack', async () => {
+    requireChildMock.mockResolvedValue({
+      parent: parentRow,
+      child: { ...childRow, currentCurriculumPackId: 'shared_pack_1' },
+    });
+    ensureSchoolCustomPackMock.mockResolvedValue('school_custom_pack_1');
+    createWeekMock.mockResolvedValue({ id: 'week_1', label: 'Week 1' });
+    generateWeekContentMock.mockResolvedValue({});
+
+    await expect(
+      createWeekAction(
+        {},
+        fd({
+          childId: '11111111-2222-4333-a444-555555555555',
+          label: 'Week 1',
+          rawChars: '人口大',
+        }),
+      ),
+    ).rejects.toThrow('__REDIRECT__:/admin/week/week_1/review');
+
+    expect(ensureSchoolCustomPackMock).toHaveBeenCalledWith('user_p');
+    expect(createWeekMock).toHaveBeenCalledWith(
+      expect.objectContaining({ curriculumPackId: 'school_custom_pack_1' }),
+    );
+    expect(createWeekMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ curriculumPackId: 'shared_pack_1' }),
+    );
+  });
 });
 
 describe('generateWeekAction', () => {
   it('errors when week not found', async () => {
-    assertParentMock.mockResolvedValue(parentRow);
+    assertAdminMock.mockResolvedValue(parentRow);
     getWeekOwnedByMock.mockResolvedValue(undefined);
 
     const res = await generateWeekAction('week_x');
@@ -164,7 +235,7 @@ describe('generateWeekAction', () => {
   });
 
   it('errors when no characters stored', async () => {
-    assertParentMock.mockResolvedValue(parentRow);
+    assertAdminMock.mockResolvedValue(parentRow);
     getWeekOwnedByMock.mockResolvedValue({ id: 'week_1', label: 'L 1' });
     listCharactersForWeekMock.mockResolvedValue([]);
 
@@ -173,7 +244,7 @@ describe('generateWeekAction', () => {
   });
 
   it('flips week to ai_generating then calls generateWeekContent', async () => {
-    assertParentMock.mockResolvedValue(parentRow);
+    assertAdminMock.mockResolvedValue(parentRow);
     getWeekOwnedByMock.mockResolvedValue({ id: 'week_1', label: 'L 1' });
     listCharactersForWeekMock.mockResolvedValue([
       { character: { hanzi: '人' }, position: 0 },
@@ -182,7 +253,7 @@ describe('generateWeekAction', () => {
     generateWeekContentMock.mockResolvedValue({});
 
     await expect(generateWeekAction('week_1')).rejects.toThrow(
-      '__REDIRECT__:/parent/week/week_1/review',
+      '__REDIRECT__:/admin/week/week_1/review',
     );
 
     expect(setWeekStatusMock).toHaveBeenCalledWith('week_1', 'ai_generating');
@@ -195,7 +266,7 @@ describe('generateWeekAction', () => {
   });
 
   it('returns AI error and does not redirect', async () => {
-    assertParentMock.mockResolvedValue(parentRow);
+    assertAdminMock.mockResolvedValue(parentRow);
     getWeekOwnedByMock.mockResolvedValue({ id: 'week_1', label: 'L 1' });
     listCharactersForWeekMock.mockResolvedValue([
       { character: { hanzi: '人' }, position: 0 },

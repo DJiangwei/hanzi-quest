@@ -37,7 +37,8 @@ src/
 │  ├─ parent/                        # Parent-only console (status pages)
 │  │   ├─ layout.tsx                 # Bootstrap + parent shell
 │  │   ├─ page.tsx                   # Dashboard
-│  │   ├─ children/                  # CRUD on child_profiles
+│  │   └─ children/                  # CRUD on child_profiles
+│  ├─ admin/                         # assertAdmin()-gated console (PR #155)
 │  │   ├─ week/new, week/[id]/review # Single-week input + AI review
 │  │   └─ stage/new                  # Bulk paste 10 lessons
 │  ├─ play/[childId]/                # Child-friendly play surface
@@ -76,7 +77,7 @@ tests/unit/                          # Vitest (10 files, ~61 cases)
 
 ```
                          ┌────────────────────────────────┐
-       parent UI ───►    │  /parent/stage/new (paste 10   │
+       parent UI ───►    │  /admin/stage/new (paste 10    │
                          │   lines = 10 lessons)          │
                          └───────────────┬────────────────┘
                                          │ createStageAction
@@ -99,7 +100,7 @@ tests/unit/                          # Vitest (10 files, ~61 cases)
                           │  → ai_jobs row records tokens  │
                           └───────────────┬────────────────┘
                                           │
-       parent UI ───►    /parent/week/[id]/review (edit cards, regenerate)
+       parent UI ───►    /admin/week/[id]/review (edit cards, regenerate)
                                           │ publishWeekAction
                                           ▼
                           ┌────────────────────────────────┐
@@ -135,7 +136,7 @@ The same `weeks` table represents **both** kinds of week, distinguished by who o
 | `parent_user_id` | non-null | **null** |
 | `child_id` | non-null | **null** |
 | `curriculum_pack_id` | family's own auto-created `school-custom` | a public pack (e.g. `pirate-class-level-1`) |
-| Created by | `/parent/stage/new` server action | `scripts/seed-pirate-class.ts` |
+| Created by | `/admin/stage/new` server action (PR #155: content authoring moved under `/admin`, `assertAdmin()`-gated) | `scripts/seed-pirate-class.ts` |
 | Uniqueness | `(child_id, week_number)` unique | partial unique `(curriculum_pack_id, week_number) WHERE child_id IS NULL` |
 | Who plays it | only that child | **every** child whose `current_curriculum_pack_id` points at this pack |
 

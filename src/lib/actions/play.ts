@@ -572,7 +572,7 @@ export async function finishLevelAction(
     }
   }
 
-  await endPlaySession(parsed.sessionId, {
+  await endPlaySession(parsed.sessionId, child.id, {
     weekId: parsed.weekId,
     completionPercent,
     durationSeconds: parsed.durationSeconds,

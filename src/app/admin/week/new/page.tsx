@@ -1,20 +1,20 @@
 import Link from 'next/link';
 import { NewWeekForm } from '@/components/parent/NewWeekForm';
-import { assertParent } from '@/lib/auth/guards';
+import { assertAdmin } from '@/lib/auth/guards';
 import { listChildrenByParent } from '@/lib/db/children';
 
 export default async function NewWeekPage() {
-  const parent = await assertParent();
+  const parent = await assertAdmin();
   const children = await listChildrenByParent(parent.id);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-10">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-10">
       <header className="flex items-center justify-between">
         <h1 className="font-hanzi text-3xl font-bold tracking-tight text-[var(--color-ocean-900)]">
           New week
         </h1>
         <Link
-          href="/parent"
+          href="/admin"
           className="text-sm font-semibold text-[var(--color-ocean-700)] hover:underline"
         >
           ← Back
@@ -44,6 +44,6 @@ export default async function NewWeekPage() {
           }))}
         />
       )}
-    </main>
+    </div>
   );
 }

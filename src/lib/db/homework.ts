@@ -80,15 +80,38 @@ export async function createHomeworkItem(input: {
   return row!.id;
 }
 
-export async function updateHomeworkItem(id: string, config: unknown): Promise<void> {
+export async function updateHomeworkItem(
+  childId: string,
+  weekId: string,
+  id: string,
+  config: unknown,
+): Promise<void> {
   await db
     .update(homeworkItems)
     .set({ config, updatedAt: new Date() })
-    .where(eq(homeworkItems.id, id));
+    .where(
+      and(
+        eq(homeworkItems.id, id),
+        eq(homeworkItems.childId, childId),
+        eq(homeworkItems.weekId, weekId),
+      ),
+    );
 }
 
-export async function deleteHomeworkItem(id: string): Promise<void> {
-  await db.delete(homeworkItems).where(eq(homeworkItems.id, id));
+export async function deleteHomeworkItem(
+  childId: string,
+  weekId: string,
+  id: string,
+): Promise<void> {
+  await db
+    .delete(homeworkItems)
+    .where(
+      and(
+        eq(homeworkItems.id, id),
+        eq(homeworkItems.childId, childId),
+        eq(homeworkItems.weekId, weekId),
+      ),
+    );
 }
 
 export async function reorderHomeworkItems(

@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { generateWeekContent, regenerateCharacter } from '@/lib/ai/generate-content';
-import { assertParent, requireChild } from '@/lib/auth/guards';
+import { assertAdmin, requireChild } from '@/lib/auth/guards';
 import {
   linkWeekCharacters,
   replaceCharacterSentence,
@@ -55,10 +55,15 @@ export async function createWeekAction(
     };
   }
 
+  await assertAdmin();
   const { parent, child } = await requireChild(parsed.data.childId);
 
-  const packId =
-    child.currentCurriculumPackId ?? (await ensureSchoolCustomPack(parent.id));
+  // Deliberately NOT `child.currentCurriculumPackId ?? ...` — every child is
+  // auto-enrolled in the shared curriculum pack, so that fallback never fires
+  // and a parent-authored week would land in the shared pack rows, visible
+  // alongside curated content. Parent-authored weeks always go to this
+  // family's own school-custom pack; only seed scripts write the shared pack.
+  const packId = await ensureSchoolCustomPack(parent.id);
 
   const week = await createWeek({
     parentUserId: parent.id,
@@ -86,15 +91,15 @@ export async function createWeekAction(
   }
 
   revalidatePath('/parent');
-  revalidatePath('/parent/week/new');
-  redirect(`/parent/week/${week.id}/review`);
+  revalidatePath('/admin/week/new');
+  redirect(`/admin/week/${week.id}/review`);
 }
 
 export async function regenerateCharacterAction(
   weekId: string,
   characterId: string,
 ): Promise<{ error?: string }> {
-  const parent = await assertParent();
+  const parent = await assertAdmin();
   const week = await getWeekOwnedBy(weekId, parent.id);
   if (!week) return { error: 'Week not found' };
 
@@ -116,7 +121,7 @@ export async function regenerateCharacterAction(
     };
   }
 
-  revalidatePath(`/parent/week/${weekId}/review`);
+  revalidatePath(`/admin/week/${weekId}/review`);
   return {};
 }
 
@@ -151,7 +156,7 @@ export async function saveCharacterEditsAction(
   _prev: { error?: string },
   formData: FormData,
 ): Promise<{ error?: string }> {
-  const parent = await assertParent();
+  const parent = await assertAdmin();
   const week = await getWeekOwnedBy(weekId, parent.id);
   if (!week) return { error: 'Week not found' };
 
@@ -198,7 +203,7 @@ export async function saveCharacterEditsAction(
     });
   });
 
-  revalidatePath(`/parent/week/${weekId}/review`);
+  revalidatePath(`/admin/week/${weekId}/review`);
   return {};
 }
 
@@ -214,7 +219,7 @@ export async function listChildWeeks(childId: string) {
 export async function publishWeekAction(
   weekId: string,
 ): Promise<{ error?: string }> {
-  const parent = await assertParent();
+  const parent = await assertAdmin();
   const week = await getWeekOwnedBy(weekId, parent.id);
   if (!week) return { error: 'Week not found' };
   if (week.status !== 'awaiting_review' && week.status !== 'published') {
@@ -235,7 +240,7 @@ export async function publishWeekAction(
     .where(eq(weeks.id, weekId));
 
   revalidatePath('/parent');
-  revalidatePath(`/parent/week/${weekId}/review`);
+  revalidatePath(`/admin/week/${weekId}/review`);
   revalidatePath(`/play/${week.childId}`);
   return {};
 }
@@ -294,9 +299,11 @@ export async function createStageAction(
     };
   }
 
+  await assertAdmin();
   const { parent, child } = await requireChild(parsed.data.childId);
-  const packId =
-    child.currentCurriculumPackId ?? (await ensureSchoolCustomPack(parent.id));
+  // Deliberately NOT `child.currentCurriculumPackId ?? ...` — see the
+  // comment in createWeekAction above; the same reasoning applies here.
+  const packId = await ensureSchoolCustomPack(parent.id);
 
   for (const lesson of lessons) {
     const week = await createWeek({
@@ -322,7 +329,7 @@ export async function createStageAction(
   }
 
   revalidatePath('/parent');
-  redirect('/parent');
+  redirect('/admin');
 }
 
 /**
@@ -333,7 +340,7 @@ export async function createStageAction(
 export async function generateWeekAction(
   weekId: string,
 ): Promise<{ error?: string }> {
-  const parent = await assertParent();
+  const parent = await assertAdmin();
   const week = await getWeekOwnedBy(weekId, parent.id);
   if (!week) return { error: 'Week not found' };
 
@@ -357,6 +364,6 @@ export async function generateWeekAction(
   }
 
   revalidatePath('/parent');
-  revalidatePath(`/parent/week/${weekId}/review`);
-  redirect(`/parent/week/${weekId}/review`);
+  revalidatePath(`/admin/week/${weekId}/review`);
+  redirect(`/admin/week/${weekId}/review`);
 }

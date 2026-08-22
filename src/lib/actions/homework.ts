@@ -139,7 +139,9 @@ export async function updateHomeworkItemAction(
 ): Promise<void> {
   await assertOwnsChildWeek(childId, weekId);
   const config = parseHomeworkConfig(type, rawConfig);
-  await updateHomeworkItem(id, config);
+  // Scoped by (childId, weekId, id) so a parent can never touch another
+  // family's homework row by passing its UUID alongside their own child/week.
+  await updateHomeworkItem(childId, weekId, id, config);
   revalidateHomework(childId, weekId);
 }
 
@@ -149,7 +151,8 @@ export async function deleteHomeworkItemAction(
   id: string,
 ): Promise<void> {
   await assertOwnsChildWeek(childId, weekId);
-  await deleteHomeworkItem(id);
+  // Scoped by (childId, weekId, id) — see updateHomeworkItemAction above.
+  await deleteHomeworkItem(childId, weekId, id);
   revalidateHomework(childId, weekId);
 }
 

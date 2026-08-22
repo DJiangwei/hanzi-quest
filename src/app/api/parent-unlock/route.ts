@@ -11,6 +11,20 @@ import { hashPin, verifyPin, isLocked } from '@/lib/auth/parent-pin';
 
 const COOKIE_MAX_AGE_SECONDS = 15 * 60;
 
+/**
+ * Only same-origin absolute paths. Rejects `//host` and `/\host` —
+ * protocol-relative URLs a browser will happily follow off-site — and any
+ * value carrying a scheme. Falls back to `/parent` for anything else.
+ */
+export function safeNext(next: unknown): string {
+  if (typeof next !== 'string') return '/parent';
+  // The WHATWG URL parser strips ASCII tab/LF/CR before parsing, so
+  // "/\t/evil.example" resolves to "//evil.example" — protocol-relative and
+  // off-site. Strip them before testing, not after.
+  const cleaned = next.replace(/[\t\n\r]/g, '');
+  return /^\/[^/\\]/.test(cleaned) ? cleaned : '/parent';
+}
+
 export async function POST(req: Request): Promise<Response> {
   const { userId } = await auth();
   if (!userId) {
@@ -36,7 +50,7 @@ export async function POST(req: Request): Promise<Response> {
     const hash = await hashPin(pin);
     await setParentPin(userId, hash);
     await setUnlockCookie();
-    return NextResponse.json({ status: 'set', next: body.next ?? '/parent' });
+    return NextResponse.json({ status: 'set', next: safeNext(body.next) });
   }
 
   // Locked?
@@ -56,7 +70,7 @@ export async function POST(req: Request): Promise<Response> {
 
   await clearFailedAttempts(userId);
   await setUnlockCookie();
-  return NextResponse.json({ status: 'ok', next: body.next ?? '/parent' });
+  return NextResponse.json({ status: 'ok', next: safeNext(body.next) });
 }
 
 async function setUnlockCookie(): Promise<void> {
