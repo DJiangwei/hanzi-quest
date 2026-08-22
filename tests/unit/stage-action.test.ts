@@ -140,7 +140,7 @@ describe('createStageAction', () => {
           rawText: '人 口 大\n爸 妈 天\n云 火 水',
         }),
       ),
-    ).rejects.toThrow('__REDIRECT__:/parent');
+    ).rejects.toThrow('__REDIRECT__:/admin');
 
     expect(createWeekMock).toHaveBeenCalledTimes(3);
     expect(createWeekMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
@@ -182,7 +182,7 @@ describe('createStageAction', () => {
           rawText: '人 口 大',
         }),
       ),
-    ).rejects.toThrow('__REDIRECT__:/parent');
+    ).rejects.toThrow('__REDIRECT__:/admin');
 
     expect(ensureSchoolCustomPackMock).toHaveBeenCalledWith('user_p');
     expect(createWeekMock).toHaveBeenCalledWith(

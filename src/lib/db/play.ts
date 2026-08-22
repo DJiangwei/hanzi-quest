@@ -26,15 +26,21 @@ export async function startPlaySession(input: {
 
 export async function endPlaySession(
   sessionId: string,
+  childId: string,
   summary: Record<string, unknown>,
 ): Promise<void> {
+  // Scoped by childId as well as sessionId: sessionId is client-supplied
+  // (from the finish-level action) after a requireChild guard on a
+  // *different* resource — the same shape as the homework IDOR this
+  // mirrors. A session UUID is never exposed to another account, so impact
+  // is negligible, but scoping the UPDATE closes the class cheaply.
   await db
     .update(playSessions)
     .set({
       endedAt: sql`now()`,
       sessionSummary: summary,
     })
-    .where(eq(playSessions.id, sessionId));
+    .where(and(eq(playSessions.id, sessionId), eq(playSessions.childId, childId)));
 }
 
 export interface CompiledLevel {

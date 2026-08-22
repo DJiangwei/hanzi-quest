@@ -25,7 +25,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #2 | Clerk webhook + role guards + repo helpers | `assertParent`, `requireChild`, svix-verified webhook |
 | #3 | Login closed-loop + Children CRUD + scene_templates seed | `/parent` + `/parent/children`; `ensureUserBootstrapped` makes the webhook optional |
 | #4 | AI generation pipeline (single week) + review UI | DeepSeek V4 Pro, per-char regenerate, Zod schemas |
-| #5 | Stage bulk import + DeepSeek switch | `/parent/stage/new` — paste 10 lines → 10 draft weeks |
+| #5 | Stage bulk import + DeepSeek switch | `/parent/stage/new` (moved to `/admin/stage/new` in PR #155) — paste 10 lines → 10 draft weeks |
 | #6 | Phase 3 MVP — playable flashcard map | `/play/[childId]` + first scene, coin balance |
 | #7 | Yinuo placeholder | Replaces Anna in form/example |
 | #8 | Phase 3 full — 4 more scene types + mixed compile | Each level = 14-scene gauntlet |
@@ -198,7 +198,7 @@ After PR #10 ships, this is the smoke path that proves the platform is alive.
 2. Add a child (`Yinuo`, birth_year `2019`). Verify `child_profiles` row exists.
 3. **Class path**: enrol Yinuo in `pirate-class-level-1` (today via `scripts/bind-yinuo-to-pirate-class.ts`; future via a UI picker). `/play/[yinuoId]` shows 10 island nodes — published.
 4. Yinuo plays Lesson 5. 14 scenes: 10 flashcards + audio_pick + visual_pick + image_pick + word_match. Coin balance ticks up live. End screen: `🎉 Island cleared! +X coins`.
-5. **Custom-week path** (still supported): `/parent/stage/new` → paste 10 extra lines → 10 draft weeks. Click *Generate AI* on each (~3 min/week). Review/edit. Publish. Those weeks appear alongside the class pack ones in `/play`.
+5. **Custom-week path** (still supported): `/admin/stage/new` (moved from `/parent/stage/new` in PR #155 — content authoring is `assertAdmin()`-gated) → paste 10 extra lines → 10 draft weeks. Click *Generate AI* on each (~3 min/week). Review/edit. Publish. Those weeks appear alongside the class pack ones in `/play`.
 6. Re-publish an old week. Confirm `week_levels` are recompiled into the new mixed gauntlet (handles upgrade after PR #8 schema/compile changes).
 7. CI: full `pnpm test` (61 vitest cases) + `pnpm build` + `pnpm typecheck` + `pnpm lint` green.
 

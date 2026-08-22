@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CharacterReviewCard } from '@/components/parent/CharacterReviewCard';
 import { PublishWeekButton } from '@/components/parent/PublishWeekButton';
-import { assertParent } from '@/lib/auth/guards';
+import { assertAdmin } from '@/lib/auth/guards';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
 import { getWeekOwnedBy } from '@/lib/db/weeks';
 
@@ -12,14 +12,14 @@ interface PageProps {
 
 export default async function ReviewWeekPage({ params }: PageProps) {
   const { id } = await params;
-  const parent = await assertParent();
+  const parent = await assertAdmin();
   const week = await getWeekOwnedBy(id, parent.id);
   if (!week) notFound();
 
   const chars = await getCharactersWithDetailsForWeek(id);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="font-hanzi text-3xl font-bold tracking-tight text-[var(--color-ocean-900)]">
@@ -92,6 +92,6 @@ export default async function ReviewWeekPage({ params }: PageProps) {
           ))}
         </div>
       )}
-    </main>
+    </div>
   );
 }

@@ -329,7 +329,7 @@ export async function createStageAction(
   }
 
   revalidatePath('/parent');
-  redirect('/parent');
+  redirect('/admin');
 }
 
 /**
