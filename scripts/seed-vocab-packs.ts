@@ -24,12 +24,14 @@ async function main() {
   const { MINIBEASTS } = await import('../src/lib/collections/minibeastsData');
   const { INSTRUMENTS } = await import('../src/lib/collections/instrumentsData');
   const { ANIMALS } = await import('../src/lib/collections/animalsData');
+  const { OLYMPIC_SPORTS } = await import('../src/lib/collections/olympicsData');
 
   const packs: SeedPack[] = [
     { slug: 'transport-v1', name: '交通工具', description: 'Things that go on land, water, and air.', themeColor: '#e8562a', items: TRANSPORT },
     { slug: 'minibeasts-v1', name: '昆虫', description: 'Little bug friends from the garden.', themeColor: '#3fae5a', items: MINIBEASTS },
     { slug: 'instruments-v1', name: '乐器', description: 'Western and Chinese instruments.', themeColor: '#8b5cf6', items: INSTRUMENTS },
     { slug: 'animals-v1', name: '动物', description: 'Pets, woodland, and zoo animals.', themeColor: '#e8893a', items: ANIMALS },
+    { slug: 'olympics-v1', name: '奥运会', description: 'Sports of the Summer Games.', themeColor: '#2f6fd0', items: OLYMPIC_SPORTS },
   ];
 
   for (const p of packs) {
