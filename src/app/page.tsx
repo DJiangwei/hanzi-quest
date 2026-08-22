@@ -39,13 +39,15 @@ export default async function HomePage({
     <main className="flex flex-1 flex-col items-center justify-center gap-8 bg-[var(--color-sand-50)] px-6 py-12 text-center">
       <div className="flex flex-col items-center gap-3">
         <span className="rounded-full bg-[var(--color-ocean-100)] px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-ocean-700)]">
-          Weekly characters, made playable
+          Chinese characters, made playable
         </span>
         <h1 className="font-hanzi text-6xl font-bold tracking-tight text-[var(--color-ocean-900)]">
           Hanzi Quest
         </h1>
         <p className="max-w-md text-base text-[var(--color-sand-700)]">
-          Make your school&apos;s weekly characters playable.
+          A pirate adventure that turns Chinese characters into games. Ten
+          islands, boss battles, and a backpack of cards to collect — ready to
+          play the moment you add your child.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-3">
