@@ -158,6 +158,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #150 | fix(boss): drop pinyin `visual_pick` from both gauntlets; final boss shows pictures | |
 | #151 | fix(play): bossless weeks deadlocked gating — week 10 locked, final boss + vault unreachable | |
 | #152 | feat(play): `BOSS_MIN_CHARS` 10 → 8 so Map 1's 8-char weeks 9 + 10 get real bosses | |
+| #153 | fix(final-boss): map slug lookup hit the wrong table — final boss unreachable | |
 | #154 | feat(packs): `olympics-v1` collectible pack — 20 cards across 4 groups | |
 
 ### Next up
