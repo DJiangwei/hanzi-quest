@@ -7,12 +7,13 @@ vi.mock('@/lib/auth/guards', () => ({
   })),
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-const getPackBySlug = vi.fn<(...a: unknown[]) => unknown>(async () => ({
+const getSharedCurriculumPackBySlug = vi.fn<(...a: unknown[]) => unknown>(async () => ({
   id: 'pk',
   slug: 'pirate-class-level-1',
 }));
-vi.mock('@/lib/db/collections', () => ({
-  getPackBySlug: (...a: unknown[]) => getPackBySlug(...a),
+vi.mock('@/lib/db/curriculum', () => ({
+  getSharedCurriculumPackBySlug: (...a: unknown[]) =>
+    getSharedCurriculumPackBySlug(...a),
 }));
 const isMapFullyCleared = vi.fn<(...a: unknown[]) => unknown>(async () => true);
 const recordFinalBossClear = vi.fn<(...a: unknown[]) => unknown>(async () => ({

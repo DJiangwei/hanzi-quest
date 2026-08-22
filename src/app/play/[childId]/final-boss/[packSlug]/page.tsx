@@ -1,7 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { requireChild } from '@/lib/auth/guards';
-import { getPackBySlug } from '@/lib/db/collections';
-import { getPackMeta } from '@/lib/collections/packRegistry';
+import { getSharedCurriculumPackBySlug } from '@/lib/db/curriculum';
 import { isMapFullyCleared } from '@/lib/db/final-boss';
 import { listChildPlayableWeeks } from '@/lib/db/weeks';
 import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
@@ -16,8 +15,9 @@ export default async function FinalBossPage({ params }: PageProps) {
   const { childId, packSlug } = await params;
   await requireChild(childId);
 
-  const pack = await getPackBySlug(packSlug);
-  const meta = getPackMeta(packSlug);
+  // A map slug lives in curriculum_packs, NOT collection_packs — see the helper's
+  // docstring. Using the collectible lookup here made every final boss 404.
+  const pack = await getSharedCurriculumPackBySlug(packSlug);
   if (!pack) notFound();
 
   if (!(await isMapFullyCleared(childId, pack.id))) {
@@ -61,8 +61,12 @@ export default async function FinalBossPage({ params }: PageProps) {
       <FinalBossRunner
         childId={childId}
         packSlug={packSlug}
-        mapNameZh={meta?.displayNameZh ?? pack.name}
-        mapNameEn={meta?.displayNameEn ?? pack.name}
+        // curriculum_packs carries bilingual names; `name` is the internal class
+        // label (not display copy) and is only a last-resort fallback for older
+        // rows whose bilingual columns were never backfilled (see the PR #40
+        // fallback pattern).
+        mapNameZh={pack.nameZh ?? pack.name}
+        mapNameEn={pack.nameEn ?? pack.name}
         phases={phases}
       />
     </main>

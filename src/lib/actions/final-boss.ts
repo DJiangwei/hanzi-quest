@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { requireChild } from '@/lib/auth/guards';
-import { getPackBySlug } from '@/lib/db/collections';
+import { getSharedCurriculumPackBySlug } from '@/lib/db/curriculum';
 import {
   isMapFullyCleared,
   recordFinalBossClear,
@@ -28,7 +28,9 @@ export async function finishFinalBossAction(
   const parsed = Schema.parse(input);
   const { child } = await requireChild(parsed.childId);
 
-  const pack = await getPackBySlug(parsed.packSlug);
+  // A map slug lives in curriculum_packs, NOT collection_packs — see the helper's
+  // docstring. Using the collectible lookup here made every final boss throw.
+  const pack = await getSharedCurriculumPackBySlug(parsed.packSlug);
   if (!pack) throw new Error('Map not found');
 
   const cleared = await isMapFullyCleared(child.id, pack.id);
