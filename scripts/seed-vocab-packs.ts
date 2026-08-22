@@ -1,5 +1,5 @@
 /**
- * Seed the 4 themed vocab packs (transport / minibeasts / instruments / animals).
+ * Seed the 5 themed vocab packs (transport / minibeasts / instruments / animals / olympics).
  * Idempotent: upserts each pack by slug (active, gacha_eligible=true) and inserts
  * only missing collectible_items. Emoji stored verbatim in image_url as the text
  * fallback (overwritten later by the CF art generator).

@@ -1,15 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { getPackMeta } from '@/lib/collections/packRegistry';
+import { getPackMeta, PACK_REGISTRY } from '@/lib/collections/packRegistry';
 
 describe('vocab pack registry entries', () => {
-  it.each(['transport-v1', 'minibeasts-v1', 'instruments-v1', 'animals-v1', 'olympics-v1'])(
+  it.each(Object.keys(PACK_REGISTRY))(
     '%s has bilingual names + an ItemCard + reveal emoji',
     (slug) => {
       const meta = getPackMeta(slug);
       expect(meta).toBeTruthy();
       expect(meta!.displayNameZh && meta!.displayNameEn).toBeTruthy();
+      expect(meta!.sloganZh && meta!.sloganEn).toBeTruthy();
       expect(meta!.ItemCard).toBeTypeOf('function');
-      expect(meta!.resolveRevealEmoji).toBeTypeOf('function');
+      if (slug === 'zodiac-v1') {
+        // zodiac-v1 deliberately has no resolveRevealEmoji: CardChestReveal
+        // renders it via ZodiacIcon (emoji={null}) instead of resolving a
+        // glyph. Every other registered pack must define one.
+        expect(meta!.resolveRevealEmoji).toBeUndefined();
+      } else {
+        expect(meta!.resolveRevealEmoji).toBeTypeOf('function');
+      }
     },
   );
   it('transport + instruments are grouped; minibeasts + animals are flat', () => {
