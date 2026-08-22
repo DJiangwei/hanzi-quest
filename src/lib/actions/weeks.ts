@@ -58,8 +58,12 @@ export async function createWeekAction(
   await assertAdmin();
   const { parent, child } = await requireChild(parsed.data.childId);
 
-  const packId =
-    child.currentCurriculumPackId ?? (await ensureSchoolCustomPack(parent.id));
+  // Deliberately NOT `child.currentCurriculumPackId ?? ...` — every child is
+  // auto-enrolled in the shared curriculum pack, so that fallback never fires
+  // and a parent-authored week would land in the shared pack rows, visible
+  // alongside curated content. Parent-authored weeks always go to this
+  // family's own school-custom pack; only seed scripts write the shared pack.
+  const packId = await ensureSchoolCustomPack(parent.id);
 
   const week = await createWeek({
     parentUserId: parent.id,
@@ -297,8 +301,9 @@ export async function createStageAction(
 
   await assertAdmin();
   const { parent, child } = await requireChild(parsed.data.childId);
-  const packId =
-    child.currentCurriculumPackId ?? (await ensureSchoolCustomPack(parent.id));
+  // Deliberately NOT `child.currentCurriculumPackId ?? ...` — see the
+  // comment in createWeekAction above; the same reasoning applies here.
+  const packId = await ensureSchoolCustomPack(parent.id);
 
   for (const lesson of lessons) {
     const week = await createWeek({

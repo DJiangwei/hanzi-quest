@@ -58,7 +58,7 @@ vi.mock('@/lib/ai/generate-content', () => ({
   regenerateCharacter: vi.fn(),
 }));
 
-import { createStageAction, generateWeekAction } from '@/lib/actions/weeks';
+import { createWeekAction, createStageAction, generateWeekAction } from '@/lib/actions/weeks';
 
 const parentRow = { id: 'user_p', email: 'p@b.com', role: 'parent' as const };
 const childRow = {
@@ -151,6 +151,77 @@ describe('createStageAction', () => {
       label: 'Stage A 3',
     }));
     expect(linkWeekCharactersMock).toHaveBeenCalledTimes(3);
+  });
+
+  // Fix B (Finding 5, MEDIUM): a child is always auto-enrolled in the shared
+  // curriculum pack, so `child.currentCurriculumPackId ?? ensureSchoolCustomPack(...)`
+  // never fell through to the family pack. Assert the shared pack id is never
+  // used even though it's present on the child row.
+  it('authors weeks into the school-custom pack, never the child current (shared) pack', async () => {
+    requireChildMock.mockResolvedValue({
+      parent: parentRow,
+      child: { ...childRow, currentCurriculumPackId: 'shared_pack_1' },
+    });
+    ensureSchoolCustomPackMock.mockResolvedValue('school_custom_pack_1');
+    let createdCount = 0;
+    createWeekMock.mockImplementation(async () => ({
+      id: `week_${++createdCount}`,
+      label: '...',
+    }));
+    upsertSimplifiedCharacterMock.mockImplementation(async (input) => ({
+      id: `char_${input.hanzi}`,
+      hanzi: input.hanzi,
+    }));
+
+    await expect(
+      createStageAction(
+        {},
+        fd({
+          childId: '11111111-2222-4333-a444-555555555555',
+          labelPrefix: 'Stage A',
+          rawText: '人 口 大',
+        }),
+      ),
+    ).rejects.toThrow('__REDIRECT__:/parent');
+
+    expect(ensureSchoolCustomPackMock).toHaveBeenCalledWith('user_p');
+    expect(createWeekMock).toHaveBeenCalledWith(
+      expect.objectContaining({ curriculumPackId: 'school_custom_pack_1' }),
+    );
+    expect(createWeekMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ curriculumPackId: 'shared_pack_1' }),
+    );
+  });
+});
+
+describe('createWeekAction', () => {
+  it('authors the week into the school-custom pack, never the child current (shared) pack', async () => {
+    requireChildMock.mockResolvedValue({
+      parent: parentRow,
+      child: { ...childRow, currentCurriculumPackId: 'shared_pack_1' },
+    });
+    ensureSchoolCustomPackMock.mockResolvedValue('school_custom_pack_1');
+    createWeekMock.mockResolvedValue({ id: 'week_1', label: 'Week 1' });
+    generateWeekContentMock.mockResolvedValue({});
+
+    await expect(
+      createWeekAction(
+        {},
+        fd({
+          childId: '11111111-2222-4333-a444-555555555555',
+          label: 'Week 1',
+          rawChars: '人口大',
+        }),
+      ),
+    ).rejects.toThrow('__REDIRECT__:/admin/week/week_1/review');
+
+    expect(ensureSchoolCustomPackMock).toHaveBeenCalledWith('user_p');
+    expect(createWeekMock).toHaveBeenCalledWith(
+      expect.objectContaining({ curriculumPackId: 'school_custom_pack_1' }),
+    );
+    expect(createWeekMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ curriculumPackId: 'shared_pack_1' }),
+    );
   });
 });
 
