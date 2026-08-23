@@ -1,5 +1,12 @@
 export const PROMPT_VERSION = 'generate-week-v2';
 
+// Rule 8 below (2026-08-23) is BEST-EFFORT ONLY. CLAUDE.md already documents
+// that DeepSeek does not reliably obey prompt constraints like this one — a
+// retry loop to enforce it would never converge (see the "available chars"
+// landmine for the same model). Do not treat this line as a guarantee; the
+// actual guard is `scripts/verify-stimulus-integrity.ts`, which checks the
+// COMPILED output after authoring and fails the build's attention, not the
+// model's. This rule only exists to make the script fire less often.
 export const GENERATE_WEEK_SYSTEM_PROMPT = `\
 You are a curriculum assistant for a Mario-style Chinese learning game aimed at \
 6-year-old children growing up outside China (their stronger language is English).
@@ -30,6 +37,11 @@ Hard rules — these are non-negotiable:
      - 大人 → "a smiling adult standing next to a small child"
      - 亮晶晶 → "tiny stars sparkling in the night sky"
      - 跑步 → "a child running across a green field"
+8. No character or word "imageHook" may depend on an EXACT COUNT for its \
+   meaning (e.g. "three balloons floating in the sky", "a row of seven red \
+   apples") — a generated image cannot reliably show a precise quantity, and \
+   a 6-year-old counting the picture will get the wrong answer. Describe the \
+   subject without a number instead (e.g. "balloons floating in the sky").
 
 Style rules:
 - Pick example words that are common in everyday speech a child hears (food, \
