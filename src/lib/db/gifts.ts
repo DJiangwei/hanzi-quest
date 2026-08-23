@@ -1,8 +1,15 @@
 // NEVER import this file from client code. It pulls in postgres.
-import { and, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { cardGifts, childCollections } from '@/db/schema/collections';
+import {
+  cardGifts,
+  childCollections,
+  collectibleItems,
+  collectionPacks,
+} from '@/db/schema/collections';
 import type { Tx } from '@/lib/db/grants';
+import { nicknameFor } from '@/lib/crew/nickname';
+import type { RevealCard } from '@/lib/play/reveal-card';
 import {
   GIFTS_PER_SENDER_PER_DAY,
   GIFTS_RECEIVED_PER_DAY,
@@ -170,4 +177,77 @@ export async function giftCardInTx(
   await tx.insert(cardGifts).values({ fromChildId, toChildId, itemId, dayUtc });
 
   return { ok: true, itemId };
+}
+
+/** An unseen gift, with everything the reveal needs and nothing more. */
+export interface UnseenGift {
+  giftId: string;
+  /** The giver's generated pirate nickname. NEVER their displayName. */
+  from: { zh: string; en: string };
+  card: RevealCard;
+}
+
+/**
+ * Gifts that have arrived but not yet been opened.
+ *
+ * The card already transferred inside `giftCardInTx` — this queue exists only so
+ * the recipient gets a moment of ceremony rather than silently finding a new
+ * card in their Backpack. `seen_at` is stamped when they open the chest.
+ *
+ * The giver is identified by `nicknameFor(from_child_id)` alone. Their real name
+ * is never selected, never joined, and cannot reach the payload — the same
+ * contract `listCrewMates` holds.
+ */
+export async function listUnseenGifts(childId: string): Promise<UnseenGift[]> {
+  const rows = await db
+    .select({
+      giftId: cardGifts.id,
+      fromChildId: cardGifts.fromChildId,
+      itemId: collectibleItems.id,
+      slug: collectibleItems.slug,
+      packSlug: collectionPacks.slug,
+      nameZh: collectibleItems.nameZh,
+      nameEn: collectibleItems.nameEn,
+      loreZh: collectibleItems.loreZh,
+      loreEn: collectibleItems.loreEn,
+    })
+    .from(cardGifts)
+    .innerJoin(collectibleItems, eq(collectibleItems.id, cardGifts.itemId))
+    .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
+    .where(and(eq(cardGifts.toChildId, childId), isNull(cardGifts.seenAt)))
+    .orderBy(asc(cardGifts.sentAt));
+
+  return rows.map((r) => ({
+    giftId: r.giftId,
+    from: nicknameFor(r.fromChildId),
+    card: {
+      id: r.itemId,
+      slug: r.slug,
+      packSlug: r.packSlug,
+      nameZh: r.nameZh,
+      nameEn: r.nameEn,
+      loreZh: r.loreZh,
+      loreEn: r.loreEn,
+      // A gift is always a card the recipient did not own — giftCardInTx
+      // rejects `already_owned` — so it is never a duplicate, and shards are
+      // not part of this path.
+      isDupe: false,
+      shardsAfter: 0,
+    },
+  }));
+}
+
+/** Stamp gifts as opened. Scoped by childId so a caller cannot clear another's. */
+export async function markGiftsSeen(childId: string, giftIds: string[]): Promise<void> {
+  if (giftIds.length === 0) return;
+  await db
+    .update(cardGifts)
+    .set({ seenAt: new Date() })
+    .where(
+      and(
+        eq(cardGifts.toChildId, childId),
+        inArray(cardGifts.id, giftIds),
+        isNull(cardGifts.seenAt),
+      ),
+    );
 }

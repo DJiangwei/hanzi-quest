@@ -51,7 +51,11 @@ describe('trust-caller endpoints are not exported from use-server action files',
 describe('crew gifting is gated at the GIVER (the second cross-account write)', () => {
   // Pinned so a newly added export can't slip past the per-function gate
   // check below — same reasoning as EXPECTED_WEEKS_EXPORTS.
-  const EXPECTED_CREW_EXPORTS = ['giftCardAction'];
+  // markGiftsSeenAction joined in Task 7. It writes only to rows the
+  // recipient already owns, but it is listed here on purpose: the point of
+  // pinning the set is that a NEW export cannot appear without someone
+  // consciously adding it and thereby confirming its gate.
+  const EXPECTED_CREW_EXPORTS = ['giftCardAction', 'markGiftsSeenAction'];
 
   it('crew.ts exports exactly the expected action set', () => {
     const src = read('src/lib/actions/crew.ts');

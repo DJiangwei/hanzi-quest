@@ -29,7 +29,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { requireChild } from '@/lib/auth/guards';
 import { childExists } from '@/lib/db/crew';
-import { giftCardInTx } from '@/lib/db/gifts';
+import { giftCardInTx, markGiftsSeen } from '@/lib/db/gifts';
 import { todayUtcIso } from '@/lib/db/streaks';
 
 export type GiftActionOutcome =
@@ -94,4 +94,25 @@ export async function giftCardAction(
   // from the id it supplied). The result must never become an oracle for
   // probing another family's account.
   return outcome;
+}
+
+const SeenSchema = z.object({
+  childId: z.string().min(1),
+  giftIds: z.array(z.string().min(1)).max(20),
+});
+
+/**
+ * Stamp opened gifts as seen so they stop reappearing on the home render.
+ *
+ * `requireChild` proves the caller owns the RECIPIENT, and `markGiftsSeen`
+ * scopes its UPDATE by that verified child id as well — so a caller cannot
+ * clear somebody else's inbox even by supplying their gift ids.
+ */
+export async function markGiftsSeenAction(
+  input: z.input<typeof SeenSchema>,
+): Promise<void> {
+  const parsed = SeenSchema.parse(input);
+  const { child } = await requireChild(parsed.childId);
+  await markGiftsSeen(child.id, parsed.giftIds);
+  revalidatePath(`/play/${child.id}`);
 }
