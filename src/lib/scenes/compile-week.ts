@@ -1,7 +1,10 @@
 import { and, eq, notInArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { sceneTemplates, weekLevels } from '@/db/schema';
-import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
+import {
+  getCharactersWithDetailsForWeek,
+  type CharacterWithDetails,
+} from '@/lib/db/characters';
 import type {
   AudioPickConfig,
   BossConfig,
@@ -16,6 +19,11 @@ import type {
 } from './configs';
 import { BOSS_LEVEL_KEY, BOSS_MAX_QUESTIONS, BOSS_MIN_CHARS } from './configs';
 import { shuffle } from './sample';
+import {
+  isCountingChar,
+  validStimulusWords,
+  type StimulusCandidate,
+} from './stimulus-validity';
 
 type AnyConfig =
   | FlashcardConfig
@@ -121,21 +129,53 @@ export async function compileWeekIntoLevels(weekId: string): Promise<number> {
     const imageId = tmplByType.get('image_pick');
     const usedCharIds = new Set<string>();
 
-    // image_pick (看图找字): N distinct chars. Runtime shows a picture from one of
-    // the char's words and asks which character it is. Prefer chars that have a
-    // word to picture; fall back to any char (the scene degrades to the imageHook
-    // text card when no word image exists).
+    // image_pick (看图找字): N distinct chars. Runtime shows a picture and asks
+    // which character it depicts. Stimulus validity (2026-08-23 fix — see
+    // docs/superpowers/specs/2026-08-23-image-stimulus-validity-design.md):
+    // a target is eligible when it's a counting character (一...十; Task 3
+    // renders those procedurally, never a diffusion word) OR it owns at
+    // least one word that's imaged AND not shared with another character
+    // taught this same week (validStimulusWords — an ambiguous word like
+    // 唱歌, owned by both 唱 and 歌, could pair with a distractor drawn from
+    // the same week's pool and leave the scene with no correct answer).
+    // `wordOwners` is built once from the FULL word set — ownership is a
+    // property of the whole week, not of whichever character is asking.
     if (sizing.imagePick > 0 && imageId) {
-      const eligible = chars.filter((c) => c.words.length > 0);
+      const wordOwners = buildWordOwners(chars);
+      const eligible = chars.filter(
+        (c) =>
+          isCountingChar(c.hanzi) ||
+          validStimulusWords(c.hanzi, toStimulusCandidates(c), wordOwners)
+            .length > 0,
+      );
+      // Falling back to the full pool mirrors the OLD "no word data at all"
+      // degradation: compile with just characterId, and pickStimulusImage /
+      // ImagePickScene fall through to the imageHook text card at render
+      // time. Measured against the real corpus this path never fires — all
+      // 86 non-number characters keep >=1 valid word — so treat it as
+      // resilience for incomplete data, not the expected case.
       const picks = shuffle(eligible.length > 0 ? eligible : chars).slice(
         0,
         sizing.imagePick,
       );
       picks.forEach((target, i) => {
         usedCharIds.add(target.id);
+        // Counting characters never pick a word (validStimulusWords always
+        // returns [] for them, by construction); a target the fallback
+        // above swept in without a valid word compiles the same way.
+        const validWords = isCountingChar(target.hanzi)
+          ? []
+          : validStimulusWords(
+              target.hanzi,
+              toStimulusCandidates(target),
+              wordOwners,
+            );
+        const chosen = validWords.length > 0 ? pickRandom(validWords) : null;
         push(
           imageId,
-          { characterId: target.id },
+          chosen
+            ? { characterId: target.id, wordId: chosen.wordId }
+            : { characterId: target.id },
           'sight',
           `practice:image_pick:${i}`,
         );
@@ -323,4 +363,30 @@ function pickRandom<T>(arr: T[]): T {
 function sampleN<T>(arr: T[], n: number): T[] {
   if (arr.length <= n) return shuffle(arr);
   return shuffle(arr).slice(0, n);
+}
+
+/**
+ * word TEXT -> the set of this week's hanzi that own it. Powers
+ * `validStimulusWords`'s ambiguity check: a word linked to two characters
+ * taught the same week (唱歌 -> 唱/歌, 多少 -> 多/少, 大人 -> 人/大, ...)
+ * can't identify either one uniquely as an image_pick stimulus. Built once
+ * per compile from ALL of the week's words, not just image_pick's own
+ * candidates — ownership is a property of the whole week.
+ */
+function buildWordOwners(
+  chars: CharacterWithDetails[],
+): Map<string, Set<string>> {
+  const owners = new Map<string, Set<string>>();
+  for (const c of chars) {
+    for (const w of c.words) {
+      const set = owners.get(w.text) ?? new Set<string>();
+      set.add(c.hanzi);
+      owners.set(w.text, set);
+    }
+  }
+  return owners;
+}
+
+function toStimulusCandidates(c: CharacterWithDetails): StimulusCandidate[] {
+  return c.words.map((w) => ({ wordId: w.id, text: w.text, imageUrl: w.imageUrl }));
 }

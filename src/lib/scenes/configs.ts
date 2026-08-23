@@ -35,6 +35,14 @@ export type VisualPickConfig = z.infer<typeof VisualPickConfigSchema>;
 
 export const ImagePickConfigSchema = z.object({
   characterId: z.string().uuid(),
+  // The stimulus word compile-week chose for this target (validStimulusWords,
+  // stimulus-validity.ts) — replaces the old render-time "first word with a
+  // URL" guess. OPTIONAL, not required: rows compiled before the recompile
+  // that shipped this field have no wordId at all and must keep validating
+  // until scripts/recompile-all-weeks.ts runs post-merge. Absent for a
+  // counting character (一...十) too — those render a procedural counting
+  // card, never a compiled word's picture.
+  wordId: z.string().uuid().optional(),
   ...withSegment,
 });
 export type ImagePickConfig = z.infer<typeof ImagePickConfigSchema>;
