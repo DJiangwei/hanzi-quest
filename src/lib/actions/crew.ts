@@ -40,9 +40,10 @@ export type GiftActionOutcome =
         | 'no_duplicate'
         | 'already_owned'
         | 'send_cap_reached'
+        | 'already_gifted_today'
         | 'receive_cap_reached'
         | 'self_gift'
-        // The five above come straight from `giftCardInTx`; this one is the
+        // The six above come straight from `giftCardInTx`; this one is the
         // action's alone — the transaction never sees an unknown recipient.
         | 'recipient_not_found';
     };

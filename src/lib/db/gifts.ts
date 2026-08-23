@@ -3,6 +3,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { cardGifts, childCollections } from '@/db/schema/collections';
 import type { Tx } from '@/lib/db/grants';
 import {
+  GIFTS_PER_SENDER_PER_DAY,
   GIFTS_RECEIVED_PER_DAY,
   GIFTS_SENT_PER_DAY,
 } from '@/lib/crew/gift-config';
@@ -15,6 +16,7 @@ export type GiftOutcome =
         | 'no_duplicate'
         | 'already_owned'
         | 'send_cap_reached'
+        | 'already_gifted_today'
         | 'receive_cap_reached'
         | 'self_gift';
     };
@@ -85,7 +87,31 @@ export async function giftCardInTx(
     return { ok: false, reason: 'send_cap_reached' };
   }
 
-  // 5. Recipient's receive cap for the day.
+  // 5a. Per-sender cap: how many THIS sender has already given THIS
+  //     recipient today. This — not the global backstop below — is the
+  //     check that actually stops a crew funnelling every duplicate into
+  //     one collection, because it bounds each sender individually rather
+  //     than the recipient's inbox as a whole. A global-only cap let one
+  //     generous child consume the slots a different child's friend needed,
+  //     blocking the very exchange the feature exists to create.
+  const fromSenderTodayRows = await tx
+    .select({ count: sql<number>`count(*)` })
+    .from(cardGifts)
+    .where(
+      and(
+        eq(cardGifts.toChildId, toChildId),
+        eq(cardGifts.fromChildId, fromChildId),
+        eq(cardGifts.dayUtc, dayUtc),
+      ),
+    );
+  const fromSenderToday = Number(fromSenderTodayRows[0]?.count ?? 0);
+  if (fromSenderToday >= GIFTS_PER_SENDER_PER_DAY) {
+    return { ok: false, reason: 'already_gifted_today' };
+  }
+
+  // 5b. Global backstop: absolute inflow ceiling regardless of who's
+  //     sending. Not the primary defence (see 5a) — just a ceiling for a
+  //     larger crew than we expect today.
   const receivedRows = await tx
     .select({ count: sql<number>`count(*)` })
     .from(cardGifts)
