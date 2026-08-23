@@ -50,9 +50,27 @@ function hash(input: string, seed: number): number {
   return h >>> 0;
 }
 
+/**
+ * murmur3 fmix32 — a final avalanche.
+ *
+ * FNV-1a's low bits are weak: its last step is a multiply, and a product's low
+ * bits depend only on its inputs' low bits. `% 12` reads exactly those bits, and
+ * since both axes hash the same string with only the seed differing, their low
+ * bits stayed correlated — only 36 of the 144 possible names were reachable.
+ * Avalanching first makes the two axes genuinely independent.
+ */
+function fmix32(h: number): number {
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return h >>> 0;
+}
+
 export function nicknameFor(childId: string): { zh: string; en: string } {
-  const q = QUALITIES[hash(childId, 0) % QUALITIES.length]!;
-  const r = ROLES[hash(childId, 0x9e3779b9) % ROLES.length]!;
+  const q = QUALITIES[fmix32(hash(childId, 0)) % QUALITIES.length]!;
+  const r = ROLES[fmix32(hash(childId, 0x9e3779b9)) % ROLES.length]!;
   // 红帆船长 / Captain Redsail — ZH is quality+role, EN reads role-first.
   return { zh: `${q.zh}${r.zh}`, en: `${r.en} ${q.en}` };
 }
