@@ -54,6 +54,8 @@ import { TravelingMerchant } from '@/components/play/TravelingMerchant';
 import { getMerchantOffer, hasBoughtMerchantToday } from '@/lib/db/merchant';
 import { WantedPosters } from '@/components/play/WantedPosters';
 import { generateDailyBounties, listTodayBounties } from '@/lib/db/bounties';
+import { listUnseenGifts } from '@/lib/db/gifts';
+import { GiftInbox } from '@/components/play/GiftInbox';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -221,10 +223,14 @@ export default async function PlayHomePage({ params }: PageProps) {
     generateDailyQuests(child.id, questCtx),
     generateDailyBounties(child.id, todayIso),
   ]);
-  const [todayQuests, chestClaimed, bounties] = await Promise.all([
+  const [todayQuests, chestClaimed, bounties, unseenGifts] = await Promise.all([
     getTodayQuests(child.id),
     getDailyChestClaimed(child.id),
     listTodayBounties(child.id, todayIso),
+    // Gifts already transferred when they were sent; this is the unopened
+    // queue. Picked up on the home render — the same place quests and bounties
+    // are — because the giver's revalidatePath only refreshes the GIVER.
+    listUnseenGifts(child.id),
   ]);
 
   const allDone =
@@ -339,6 +345,10 @@ export default async function PlayHomePage({ params }: PageProps) {
       />
 
       <SeasonBanner childId={childId} state={seasonBanner} />
+
+      {/* Unopened gifts from crewmates. Rendered here so the chest is the
+          first thing the child meets on arriving home. */}
+      <GiftInbox childId={childId} gifts={unseenGifts} />
       </div>
 
       {/* Map pane — right on lg, below the HUD on phones */}

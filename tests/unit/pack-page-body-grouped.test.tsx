@@ -11,6 +11,12 @@ vi.mock('@/lib/actions/gacha', () => ({
     .mockResolvedValue({ ok: true, shardsRemaining: 2, continentTrophies: [] }),
 }));
 
+// PackPageBody's CardDetailDialog mounts GiftDialog, which imports
+// `giftCardAction` from a 'use server' file that transitively pulls in
+// `@/db` + `next/cache`. Mock it directly — see the note in
+// card-detail-dialog.test.tsx.
+vi.mock('@/lib/actions/crew', () => ({ giftCardAction: vi.fn() }));
+
 import { PackPageBody } from '@/components/play/PackPageBody';
 import type { CollectibleItem } from '@/lib/db/collections';
 
@@ -48,6 +54,9 @@ describe('PackPageBody grouped render', () => {
         ownedItems={[{ ...items[0], count: 1, firstObtainedAt: new Date() }]}
         balance={0}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     // Headers are <h2>; the per-card continent badge also shows the zh name,
@@ -71,6 +80,9 @@ describe('PackPageBody grouped render', () => {
         ownedItems={[]}
         balance={0}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     const asia = screen.getByTestId('pack-section-asia');
@@ -91,6 +103,9 @@ describe('PackPageBody grouped render', () => {
         ownedItems={[]}
         balance={0}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     const nav = screen.getByTestId('continent-nav');
@@ -114,6 +129,9 @@ describe('PackPageBody grouped render', () => {
         ownedItems={[]}
         balance={0}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     screen.getByTestId('continent-nav-europe').click();
@@ -131,6 +149,9 @@ describe('PackPageBody grouped render', () => {
         ownedItems={[]}
         balance={0}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.getByTestId('pack-grid-with-badges')).toBeInTheDocument();

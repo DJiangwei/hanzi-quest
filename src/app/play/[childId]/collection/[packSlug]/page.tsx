@@ -7,7 +7,10 @@ import {
   listChildCollection,
   listPackItems,
 } from '@/lib/db/collections';
+import { listCrewMates, listCrewOwnershipForPack } from '@/lib/db/crew';
+import { countGiftsSentToday } from '@/lib/db/gifts';
 import { getGlobalShards } from '@/lib/db/grants';
+import { todayUtcIso } from '@/lib/db/streaks';
 import { PackPageBody } from '@/components/play/PackPageBody';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 
@@ -28,14 +31,20 @@ export default async function PackPage({ params }: PageProps) {
   const meta = getPackMeta(packSlug);
   if (!pack || !meta) notFound();
 
-  const [items, owned, balance, shardCount] = await Promise.all([
+  const [items, owned, balance, shardCount, crew, giftsSentToday] = await Promise.all([
     listPackItems(pack.id),
     listChildCollection(childId, pack.id),
     getCoinBalance(childId),
     getGlobalShards(childId),
+    listCrewMates(childId),
+    countGiftsSentToday(childId, todayUtcIso()),
   ]);
 
   const ownedItemIds = owned.map((o) => o.id);
+  const ownersByItem = await listCrewOwnershipForPack(
+    pack.id,
+    crew.map((m) => m.childId),
+  );
 
   return (
     <main className="flex flex-1 flex-col items-center gap-4 p-6">
@@ -47,6 +56,9 @@ export default async function PackPage({ params }: PageProps) {
         ownedItems={owned}
         balance={balance.balance}
         shardCount={shardCount}
+        crew={crew}
+        ownersByItem={ownersByItem}
+        giftsSentToday={giftsSentToday}
       />
     </main>
   );

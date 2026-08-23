@@ -3,6 +3,13 @@ import { render, screen } from '@testing-library/react';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock('@/lib/actions/gacha', () => ({ swapShardsForItem: vi.fn(), convertDuplicateToShard: vi.fn() }));
+// PackPageBody's CardDetailDialog mounts GiftDialog, which imports
+// `giftCardAction` from a 'use server' file that transitively pulls in
+// `@/db` + `next/cache`. Mock it directly — see the note in
+// card-detail-dialog.test.tsx.
+vi.mock('@/lib/actions/crew', () => ({ giftCardAction: vi.fn() }));
+
+const NO_GIFTING = { crew: [], ownersByItem: {}, giftsSentToday: 0 };
 
 import { PackPageBody } from '@/components/play/PackPageBody';
 import type { CollectibleItem } from '@/lib/db/collections';
@@ -14,13 +21,13 @@ const items = ['a', 'b', 'c', 'd'].map(item);
 
 describe('PackPageBody study button', () => {
   it('shows the 学习 CTA enabled when ≥3 owned', () => {
-    render(<PackPageBody childId="c1" packSlug="animals-v1" items={items} ownedItemIds={['a', 'b', 'c']} ownedItems={[]} balance={0} shardCount={0} />);
+    render(<PackPageBody childId="c1" packSlug="animals-v1" items={items} ownedItemIds={['a', 'b', 'c']} ownedItems={[]} balance={0} shardCount={0} {...NO_GIFTING} />);
     const btn = screen.getByTestId('study-cta');
     expect(btn).toBeEnabled();
     expect(btn).toHaveTextContent(/学习/);
   });
   it('shows the collect-3 hint when fewer than 3 owned', () => {
-    render(<PackPageBody childId="c1" packSlug="animals-v1" items={items} ownedItemIds={['a']} ownedItems={[]} balance={0} shardCount={0} />);
+    render(<PackPageBody childId="c1" packSlug="animals-v1" items={items} ownedItemIds={['a']} ownedItems={[]} balance={0} shardCount={0} {...NO_GIFTING} />);
     expect(screen.getByTestId('study-cta')).toBeDisabled();
     expect(screen.getByText(/收集 3 张/)).toBeInTheDocument();
   });

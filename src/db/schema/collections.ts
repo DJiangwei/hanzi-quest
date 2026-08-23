@@ -122,3 +122,35 @@ export const festivalChallengeClaims = pgTable(
   },
   (t) => [primaryKey({ columns: [t.childId, t.monthKey] })],
 );
+
+/**
+ * Peer-to-peer card gifts (crew gifting, 2026-08-23). Doubles as the ledger AND
+ * the unseen-notification queue: the card transfers immediately inside the
+ * gifting tx, and `seen_at` is stamped when the recipient opens the chest.
+ *
+ * `day_utc` is denormalised rather than derived from `sent_at` so the two daily
+ * cap checks are plain index scans — same shape as `child_card_grants_daily`.
+ */
+export const cardGifts = pgTable(
+  'card_gifts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    fromChildId: uuid('from_child_id')
+      .notNull()
+      .references(() => childProfiles.id, { onDelete: 'cascade' }),
+    toChildId: uuid('to_child_id')
+      .notNull()
+      .references(() => childProfiles.id, { onDelete: 'cascade' }),
+    itemId: uuid('item_id')
+      .notNull()
+      .references(() => collectibleItems.id, { onDelete: 'cascade' }),
+    dayUtc: text('day_utc').notNull(),
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+    seenAt: timestamp('seen_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('card_gifts_to_unseen_idx').on(t.toChildId, t.seenAt),
+    index('card_gifts_from_day_idx').on(t.fromChildId, t.dayUtc),
+    index('card_gifts_to_day_idx').on(t.toChildId, t.dayUtc),
+  ],
+);

@@ -9,6 +9,7 @@ import { TrophyToast } from './TrophyToast';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 import type { GrantedTrophy } from '@/lib/actions/play';
+import type { CrewMate } from '@/lib/db/crew';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { swapShardsForItem, convertDuplicateToShard } from '@/lib/actions/gacha';
 import { shardSwapCostForPack } from '@/lib/economy/shards';
@@ -31,6 +32,11 @@ interface Props {
   balance: number;
   /** Universal (global) shard wallet for this child — spendable on any pack. */
   shardCount: number;
+  /** Everyone else in the deployment — plain data, never a real name. */
+  crew: CrewMate[];
+  /** itemId → childIds of crewmates who already own it, scoped to this pack. */
+  ownersByItem: Record<string, string[]>;
+  giftsSentToday: number;
 }
 
 /**
@@ -49,6 +55,9 @@ export function PackPageBody({
   ownedItems,
   balance,
   shardCount,
+  crew,
+  ownersByItem,
+  giftsSentToday,
 }: Props) {
   const meta = getPackMeta(packSlug);
   if (!meta) {
@@ -332,6 +341,11 @@ export function PackPageBody({
           item={detailItem}
           owned={ownedSet.has(detailItem.id)}
           onClose={() => setDetailItem(null)}
+          ownedCount={countById.get(detailItem.id) ?? 0}
+          childId={childId}
+          crew={crew}
+          ownersByItem={ownersByItem}
+          giftsSentToday={giftsSentToday}
         />
       ) : null}
     </div>

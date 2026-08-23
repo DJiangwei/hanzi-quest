@@ -17,6 +17,12 @@ vi.mock('@/lib/actions/gacha', () => ({
   swapShardsForItem: vi.fn().mockResolvedValue({ ok: true, shardsRemaining: 2 }),
 }));
 
+// PackPageBody's CardDetailDialog mounts GiftDialog, which imports
+// `giftCardAction` from a 'use server' file that transitively pulls in
+// `@/db` + `next/cache`. Mock it directly — see the note in
+// card-detail-dialog.test.tsx.
+vi.mock('@/lib/actions/crew', () => ({ giftCardAction: vi.fn() }));
+
 import { PackPageBody } from '@/components/play/PackPageBody';
 import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 
@@ -81,6 +87,9 @@ describe('PackPageBody gacha removal (PR #52)', () => {
         ownedItems={[]}
         balance={1000}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.queryByRole('button', { name: /抽卡|buy a pull|gacha/i })).toBeNull();
@@ -98,6 +107,9 @@ describe('PackPageBody PR #52 surface', () => {
         ownedItems={ownedItems}
         balance={1000}
         shardCount={7}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.getByText(/7/)).toBeInTheDocument();
@@ -115,6 +127,9 @@ describe('PackPageBody PR #52 surface', () => {
         ownedItems={ownedItems}
         balance={1000}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.getByText(/×3/)).toBeInTheDocument();
@@ -130,6 +145,9 @@ describe('PackPageBody PR #52 surface', () => {
         ownedItems={ownedItems}
         balance={1000}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.queryByText(/×1/)).toBeNull();
@@ -147,6 +165,9 @@ describe('PackPageBody', () => {
         ownedItems={[]}
         balance={1000}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.getByText('世界国旗')).toBeInTheDocument();
@@ -166,6 +187,9 @@ describe('PackPageBody', () => {
         ownedItems={[]}
         balance={1000}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.getByText(/1 \/ 2/)).toBeInTheDocument();
@@ -181,6 +205,9 @@ describe('PackPageBody', () => {
         ownedItems={[]}
         balance={500}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.getByText(/🪙 500/)).toBeInTheDocument();
