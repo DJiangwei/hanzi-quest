@@ -48,6 +48,42 @@ describe('trust-caller endpoints are not exported from use-server action files',
   });
 });
 
+describe('crew gifting is gated at the GIVER (the second cross-account write)', () => {
+  // Pinned so a newly added export can't slip past the per-function gate
+  // check below — same reasoning as EXPECTED_WEEKS_EXPORTS.
+  const EXPECTED_CREW_EXPORTS = ['giftCardAction'];
+
+  it('crew.ts exports exactly the expected action set', () => {
+    const src = read('src/lib/actions/crew.ts');
+    const names = [...src.matchAll(/export async function (\w+)\(/g)].map(
+      (m) => m[1],
+    );
+    expect(names).toEqual(EXPECTED_CREW_EXPORTS);
+  });
+
+  it('every exported action in crew.ts calls requireChild and never assertParent', () => {
+    // assertParent proves only "is signed in" — `users.role` defaults to
+    // 'parent' for every Clerk signup (the PR #155 landmine). An action that
+    // writes into ANOTHER family's child must prove ownership of the GIVER
+    // with requireChild, or any stranger with a session reaches the write.
+    const src = read('src/lib/actions/crew.ts');
+    expect(src.trimStart()).toMatch(/^['"]use server['"]/);
+    const starts = [...src.matchAll(/export async function (\w+)\(/g)];
+    expect(starts.length).toBe(EXPECTED_CREW_EXPORTS.length);
+    for (let i = 0; i < starts.length; i++) {
+      const name = starts[i][1];
+      const bodyStart = starts[i].index!;
+      const bodyEnd = i + 1 < starts.length ? starts[i + 1].index! : src.length;
+      const body = src.slice(bodyStart, bodyEnd);
+      expect(body, `${name}: must call requireChild()`).toMatch(/requireChild\(/);
+      expect(body, `${name}: must NOT call assertParent()`).not.toMatch(/assertParent\(/);
+    }
+    // File-level too: no import of assertParent, no call anywhere outside an
+    // exported function body.
+    expect(src).not.toMatch(/assertParent\(/);
+  });
+});
+
 describe('content authoring is admin-gated (Findings 1, 2, 3)', () => {
   // Pinned so a deleted or renamed export can't silently drop out of the
   // per-function assertAdmin check below (F6).

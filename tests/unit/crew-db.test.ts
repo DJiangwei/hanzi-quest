@@ -14,7 +14,7 @@ vi.mock('@/lib/db/shop', () => ({
   getEquippedAvatar: shopMocks.getEquippedAvatar,
 }));
 
-import { listCrewMates } from '@/lib/db/crew';
+import { childExists, listCrewMates } from '@/lib/db/crew';
 
 // The raw row includes `displayName` (as a real `childProfiles` row would if
 // a future edit ever widened the select) so the leak test has something to
@@ -96,5 +96,42 @@ describe('listCrewMates', () => {
     const mates = await listCrewMates('c-self');
     expect(mates).toEqual([]);
     expect(shopMocks.getEquippedAvatar).not.toHaveBeenCalled();
+  });
+});
+
+describe('childExists', () => {
+  // The recipient side of `giftCardAction`. A boolean by design: this is a
+  // cross-account read, and anything richer would put another family's
+  // `displayName` in a caller's hands.
+  function mockLookup(rows: unknown[]) {
+    const limitMock = vi.fn().mockResolvedValue(rows);
+    const whereMock = vi.fn().mockReturnValue({ limit: limitMock });
+    const fromMock = vi.fn().mockReturnValue({ where: whereMock });
+    dbMock.select.mockReturnValue({ from: fromMock });
+    return { fromMock, whereMock, limitMock };
+  }
+
+  it('is true for a child that exists, false for one that does not', async () => {
+    mockLookup([{ id: 'c-mate-1' }]);
+    await expect(childExists('c-mate-1')).resolves.toBe(true);
+    mockLookup([]);
+    await expect(childExists('nope')).resolves.toBe(false);
+  });
+
+  it('returns a boolean, never a row — even if the query ever returns one', async () => {
+    // A row shaped like a real childProfiles row, name included. Whatever the
+    // query hands back, only `true` may leave this function.
+    mockLookup([{ id: 'c-mate-1', displayName: 'Yinuo' }]);
+    const result = await childExists('c-mate-1');
+    expect(result).toBe(true);
+    expect(JSON.stringify(result)).not.toContain('Yinuo');
+  });
+
+  it('filters by id and limits to one row', async () => {
+    const { whereMock, limitMock } = mockLookup([]);
+    await childExists('c-mate-1');
+    expect(whereMock).toHaveBeenCalledTimes(1);
+    expect(whereMock.mock.calls[0][0]).toBeDefined();
+    expect(limitMock).toHaveBeenCalledWith(1);
   });
 });

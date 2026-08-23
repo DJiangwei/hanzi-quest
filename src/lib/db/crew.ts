@@ -1,5 +1,5 @@
 // NEVER import this file from client code — it pulls in postgres.
-import { ne } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
 import { db } from '@/db';
 import { childProfiles } from '@/db/schema';
 import { nicknameFor } from '@/lib/crew/nickname';
@@ -49,4 +49,32 @@ export async function listCrewMates(
       };
     }),
   );
+}
+
+/**
+ * Does this child exist anywhere in the deployment?
+ *
+ * Lives HERE, next to `listCrewMates`, because these two functions are the
+ * only cross-account reads in the codebase and this is the module audited
+ * for not leaking another family's data. Returns a BOOLEAN on purpose: a
+ * helper that handed back a whole `childProfiles` row across accounts would
+ * put `displayName` (and the owning parent's id) in the caller's hands, one
+ * careless spread away from a payload rendered to someone else's kid.
+ *
+ * Membership semantics: the crew is currently "every child in the
+ * deployment", so existence IS the entire membership check. If the crew
+ * model ever narrows — friend lists, per-family opt-in, a class code — this
+ * function must narrow in lockstep with `listCrewMates` above. Those two are
+ * the only places that define who is reachable: `listCrewMates` decides who
+ * a child can SEE, this decides who a child can WRITE to. Letting them drift
+ * means a recipient that no picker ever offered is still giftable by anyone
+ * who can type an id into the RPC.
+ */
+export async function childExists(childId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: childProfiles.id })
+    .from(childProfiles)
+    .where(eq(childProfiles.id, childId))
+    .limit(1);
+  return rows.length > 0;
 }
