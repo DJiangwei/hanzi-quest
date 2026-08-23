@@ -161,6 +161,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #153 | fix(final-boss): map slug lookup hit the wrong table — final boss unreachable | |
 | #154 | feat(packs): `olympics-v1` collectible pack — 20 cards across 4 groups | |
 | #155 | fix(security): pre-distribution hardening — authoring is admin-only, homework/session writes scoped, open redirect closed | |
+| #157 | feat(crew): card gifting — duplicates to crewmates, nickname identity, no leaderboard | |
 
 ### Next up
 
