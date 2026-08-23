@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { and, eq, sql } from 'drizzle-orm';
 import { cardGifts, childCollections } from '@/db/schema/collections';
 
-// db is not imported at module load by gifts.ts (giftCardInTx takes `tx`
-// directly), but mock it anyway per project convention — a future helper in
-// this file that reads outside a tx (like grants.ts's getGlobalShards) would
-// otherwise throw "DATABASE_URL is not set" on CI.
-vi.mock('@/db', () => ({ db: {} }));
+// `giftCardInTx` takes `tx` directly and never touches `db` — but
+// `countGiftsSentToday` (below) reads OUTSIDE a tx and does, so `db` must be a
+// live spy, not the inert `{}` this file used before that read existed.
+const dbMock = vi.hoisted(() => ({ select: vi.fn() }));
+vi.mock('@/db', () => ({ db: dbMock }));
 
-import { giftCardInTx } from '@/lib/db/gifts';
+import { countGiftsSentToday, giftCardInTx } from '@/lib/db/gifts';
 import {
   GIFTS_PER_SENDER_PER_DAY,
   GIFTS_RECEIVED_PER_DAY,
@@ -100,7 +100,10 @@ function makeTx(opts: {
   };
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  dbMock.select.mockReset();
+});
 
 describe('giftCardInTx', () => {
   it('fromChildId === toChildId -> self_gift, with NO IO at all', async () => {
@@ -318,5 +321,35 @@ describe('giftCardInTx', () => {
     expect(lockOrder).toBeLessThan(sentCheckOrder);
     expect(lockOrder).toBeLessThan(fromSenderCheckOrder);
     expect(lockOrder).toBeLessThan(receivedCheckOrder);
+  });
+});
+
+describe('countGiftsSentToday', () => {
+  // The read-side counterpart of step 4 inside giftCardInTx — renders "N
+  // gifts left today" in the picker BEFORE the child taps anyone.
+  function mockCount(count: number) {
+    const whereMock = vi.fn().mockResolvedValue([{ count }]);
+    const fromMock = vi.fn().mockReturnValue({ where: whereMock });
+    dbMock.select.mockReturnValue({ from: fromMock });
+    return { whereMock, fromMock };
+  }
+
+  it('returns the count for this child and day', async () => {
+    mockCount(2);
+    await expect(countGiftsSentToday(FROM, DAY)).resolves.toBe(2);
+  });
+
+  it('returns 0 when no rows come back', async () => {
+    const whereMock = vi.fn().mockResolvedValue([]);
+    dbMock.select.mockReturnValue({ from: vi.fn().mockReturnValue({ where: whereMock }) });
+    await expect(countGiftsSentToday(FROM, DAY)).resolves.toBe(0);
+  });
+
+  it('filters by fromChildId AND dayUtc — never another child, never another day', async () => {
+    const { whereMock } = mockCount(0);
+    await countGiftsSentToday(FROM, DAY);
+    expect(whereMock).toHaveBeenCalledWith(
+      and(eq(cardGifts.fromChildId, FROM), eq(cardGifts.dayUtc, DAY)),
+    );
   });
 });

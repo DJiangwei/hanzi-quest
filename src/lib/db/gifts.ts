@@ -1,5 +1,6 @@
 // NEVER import this file from client code. It pulls in postgres.
 import { and, eq, sql } from 'drizzle-orm';
+import { db } from '@/db';
 import { cardGifts, childCollections } from '@/db/schema/collections';
 import type { Tx } from '@/lib/db/grants';
 import {
@@ -7,6 +8,26 @@ import {
   GIFTS_RECEIVED_PER_DAY,
   GIFTS_SENT_PER_DAY,
 } from '@/lib/crew/gift-config';
+
+/**
+ * How many gifts `childId` has already sent today (any recipient) — the
+ * read-side counterpart of step 4 inside `giftCardInTx`, used to render
+ * "N gifts left today" BEFORE the child taps a crewmate. Not
+ * transactional and not authoritative: `giftCardInTx` re-checks the real
+ * cap under `SELECT ... FOR UPDATE` at send time, so a stale read here can
+ * only make the UI's number briefly optimistic, never let an extra gift
+ * through.
+ */
+export async function countGiftsSentToday(
+  childId: string,
+  dayUtc: string,
+): Promise<number> {
+  const rows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(cardGifts)
+    .where(and(eq(cardGifts.fromChildId, childId), eq(cardGifts.dayUtc, dayUtc)));
+  return Number(rows[0]?.count ?? 0);
+}
 
 export type GiftOutcome =
   | { ok: true; itemId: string }

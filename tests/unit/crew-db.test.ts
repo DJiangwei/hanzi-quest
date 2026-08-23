@@ -14,7 +14,7 @@ vi.mock('@/lib/db/shop', () => ({
   getEquippedAvatar: shopMocks.getEquippedAvatar,
 }));
 
-import { childExists, listCrewMates } from '@/lib/db/crew';
+import { childExists, listCrewMates, listCrewOwnershipForPack } from '@/lib/db/crew';
 
 // The raw row includes `displayName` (as a real `childProfiles` row would if
 // a future edit ever widened the select) so the leak test has something to
@@ -133,5 +133,49 @@ describe('childExists', () => {
     expect(whereMock).toHaveBeenCalledTimes(1);
     expect(whereMock.mock.calls[0][0]).toBeDefined();
     expect(limitMock).toHaveBeenCalledWith(1);
+  });
+});
+
+describe('listCrewOwnershipForPack', () => {
+  // The gift picker's whole reason to exist: which crewmates already own
+  // this card, so the UI can grey them out and label them 已经有了.
+  function mockJoin(rows: { itemId: string; childId: string }[]) {
+    const whereMock = vi.fn().mockResolvedValue(rows);
+    const innerJoinMock = vi.fn().mockReturnValue({ where: whereMock });
+    const fromMock = vi.fn().mockReturnValue({ innerJoin: innerJoinMock });
+    dbMock.select.mockReturnValue({ from: fromMock });
+    return { whereMock, innerJoinMock, fromMock };
+  }
+
+  it('returns {} for an empty crew WITHOUT issuing a query', async () => {
+    const result = await listCrewOwnershipForPack('pack-1', []);
+    expect(result).toEqual({});
+    expect(dbMock.select).not.toHaveBeenCalled();
+  });
+
+  it('groups owning childIds by itemId', async () => {
+    mockJoin([
+      { itemId: 'item-a', childId: 'c-mate-1' },
+      { itemId: 'item-a', childId: 'c-mate-2' },
+      { itemId: 'item-b', childId: 'c-mate-1' },
+    ]);
+    const result = await listCrewOwnershipForPack('pack-1', ['c-mate-1', 'c-mate-2']);
+    expect(result).toEqual({
+      'item-a': ['c-mate-1', 'c-mate-2'],
+      'item-b': ['c-mate-1'],
+    });
+  });
+
+  it('returns {} when no crewmate owns anything in the pack', async () => {
+    mockJoin([]);
+    const result = await listCrewOwnershipForPack('pack-1', ['c-mate-1']);
+    expect(result).toEqual({});
+  });
+
+  it('scopes the where clause by pack AND crew membership', async () => {
+    const { whereMock } = mockJoin([]);
+    await listCrewOwnershipForPack('pack-1', ['c-mate-1']);
+    expect(whereMock).toHaveBeenCalledTimes(1);
+    expect(whereMock.mock.calls[0][0]).toBeDefined();
   });
 });

@@ -22,6 +22,12 @@ vi.mock('@/lib/actions/gacha', () => ({
   convertDuplicateToShard: vi.fn().mockResolvedValue({ ok: true, count: 1, shards: 1 }),
 }));
 
+// PackPageBody's CardDetailDialog mounts GiftDialog, which imports
+// `giftCardAction` from a 'use server' file that transitively pulls in
+// `@/db` + `next/cache`. Mock it directly — see the note in
+// card-detail-dialog.test.tsx.
+vi.mock('@/lib/actions/crew', () => ({ giftCardAction: vi.fn() }));
+
 import { PackPageBody } from '@/components/play/PackPageBody';
 import type { CollectibleItem, OwnedCollectibleItem } from '@/lib/db/collections';
 
@@ -71,6 +77,9 @@ describe('swap-chip: with shardCount >= 3', () => {
         ownedItems={ownedItems}
         balance={500}
         shardCount={3}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     const chips = screen.getAllByTestId('swap-chip');
@@ -91,6 +100,9 @@ describe('swap-chip: with shardCount < 3', () => {
         ownedItems={ownedItems}
         balance={500}
         shardCount={1}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     const chips = screen.getAllByTestId('swap-chip');
@@ -111,6 +123,9 @@ describe('swap-chip: owned card', () => {
         ownedItems={ownedItems}
         balance={500}
         shardCount={5}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     // Only the unowned card has a chip — owned card must not
@@ -130,6 +145,9 @@ describe('convert-chip: owned duplicates', () => {
         ownedItems={[{ ...items[0], count: 2, firstObtainedAt: new Date() }]}
         balance={0}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     const chips = screen.getAllByTestId('convert-chip');
@@ -146,6 +164,9 @@ describe('convert-chip: owned duplicates', () => {
         ownedItems={ownedItems} // count: 1
         balance={0}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.queryByTestId('convert-chip')).toBeNull();
@@ -163,6 +184,9 @@ describe('shard help text', () => {
         ownedItems={ownedItems}
         balance={500}
         shardCount={0}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.getByText(/重复的卡可以换成/)).toBeInTheDocument();
@@ -182,6 +206,9 @@ describe('shard help text', () => {
         ]}
         balance={500}
         shardCount={5}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     expect(screen.getByText(/重复的卡可以换成/)).toBeInTheDocument();
@@ -199,6 +226,9 @@ describe('card detail tap', () => {
         ownedItems={ownedItems}
         balance={0}
         shardCount={5}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     // Tap the owned card → detail dialog opens.
@@ -217,6 +247,9 @@ describe('card detail tap', () => {
         ownedItems={ownedItems}
         balance={0}
         shardCount={5}
+        crew={[]}
+        ownersByItem={{}}
+        giftsSentToday={0}
       />,
     );
     fireEvent.click(screen.getByTestId('swap-chip'));

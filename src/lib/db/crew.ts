@@ -1,7 +1,7 @@
 // NEVER import this file from client code — it pulls in postgres.
-import { eq, ne } from 'drizzle-orm';
+import { and, eq, inArray, ne } from 'drizzle-orm';
 import { db } from '@/db';
-import { childProfiles } from '@/db/schema';
+import { childCollections, childProfiles, collectibleItems } from '@/db/schema';
 import { nicknameFor } from '@/lib/crew/nickname';
 import { getEquippedAvatar } from '@/lib/db/shop';
 
@@ -77,4 +77,46 @@ export async function childExists(childId: string): Promise<boolean> {
     .where(eq(childProfiles.id, childId))
     .limit(1);
   return rows.length > 0;
+}
+
+/**
+ * itemId → childIds of crewmates who own it, scoped to one pack. One query.
+ *
+ * This is the data the gift picker is FOR: a crewmate who already has the
+ * card is greyed out and labelled 已经有了, which is what teaches the child
+ * what their friend is missing. It is display data about ownership, not an
+ * identity leak — no name, no count, no other pack's cards.
+ *
+ * `crewChildIds` comes from `listCrewMates`, so it never includes the caller.
+ * Guard the empty-crew case explicitly: an empty `inArray(...)` is a query
+ * Drizzle/Postgres reject, not one that returns zero rows.
+ */
+export async function listCrewOwnershipForPack(
+  packId: string,
+  crewChildIds: string[],
+): Promise<Record<string, string[]>> {
+  if (crewChildIds.length === 0) return {};
+
+  const rows = await db
+    .select({
+      itemId: childCollections.itemId,
+      childId: childCollections.childId,
+    })
+    .from(childCollections)
+    .innerJoin(
+      collectibleItems,
+      eq(collectibleItems.id, childCollections.itemId),
+    )
+    .where(
+      and(
+        eq(collectibleItems.packId, packId),
+        inArray(childCollections.childId, crewChildIds),
+      ),
+    );
+
+  const byItem: Record<string, string[]> = {};
+  for (const r of rows) {
+    (byItem[r.itemId] ??= []).push(r.childId);
+  }
+  return byItem;
 }
