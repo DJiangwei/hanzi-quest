@@ -2,8 +2,10 @@
 
 import { useMemo } from 'react';
 import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
+import { COUNTING_CHAR_VALUES } from '@/lib/scenes/stimulus-validity';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 import { HintBubble } from './HintBubble';
+import { CountingBalloons } from './fx/CountingBalloons';
 import type { SceneAnswerEvent } from '@/lib/play/answer-events';
 
 interface CharacterDetail {
@@ -29,6 +31,18 @@ interface Props {
 }
 
 export function ImagePickScene({ target, pool, imageUrl, imageHint, onComplete, onAnswerEvent, hintRequested }: Props) {
+  // A counting character (一...十) never shows a diffusion picture, no
+  // matter what `imageUrl`/`imageHint` the caller resolved — a host's
+  // pickStimulusImage() fallback can still find SOME word image for one
+  // (it just scans for the first word with a URL, unaware of
+  // counting-ness), and that image would have the wrong count. This check
+  // lives HERE, in the one component all three image_pick hosts
+  // (SceneRunner, BossScene, FinalBossScene) render through, so fixing it
+  // once fixes it everywhere — no per-host call to remember. See
+  // src/components/scenes/fx/CountingBalloons.tsx and
+  // docs/superpowers/specs/2026-08-23-image-stimulus-validity-design.md.
+  const countingValue = COUNTING_CHAR_VALUES.get(target.hanzi);
+
   // Shuffle ONCE per scene (keyed on the stable characterId, not the target/pool
   // object identity) — otherwise a parent re-render reshuffles the options
   // mid-selection, making them jump around.
@@ -51,7 +65,18 @@ export function ImagePickScene({ target, pool, imageUrl, imageHint, onComplete, 
     <MultipleChoiceQuiz
       prompt="看图找字 / Find the character"
       stimulus={
-        imageUrl ? (
+        countingValue !== undefined ? (
+          <div className="flex flex-col items-center">
+            <div className="h-48 w-72 overflow-hidden rounded-2xl border-4 border-amber-800/30 bg-amber-50 shadow-lg">
+              <CountingBalloons count={countingValue} />
+            </div>
+            {/* Deliberately no HintBubble here, even when hintRequested: the
+                stimulus word's own imageHook reads like "seven colorful
+                balloons floating in a bright blue sky" — showing it as a
+                hint would just say the answer out loud in English. Counting
+                the balloons already IS the hint; nothing else is needed. */}
+          </div>
+        ) : imageUrl ? (
           <div className="flex flex-col items-center">
             <div className="h-48 w-72 overflow-hidden rounded-2xl border-4 border-amber-800/30 bg-amber-50 shadow-lg">
               {/* eslint-disable-next-line @next/next/no-img-element */}
