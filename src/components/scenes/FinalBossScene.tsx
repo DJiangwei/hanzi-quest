@@ -5,7 +5,7 @@ import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import { getFinalBoss } from '@/lib/scenes/final-boss-roster';
 import type { BossAnimState } from './fx/bosses/types';
 import type { FinalBossQuestion, FinalBossCharacter } from '@/lib/play/final-boss';
-import { pickStimulusImage } from '@/lib/scenes/stimulus';
+import { pickValidStimulusImage } from '@/lib/scenes/stimulus';
 import { AudioPickScene } from './AudioPickScene';
 import { ImagePickScene } from './ImagePickScene';
 import { TranslatePickScene } from './TranslatePickScene';
@@ -220,7 +220,9 @@ export function FinalBossScene({
             // Without it every 看图找字 in the final gauntlet renders the
             // text-only fallback — the same bug PR #148 fixed in BossScene.
             // No `imageHint`: 💡 is never available in a boss fight.
-            imageUrl={pickStimulusImage(q.target.words, q.target.imageHook).imageUrl}
+            // See BossScene: no compiled wordId here either, so the stimulus
+            // must be checked against this question's own answer pool.
+            imageUrl={pickValidStimulusImage(q.target, pool).imageUrl}
             onComplete={handleAnswer}
           />
         )}

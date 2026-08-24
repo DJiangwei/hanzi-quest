@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
 import type { BossQuestionType } from '@/lib/scenes/configs';
 import { getBossCreature } from '@/lib/scenes/boss-roster';
-import { pickStimulusImage } from '@/lib/scenes/stimulus';
+import { pickValidStimulusImage } from '@/lib/scenes/stimulus';
 import { playBossCue } from '@/lib/audio/boss';
 import type { BossAnimState } from './fx/bosses/types';
 import { AudioPickScene } from './AudioPickScene';
@@ -253,7 +253,12 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             // Without this the boss rendered EVERY 看图找字 as the text-only
             // fallback card. No `imageHint` on purpose — the 💡 hint is never
             // available in a boss fight, so the description must stay hidden.
-            imageUrl={pickStimulusImage(q.target.words, q.target.imageHook).imageUrl}
+            // pickValidStimulusImage, not pickStimulusImage: the boss has no
+            // compiled wordId, so the plain scan would take the first word with
+            // a picture — which in a week teaching both 唱 and 歌 can be 唱歌,
+            // supporting two of the answers on screen. Unanswerable, and here a
+            // wrong answer costs a life.
+            imageUrl={pickValidStimulusImage(q.target, pool).imageUrl}
             onComplete={handleAnswer}
           />
         )}

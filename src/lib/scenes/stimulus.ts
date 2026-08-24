@@ -25,6 +25,8 @@
 export interface StimulusWord {
   /** Word id — matches `words.id`. Only needed to honour `preferredWordId`. */
   id?: string;
+  /** Word text. Only needed to tell whether another char in the pool owns it. */
+  text?: string | null;
   imageHook: string | null;
   meaningEn: string | null;
   imageUrl: string | null;
@@ -60,5 +62,45 @@ export function pickStimulusImage(
   return {
     imageUrl: word?.imageUrl ?? null,
     imageHint: word?.imageHook ?? word?.meaningEn ?? fallbackHook,
+  };
+}
+
+/**
+ * Resolve a stimulus for a host that has NO compiled `wordId` — i.e. the boss
+ * gauntlets, whose questions are assembled at runtime rather than by
+ * compile-week.
+ *
+ * Practice slots carry a `wordId` chosen and validated at compile time. The
+ * bosses do not, so without this they fell back to `pickStimulusImage`'s
+ * first-word-with-a-URL scan, which is exactly the guess this whole fix
+ * removed: in a week teaching both 唱 and 歌, a 唱 question could show the
+ * 唱歌 picture while 歌 sat in the choices — an unanswerable question, and in
+ * a boss fight a wrong answer costs a life.
+ *
+ * `pool` is the question's own answer set, which is precisely the set a
+ * stimulus has to be unambiguous against, so the ownership map is built from
+ * it rather than from a separate query.
+ */
+export function pickValidStimulusImage(
+  target: { hanzi: string; words?: StimulusWord[]; imageHook?: string | null },
+  pool: { hanzi: string; words?: StimulusWord[] }[],
+): StimulusImage {
+  const owners = new Map<string, Set<string>>();
+  for (const c of pool) {
+    for (const w of c.words ?? []) {
+      if (!w.text) continue;
+      if (!owners.has(w.text)) owners.set(w.text, new Set());
+      owners.get(w.text)!.add(c.hanzi);
+    }
+  }
+  const safe = (target.words ?? []).filter(
+    (w) => w.imageUrl && w.text && (owners.get(w.text)?.size ?? 1) === 1,
+  );
+  // No unambiguous word → no picture. ImagePickScene renders its text card,
+  // which is a legitimate (if plainer) question, unlike a picture that
+  // supports two of the answers on screen.
+  return {
+    imageUrl: safe[0]?.imageUrl ?? null,
+    imageHint: safe[0]?.imageHook ?? safe[0]?.meaningEn ?? target.imageHook ?? null,
   };
 }
