@@ -22,15 +22,7 @@ import {
   type MerchantOffer,
   type MerchantPurchaseOutcome,
 } from '@/lib/merchant/offer';
-
-function isUniqueViolation(err: unknown): boolean {
-  return (
-    typeof err === 'object' &&
-    err !== null &&
-    'code' in err &&
-    (err as { code: string }).code === '23505'
-  );
-}
+import { isUniqueViolation } from '@/lib/errors/pg-errors';
 
 /**
  * Today's offer for a child, or null when she owns every gacha-eligible card.

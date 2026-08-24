@@ -10,6 +10,7 @@ import {
   MAP_TO_VAULT_CARD,
 } from '@/lib/collections/keyVaultData';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import { isUniqueViolation } from '@/lib/errors/pg-errors';
 
 /** `card_grants_log.source` for the once-per-map vault prize. Plain text column
  *  — no enum migration needed for a new source (unlike `coin_reason`). */
@@ -79,12 +80,7 @@ export async function claimKeyVaultPrize(
       await grantSpecificCardInTx(tx, childId, item.id);
     });
   } catch (err) {
-    if (
-      typeof err === 'object' &&
-      err !== null &&
-      'code' in err &&
-      (err as { code: string }).code === '23505'
-    ) {
+    if (isUniqueViolation(err)) {
       return empty; // already opened this map's vault
     }
     throw err;

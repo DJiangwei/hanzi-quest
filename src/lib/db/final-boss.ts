@@ -18,6 +18,7 @@ import {
 } from '@/lib/db/trophies';
 import { MAP_TO_CHAMPION_CARD } from '@/lib/collections/championsData';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import { isUniqueViolation } from '@/lib/errors/pg-errors';
 
 const CHAMPIONS_PACK_SLUG = 'champions-v1';
 
@@ -112,12 +113,7 @@ export async function recordFinalBossClear(
     await db.insert(finalBossClears).values({ childId, packId });
     return { firstClear: true };
   } catch (err) {
-    if (
-      typeof err === 'object' &&
-      err !== null &&
-      'code' in err &&
-      (err as { code: string }).code === '23505'
-    ) {
+    if (isUniqueViolation(err)) {
       return { firstClear: false };
     }
     throw err;

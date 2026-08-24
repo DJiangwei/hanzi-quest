@@ -16,6 +16,7 @@ import {
 } from '@/lib/calendar/festivals';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { Tx } from './grants';
+import { isUniqueViolation } from '@/lib/errors/pg-errors';
 
 export const FESTIVALS_PACK_SLUG = 'festivals-v1';
 
@@ -79,15 +80,6 @@ function monthRange(yyyymm: string): { startIso: string; endIso: string } {
     startIso: `${yyyymm}-01`,
     endIso: `${yyyymm}-${String(lastDay).padStart(2, '0')}`,
   };
-}
-
-function isUniqueViolation(err: unknown): boolean {
-  return (
-    typeof err === 'object' &&
-    err !== null &&
-    'code' in err &&
-    (err as { code: string }).code === '23505'
-  );
 }
 
 /**

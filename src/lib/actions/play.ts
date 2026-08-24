@@ -114,6 +114,21 @@ async function safeClaimKeyVault(
   }
 }
 
+/** Guarded weekly 大礼包 claim — the gift rides the daily-login signal and is a
+ *  bonus, not the attempt. A failure must never reject finishAttemptAction:
+ *  SceneRunner awaits it inside startTransition with no catch, so a throw here
+ *  freezes the scene mid-question. Same rule as `safeClaimKeyVault`. */
+async function safeClaimWeeklyGift(
+  childId: string,
+): Promise<{ cards: GiftCard[] } | null> {
+  try {
+    return await claimWeeklyGiftIfDue(childId);
+  } catch (err) {
+    console.error('[finishAttemptAction] weekly gift claim failed:', err);
+    return null;
+  }
+}
+
 function toRevealCard(g: Awaited<ReturnType<typeof pullCardForChild>>): RevealCard | null {
   if (!g.granted) return null;
   return {
@@ -300,7 +315,7 @@ export async function finishAttemptAction(
         labelEn: "First play of the day!",
       });
       // Fresh check-in today → maybe the 5-of-7 weekly gift is now due.
-      giftPack = await claimWeeklyGiftIfDue(child.id);
+      giftPack = await safeClaimWeeklyGift(child.id);
     }
     const milestone = await awardStreakMilestoneIfDue(
       child.id,
