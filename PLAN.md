@@ -161,8 +161,10 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #153 | fix(final-boss): map slug lookup hit the wrong table — final boss unreachable | |
 | #154 | feat(packs): `olympics-v1` collectible pack — 20 cards across 4 groups | |
 | #155 | fix(security): pre-distribution hardening — authoring is admin-only, homework/session writes scoped, open redirect closed | |
+| #156 | fix(first-run): zero-child entry path + truthful landing copy | |
 | #157 | feat(crew): card gifting — duplicates to crewmates, nickname identity, no leaderboard | |
 | #158 | fix(scenes): 看图找字 stimulus validity — compiled `wordId`, counting-char balloon cards, verify script | |
+| #159 | fix(economy): every 23505 idempotency guard was dead — drizzle wraps driver errors, `err.code` never matched | |
 
 ### Next up
 

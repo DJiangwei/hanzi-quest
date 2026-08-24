@@ -163,6 +163,20 @@ describe('finishAttemptAction giftPack (Card Economy v2)', () => {
     expect(mocks.claimWeeklyGiftIfDue).not.toHaveBeenCalled();
   });
 
+  it('still completes the attempt when the weekly gift claim throws', async () => {
+    // The 大礼包 is a bonus riding the daily-login signal. A failure there must
+    // never break the child's answer — the same rule `safeClaimKeyVault`
+    // already enforces for the vault prize. Before this guard, a throw here
+    // rejected finishAttemptAction, and SceneRunner awaits it inside
+    // startTransition with no catch, so the scene froze mid-question.
+    mocks.claimWeeklyGiftIfDue.mockRejectedValue(new Error('gift grant blew up'));
+
+    const result = await finishAttemptAction(VALID_INPUT);
+
+    expect(result.giftPack).toBeNull();
+    expect(result.coinsAwarded).toBeGreaterThanOrEqual(0);
+  });
+
   it('always includes giftPack in return shape (null when no check-in, non-null when gift due)', async () => {
     // Verify giftPack key is always present on the returned object
     mocks.claimWeeklyGiftIfDue.mockResolvedValue({ cards: [] });

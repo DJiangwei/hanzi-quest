@@ -1,5 +1,6 @@
 // E2 旅行商人 — db layer: offer derivation + transactional buy.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { wrappedUniqueViolation } from './helpers/pg-error';
 
 const mocks = vi.hoisted(() => {
   const fakeTable = (name: string) => {
@@ -170,9 +171,7 @@ describe('buyMerchantOffer', () => {
 
   it('second buy of the day: unique violation → already_bought_today', async () => {
     mocks.insertBehavior['card_grants_log'] = () => {
-      const err = new Error('duplicate key') as Error & { code: string };
-      err.code = '23505';
-      throw err;
+      throw wrappedUniqueViolation();
     };
     const res = await buyMerchantOffer('c1', '2026-07-18', offer, 'i1');
     expect(res).toEqual({ ok: false, reason: 'already_bought_today' });

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/db', () => ({ db: { transaction: vi.fn() } }));
 
 import { grantGiftPackInTx, WEEKLY_GIFT_SOURCE } from '@/lib/db/grants';
+import { wrappedUniqueViolation } from './helpers/pg-error';
 
 /** Chainable select stub: each terminal .where() yields the next queued rows array. */
 function selectYielding(rowsQueue: unknown[][]) {
@@ -54,7 +55,7 @@ describe('grantGiftPackInTx', () => {
   it('returns already_granted when the weekly idempotency insert collides (23505)', async () => {
     const tx = {
       insert: vi.fn(() => ({
-        values: vi.fn(() => { const e: { code: string } = { code: '23505' }; throw e; }),
+        values: vi.fn(() => { throw wrappedUniqueViolation(); }),
       })),
       select: vi.fn(),
       update: vi.fn(),

@@ -9,6 +9,7 @@ import {
   collectionPacks,
 } from '@/db/schema/collections';
 import { SHARD_SWAP_COST, shardSwapCostForPack } from '@/lib/economy/shards';
+import { isUniqueViolation } from '@/lib/errors/pg-errors';
 
 export const WEEKLY_CARD_CAP = 10; // dead since card-economy-v2 — daily cap replaced it
 export const DAILY_CARD_CAP = 10;
@@ -123,13 +124,7 @@ export async function pullCardInTx(
   try {
     await tx.insert(cardGrantsLog).values({ childId, source, refId });
   } catch (err) {
-    // Postgres unique_violation (23505)
-    if (
-      typeof err === 'object' &&
-      err !== null &&
-      'code' in err &&
-      (err as { code: string }).code === '23505'
-    ) {
+    if (isUniqueViolation(err)) {
       return { granted: false, reason: 'already_granted', cardsToday: currentCount };
     }
     throw err;
@@ -243,7 +238,7 @@ export async function grantGiftPackInTx(
   try {
     await tx.insert(cardGrantsLog).values({ childId, source: WEEKLY_GIFT_SOURCE, refId: weekStartUtc });
   } catch (err) {
-    if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === '23505') {
+    if (isUniqueViolation(err)) {
       return { granted: false, reason: 'already_granted' };
     }
     throw err;

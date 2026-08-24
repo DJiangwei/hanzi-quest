@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { wrappedUniqueViolation } from './helpers/pg-error';
 
 const h = vi.hoisted(() => ({
   claimRows: [] as unknown[],
@@ -60,7 +61,7 @@ function makeTx(opts: {
       values: vi.fn(() => {
         insertCalls++;
         if (insertCalls === 1 && opts.claimThrows) {
-          throw { code: '23505' };
+          throw wrappedUniqueViolation();
         }
         // Awaitable, and chainable for onConflictDo*.
         return {
