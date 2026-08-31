@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SectionCard } from './SectionCard';
 import { BOSS_UNLOCK_PRACTICE_THRESHOLD } from '@/lib/scenes/configs';
+import { formatPence } from '@/lib/piggy/money';
 
 interface Stat {
   done: number;
@@ -25,6 +26,8 @@ interface Props {
   frontier?: boolean;
   /** T3: 🗝️ keys earned / available on this map — drives the first-clear promise. */
   keys?: { earned: number; total: number };
+  /** 存钱罐: pence a first clear pays. Omitted when the piggy bank is off. */
+  piggyPence?: number;
 }
 
 function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cleared' {
@@ -34,7 +37,16 @@ function deriveState(done: number, total: number): 'idle' | 'in-progress' | 'cle
   return 'idle';
 }
 
-export function WeekHub({ childId, week, sections, weekId, homework, frontier, keys }: Props) {
+export function WeekHub({
+  childId,
+  week,
+  sections,
+  weekId,
+  homework,
+  frontier,
+  keys,
+  piggyPence,
+}: Props) {
   const reviewState = deriveState(sections.review.done, sections.review.total);
   const practiceState = deriveState(sections.practice.done, sections.practice.total);
   const bossState: 'idle' | 'in-progress' | 'cleared' | 'locked' = sections.boss.locked
@@ -95,6 +107,15 @@ export function WeekHub({ childId, week, sections, weekId, homework, frontier, k
               </span>
               <span className="font-normal text-amber-800/80">/ 1 key shard</span>
             </li>
+            {piggyPence ? (
+              <li data-testid="piggy-prefight" className="flex items-center gap-1.5">
+                <span aria-hidden="true">💷</span>
+                <span className="font-hanzi">零花钱 {formatPence(piggyPence)}</span>
+                <span className="font-normal text-amber-800/80">
+                  / {formatPence(piggyPence)} pocket money
+                </span>
+              </li>
+            ) : null}
             <li className="flex items-center gap-1.5">
               <span aria-hidden="true">🏝️</span>
               <span className="font-hanzi">解锁下一座岛</span>

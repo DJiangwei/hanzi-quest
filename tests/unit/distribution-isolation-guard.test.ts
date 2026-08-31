@@ -236,6 +236,27 @@ describe('content authoring is admin-gated (Findings 1, 2, 3)', () => {
   });
 });
 
+describe('存钱罐 never reaches a social surface', () => {
+  // A money balance is the most comparative number this app could hold, and
+  // the crew rule already forbids ranks and gifts-received tallies (see the
+  // CLAUDE.md landmine: no social surface may EVER show a comparative figure
+  // between children). Extend this file list if crew gains new surfaces.
+  it('crew.ts does not import the piggy modules', () => {
+    const src = read('src/lib/db/crew.ts');
+    expect(src).not.toMatch(/piggy/i);
+  });
+
+  it('no crew or gift component renders a money value', () => {
+    for (const file of [
+      'src/components/play/GiftInbox.tsx',
+      'src/lib/actions/crew.ts',
+    ]) {
+      const src = read(file);
+      expect(src).not.toMatch(/formatPence|piggy|pence/i);
+    }
+  });
+});
+
 describe('no family-specific strings in rendered surfaces', () => {
   const files = [...walk(join(ROOT, 'src/app')), ...walk(join(ROOT, 'src/components'))];
   it('contains no "海盗班" or "Yinuo" in src/app or src/components', () => {

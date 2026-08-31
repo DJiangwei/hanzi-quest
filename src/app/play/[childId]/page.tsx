@@ -56,6 +56,8 @@ import { WantedPosters } from '@/components/play/WantedPosters';
 import { generateDailyBounties, listTodayBounties } from '@/lib/db/bounties';
 import { listUnseenGifts } from '@/lib/db/gifts';
 import { GiftInbox } from '@/components/play/GiftInbox';
+import { PiggyBankCard } from '@/components/play/PiggyBankCard';
+import { getPiggyBalance, isPiggyEnabled } from '@/lib/db/piggy';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -108,6 +110,9 @@ export default async function PlayHomePage({ params }: PageProps) {
     getMerchantOffer(child.id, todayIso),
     hasBoughtMerchantToday(child.id, todayIso),
   ]);
+
+  const piggyEnabled = await isPiggyEnabled(child.id);
+  const piggyBalance = piggyEnabled ? await getPiggyBalance(child.id) : 0;
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
   const voyage = currentMap ? getVoyageMap(currentMap.slug) : null;
@@ -336,6 +341,10 @@ export default async function PlayHomePage({ params }: PageProps) {
       />
 
       <WantedPosters childId={childId} posters={bounties} />
+
+      {piggyEnabled && (
+        <PiggyBankCard childId={childId} balancePence={piggyBalance} />
+      )}
 
       <TravelingMerchant
         childId={childId}
