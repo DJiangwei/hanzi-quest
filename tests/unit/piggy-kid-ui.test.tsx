@@ -20,6 +20,26 @@ describe('PiggyJar', () => {
     expect(screen.queryByText(/earned nothing/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/没有/)).not.toBeInTheDocument();
   });
+
+  it('never collides clipPath ids across two instances on the same page', () => {
+    // The home-page card explicitly pairs a `compact` jar with other UI, and
+    // a parent overview can render several children's jars at once. SVG ids
+    // are document-global — a hardcoded id would make the second instance's
+    // fill clip against the first instance's path.
+    const { container } = render(
+      <div>
+        <PiggyJar balancePence={100} />
+        <PiggyJar balancePence={200} compact />
+      </div>,
+    );
+    const clipPathIds = Array.from(container.querySelectorAll('clipPath')).map(
+      (el) => el.id,
+    );
+    expect(clipPathIds).toHaveLength(2);
+    expect(clipPathIds[0]).not.toBe(clipPathIds[1]);
+    expect(clipPathIds[0]).not.toBe('');
+    expect(clipPathIds[1]).not.toBe('');
+  });
 });
 
 describe('PiggyBreakdown', () => {

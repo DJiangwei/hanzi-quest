@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { formatPence } from '@/lib/piggy/money';
 
 interface Props {
@@ -23,6 +24,12 @@ export function PiggyJar({ balancePence, compact = false }: Props) {
   // Fill rises with the balance but saturates — a full jar at £20 keeps the
   // art readable without implying a target she is failing to hit.
   const fill = Math.min(1, Math.max(0, balancePence / 2000));
+  // useId(), not a hardcoded id: `compact` is explicitly meant to sit beside
+  // a full jar (home-page card) or repeat across several children on one
+  // page, and SVG ids are document-global — a hardcoded id lets a second
+  // instance's fill clip against the first's path. See AvatarRender for the
+  // same pattern.
+  const clipId = useId();
 
   return (
     <div
@@ -36,7 +43,7 @@ export function PiggyJar({ balancePence, compact = false }: Props) {
         className={compact ? 'h-12 w-12' : 'h-24 w-24'}
       >
         <defs>
-          <clipPath id="piggy-jar-clip">
+          <clipPath id={clipId}>
             <path d="M14 26 h36 a4 4 0 0 1 4 4 v20 a4 4 0 0 1 -4 4 h-36 a4 4 0 0 1 -4 -4 v-20 a4 4 0 0 1 4 -4 z" />
           </clipPath>
         </defs>
@@ -46,7 +53,7 @@ export function PiggyJar({ balancePence, compact = false }: Props) {
           stroke="var(--color-sunset-400)"
           strokeWidth="2"
         />
-        <g clipPath="url(#piggy-jar-clip)">
+        <g clipPath={`url(#${clipId})`}>
           <rect
             x="10"
             y={54 - 28 * fill}
