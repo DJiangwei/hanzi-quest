@@ -39,13 +39,13 @@ export interface CreditInput {
 /**
  * Credit inside an existing transaction, WITHOUT checking the enable flag.
  *
- * Three callers: `creditPiggy` (which checked the flag itself);
- * `enablePiggyBankWithBackfill` (which is the statement that sets the flag, so
- * a fresh read would race its own write); and `claimSeasonTierInTx` (which
- * pays unconditionally — a season tier's £ lands in the ledger the moment it's
- * claimed, enabled or not, which is exactly why `computePastProgressCredits`
- * deliberately excludes season tiers from the enable-time backfill: there is
- * nothing to backfill, it was never skipped).
+ * The ONLY caller permitted to skip the check is `enablePiggyBankWithBackfill`
+ * — it SETS `piggy_bank_enabled` in this very transaction, so a fresh read of
+ * the flag would race its own write; the caller has already established truth
+ * by fiat. Every OTHER in-transaction caller (e.g. `claimSeasonTierInTx`) MUST
+ * gate on `isPiggyEnabledInTx(tx, childId)` first — "off" means nothing
+ * accrues, not accrues-but-hidden. Out-of-transaction code should call
+ * `creditPiggy` instead, which checks the flag itself.
  *
  * Idempotency is ON CONFLICT DO NOTHING against `piggy_entries_auto_uq`, NOT a
  * caught 23505. This runs inside `claimSeasonTierInTx`'s transaction, and
@@ -76,6 +76,25 @@ export async function creditPiggyInTx(
 /** True when this child's parent has opted them into the piggy bank. */
 export async function isPiggyEnabled(childId: string): Promise<boolean> {
   const [row] = await db
+    .select({ enabled: childProfiles.piggyBankEnabled })
+    .from(childProfiles)
+    .where(eq(childProfiles.id, childId))
+    .limit(1);
+  return row?.enabled === true;
+}
+
+/**
+ * Enable-flag read INSIDE an existing transaction. `creditPiggyInTx`
+ * deliberately does not check the flag itself — its backfill caller SETS the
+ * flag in the same transaction, so a read there would race its own write. Any
+ * OTHER in-transaction caller (e.g. `claimSeasonTierInTx`) must gate on this
+ * first, or a disabled child accrues real money silently.
+ */
+export async function isPiggyEnabledInTx(
+  tx: Tx,
+  childId: string,
+): Promise<boolean> {
+  const [row] = await tx
     .select({ enabled: childProfiles.piggyBankEnabled })
     .from(childProfiles)
     .where(eq(childProfiles.id, childId))

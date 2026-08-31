@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SUMMER_VOYAGE_TIERS } from '@/lib/season/summerVoyage';
 
-const mocks = vi.hoisted(() => ({ creditPiggyInTx: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  creditPiggyInTx: vi.fn(),
+  isPiggyEnabledInTx: vi.fn(),
+}));
 // db/season.ts and coins.ts import @/db at module load; claimSeasonTierInTx
 // receives its tx directly, so the client itself is never touched.
 vi.mock('@/db', () => ({ db: {} }));
-vi.mock('@/lib/db/piggy', () => ({ creditPiggyInTx: mocks.creditPiggyInTx }));
+vi.mock('@/lib/db/piggy', () => ({
+  creditPiggyInTx: mocks.creditPiggyInTx,
+  isPiggyEnabledInTx: mocks.isPiggyEnabledInTx,
+}));
 
 import { claimSeasonTierInTx } from '@/lib/db/season';
 
@@ -45,6 +51,7 @@ describe('claimSeasonTierInTx', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.creditPiggyInTx.mockResolvedValue({ credited: true });
+    mocks.isPiggyEnabledInTx.mockResolvedValue(true);
   });
 
   /** The fake Drizzle tx from tests/unit/season-claim.test.ts. `selectResults`
@@ -111,5 +118,25 @@ describe('claimSeasonTierInTx', () => {
     const res = await claimSeasonTierInTx(tx, 'c1', 's1', moneyTier);
     expect(res).toEqual({ claimed: false, reveal: null });
     expect(mocks.creditPiggyInTx).not.toHaveBeenCalled();
+  });
+
+  it('credits nothing when the child\'s piggy bank is disabled — "off" must mean nothing accrues, not accrues-but-hidden', async () => {
+    mocks.isPiggyEnabledInTx.mockResolvedValue(false);
+    const tx = makeTx([[]]); // claim-state read: nothing claimed yet
+    const res = await claimSeasonTierInTx(tx, 'c1', 's1', moneyTier);
+    expect(res.claimed).toBe(true); // the reward (card/coins/etc) still grants
+    expect(mocks.isPiggyEnabledInTx).toHaveBeenCalledWith(tx, 'c1');
+    expect(mocks.creditPiggyInTx).not.toHaveBeenCalled();
+  });
+
+  it('credits when the flag read (inside the SAME tx) comes back enabled', async () => {
+    mocks.isPiggyEnabledInTx.mockResolvedValue(true);
+    const tx = makeTx([[]]);
+    await claimSeasonTierInTx(tx, 'c1', 's1', moneyTier);
+    expect(mocks.isPiggyEnabledInTx).toHaveBeenCalledWith(tx, 'c1');
+    expect(mocks.creditPiggyInTx).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({ source: 'season_tier', pence: 150 }),
+    );
   });
 });

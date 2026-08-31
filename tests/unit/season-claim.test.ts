@@ -7,9 +7,10 @@ vi.mock('@/db', () => ({ db: {} }));
 // tx.insert().onConflictDoNothing().returning() chain this fake tx doesn't
 // shape (no .returning()); this file isn't exercising the money path, so a
 // stub that resolves is enough. See piggy-season.test.ts for the money-path
-// assertions.
+// (and enable-flag-gate) assertions.
 vi.mock('@/lib/db/piggy', () => ({
   creditPiggyInTx: vi.fn().mockResolvedValue({ credited: true }),
+  isPiggyEnabledInTx: vi.fn().mockResolvedValue(true),
 }));
 
 import { claimSeasonTierInTx } from '@/lib/db/season';

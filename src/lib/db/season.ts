@@ -17,7 +17,7 @@ import {
   childTrophies,
 } from '@/db/schema';
 import { awardCoinsInTx } from '@/lib/db/coins';
-import { creditPiggyInTx } from '@/lib/db/piggy';
+import { creditPiggyInTx, isPiggyEnabledInTx } from '@/lib/db/piggy';
 import type { Tx } from '@/lib/db/grants';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { SeasonRow, SeasonTier, SeasonReward } from '@/lib/season/types';
@@ -278,8 +278,10 @@ export async function claimSeasonTierInTx(
 
   // 存钱罐 bonus, INSIDE the tx: if the claim rolls back, the money must roll
   // back with it. creditPiggyInTx uses ON CONFLICT DO NOTHING rather than a
-  // caught 23505 precisely so it cannot poison this transaction.
-  if (tier.bonusMoneyPence) {
+  // caught 23505 precisely so it cannot poison this transaction. Gated on the
+  // enable flag (read inside the SAME tx) — creditPiggyInTx itself does not
+  // check it, and skipping this gate would pay disabled children silently.
+  if (tier.bonusMoneyPence && (await isPiggyEnabledInTx(tx, childId))) {
     await creditPiggyInTx(tx, {
       childId,
       source: 'season_tier',
