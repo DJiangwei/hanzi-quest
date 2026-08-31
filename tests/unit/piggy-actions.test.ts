@@ -36,13 +36,66 @@ beforeEach(() => {
 });
 
 describe('auth', () => {
-  it('every action gates on requireChild — assertParent only proves "signed in"', async () => {
-    mocks.requireChild.mockRejectedValue(new Error('Not found'));
-    await expect(
-      addPiggyCreditAction({ childId: 'other', pounds: '5', note: 'x' }),
-    ).rejects.toThrow();
-    expect(mocks.insertManualEntry).not.toHaveBeenCalled();
-  });
+  // Named explicitly, one row per exported action — a sixth action added
+  // later without an entry here would silently pass this suite, which is
+  // exactly the gap the previous single-case version of this test had (it
+  // only ever exercised addPiggyCreditAction). The static export-set pin in
+  // distribution-isolation-guard.test.ts is the backstop for a NEW action
+  // shipping with no gate at all; this table's job is to prove that when
+  // requireChild rejects, each of these five specific actions rejects too
+  // and never reaches its underlying db write.
+  const cases: Array<{
+    name: string;
+    call: () => Promise<unknown>;
+    dbMocks: Array<keyof typeof mocks>;
+  }> = [
+    {
+      name: 'addPiggyCreditAction',
+      call: () =>
+        addPiggyCreditAction({ childId: 'other', pounds: '5', note: 'x' }),
+      dbMocks: ['insertManualEntry'],
+    },
+    {
+      name: 'recordPiggyPurchaseAction',
+      call: () =>
+        recordPiggyPurchaseAction({
+          childId: 'other',
+          pounds: '5',
+          category: 'toys',
+          note: '',
+        }),
+      dbMocks: ['insertManualEntry'],
+    },
+    {
+      name: 'reconcilePiggyAction',
+      call: () =>
+        reconcilePiggyAction({ childId: 'other', actualPounds: '5' }),
+      dbMocks: ['getPiggyBalance', 'insertManualEntry'],
+    },
+    {
+      name: 'deletePiggyEntryAction',
+      call: () =>
+        deletePiggyEntryAction({ childId: 'other', entryId: 'e1' }),
+      dbMocks: ['deleteManualEntry'],
+    },
+    {
+      name: 'setPiggyEnabledAction',
+      call: () =>
+        setPiggyEnabledAction({ childId: 'other', enabled: true }),
+      dbMocks: ['enablePiggyBankWithBackfill', 'disablePiggyBank'],
+    },
+  ];
+
+  it.each(cases)(
+    '$name gates on requireChild — assertParent only proves "signed in"',
+    async ({ call, dbMocks }) => {
+      mocks.requireChild.mockRejectedValue(new Error('Not found'));
+      await expect(call()).rejects.toThrow();
+      for (const key of dbMocks) {
+        expect(mocks[key]).not.toHaveBeenCalled();
+      }
+    },
+  );
 });
 
 describe('addPiggyCreditAction', () => {
