@@ -4,6 +4,7 @@
 import { and, desc, eq, gte, inArray, isNotNull, lt, lte, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { childProfiles, piggyEntries } from '@/db/schema';
+import { PIGGY_MANUAL_SOURCES, type PiggyManualSource } from '@/lib/piggy/sources';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -209,7 +210,7 @@ export async function getPiggyTotals(
 
 export interface ManualEntryInput {
   childId: string;
-  source: Extract<PiggySource, 'parent_credit' | 'purchase' | 'reconcile'>;
+  source: PiggyManualSource;
   pence: number;
   category?: string | null;
   note?: string | null;
@@ -242,7 +243,7 @@ export async function insertManualEntry(
   return row as PiggyEntry;
 }
 
-const DELETABLE_SOURCES = ['parent_credit', 'purchase', 'reconcile'];
+const DELETABLE_SOURCES: string[] = [...PIGGY_MANUAL_SOURCES];
 
 /**
  * Delete a parent-typed entry. Auto-earned entries are immutable: they double

@@ -10,6 +10,7 @@ import {
 } from '@/lib/actions/piggy';
 import { PIGGY_CATEGORIES, getPiggyCategory } from '@/lib/piggy/categories';
 import { formatPence } from '@/lib/piggy/money';
+import { PIGGY_MANUAL_SOURCES } from '@/lib/piggy/sources';
 
 export interface PanelEntry {
   id: string;
@@ -36,7 +37,7 @@ interface Props {
   };
 }
 
-const DELETABLE = new Set(['parent_credit', 'purchase', 'reconcile']);
+const DELETABLE = new Set<string>(PIGGY_MANUAL_SOURCES);
 
 export function PiggyBankPanel({
   childId,
@@ -52,8 +53,14 @@ export function PiggyBankPanel({
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) {
     startTransition(async () => {
-      const res = await fn();
-      setMessage(res.ok ? okMsg : `Failed: ${res.error ?? 'unknown error'}`);
+      try {
+        const res = await fn();
+        setMessage(res.ok ? okMsg : `Failed: ${res.error ?? 'unknown error'}`);
+      } catch (err) {
+        // A thrown action (e.g. zod rejecting a note over 200 chars) must
+        // surface here, not as an unhandled rejection inside the transition.
+        setMessage(`Failed: ${err instanceof Error ? err.message : 'unknown error'}`);
+      }
     });
   }
 
@@ -82,10 +89,14 @@ export function PiggyBankPanel({
           data-testid="piggy-enable"
           onClick={() =>
             startTransition(async () => {
-              const res = await setPiggyEnabledAction({ childId, enabled: true });
-              setMessage(
-                `Enabled — credited ${formatPence(res.creditedPence)} across ${res.entries} entries.`,
-              );
+              try {
+                const res = await setPiggyEnabledAction({ childId, enabled: true });
+                setMessage(
+                  `Enabled — credited ${formatPence(res.creditedPence)} across ${res.entries} entries.`,
+                );
+              } catch (err) {
+                setMessage(`Failed: ${err instanceof Error ? err.message : 'unknown error'}`);
+              }
             })
           }
           className="self-start rounded-full bg-[var(--color-ocean-700)] px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
@@ -109,7 +120,7 @@ export function PiggyBankPanel({
       </header>
 
       <p data-testid="piggy-totals" className="text-xs text-[var(--color-sand-700)]">
-        Earned {formatPence(totals.earnedPence)} lifetime · spent{' '}
+        Money in {formatPence(totals.earnedPence)} lifetime · money out{' '}
         {formatPence(totals.spentPence)}.
       </p>
 

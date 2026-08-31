@@ -11,6 +11,7 @@ import {
   weekProgress,
 } from '@/db/schema';
 import { listBossWeekIds } from '@/lib/db/weeks';
+import { KEY_VAULT_SOURCE } from '@/lib/db/key-vault';
 import { creditPiggyInTx, type PiggySource } from '@/lib/db/piggy';
 import {
   PIGGY_BOSS_CLEAR_PENCE,
@@ -78,7 +79,7 @@ export async function computePastProgressCredits(
     .where(
       and(
         eq(cardGrantsLog.childId, childId),
-        eq(cardGrantsLog.source, 'key_vault'),
+        eq(cardGrantsLog.source, KEY_VAULT_SOURCE),
       ),
     );
   for (const v of vaultRows) {

@@ -7,6 +7,7 @@ import {
   deleteManualEntry,
   getPiggyBalance,
   insertManualEntry,
+  isPiggyEnabled,
 } from '@/lib/db/piggy';
 import {
   disablePiggyBank,
@@ -62,6 +63,9 @@ export async function addPiggyCreditAction(
 ): Promise<Result> {
   const parsed = CreditSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
+  if (!(await isPiggyEnabled(child.id))) {
+    return { ok: false, error: 'piggy_disabled' };
+  }
 
   const pence = parsePoundsToPence(parsed.pounds);
   if (pence === null || pence === 0) {
@@ -85,6 +89,9 @@ export async function recordPiggyPurchaseAction(
 ): Promise<Result> {
   const parsed = PurchaseSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
+  if (!(await isPiggyEnabled(child.id))) {
+    return { ok: false, error: 'piggy_disabled' };
+  }
 
   const pence = parsePoundsToPence(parsed.pounds);
   if (pence === null || pence === 0) {
@@ -121,6 +128,9 @@ export async function reconcilePiggyAction(
 > {
   const parsed = ReconcileSchema.parse(input);
   const { child } = await requireChild(parsed.childId);
+  if (!(await isPiggyEnabled(child.id))) {
+    return { ok: false, error: 'piggy_disabled' };
+  }
 
   const actual = parsePoundsToPence(parsed.actualPounds);
   if (actual === null) return { ok: false, error: 'invalid_amount' };

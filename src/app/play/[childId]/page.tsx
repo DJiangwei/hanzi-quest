@@ -95,6 +95,8 @@ export default async function PlayHomePage({ params }: PageProps) {
     seasonBanner,
     merchantOffer,
     merchantBought,
+    piggyEnabled,
+    piggyBalance,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -109,10 +111,13 @@ export default async function PlayHomePage({ params }: PageProps) {
     getSeasonBannerState(child.id),
     getMerchantOffer(child.id, todayIso),
     hasBoughtMerchantToday(child.id, todayIso),
+    isPiggyEnabled(child.id),
+    // Fetched unconditionally — one indexed SUM — rather than gated behind
+    // piggyEnabled. PiggyBankCard already returns null when disabled, so an
+    // unused balance here is harmless, and folding it into this Promise.all
+    // avoids two extra serial round-trips on every home render.
+    getPiggyBalance(child.id),
   ]);
-
-  const piggyEnabled = await isPiggyEnabled(child.id);
-  const piggyBalance = piggyEnabled ? await getPiggyBalance(child.id) : 0;
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
   const voyage = currentMap ? getVoyageMap(currentMap.slug) : null;

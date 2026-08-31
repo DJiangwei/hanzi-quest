@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   insertManualEntry: vi.fn(),
   deleteManualEntry: vi.fn(),
   getPiggyBalance: vi.fn(),
+  isPiggyEnabled: vi.fn(),
   enablePiggyBankWithBackfill: vi.fn(),
   disablePiggyBank: vi.fn(),
 }));
@@ -15,6 +16,7 @@ vi.mock('@/lib/db/piggy', () => ({
   insertManualEntry: mocks.insertManualEntry,
   deleteManualEntry: mocks.deleteManualEntry,
   getPiggyBalance: mocks.getPiggyBalance,
+  isPiggyEnabled: mocks.isPiggyEnabled,
 }));
 vi.mock('@/lib/db/piggy-backfill', () => ({
   enablePiggyBankWithBackfill: mocks.enablePiggyBankWithBackfill,
@@ -33,6 +35,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.requireChild.mockResolvedValue({ child: { id: 'c1' }, parent: { id: 'p1' } });
   mocks.insertManualEntry.mockResolvedValue({ id: 'e1' });
+  // Existing tests below assume an enabled bank unless they say otherwise —
+  // the "piggy_disabled gate" block flips this to false per-case.
+  mocks.isPiggyEnabled.mockResolvedValue(true);
 });
 
 describe('auth', () => {
@@ -181,5 +186,40 @@ describe('setPiggyEnabledAction', () => {
       setPiggyEnabledAction({ childId: 'c1', enabled: false }),
     ).resolves.toEqual({ ok: true, creditedPence: 0, entries: 0 });
     expect(mocks.disablePiggyBank).toHaveBeenCalledWith('c1');
+  });
+});
+
+// A disabled child must accrue NOTHING, not accrue invisibly (creditPiggy's
+// own docstring rule). insertManualEntry itself has no enable-flag check — a
+// stale tab or a direct call to one of these three public server actions is
+// the failure mode this guards against, so the gate belongs at the action
+// layer, checked after requireChild and before any write.
+describe('piggy_disabled gate — a stale tab or direct call must not write', () => {
+  beforeEach(() => {
+    mocks.isPiggyEnabled.mockResolvedValue(false);
+  });
+
+  it('addPiggyCreditAction writes nothing and reports piggy_disabled', async () => {
+    await expect(
+      addPiggyCreditAction({ childId: 'c1', pounds: '2.50', note: '' }),
+    ).resolves.toEqual({ ok: false, error: 'piggy_disabled' });
+    expect(mocks.insertManualEntry).not.toHaveBeenCalled();
+  });
+
+  it('recordPiggyPurchaseAction writes nothing and reports piggy_disabled', async () => {
+    await expect(
+      recordPiggyPurchaseAction({
+        childId: 'c1', pounds: '3.00', category: 'toys', note: '',
+      }),
+    ).resolves.toEqual({ ok: false, error: 'piggy_disabled' });
+    expect(mocks.insertManualEntry).not.toHaveBeenCalled();
+  });
+
+  it('reconcilePiggyAction writes nothing and reports piggy_disabled — never even reads the jar balance', async () => {
+    await expect(
+      reconcilePiggyAction({ childId: 'c1', actualPounds: '9.40' }),
+    ).resolves.toEqual({ ok: false, error: 'piggy_disabled' });
+    expect(mocks.getPiggyBalance).not.toHaveBeenCalled();
+    expect(mocks.insertManualEntry).not.toHaveBeenCalled();
   });
 });
