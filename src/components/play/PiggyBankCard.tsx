@@ -4,14 +4,23 @@ import { PiggyJar } from '@/components/piggy/PiggyJar';
 interface Props {
   childId: string;
   balancePence: number;
+  /**
+   * Whether the child's parent has opted into the piggy bank. The rule
+   * lives HERE, not in the caller: "never show a reward she cannot have" is
+   * a product rule, so every future caller inherits it automatically rather
+   * than having to remember a page-level conditional.
+   */
+  enabled: boolean;
 }
 
 /**
- * The home entry point. Rendered only when the piggy bank is enabled — hidden
- * entirely otherwise, never greyed out or teasing, because a child whose parent
- * has not opted in should not see a reward she cannot have.
+ * The home entry point. Renders nothing when the piggy bank is disabled —
+ * hidden entirely, never greyed out or teasing, because a child whose parent
+ * has not opted in must not see a reward she cannot have.
  */
-export function PiggyBankCard({ childId, balancePence }: Props) {
+export function PiggyBankCard({ childId, balancePence, enabled }: Props) {
+  if (!enabled) return null;
+
   return (
     <Link
       href={`/play/${childId}/piggy-bank`}

@@ -11,11 +11,19 @@ const sections = {
 const week = { id: 'w1', weekNumber: 3, label: '第三周' };
 
 describe('PiggyBankCard', () => {
-  it('links to the piggy page and shows the balance', () => {
-    render(<PiggyBankCard childId="c1" balancePence={1450} />);
+  it('links to the piggy page and shows the balance when enabled', () => {
+    render(<PiggyBankCard childId="c1" balancePence={1450} enabled />);
     const link = screen.getByTestId('piggy-home-card');
     expect(link).toHaveAttribute('href', '/play/c1/piggy-bank');
     expect(link).toHaveTextContent('£14.50');
+  });
+
+  it('renders nothing when disabled — a child whose parent has not opted in must not see this reward', () => {
+    const { container } = render(
+      <PiggyBankCard childId="c1" balancePence={1450} enabled={false} />,
+    );
+    expect(screen.queryByTestId('piggy-home-card')).not.toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
   });
 });
 
@@ -58,7 +66,9 @@ describe('WeekHub pre-fight rewards', () => {
         piggyPence={100}
       />,
     );
+    expect(screen.getByText('金币 ×2')).toBeInTheDocument();
+    expect(screen.getByText('额外卡片 ×1')).toBeInTheDocument();
+    expect(screen.getByText(/钥匙碎片 ×1/)).toBeInTheDocument();
     expect(screen.getByText('解锁下一座岛')).toBeInTheDocument();
-    expect(screen.getByText(/金币 ×2/)).toBeInTheDocument();
   });
 });

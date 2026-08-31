@@ -342,9 +342,11 @@ export default async function PlayHomePage({ params }: PageProps) {
 
       <WantedPosters childId={childId} posters={bounties} />
 
-      {piggyEnabled && (
-        <PiggyBankCard childId={childId} balancePence={piggyBalance} />
-      )}
+      <PiggyBankCard
+        childId={childId}
+        enabled={piggyEnabled}
+        balancePence={piggyBalance}
+      />
 
       <TravelingMerchant
         childId={childId}
