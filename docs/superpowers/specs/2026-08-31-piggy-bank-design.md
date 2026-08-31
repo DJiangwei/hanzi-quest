@@ -154,16 +154,29 @@ The **partial** unique index is the entire idempotency story for auto-credits.
 It is partial because manual entries legitimately repeat — two 🍬 purchases on
 one day are two rows, not a conflict.
 
-### The 23505 guard
+### Idempotency without an exception
 
-`creditPiggy` catches the unique violation with **`isUniqueViolation` from
-`src/lib/errors/pg-errors.ts`**. Not `err.code === '23505'`: drizzle wraps every
-driver error in `DrizzleQueryError`, which has no `code`, so that check is always
-false. All six of this codebase's previous guards shipped with that bug and none
-worked in production (PR #159). Tests must build the error with
-`wrappedUniqueViolation()` from `tests/unit/helpers/pg-error.ts` — a bare
-`{ code: '23505' }` is a shape production never produces, and is exactly what
-made the previous tests vacuous.
+Auto-credits insert with **`.onConflictDoNothing().returning({ id })`** and read
+`rows.length > 0` as "did this credit happen". No exception is raised, so no
+23505 guard is needed at all.
+
+This is deliberately *not* the pattern the six guards audited in PR #159 use, and
+the difference matters here. `creditPiggyInTx` is called from **inside**
+`claimSeasonTierInTx`'s transaction. Postgres aborts an entire transaction on any
+error unless it is wrapped in a savepoint, so a caught unique violation would
+leave the enclosing season-claim transaction poisoned — every later statement
+failing with `current transaction is aborted`. Catching the error would plant
+that bug; not raising it avoids the question.
+
+`ON CONFLICT DO NOTHING` is precise here because `piggy_entries` has exactly one
+unique index besides its random-uuid primary key, so nothing else can be
+swallowed by it.
+
+The residual risk moves to the index itself: tests mock `@/db`, so a unit test
+proves only that the code branches correctly on an empty vs. non-empty
+`returning()`. **Whether the partial unique index actually exists and matches
+must be checked against the dev branch by hand** after `pnpm db:generate` — the
+same class of gap as a missing seed script run.
 
 ---
 
@@ -280,6 +293,12 @@ to remember.
 - **Vault** — `card_grants_log` where `source = 'key_vault'`.
 - **Final boss** — `final_boss_clears`.
 
+**Already-claimed season tiers are NOT backfilled.** The season £ attaches to the
+*act of claiming*, and those claims already happened under a config that paid
+nothing; there is also no per-tier timestamp to date them by. Claims from the
+merge onward pay. This is the one place "backfill everything" is read narrowly,
+and it is called out here so the preview figure is not mistaken for a bug.
+
 Dating: the vault (`granted_at`) and final boss (`cleared_at`) are exact.
 `week_progress` has **no `boss_cleared_at` column**, so weekly entries fall back
 to `last_played_at` — the right week, occasionally the wrong session. Do not add
@@ -387,8 +406,11 @@ spans for every label, per the bilingual-chrome rule.
 **Home card** near the 通缉令 posters: jar, balance, links through. Hidden
 entirely when `piggy_bank_enabled` is false — not greyed, not teasing.
 
-**Pre-fight preview**: 💷£1 joins `🪙×2 · 🎴+1 · 🗝️+1 · 解锁下一座岛` on the
-frontier island and the week hub, conditional on the flag. T3 established that
+**Pre-fight preview**: 💷£1 joins `🪙×2 · 🎴+1 · 🗝️+1 · 解锁下一座岛` in
+`WeekHub`'s frontier reward list, conditional on the flag. Correction to the
+brief: the frontier *island* on the voyage board carries only a compact `✨2×`
+badge, not a list, so there is nothing there for a fourth line to join. The hub
+is the surface the child reads before tapping into the fight. T3 established that
 naming rewards *before* the fight is what gets a reluctant child to attempt it;
 real money is the strongest instance of that, aimed at the exact battles she was
 avoiding.
