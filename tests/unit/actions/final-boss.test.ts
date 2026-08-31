@@ -7,8 +7,9 @@ vi.mock('@/lib/auth/guards', () => ({
   })),
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+const creditPiggy = vi.fn<(...a: unknown[]) => unknown>(async () => ({ credited: false }));
 vi.mock('@/lib/db/piggy', () => ({
-  creditPiggy: vi.fn().mockResolvedValue({ credited: false }),
+  creditPiggy: (...a: unknown[]) => creditPiggy(...a),
 }));
 const getSharedCurriculumPackBySlug = vi.fn<(...a: unknown[]) => unknown>(async () => ({
   id: 'pk',
@@ -74,5 +75,15 @@ describe('finishFinalBossAction', () => {
     });
     expect(grantMapChampionRewards).not.toHaveBeenCalled();
     expect(res.cardGrants).toHaveLength(0);
+  });
+  it('still returns the champion bundle when the £3 piggy credit throws', async () => {
+    creditPiggy.mockRejectedValueOnce(new Error('db down'));
+    const res = await finishFinalBossAction({
+      childId: 'c1',
+      packSlug: 'pirate-class-level-1',
+    });
+    expect(res.ok).toBe(true);
+    expect(res.cardGrants).toHaveLength(1);
+    expect(res.trophies).toHaveLength(1);
   });
 });
