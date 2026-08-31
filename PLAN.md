@@ -165,6 +165,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #157 | feat(crew): card gifting — duplicates to crewmates, nickname identity, no leaderboard | |
 | #158 | fix(scenes): 看图找字 stimulus validity — compiled `wordId`, counting-char balloon cards, verify script | |
 | #159 | fix(economy): every 23505 idempotency guard was dead — drizzle wraps driver errors, `err.code` never matched | |
+| #160 | feat(piggy): 存钱罐 piggy bank — real pocket money, off by default, ledger-derived balance | |
 
 ### Next up
 
