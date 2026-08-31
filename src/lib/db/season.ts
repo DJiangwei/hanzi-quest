@@ -17,6 +17,7 @@ import {
   childTrophies,
 } from '@/db/schema';
 import { awardCoinsInTx } from '@/lib/db/coins';
+import { creditPiggyInTx } from '@/lib/db/piggy';
 import type { Tx } from '@/lib/db/grants';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { SeasonRow, SeasonTier, SeasonReward } from '@/lib/season/types';
@@ -274,6 +275,18 @@ export async function claimSeasonTierInTx(
   if (claimed.includes(tier.tier)) return { claimed: false, reveal: null };
 
   const reveal = await grantRewardInTx(tx, childId, seasonId, tier.tier, tier.reward);
+
+  // 存钱罐 bonus, INSIDE the tx: if the claim rolls back, the money must roll
+  // back with it. creditPiggyInTx uses ON CONFLICT DO NOTHING rather than a
+  // caught 23505 precisely so it cannot poison this transaction.
+  if (tier.bonusMoneyPence) {
+    await creditPiggyInTx(tx, {
+      childId,
+      source: 'season_tier',
+      refId: `${seasonId}:${tier.tier}`,
+      pence: tier.bonusMoneyPence,
+    });
+  }
 
   await tx
     .update(childSeasonProgress)

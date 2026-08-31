@@ -3,6 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Minimal @/db mock — claimSeasonTierInTx receives the tx directly, so db itself
 // is unused here, but db/season.ts (and coins.ts) import it at module load.
 vi.mock('@/db', () => ({ db: {} }));
+// Tier 10 pays a 存钱罐 bonus (Task 7) — creditPiggyInTx does a real
+// tx.insert().onConflictDoNothing().returning() chain this fake tx doesn't
+// shape (no .returning()); this file isn't exercising the money path, so a
+// stub that resolves is enough. See piggy-season.test.ts for the money-path
+// assertions.
+vi.mock('@/lib/db/piggy', () => ({
+  creditPiggyInTx: vi.fn().mockResolvedValue({ credited: true }),
+}));
 
 import { claimSeasonTierInTx } from '@/lib/db/season';
 import { SUMMER_VOYAGE_TIERS } from '@/lib/season/summerVoyage';

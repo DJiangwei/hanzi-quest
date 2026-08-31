@@ -12,6 +12,14 @@ export interface SeasonTier {
   /** Cumulative season XP required to reach this tier. */
   xpRequired: number;
   reward: SeasonReward;
+  /**
+   * 存钱罐: real pocket money paid ON TOP of `reward`, in pence.
+   *
+   * Deliberately not a `{ type: 'money' }` variant of SeasonReward — that union
+   * is one-reward-per-tier, so a money variant would REPLACE this tier's card
+   * or cosmetic instead of adding to it.
+   */
+  bonusMoneyPence?: number;
 }
 
 export interface SeasonRow {

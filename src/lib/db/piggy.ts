@@ -39,9 +39,13 @@ export interface CreditInput {
 /**
  * Credit inside an existing transaction, WITHOUT checking the enable flag.
  *
- * Two callers: `creditPiggy` (which checked the flag itself) and
+ * Three callers: `creditPiggy` (which checked the flag itself);
  * `enablePiggyBankWithBackfill` (which is the statement that sets the flag, so
- * a fresh read would race its own write).
+ * a fresh read would race its own write); and `claimSeasonTierInTx` (which
+ * pays unconditionally — a season tier's £ lands in the ledger the moment it's
+ * claimed, enabled or not, which is exactly why `computePastProgressCredits`
+ * deliberately excludes season tiers from the enable-time backfill: there is
+ * nothing to backfill, it was never skipped).
  *
  * Idempotency is ON CONFLICT DO NOTHING against `piggy_entries_auto_uq`, NOT a
  * caught 23505. This runs inside `claimSeasonTierInTx`'s transaction, and
