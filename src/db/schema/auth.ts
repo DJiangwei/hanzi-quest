@@ -1,5 +1,6 @@
 // Drizzle schema · auth — see PLAN.md §4 (users, child_profiles)
 import {
+  boolean,
   jsonb,
   pgEnum,
   pgTable,
@@ -36,6 +37,12 @@ export const childProfiles = pgTable('child_profiles', {
   // 'boy' | 'girl' | null (neutral). Chosen at child creation; drives the
   // gendered default avatar head. Plain text (validated at the app layer).
   gender: text('gender'),
+  /**
+   * 存钱罐: off by default and opted into per-child by that child's OWN parent.
+   * Auto-crediting every child in the deployment would commit other families
+   * to a real payout schedule they never agreed to.
+   */
+  piggyBankEnabled: boolean('piggy_bank_enabled').notNull().default(false),
   birthYear: smallint('birth_year'),
   currentCurriculumPackId: uuid('current_curriculum_pack_id').references(
     () => curriculumPacks.id,
