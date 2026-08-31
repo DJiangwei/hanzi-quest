@@ -11,6 +11,8 @@ import {
 } from '@/lib/db/final-boss';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { GrantedTrophy } from '@/lib/db/trophies';
+import { creditPiggy } from '@/lib/db/piggy';
+import { PIGGY_FINAL_BOSS_PENCE } from '@/lib/piggy/rates';
 
 // childId is validated by requireChild (the real auth gate) — min(1) keeps
 // non-uuid test/dev ids working while still rejecting empty input.
@@ -46,6 +48,20 @@ export async function finishFinalBossAction(
     child.id,
     parsed.packSlug,
   );
+
+  // 存钱罐 £3. Guarded — the champion bundle must land even if this fails.
+  // Reached only on firstClear, and recordFinalBossClear is the single guard.
+  try {
+    await creditPiggy({
+      childId: child.id,
+      source: 'final_boss',
+      refId: pack.id,
+      pence: PIGGY_FINAL_BOSS_PENCE,
+    });
+  } catch (err) {
+    console.error('[finishFinalBossAction] piggy credit failed:', err);
+  }
+
   revalidatePath(`/play/${child.id}`);
   revalidatePath(`/play/${child.id}/maps`);
   return { ok: true, cardGrants: card ? [card] : [], trophies };

@@ -7,6 +7,9 @@ vi.mock('@/lib/auth/guards', () => ({
   })),
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/db/piggy', () => ({
+  creditPiggy: vi.fn().mockResolvedValue({ credited: false }),
+}));
 const getSharedCurriculumPackBySlug = vi.fn<(...a: unknown[]) => unknown>(async () => ({
   id: 'pk',
   slug: 'pirate-class-level-1',
