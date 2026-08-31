@@ -1,7 +1,7 @@
 // 存钱罐 ledger. SERVER-ONLY — never imported by a client component, and
 // deliberately NOT under src/lib/actions/: every exported async function in a
 // 'use server' file is a public RPC endpoint, and these take a raw childId.
-import { and, desc, eq, gte, isNotNull, lt, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, lt, lte, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { childProfiles, piggyEntries } from '@/db/schema';
 
@@ -240,7 +240,7 @@ export async function deleteManualEntry(
       and(
         eq(piggyEntries.id, entryId),
         eq(piggyEntries.childId, childId),
-        sql`${piggyEntries.source} = any(${DELETABLE_SOURCES})`,
+        inArray(piggyEntries.source, DELETABLE_SOURCES),
       ),
     )
     .returning({ id: piggyEntries.id });
