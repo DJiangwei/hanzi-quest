@@ -194,7 +194,10 @@ the route cannot produce a crash.
 
 ## Schema changes
 
-**Migration 0041** — one DDL statement:
+**Migration 0042** — one DDL statement:
+
+> Was 0041. The 存钱罐 piggy-bank spec (2026-08-31) claimed 0041 and is
+> expected to land first; renumber again if the merge order changes.
 
 ```sql
 ALTER TYPE coin_reason ADD VALUE 'daily_review';
@@ -266,5 +269,5 @@ the mock-`@/db` landmine.
 
 ## Post-merge ops
 
-Migration 0041 applies automatically on the Vercel production build
+Migration 0042 applies automatically on the Vercel production build
 (`tsx scripts/migrate.ts && next build`). **No recompile, no seed script.**
