@@ -42,3 +42,40 @@ describe('CardChestReveal', () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+// ── Zodiac ──────────────────────────────────────────────────────────────────
+// emojiFor branched on `card.packSlug === 'zodiac'`, but the real pack slug is
+// 'zodiac-v1'. That comparison was never true, so every zodiac card revealed
+// the pack's generic 🐲 instead of its own animal — since the feature shipped.
+// The fixtures below use the REAL slug on purpose: the previous one in this
+// file ('flags') is a value production has never stored.
+describe('CardChestReveal — zodiac', () => {
+  const zodiacCard = (slug: string, nameZh: string, nameEn: string): RevealCard => ({
+    id: `z-${slug}`,
+    slug,
+    packSlug: 'zodiac-v1',
+    nameZh,
+    nameEn,
+    loreZh: null,
+    loreEn: null,
+    isDupe: false,
+    shardsAfter: 0,
+  });
+
+  it('reveals the animal, not the pack emoji', () => {
+    const { container } = render(
+      <CardChestReveal cards={[zodiacCard('rat', '鼠', 'Rat')]} onDone={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /开启|open/i }));
+    expect(container.querySelector('use')).toHaveAttribute('href', '#z-rat');
+    expect(container.textContent).not.toContain('🐲');
+  });
+
+  it('reveals a DIFFERENT animal for a different card', () => {
+    const { container } = render(
+      <CardChestReveal cards={[zodiacCard('tiger', '虎', 'Tiger')]} onDone={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /开启|open/i }));
+    expect(container.querySelector('use')).toHaveAttribute('href', '#z-tiger');
+  });
+});
