@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
+vi.mock('@/lib/db/piggy', () => ({ creditPiggy: vi.fn().mockResolvedValue({ credited: false }) }));
 vi.mock('@/lib/db/bounties', () => ({ tickBountyProgress: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('@/lib/db/key-vault', () => ({ claimKeyVaultPrize: mocks.claimKeyVaultPrize }));
 vi.mock('@/lib/db/final-boss', () => ({ isMapFullyCleared: mocks.isMapFullyCleared }));

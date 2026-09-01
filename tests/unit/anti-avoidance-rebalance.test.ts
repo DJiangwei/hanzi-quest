@@ -42,6 +42,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
+vi.mock('@/lib/db/piggy', () => ({ creditPiggy: vi.fn().mockResolvedValue({ credited: false }) }));
 vi.mock('@/lib/db/play', () => ({
   startPlaySession: vi.fn(),
   endPlaySession: mocks.endPlaySession,

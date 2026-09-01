@@ -19,3 +19,4 @@ export * from './season';
 export * from './admin';
 export * from './answer-events';
 export * from './bounties';
+export * from './piggy';

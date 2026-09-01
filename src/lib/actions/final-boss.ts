@@ -11,6 +11,10 @@ import {
 } from '@/lib/db/final-boss';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { GrantedTrophy } from '@/lib/db/trophies';
+import { creditPiggy } from '@/lib/db/piggy';
+import { PIGGY_FINAL_BOSS_PENCE } from '@/lib/piggy/rates';
+import { piggyBonus } from '@/lib/piggy/bonus';
+import type { EconomyBonus } from '@/lib/actions/play';
 
 // childId is validated by requireChild (the real auth gate) — min(1) keeps
 // non-uuid test/dev ids working while still rejecting empty input.
@@ -24,7 +28,12 @@ const Schema = z.object({ childId: z.string().min(1), packSlug: z.string() });
  */
 export async function finishFinalBossAction(
   input: z.input<typeof Schema>,
-): Promise<{ ok: true; cardGrants: RevealCard[]; trophies: GrantedTrophy[] }> {
+): Promise<{
+  ok: true;
+  cardGrants: RevealCard[];
+  trophies: GrantedTrophy[];
+  bonuses: EconomyBonus[];
+}> {
   const parsed = Schema.parse(input);
   const { child } = await requireChild(parsed.childId);
 
@@ -39,14 +48,34 @@ export async function finishFinalBossAction(
   const { firstClear } = await recordFinalBossClear(child.id, pack.id);
   if (!firstClear) {
     revalidatePath(`/play/${child.id}`);
-    return { ok: true, cardGrants: [], trophies: [] };
+    return { ok: true, cardGrants: [], trophies: [], bonuses: [] };
   }
 
   const { card, trophies } = await grantMapChampionRewards(
     child.id,
     parsed.packSlug,
   );
+
+  // 存钱罐 £3. Guarded — the champion bundle must land even if this fails.
+  // Reached only on firstClear, and recordFinalBossClear is the single guard.
+  //
+  // The bonus is pushed ONLY when the credit actually happened, so a disabled
+  // child (creditPiggy returns credited:false) and a duplicate both stay
+  // silent rather than promising money that was never banked.
+  const bonuses: EconomyBonus[] = [];
+  try {
+    const res = await creditPiggy({
+      childId: child.id,
+      source: 'final_boss',
+      refId: pack.id,
+      pence: PIGGY_FINAL_BOSS_PENCE,
+    });
+    if (res.credited) bonuses.push(piggyBonus(PIGGY_FINAL_BOSS_PENCE));
+  } catch (err) {
+    console.error('[finishFinalBossAction] piggy credit failed:', err);
+  }
+
   revalidatePath(`/play/${child.id}`);
   revalidatePath(`/play/${child.id}/maps`);
-  return { ok: true, cardGrants: card ? [card] : [], trophies };
+  return { ok: true, cardGrants: card ? [card] : [], trophies, bonuses };
 }

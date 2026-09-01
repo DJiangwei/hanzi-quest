@@ -288,6 +288,13 @@
       "when": 1787470673170,
       "tag": "0040_opposite_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1788180118996,
+      "tag": "0041_messy_lightspeed",
+      "breakpoints": true
     }
   ]
 }

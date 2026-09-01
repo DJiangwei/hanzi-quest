@@ -72,6 +72,21 @@ export default async function EditChildPage({ params }: PageProps) {
         )}
       </section>
 
+      <section className="flex flex-col gap-2 rounded-2xl border border-[var(--color-sand-200)] bg-white/60 p-4">
+        <h2 className="text-sm font-bold text-[var(--color-ocean-900)]">
+          🐷 Piggy Bank
+        </h2>
+        <p className="text-xs text-[var(--color-sand-700)]">
+          Real pocket money — balance, purchases, and what the game has paid.
+        </p>
+        <Link
+          href={`/parent/children/${child.id}/piggy-bank`}
+          className="self-start text-sm font-semibold text-[var(--color-ocean-700)] hover:underline"
+        >
+          Open piggy bank →
+        </Link>
+      </section>
+
       <section className="flex flex-col gap-2 rounded-2xl border border-[var(--color-bad-bg)] bg-[var(--color-bad-bg)]/40 p-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-bad)]">
           Danger zone

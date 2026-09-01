@@ -56,6 +56,8 @@ import { WantedPosters } from '@/components/play/WantedPosters';
 import { generateDailyBounties, listTodayBounties } from '@/lib/db/bounties';
 import { listUnseenGifts } from '@/lib/db/gifts';
 import { GiftInbox } from '@/components/play/GiftInbox';
+import { PiggyBankCard } from '@/components/play/PiggyBankCard';
+import { getPiggyBalance, isPiggyEnabled } from '@/lib/db/piggy';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -93,6 +95,8 @@ export default async function PlayHomePage({ params }: PageProps) {
     seasonBanner,
     merchantOffer,
     merchantBought,
+    piggyEnabled,
+    piggyBalance,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -107,6 +111,12 @@ export default async function PlayHomePage({ params }: PageProps) {
     getSeasonBannerState(child.id),
     getMerchantOffer(child.id, todayIso),
     hasBoughtMerchantToday(child.id, todayIso),
+    isPiggyEnabled(child.id),
+    // Fetched unconditionally — one indexed SUM — rather than gated behind
+    // piggyEnabled. PiggyBankCard already returns null when disabled, so an
+    // unused balance here is harmless, and folding it into this Promise.all
+    // avoids two extra serial round-trips on every home render.
+    getPiggyBalance(child.id),
   ]);
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
@@ -336,6 +346,12 @@ export default async function PlayHomePage({ params }: PageProps) {
       />
 
       <WantedPosters childId={childId} posters={bounties} />
+
+      <PiggyBankCard
+        childId={childId}
+        enabled={piggyEnabled}
+        balancePence={piggyBalance}
+      />
 
       <TravelingMerchant
         childId={childId}

@@ -52,6 +52,9 @@ import {
   SceneAnswerEventSchema,
 } from '@/lib/play/answer-events';
 import { tickBountyProgress } from '@/lib/db/bounties';
+import { creditPiggy } from '@/lib/db/piggy';
+import { PIGGY_BOSS_CLEAR_PENCE, PIGGY_KEY_VAULT_PENCE } from '@/lib/piggy/rates';
+import { piggyBonus } from '@/lib/piggy/bonus';
 
 // ─── XP helpers ──────────────────────────────────────────────────────────────
 
@@ -111,6 +114,25 @@ async function safeClaimKeyVault(
   } catch (err) {
     console.error('[finishLevelAction] key vault claim failed:', err);
     return { card: null, coins: 0 };
+  }
+}
+
+/** Guarded 存钱罐 credit. Real money rides on a boss clear as a bonus; a
+ *  failure must never fail the clear. Same rule as `safeClaimKeyVault`:
+ *  SceneRunner awaits these actions inside startTransition with no catch, so
+ *  an unguarded throw freezes the child's screen mid-question. */
+async function safeCreditPiggy(
+  childId: string,
+  source: 'boss_clear' | 'key_vault',
+  refId: string,
+  pence: number,
+): Promise<boolean> {
+  try {
+    const res = await creditPiggy({ childId, source, refId, pence });
+    return res.credited;
+  } catch (err) {
+    console.error(`[finishLevelAction] piggy ${source} credit failed:`, err);
+    return false;
   }
 }
 
@@ -204,13 +226,18 @@ export type EconomyBonusReason =
   // T3: 'key_shard' is NOT a coin award — its `delta` is 1 key, shown as a
   // toast so the kid sees the island-unlock currency tick up.
   | 'key_shard'
-  | 'key_vault';
+  | 'key_vault'
+  // 存钱罐: `delta` is PENCE of real pocket money. See `unit`.
+  | 'piggy';
 
 export interface EconomyBonus {
   reason: EconomyBonusReason;
   delta: number;
   labelZh: string;
   labelEn: string;
+  /** What `delta` counts. Absent means coins — 'key_shard' was already an
+   *  unmarked exception; 'piggy' makes the distinction explicit. */
+  unit?: 'coins' | 'pence';
   meta?: { milestone?: number };
 }
 
@@ -566,6 +593,19 @@ export async function finishLevelAction(
       refType: 'week',
       refId: parsed.weekId,
     });
+    // 存钱罐: real money, FIRST clear only. Bosses are replayable (refId is the
+    // sessionId) and a LOSS pays boss_courage, so a repeatable £ would let her
+    // farm real money indefinitely.
+    if (
+      await safeCreditPiggy(
+        child.id,
+        'boss_clear',
+        parsed.weekId,
+        PIGGY_BOSS_CLEAR_PENCE,
+      )
+    ) {
+      bonuses.push(piggyBonus(PIGGY_BOSS_CLEAR_PENCE));
+    }
     // Story mode is HIDDEN (2026-06-13) — ZH text quality not yet up to par.
     // Eager generation disabled so no new chapters are produced; the helper +
     // routes are retained for re-enable. (Was: triggerEagerStoryGeneration.)
@@ -665,6 +705,17 @@ export async function finishLevelAction(
           labelZh: '集齐所有钥匙！宝库开启！',
           labelEn: 'All keys collected — the vault opens!',
         });
+      }
+      // The vault is idempotent per (child, map), so this can only pay once.
+      if (
+        await safeCreditPiggy(
+          child.id,
+          'key_vault',
+          week.curriculumPackId,
+          PIGGY_KEY_VAULT_PENCE,
+        )
+      ) {
+        bonuses.push(piggyBonus(PIGGY_KEY_VAULT_PENCE));
       }
     }
   }

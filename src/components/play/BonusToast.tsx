@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
 import type { EconomyBonus } from '@/lib/actions/play';
+import { formatPence } from '@/lib/piggy/money';
 
 interface BonusToastProps {
   bonuses: EconomyBonus[];
@@ -19,6 +20,7 @@ const REASON_ICON: Record<EconomyBonus['reason'], string> = {
   boss_courage: '🛡️',
   key_shard: '🗝️',
   key_vault: '💎',
+  piggy: '💷',
 };
 
 /**
@@ -75,7 +77,9 @@ export function BonusToast({
           <div className="flex flex-col items-start leading-tight">
             <span className="font-hanzi text-stone-900">
               {b.labelZh}{' '}
-              <span className="font-bold text-amber-700">+{b.delta}</span>
+              <span className="font-bold text-amber-700">
+                {b.unit === 'pence' ? `+${formatPence(b.delta)}` : `+${b.delta}`}
+              </span>
             </span>
             <span className="text-[10px] italic text-stone-600">
               {b.labelEn}

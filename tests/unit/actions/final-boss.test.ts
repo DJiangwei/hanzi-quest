@@ -7,6 +7,10 @@ vi.mock('@/lib/auth/guards', () => ({
   })),
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+const creditPiggy = vi.fn<(...a: unknown[]) => unknown>(async () => ({ credited: false }));
+vi.mock('@/lib/db/piggy', () => ({
+  creditPiggy: (...a: unknown[]) => creditPiggy(...a),
+}));
 const getSharedCurriculumPackBySlug = vi.fn<(...a: unknown[]) => unknown>(async () => ({
   id: 'pk',
   slug: 'pirate-class-level-1',
@@ -43,6 +47,11 @@ import { finishFinalBossAction } from '@/lib/actions/final-boss';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // clearAllMocks does NOT drain queued `...Once` implementations, so an
+  // unconsumed one leaks into the next test and silently answers ITS call.
+  // Reset and restore the default explicitly.
+  creditPiggy.mockReset();
+  creditPiggy.mockResolvedValue({ credited: false });
 });
 
 describe('finishFinalBossAction', () => {
@@ -71,5 +80,44 @@ describe('finishFinalBossAction', () => {
     });
     expect(grantMapChampionRewards).not.toHaveBeenCalled();
     expect(res.cardGrants).toHaveLength(0);
+  });
+  it('surfaces the £3 as a PENCE bonus so the win is celebrated, not silent', async () => {
+    creditPiggy.mockResolvedValueOnce({ credited: true });
+    const res = await finishFinalBossAction({
+      childId: 'c1',
+      packSlug: 'pirate-class-level-1',
+    });
+    expect(res.bonuses).toEqual([
+      expect.objectContaining({ reason: 'piggy', unit: 'pence', delta: 300 }),
+    ]);
+  });
+  it('emits no bonus when the credit did not happen (disabled child, or a dupe)', async () => {
+    creditPiggy.mockResolvedValueOnce({ credited: false });
+    const res = await finishFinalBossAction({
+      childId: 'c1',
+      packSlug: 'pirate-class-level-1',
+    });
+    expect(res.bonuses).toEqual([]);
+  });
+  it('emits no bonus on a repeat clear — the £3 is a first-clear reward', async () => {
+    recordFinalBossClear.mockResolvedValueOnce({ firstClear: false });
+    creditPiggy.mockResolvedValueOnce({ credited: true });
+    const res = await finishFinalBossAction({
+      childId: 'c1',
+      packSlug: 'pirate-class-level-1',
+    });
+    expect(res.bonuses).toEqual([]);
+    expect(creditPiggy).not.toHaveBeenCalled();
+  });
+  it('still returns the champion bundle when the £3 piggy credit throws', async () => {
+    creditPiggy.mockRejectedValueOnce(new Error('db down'));
+    const res = await finishFinalBossAction({
+      childId: 'c1',
+      packSlug: 'pirate-class-level-1',
+    });
+    expect(res.ok).toBe(true);
+    expect(res.cardGrants).toHaveLength(1);
+    expect(res.trophies).toHaveLength(1);
+    expect(res.bonuses).toEqual([]);
   });
 });

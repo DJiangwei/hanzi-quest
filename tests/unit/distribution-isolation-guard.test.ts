@@ -88,6 +88,50 @@ describe('crew gifting is gated at the GIVER (the second cross-account write)', 
   });
 });
 
+describe('piggy bank actions are gated at requireChild (real-money, cross-account surface)', () => {
+  // Pinned so a newly added export can't slip past the per-function gate
+  // check below — same reasoning as EXPECTED_CREW_EXPORTS. This module can
+  // credit or debit a child's real pocket money, so a new export shipping
+  // without requireChild is worse here than almost anywhere else in the app.
+  const EXPECTED_PIGGY_EXPORTS = [
+    'addPiggyCreditAction',
+    'recordPiggyPurchaseAction',
+    'reconcilePiggyAction',
+    'deletePiggyEntryAction',
+    'setPiggyEnabledAction',
+  ];
+
+  it('piggy.ts exports exactly the expected action set', () => {
+    const src = read('src/lib/actions/piggy.ts');
+    const names = [...src.matchAll(/export async function (\w+)\(/g)].map(
+      (m) => m[1],
+    );
+    expect(names).toEqual(EXPECTED_PIGGY_EXPORTS);
+  });
+
+  it('every exported action in piggy.ts calls requireChild and never assertParent', () => {
+    // assertParent proves only "is signed in" — `users.role` defaults to
+    // 'parent' for every Clerk signup (the PR #155 landmine). Money actions
+    // must prove ownership of the CHILD with requireChild, or any signed-in
+    // stranger could credit or debit another family's piggy bank.
+    const src = read('src/lib/actions/piggy.ts');
+    expect(src.trimStart()).toMatch(/^['"]use server['"]/);
+    const starts = [...src.matchAll(/export async function (\w+)\(/g)];
+    expect(starts.length).toBe(EXPECTED_PIGGY_EXPORTS.length);
+    for (let i = 0; i < starts.length; i++) {
+      const name = starts[i][1];
+      const bodyStart = starts[i].index!;
+      const bodyEnd = i + 1 < starts.length ? starts[i + 1].index! : src.length;
+      const body = src.slice(bodyStart, bodyEnd);
+      expect(body, `${name}: must call requireChild()`).toMatch(/requireChild\(/);
+      expect(body, `${name}: must NOT call assertParent()`).not.toMatch(/assertParent\(/);
+    }
+    // File-level too: no import of assertParent, no call anywhere outside an
+    // exported function body.
+    expect(src).not.toMatch(/assertParent\(/);
+  });
+});
+
 describe('content authoring is admin-gated (Findings 1, 2, 3)', () => {
   // Pinned so a deleted or renamed export can't silently drop out of the
   // per-function assertAdmin check below (F6).
@@ -189,6 +233,27 @@ describe('content authoring is admin-gated (Findings 1, 2, 3)', () => {
       (f) => /[\\/](week|stage)[\\/]new[\\/]/.test(f) || /[\\/]week[\\/][^/\\]+[\\/]review[\\/]/.test(f),
     );
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('存钱罐 never reaches a social surface', () => {
+  // A money balance is the most comparative number this app could hold, and
+  // the crew rule already forbids ranks and gifts-received tallies (see the
+  // CLAUDE.md landmine: no social surface may EVER show a comparative figure
+  // between children). Extend this file list if crew gains new surfaces.
+  it('crew.ts does not import the piggy modules', () => {
+    const src = read('src/lib/db/crew.ts');
+    expect(src).not.toMatch(/piggy/i);
+  });
+
+  it('no crew or gift component renders a money value', () => {
+    for (const file of [
+      'src/components/play/GiftInbox.tsx',
+      'src/lib/actions/crew.ts',
+    ]) {
+      const src = read(file);
+      expect(src).not.toMatch(/formatPence|piggy|pence/i);
+    }
   });
 });
 

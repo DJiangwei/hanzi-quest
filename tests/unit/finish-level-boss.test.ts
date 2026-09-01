@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/auth/guards', () => ({ requireChild: mocks.requireChild }));
+vi.mock('@/lib/db/piggy', () => ({ creditPiggy: vi.fn().mockResolvedValue({ credited: false }) }));
 vi.mock('@/lib/db/bounties', () => ({ tickBountyProgress: vi.fn().mockResolvedValue(undefined) }));
 // T3 key vault: finishLevelAction now imports these @/lib/db/* modules, each of
 // which loads @/db at module scope — mock them or the suite dies on DATABASE_URL.
