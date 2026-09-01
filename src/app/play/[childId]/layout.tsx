@@ -6,6 +6,7 @@ import { SoundThemeBootstrap } from '@/components/play/SoundThemeBootstrap';
 import { MidSceneProvider } from '@/components/play/MidSceneProvider';
 import { KidNavBar } from '@/components/play/KidNavBar';
 import { getChildSettings } from '@/lib/db/settings';
+import { isPiggyEnabled } from '@/lib/db/piggy';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,7 +21,12 @@ export default async function PlayLayout({ children, params }: LayoutProps) {
     notFound();
   }
 
-  const settings = await getChildSettings(childId);
+  // Parallel, not serial: this runs on EVERY play route, so a second
+  // round-trip here would be paid on every navigation.
+  const [settings, piggyEnabled] = await Promise.all([
+    getChildSettings(childId),
+    isPiggyEnabled(childId),
+  ]);
   const themeSlug = settings?.soundThemeSlug ?? null;
 
   return (
@@ -46,7 +52,7 @@ export default async function PlayLayout({ children, params }: LayoutProps) {
       <SoundThemeBootstrap themeSlug={themeSlug} />
       <MidSceneProvider>
         <div className="flex flex-1 flex-col pb-20 lg:pb-0 lg:pl-20">{children}</div>
-        <KidNavBar childId={childId} />
+        <KidNavBar childId={childId} piggyEnabled={piggyEnabled} />
       </MidSceneProvider>
     </div>
   );
