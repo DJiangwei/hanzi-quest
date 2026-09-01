@@ -8,7 +8,11 @@ import {
   collectibleItems,
   collectionPacks,
 } from '@/db/schema/collections';
-import { SHARD_SWAP_COST, shardSwapCostForPack } from '@/lib/economy/shards';
+import {
+  SHARD_SWAP_COST,
+  isPackShardSwappable,
+  shardSwapCostForPack,
+} from '@/lib/economy/shards';
 import { isUniqueViolation } from '@/lib/errors/pg-errors';
 
 export const WEEKLY_CARD_CAP = 10; // dead since card-economy-v2 — daily cap replaced it
@@ -441,7 +445,11 @@ export async function swapShardsInTx(
   | { ok: true; shardsRemaining: number }
   | {
       ok: false;
-      reason: 'insufficient_shards' | 'already_owned' | 'item_not_found';
+      reason:
+        | 'insufficient_shards'
+        | 'already_owned'
+        | 'item_not_found'
+        | 'pack_locked';
     }
 > {
   const items = await tx
@@ -450,6 +458,14 @@ export async function swapShardsInTx(
     .innerJoin(collectionPacks, eq(collectionPacks.id, collectibleItems.packId))
     .where(eq(collectibleItems.id, itemId));
   if (items.length === 0) return { ok: false, reason: 'item_not_found' };
+
+  // Proof-of-clear packs can never be bought. Checked BEFORE any balance read
+  // or debit: this action is a public RPC endpoint, so the UI hiding the swap
+  // is presentation, not enforcement.
+  if (!isPackShardSwappable(items[0].packSlug)) {
+    return { ok: false, reason: 'pack_locked' };
+  }
+
   const cost = shardSwapCostForPack(items[0].packSlug);
 
   const owned = await tx

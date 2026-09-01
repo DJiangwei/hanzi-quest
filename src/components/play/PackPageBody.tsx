@@ -12,7 +12,7 @@ import type { GrantedTrophy } from '@/lib/actions/play';
 import type { CrewMate } from '@/lib/db/crew';
 import { getPackMeta } from '@/lib/collections/packRegistry';
 import { swapShardsForItem, convertDuplicateToShard } from '@/lib/actions/gacha';
-import { shardSwapCostForPack } from '@/lib/economy/shards';
+import { isPackShardSwappable, shardSwapCostForPack } from '@/lib/economy/shards';
 import { HoloShimmer, isLimitedPack } from '@/components/play/items/HoloShimmer';
 import { STUDY_MIN_OWNED } from '@/lib/play/study';
 
@@ -65,6 +65,10 @@ export function PackPageBody({
   }
   // Per-pack swap cost (3 regular; 12 for the festival/season limited packs).
   const SWAP_COST = shardSwapCostForPack(packSlug);
+  // 钥匙宝库 / 海域霸主 are proof-of-clear: no shard price buys them. The server
+  // refuses it too (swapShardsInTx → 'pack_locked'); hiding it here is so she
+  // never taps a button that can only say no.
+  const swapLocked = !isPackShardSwappable(packSlug);
   const router = useRouter();
   const ownedSet = new Set(ownedItemIds);
 
@@ -140,7 +144,7 @@ export function PackPageBody({
             ♻️ 换碎片 / To shard
           </button>
         )}
-        {!isOwned && (
+        {!isOwned && !swapLocked && (
           <button
             type="button"
             data-testid="swap-chip"
@@ -224,12 +228,24 @@ export function PackPageBody({
         );
       })()}
 
-      <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-center text-[11px] font-medium leading-snug text-amber-900">
-        <p>重复的卡可以换成 🔹 碎片，{SWAP_COST} 个碎片换一张你想要的新卡。</p>
-        <p className="italic opacity-80">
-          Turn duplicate cards into 🔹 shards — {SWAP_COST} shards trade for any new card you want.
-        </p>
-      </div>
+      {swapLocked ? (
+        <div
+          data-testid="locked-pack-note"
+          className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-center text-[11px] font-medium leading-snug text-amber-900"
+        >
+          <p>这里的宝藏只能靠自己打出来，不能用碎片换。</p>
+          <p className="italic opacity-80">
+            These treasures are earned, never traded — no shards can buy them.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-center text-[11px] font-medium leading-snug text-amber-900">
+          <p>重复的卡可以换成 🔹 碎片，{SWAP_COST} 个碎片换一张你想要的新卡。</p>
+          <p className="italic opacity-80">
+            Turn duplicate cards into 🔹 shards — {SWAP_COST} shards trade for any new card you want.
+          </p>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-[#c89f5e] bg-[linear-gradient(180deg,#f5ead0_0%,#ead7a8_100%)] p-4">
         {meta.grouping ? (

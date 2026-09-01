@@ -88,3 +88,29 @@ describe('swapShardsInTx (universal wallet)', () => {
     if (!r.ok) expect(r.reason).toBe('insufficient_shards');
   });
 });
+
+// ── Locked packs ────────────────────────────────────────────────────────────
+// 钥匙宝库 and 海域霸主 are proof-of-clear — a card you can buy proves nothing.
+// The UI hides the swap, but the action is a public RPC endpoint the client can
+// call with any itemId, so the refusal has to be enforced here.
+describe('swapShardsInTx — locked packs', () => {
+  for (const packSlug of ['key-vault-v1', 'champions-v1']) {
+    it(`refuses ${packSlug} before reading or debiting any shards`, async () => {
+      // Only the item lookup is queued. If the guard fired late, the balance
+      // read would consume an empty queue entry and the reason would differ.
+      const tx = makeTx([[{ id: 'item-1', packSlug }]]);
+      const r = await swapShardsInTx(tx, 'c1', 'item-1');
+      expect(r).toEqual({ ok: false, reason: 'pack_locked' });
+    });
+  }
+
+  it('still allows a festival card — timed exclusives keep their costly recovery path', async () => {
+    const tx = makeTx([
+      [{ id: 'item-1', packSlug: 'festivals-v1' }],
+      [],                    // not already owned
+      [{ shards: 99 }],      // plenty
+    ]);
+    const r = await swapShardsInTx(tx, 'c1', 'item-1');
+    expect(r).toMatchObject({ ok: true });
+  });
+});
