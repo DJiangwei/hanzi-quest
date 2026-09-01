@@ -75,17 +75,35 @@ describe('PiggyHistory', () => {
     },
   ];
 
-  it('shows credits and debits with their signs', () => {
+  it('puts money IN and money OUT in separate columns, accounting-style', () => {
     render(<PiggyHistory entries={entries} />);
-    expect(screen.getByTestId('piggy-entry-e1')).toHaveTextContent('£1.00');
-    expect(screen.getByTestId('piggy-entry-e2')).toHaveTextContent('-£4.50');
+    // A credit fills the 收入 column and leaves 支出 blank, and vice versa.
+    expect(screen.getByTestId('piggy-in-e1')).toHaveTextContent('£1.00');
+    expect(screen.getByTestId('piggy-out-e1').textContent).not.toMatch(/\d/);
+    expect(screen.getByTestId('piggy-out-e2')).toHaveTextContent('£4.50');
+    expect(screen.getByTestId('piggy-in-e2').textContent).not.toMatch(/\d/);
   });
 
-  it('labels an earned entry bilingually and a purchase by its category emoji', () => {
+  it('writes a spend as a POSITIVE magnitude — the column carries the sign', () => {
     render(<PiggyHistory entries={entries} />);
-    expect(screen.getByTestId('piggy-entry-e1')).toHaveTextContent('打败Boss');
-    expect(screen.getByTestId('piggy-entry-e1')).toHaveTextContent('Boss defeated');
-    expect(screen.getByTestId('piggy-entry-e2')).toHaveTextContent('🍬');
+    // A ledger does not write -£4.50 under 支出; that would make a six-year-old
+    // read a minus sign to learn something the column already said.
+    expect(screen.getByTestId('piggy-out-e2').textContent).not.toContain('-');
+  });
+
+  it('heads both columns bilingually', () => {
+    render(<PiggyHistory entries={entries} />);
+    const head = screen.getByTestId('piggy-ledger-head');
+    expect(head).toHaveTextContent('收入');
+    expect(head).toHaveTextContent(/In/);
+    expect(head).toHaveTextContent('支出');
+    expect(head).toHaveTextContent(/Out/);
+  });
+
+  it('keeps the rows in the order given, newest first', () => {
+    render(<PiggyHistory entries={entries} />);
+    const ids = screen.getAllByTestId(/^piggy-entry-/).map((el) => el.dataset.testid);
+    expect(ids).toEqual(['piggy-entry-e1', 'piggy-entry-e2']);
   });
 
   it('shows a bilingual empty state rather than an empty list', () => {
