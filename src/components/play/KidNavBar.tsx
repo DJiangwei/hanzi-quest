@@ -7,6 +7,12 @@ import { useMidScene } from './MidSceneProvider';
 
 interface Props {
   childId: string;
+  /**
+   * 存钱罐 is off by default and opted into per-child by that child's OWN
+   * parent, so the tab is absent — not greyed — for a child who cannot have it.
+   * Defaults to false: off is the safe default if a caller forgets to pass it.
+   */
+  piggyEnabled?: boolean;
 }
 
 interface TabDef {
@@ -17,7 +23,7 @@ interface TabDef {
   isActive: (path: string) => boolean;
 }
 
-export function KidNavBar({ childId }: Props) {
+export function KidNavBar({ childId, piggyEnabled = false }: Props) {
   const path = usePathname();
   const router = useRouter();
   const { midScene } = useMidScene();
@@ -28,7 +34,7 @@ export function KidNavBar({ childId }: Props) {
       key: 'map',
       href: `/play/${childId}`,
       icon: '🏝️',
-      label: '地图 / Map',
+      label: '地图\nMap',
       isActive: (p) =>
         p === `/play/${childId}` ||
         p.startsWith(`/play/${childId}/week`) ||
@@ -39,31 +45,43 @@ export function KidNavBar({ childId }: Props) {
       key: 'backpack',
       href: `/play/${childId}/collection`,
       icon: '🎒',
-      label: '背包 / Bag',
+      label: '背包\nBag',
       isActive: (p) => p.startsWith(`/play/${childId}/collection`),
     },
     {
       key: 'calendar',
       href: `/play/${childId}/calendar`,
       icon: '📅',
-      label: '日历 / Calendar',
+      label: '日历\nCalendar',
       isActive: (p) => p.startsWith(`/play/${childId}/calendar`),
     },
     {
       key: 'home',
       href: `/play/${childId}/home`,
       icon: '🏠',
-      label: '家 / Home',
+      label: '家\nHome',
       isActive: (p) => p.startsWith(`/play/${childId}/home`),
     },
     {
       key: 'shop',
       href: `/play/${childId}/shop`,
       icon: '🛒',
-      label: '商店 / Shop',
+      label: '商店\nShop',
       isActive: (p) => p.startsWith(`/play/${childId}/shop`),
     },
   ];
+
+  // 存钱罐 last: least disruption to existing muscle memory, and it sits next
+  // to 商店 — the coin shop and the real-money jar are neighbouring ideas.
+  if (piggyEnabled) {
+    tabs.push({
+      key: 'piggy',
+      href: `/play/${childId}/piggy-bank`,
+      icon: '🐷',
+      label: '存钱罐\nPiggy',
+      isActive: (p) => p.startsWith(`/play/${childId}/piggy-bank`),
+    });
+  }
 
   function onTabClick(e: React.MouseEvent, href: string, isActive: boolean) {
     if (isActive) return; // no-op when tapping current tab
@@ -82,14 +100,15 @@ export function KidNavBar({ childId }: Props) {
         prefetch
         aria-current={active ? 'page' : undefined}
         onClick={(e) => onTabClick(e, tab.href, active)}
-        className="flex min-w-[52px] flex-col items-center gap-0.5 px-1 py-1 transition-colors"
+        data-testid={`nav-tab-${tab.key}`}
+        className="flex min-w-[44px] flex-col items-center gap-0.5 px-1 py-1 transition-colors"
       >
         <span className="text-2xl leading-none">{tab.icon}</span>
         <span
           className={
             active
-              ? 'whitespace-nowrap text-[10px] font-bold leading-tight text-[var(--color-ocean-700)]'
-              : 'whitespace-nowrap text-[10px] font-medium leading-tight text-[var(--color-sand-600)]'
+              ? 'whitespace-pre-line text-center text-[10px] font-bold leading-tight text-[var(--color-ocean-700)]'
+              : 'whitespace-pre-line text-center text-[10px] font-medium leading-tight text-[var(--color-sand-600)]'
           }
         >
           {tab.label}
