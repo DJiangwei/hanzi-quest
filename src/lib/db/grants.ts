@@ -25,6 +25,76 @@ export interface WeightedItem {
   dropWeight: number;
 }
 
+/**
+ * Per-PACK pick weight, keyed by packId. Pure and exported so the distribution
+ * can be asserted exactly rather than sampled.
+ *
+ * `1 + unowned/size` — a FRACTION, deliberately independent of pack size.
+ *
+ * The previous version multiplied each ITEM's weight by its pack's unowned
+ * COUNT, so a pack of N contributed ~N² to the roll. With flags-v1 at 193 cards
+ * against packs of 10-20, that gave flags **93.7% of every chest pull** in
+ * production — measured, not estimated. The intent ("favour packs she hasn't
+ * finished") was right; expressing it per-item squared the pack size.
+ *
+ * The 1 + … floor keeps the spread to at most 2x between an untouched pack and
+ * a nearly-finished one, so hunting the last card of a set never becomes
+ * hopeless.
+ *
+ * A fully-collected pack weighs 0 and drops out — unless EVERY pack is
+ * complete, in which case all of them stay in and the pull yields a duplicate
+ * (which converts to a shard). That is the correct end state, not an error.
+ */
+export function packPickWeights<T extends WeightedItem>(
+  items: T[],
+  ownedSet: Set<string>,
+): Map<string, number> {
+  const size = new Map<string, number>();
+  const unowned = new Map<string, number>();
+  for (const item of items) {
+    size.set(item.packId, (size.get(item.packId) ?? 0) + 1);
+    if (!ownedSet.has(item.id)) {
+      unowned.set(item.packId, (unowned.get(item.packId) ?? 0) + 1);
+    }
+  }
+
+  const weights = new Map<string, number>();
+  for (const [packId, n] of size) {
+    const free = unowned.get(packId) ?? 0;
+    weights.set(packId, free === 0 ? 0 : 1 + free / n);
+  }
+
+  // Everything collected: keep every pack in play rather than leaving nothing
+  // to pick.
+  if ([...weights.values()].every((w) => w === 0)) {
+    for (const packId of size.keys()) weights.set(packId, 1);
+  }
+  return weights;
+}
+
+/** Roll one entry from `entries` by weight; returns null when all weigh 0. */
+function rollWeighted<T>(
+  entries: T[],
+  weightOf: (t: T) => number,
+  rng: () => number,
+): T | null {
+  const weights = entries.map(weightOf);
+  const total = weights.reduce((a, b) => a + b, 0);
+  if (total <= 0) return null;
+  let roll = rng() * total;
+  for (let i = 0; i < entries.length; i++) {
+    roll -= weights[i];
+    if (roll <= 0) return entries[i];
+  }
+  return entries[entries.length - 1]; // float-rounding safety net
+}
+
+/**
+ * Pick one card for a chest: choose the PACK first, then a card inside it.
+ *
+ * Two stages, because probability must not scale with how many cards a pack
+ * happens to contain. See `packPickWeights` for what that cost us.
+ */
 export function weightedRandomPick<T extends WeightedItem>(
   items: T[],
   ownedSet: Set<string>,
@@ -34,33 +104,30 @@ export function weightedRandomPick<T extends WeightedItem>(
     throw new Error('weightedRandomPick called with empty catalog');
   }
 
-  // Bias by per-pack unowned count.
-  const packUnowned = new Map<string, number>();
-  for (const item of items) {
-    if (!ownedSet.has(item.id)) {
-      packUnowned.set(item.packId, (packUnowned.get(item.packId) ?? 0) + 1);
-    }
-  }
-
-  const weights = items.map(
-    (item) => item.dropWeight * (1 + (packUnowned.get(item.packId) ?? 0)),
+  // A pack whose every card is retired (dropWeight 0) cannot yield a card, so
+  // it must not win the pack roll either.
+  const packHasDroppable = new Set(
+    items.filter((i) => i.dropWeight > 0).map((i) => i.packId),
   );
-  const total = weights.reduce((a, b) => a + b, 0);
-  if (total === 0) {
-    // Catalog has no items with positive drop weight (e.g. all retired).
-    // This is unexpected in normal operation — fail loudly rather than silently
-    // re-enable retired items.
+  const packWeights = packPickWeights(items, ownedSet);
+  const packIds = [...packWeights.keys()].filter((p) => packHasDroppable.has(p));
+
+  const packId = rollWeighted(packIds, (p) => packWeights.get(p) ?? 0, rng);
+  if (packId === null) {
+    // Every pack is retired. Fail loudly rather than silently re-enabling one.
     throw new Error(
       'weightedRandomPick: no items with positive dropWeight in catalog',
     );
   }
 
-  let roll = rng() * total;
-  for (let i = 0; i < items.length; i++) {
-    roll -= weights[i];
-    if (roll <= 0) return items[i];
+  const inPack = items.filter((i) => i.packId === packId);
+  const picked = rollWeighted(inPack, (i) => i.dropWeight, rng);
+  if (picked === null) {
+    throw new Error(
+      'weightedRandomPick: no items with positive dropWeight in catalog',
+    );
   }
-  return items[items.length - 1]; // float-rounding safety net
+  return picked;
 }
 
 export interface CardGrantResult {
