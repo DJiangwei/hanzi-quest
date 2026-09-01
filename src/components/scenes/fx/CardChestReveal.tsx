@@ -12,9 +12,19 @@ interface Props {
   onDone: () => void;
 }
 
-/** Resolve the per-card glyph: zodiac pack → null (use ZodiacIcon), else emoji. */
+const ZODIAC_PACK_SLUG = 'zodiac-v1';
+
+/**
+ * Resolve the per-card glyph: zodiac pack → null (TreasureChestReveal then
+ * draws the per-animal ZodiacIcon), else an emoji.
+ *
+ * This compared against 'zodiac' for months. The real pack slug is
+ * 'zodiac-v1', so the branch never fired and every zodiac card revealed the
+ * pack's generic 🐲 — the same wrong-slug-namespace class as PR #153. Keep the
+ * constant; do not re-inline the literal.
+ */
 function emojiFor(card: RevealCard): string | null {
-  if (card.packSlug === 'zodiac') return null;
+  if (card.packSlug === ZODIAC_PACK_SLUG) return null;
   const meta = getPackMeta(card.packSlug);
   return meta?.resolveRevealEmoji?.(card.slug) ?? meta?.themeEmoji ?? '🎴';
 }

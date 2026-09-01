@@ -1,3 +1,9 @@
+import {
+  ZODIAC_SLUGS,
+  ZodiacIcon,
+  type ZodiacSlug,
+} from '@/components/play/zodiac-icons';
+
 export interface CardArtProps {
   /**
    * A real image URL (Vercel Blob) when the card has generated cartoon art, or
@@ -11,6 +17,20 @@ export interface CardArtProps {
   size: 'sm' | 'md' | 'lg';
   /** Accessible label (the card's English name). */
   alt: string;
+  /**
+   * The card's pack and slug. Only zodiac-v1 needs them today: it is the one
+   * pack whose art is a procedural SVG rather than a photo or an emoji, so
+   * without them every animal collapses to the pack's single themeEmoji.
+   * Optional so existing callers keep working — they just keep the emoji path.
+   */
+  packSlug?: string;
+  slug?: string;
+}
+
+const ZODIAC_PACK_SLUG = 'zodiac-v1';
+
+function isZodiacSlug(slug: string): slug is ZodiacSlug {
+  return (ZODIAC_SLUGS as readonly string[]).includes(slug);
 }
 
 /**
@@ -43,7 +63,15 @@ const HTTP_URL = /^https?:\/\//i;
  * Codex art backfill (writing real URLs into `collectible_items.image_url`)
  * light up the cards with zero per-card code changes.
  */
-export function CardArt({ imageUrl, emoji, owned, size, alt }: CardArtProps) {
+export function CardArt({
+  imageUrl,
+  emoji,
+  owned,
+  size,
+  alt,
+  packSlug,
+  slug,
+}: CardArtProps) {
   if (imageUrl && HTTP_URL.test(imageUrl)) {
     return (
       <div
@@ -60,6 +88,25 @@ export function CardArt({ imageUrl, emoji, owned, size, alt }: CardArtProps) {
           className="h-full w-full object-cover"
           loading="lazy"
         />
+      </div>
+    );
+  }
+
+  // Zodiac art lives in <ZodiacIconDefs> (mounted in the play layout), not in
+  // image_url and not as an emoji. An unknown slug falls through to the emoji
+  // rather than emitting a <use href="#z-???"> that renders nothing.
+  if (packSlug === ZODIAC_PACK_SLUG && slug && isZodiacSlug(slug)) {
+    return (
+      <div
+        className={[
+          imgSize[size],
+          'leading-none',
+          owned ? '' : 'opacity-40 grayscale',
+        ].join(' ')}
+        role="img"
+        aria-label={alt}
+      >
+        <ZodiacIcon slug={slug} className="h-full w-full" />
       </div>
     );
   }

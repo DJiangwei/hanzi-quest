@@ -98,7 +98,7 @@ export function StudyRunner({ childId, packSlug, packNameZh, packNameEn, questio
       <MultipleChoiceQuiz
         key={q.id}
         prompt={<span className="font-hanzi text-lg">看图选词 / Match the picture to a word</span>}
-        stimulus={<CardArt imageUrl={q.target.imageUrl} emoji={emojiFor(q.target.slug)} owned size="lg" alt={q.target.nameEn} />}
+        stimulus={<CardArt packSlug={packSlug} slug={q.target.slug} imageUrl={q.target.imageUrl} emoji={emojiFor(q.target.slug)} owned size="lg" alt={q.target.nameEn} />}
         choices={q.choices.map((c: StudyCardLite) => ({
           key: c.id,
           label: (
@@ -123,7 +123,7 @@ export function StudyRunner({ childId, packSlug, packNameZh, packNameEn, questio
       stimulus={<SpeakButton text={q.target.nameZh} size="md" label="🔊 听 / Listen" />}
       choices={q.choices.map((c: StudyCardLite) => ({
         key: c.id,
-        label: <CardArt imageUrl={c.imageUrl} emoji={emojiFor(c.slug)} owned size="md" alt={c.nameEn} />,
+        label: <CardArt packSlug={packSlug} slug={c.slug} imageUrl={c.imageUrl} emoji={emojiFor(c.slug)} owned size="md" alt={c.nameEn} />,
         isCorrect: c.id === q.target.id,
       }))}
       onComplete={onAnswer}

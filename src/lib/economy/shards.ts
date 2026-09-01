@@ -29,7 +29,36 @@ export const SHARD_SWAP_EXCLUSIVE_PACKS: ReadonlySet<string> = new Set([
   'key-vault-v1',
 ]);
 
-/** The shard cost to swap for a card in the given pack. */
+/**
+ * Packs whose cards can NEVER be bought with shards, at any price.
+ *
+ * These two are proof-of-clear: 钥匙宝库 is opened by collecting every key on a
+ * map, 海域霸主 by beating that map's overlord. A card you can buy is not proof
+ * of anything, so no shard price is the right one.
+ *
+ * Deliberately NARROWER than SHARD_SWAP_EXCLUSIVE_PACKS: 节日 and 赛季 are
+ * *timed* exclusives rather than achievements. Missing a festival's window
+ * should cost a real grind (12 shards) to recover, not be permanent.
+ *
+ * Every locked pack must also be gacha-ineligible — a card that cannot be
+ * earned by grinding but can still drop from a chest would arrive by luck and
+ * not by achievement, which is the same contradiction from the other side.
+ */
+export const SHARD_SWAP_LOCKED_PACKS: ReadonlySet<string> = new Set([
+  'key-vault-v1',
+  'champions-v1',
+]);
+
+/** False when this pack's cards can never be obtained with shards. */
+export function isPackShardSwappable(packSlug: string): boolean {
+  return !SHARD_SWAP_LOCKED_PACKS.has(packSlug);
+}
+
+/**
+ * The shard cost to swap for a card in the given pack. Callers MUST check
+ * `isPackShardSwappable` first — a locked pack has no meaningful cost, and this
+ * returns the exclusive price for one rather than pretending it is free.
+ */
 export function shardSwapCostForPack(packSlug: string): number {
   return SHARD_SWAP_EXCLUSIVE_PACKS.has(packSlug)
     ? SHARD_SWAP_COST_EXCLUSIVE

@@ -51,3 +51,75 @@ describe('CardArt', () => {
     expect(wrapper?.className).toContain('opacity-40');
   });
 });
+
+// ── Zodiac ──────────────────────────────────────────────────────────────────
+// zodiac-v1 is the only pack whose art is a procedural SVG rather than a photo
+// or an emoji: all 12 cards have image_url = NULL, and it is the only one of 15
+// packs with no `resolveRevealEmoji`. CardArt therefore fell through to the
+// pack's single themeEmoji and drew the SAME 🐲 for every animal — which made
+// the zodiac study lesson unanswerable (four identical picture choices) and
+// showed a generic dragon in every zodiac chest reveal.
+describe('CardArt — zodiac', () => {
+  it('draws the per-animal ZodiacIcon, not the pack emoji', () => {
+    const { container } = render(
+      <CardArt
+        packSlug="zodiac-v1"
+        slug="rat"
+        imageUrl={null}
+        emoji="🐲"
+        owned
+        size="md"
+        alt="Rat"
+      />,
+    );
+    expect(container.querySelector('use')).toHaveAttribute('href', '#z-rat');
+    expect(container.textContent).not.toContain('🐲');
+  });
+
+  it('draws TWELVE DISTINCT glyphs for the twelve animals', () => {
+    // The regression in one assertion: before the fix this collapsed to a
+    // single 🐲 repeated twelve times.
+    const slugs = ['rat','ox','tiger','rabbit','dragon','snake','horse','sheep','monkey','rooster','dog','pig'];
+    const hrefs = slugs.map((slug) => {
+      const { container, unmount } = render(
+        <CardArt packSlug="zodiac-v1" slug={slug} imageUrl={null} emoji="🐲" owned size="md" alt={slug} />,
+      );
+      const href = container.querySelector('use')?.getAttribute('href');
+      unmount();
+      return href;
+    });
+    expect(new Set(hrefs).size).toBe(12);
+  });
+
+  it('still prefers real art when a zodiac card ever gets an image', () => {
+    const { container } = render(
+      <CardArt
+        packSlug="zodiac-v1"
+        slug="rat"
+        imageUrl="https://example.com/rat.png"
+        emoji="🐲"
+        owned
+        size="md"
+        alt="Rat"
+      />,
+    );
+    expect(container.querySelector('img')).toBeInTheDocument();
+    expect(container.querySelector('use')).toBeNull();
+  });
+
+  it('leaves every other pack on the emoji path', () => {
+    const { container } = render(
+      <CardArt packSlug="flags-v1" slug="gb" imageUrl={null} emoji="🇬🇧" owned size="md" alt="UK" />,
+    );
+    expect(container.querySelector('use')).toBeNull();
+    expect(container.textContent).toContain('🇬🇧');
+  });
+
+  it('falls back to the emoji for an unknown zodiac slug rather than a broken <use>', () => {
+    const { container } = render(
+      <CardArt packSlug="zodiac-v1" slug="unicorn" imageUrl={null} emoji="🐲" owned size="md" alt="?" />,
+    );
+    expect(container.querySelector('use')).toBeNull();
+    expect(container.textContent).toContain('🐲');
+  });
+});
