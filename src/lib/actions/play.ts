@@ -54,6 +54,7 @@ import {
 import { tickBountyProgress } from '@/lib/db/bounties';
 import { creditPiggy } from '@/lib/db/piggy';
 import { PIGGY_BOSS_CLEAR_PENCE, PIGGY_KEY_VAULT_PENCE } from '@/lib/piggy/rates';
+import { piggyBonus } from '@/lib/piggy/bonus';
 
 // ─── XP helpers ──────────────────────────────────────────────────────────────
 
@@ -133,17 +134,6 @@ async function safeCreditPiggy(
     console.error(`[finishLevelAction] piggy ${source} credit failed:`, err);
     return false;
   }
-}
-
-/** One bonus shape for both piggy payouts. */
-function piggyBonus(pence: number): EconomyBonus {
-  return {
-    reason: 'piggy',
-    delta: pence,
-    unit: 'pence',
-    labelZh: '存钱罐',
-    labelEn: 'Piggy bank',
-  };
 }
 
 /** Guarded weekly 大礼包 claim — the gift rides the daily-login signal and is a
