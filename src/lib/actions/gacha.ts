@@ -19,7 +19,14 @@ export async function swapShardsForItem(
   itemId: string,
 ): Promise<
   | { ok: true; shardsRemaining: number; continentTrophies: GrantedTrophy[] }
-  | { ok: false; reason: 'insufficient_shards' | 'already_owned' | 'item_not_found' }
+  | {
+      ok: false;
+      reason:
+        | 'insufficient_shards'
+        | 'already_owned'
+        | 'item_not_found'
+        | 'pack_locked';
+    }
 > {
   const { child } = await requireChild(childId);
   const result = await db.transaction((tx) => swapShardsInTx(tx, child.id, itemId));
