@@ -1,5 +1,4 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { wrappedUniqueViolation } from './helpers/pg-error';
 
 const h = vi.hoisted(() => ({
   claimRows: [] as unknown[],
@@ -60,12 +59,18 @@ function makeTx(opts: {
     insert: vi.fn(() => ({
       values: vi.fn(() => {
         insertCalls++;
-        if (insertCalls === 1 && opts.claimThrows) {
-          throw wrappedUniqueViolation();
-        }
-        // Awaitable, and chainable for onConflictDo*.
+        // The claim insert is the FIRST one and is idempotent via ON CONFLICT
+        // DO NOTHING — it returns no rows when the month is already claimed.
+        // Not a caught 23505: this runs inside db.transaction, where
+        // postgres.js rejects the whole transaction on any failed statement
+        // regardless of what the callback does with the error.
+        const claimConflicted = insertCalls === 1 && opts.claimThrows;
         return {
-          onConflictDoNothing: () => Promise.resolve(undefined),
+          onConflictDoNothing: () => ({
+            returning: () => Promise.resolve(claimConflicted ? [] : [{ monthKey: 'x' }]),
+            then: (resolve: (v: unknown) => unknown) =>
+              Promise.resolve(undefined).then(resolve),
+          }),
           onConflictDoUpdate: () => Promise.resolve(undefined),
           then: (resolve: (v: unknown) => unknown) =>
             Promise.resolve(undefined).then(resolve),

@@ -16,7 +16,6 @@ import {
 } from '@/lib/calendar/festivals';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { Tx } from './grants';
-import { isUniqueViolation } from '@/lib/errors/pg-errors';
 
 export const FESTIVALS_PACK_SLUG = 'festivals-v1';
 
@@ -133,18 +132,17 @@ export async function claimFestivalReward(
   }
 
   return db.transaction(async (tx) => {
-    // 1. Idempotency — once per (child, month).
-    try {
-      await tx.insert(festivalChallengeClaims).values({
-        childId,
-        monthKey: yyyymm,
-        cardSlug: theme.cardSlug,
-      });
-    } catch (err) {
-      if (isUniqueViolation(err)) {
-        return { granted: false, reason: 'already_claimed' };
-      }
-      throw err;
+    // 1. Idempotency — once per (child, month). ON CONFLICT DO NOTHING rather
+    //    than a caught violation: this is inside the transaction, and
+    //    postgres.js rejects the whole transaction on any failed statement
+    //    regardless of what the callback catches. See `pullCardInTx`.
+    const claimed = await tx
+      .insert(festivalChallengeClaims)
+      .values({ childId, monthKey: yyyymm, cardSlug: theme.cardSlug })
+      .onConflictDoNothing()
+      .returning({ monthKey: festivalChallengeClaims.monthKey });
+    if (claimed.length === 0) {
+      return { granted: false, reason: 'already_claimed' };
     }
 
     // 2. Resolve the festival card item.

@@ -13,7 +13,6 @@ import {
   isPackShardSwappable,
   shardSwapCostForPack,
 } from '@/lib/economy/shards';
-import { isUniqueViolation } from '@/lib/errors/pg-errors';
 
 export const WEEKLY_CARD_CAP = 10; // dead since card-economy-v2 — daily cap replaced it
 export const DAILY_CARD_CAP = 10;
@@ -191,14 +190,28 @@ export async function pullCardInTx(
     return { granted: false, reason: 'daily_cap_reached', cardsToday: currentCount };
   }
 
-  // 2. Idempotency log — INSERT with PK collision → already granted.
-  try {
-    await tx.insert(cardGrantsLog).values({ childId, source, refId });
-  } catch (err) {
-    if (isUniqueViolation(err)) {
-      return { granted: false, reason: 'already_granted', cardsToday: currentCount };
-    }
-    throw err;
+  // 2. Idempotency log.
+  // Idempotency: ON CONFLICT DO NOTHING, never a caught error.
+  //
+  // This runs INSIDE the caller's transaction, and postgres.js aborts a
+  // transaction the moment any statement fails — it then rejects the whole
+  // `db.transaction()` with the raw driver error, no matter what the callback
+  // did with it. Catching the violation here therefore CANNOT work: PR #159
+  // fixed the predicate (`isUniqueViolation` walks drizzle's `cause` chain) but
+  // the shape was wrong from the start, and production kept logging the
+  // rejection. Verified with a live probe against the dev branch.
+  //
+  // Guards that sit OUTSIDE a transaction (`recordFinalBossClear`'s bare
+  // insert, `claimKeyVaultPrize` and `buyMerchantOffer` wrapping
+  // `db.transaction`) are fine as try/catch — the rule is about position, not
+  // about the predicate.
+  const logged = await tx
+    .insert(cardGrantsLog)
+    .values({ childId, source, refId })
+    .onConflictDoNothing()
+    .returning({ refId: cardGrantsLog.refId });
+  if (logged.length === 0) {
+    return { granted: false, reason: 'already_granted', cardsToday: currentCount };
   }
 
   // 3. Pick weighted random item from all active packs.
@@ -305,14 +318,15 @@ export async function grantGiftPackInTx(
   weekStartUtc: string,
   rng: () => number = Math.random,
 ): Promise<GiftPackResult> {
-  // 1. Idempotency guard — once per week.
-  try {
-    await tx.insert(cardGrantsLog).values({ childId, source: WEEKLY_GIFT_SOURCE, refId: weekStartUtc });
-  } catch (err) {
-    if (isUniqueViolation(err)) {
-      return { granted: false, reason: 'already_granted' };
-    }
-    throw err;
+  // 1. Idempotency guard — once per week. See the note in `pullCardInTx`: a
+  //    try/catch cannot work from inside the caller's transaction.
+  const logged = await tx
+    .insert(cardGrantsLog)
+    .values({ childId, source: WEEKLY_GIFT_SOURCE, refId: weekStartUtc })
+    .onConflictDoNothing()
+    .returning({ refId: cardGrantsLog.refId });
+  if (logged.length === 0) {
+    return { granted: false, reason: 'already_granted' };
   }
 
   // 2. Active, gacha-eligible packs (reward-only packs like festivals are excluded).

@@ -1,10 +1,19 @@
-// Every "already granted / already claimed" guard in this codebase keys off a
-// Postgres unique violation (SQLSTATE 23505). drizzle-orm wraps EVERY driver
-// error in `DrizzleQueryError` (pg-core/session.js), which carries
-// query/params/cause but NO `code` — so a guard that tests `err.code` directly
-// never matches in production. These tests use the REAL wrapped shape observed
-// in prod logs, not a bare `{ code: '23505' }` object that production never
-// produces.
+// Idempotency guards in this codebase come in TWO shapes, and the difference is
+// positional, not stylistic:
+//
+//   OUTSIDE a transaction (a bare `db.insert`, or a try/catch wrapping
+//   `db.transaction`) → catching the violation works. `isUniqueViolation` must
+//   walk drizzle's `cause` chain, because DrizzleQueryError carries
+//   query/params/cause but NO `code` (PR #159). Tested here with the REAL
+//   wrapped shape, never a bare `{ code: '23505' }` production never produces.
+//
+//   INSIDE someone else's transaction (a `*InTx` helper handed a `tx`) →
+//   catching CANNOT work. postgres.js aborts the transaction on the first
+//   failed statement and rejects the whole `db.transaction()` with the raw
+//   driver error, whatever the callback did with it. Those guards use
+//   `.onConflictDoNothing().returning()` so no error is ever raised. Asserted
+//   below by pinning that onConflictDoNothing is actually called — reverting
+//   one to try/catch fails the test.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { wrappedUniqueViolation } from './helpers/pg-error';
@@ -123,35 +132,44 @@ describe('claimKeyVaultPrize', () => {
   });
 });
 
-describe('pullCardInTx', () => {
-  it('returns already_granted instead of throwing when the grant log row exists', async () => {
+describe('pullCardInTx (inside a transaction → ON CONFLICT, never a catch)', () => {
+  function txWithConflict(rows: unknown[]) {
+    const returning = vi.fn().mockResolvedValue(rows);
+    const onConflictDoNothing = vi.fn(() => ({ returning }));
     const tx = {
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({ for: vi.fn().mockResolvedValue([{ count: 3 }]) })),
         })),
       })),
-      insert: vi.fn(() => ({
-        values: vi.fn(() => {
-          throw wrappedUniqueViolation();
-        }),
-      })),
+      insert: vi.fn(() => ({ values: vi.fn(() => ({ onConflictDoNothing })) })),
     } as never;
+    return { tx, onConflictDoNothing, returning };
+  }
 
+  it('returns already_granted when the insert conflicts, with NO error raised', async () => {
+    const { tx } = txWithConflict([]); // conflict → nothing returned
     const result = await pullCardInTx(tx, 'child-1', 'review', '2026-08-21', '2026-08-21');
-
     expect(result).toEqual({ granted: false, reason: 'already_granted', cardsToday: 3 });
+  });
+
+  it('uses ON CONFLICT DO NOTHING — a try/catch here could not work', async () => {
+    // Regression pin. This guard runs inside the caller's transaction, where a
+    // caught violation still rejects the transaction, so the mechanism itself
+    // is the thing under test.
+    const { tx, onConflictDoNothing } = txWithConflict([]);
+    await pullCardInTx(tx, 'child-1', 'review', '2026-08-21', '2026-08-21');
+    expect(onConflictDoNothing).toHaveBeenCalled();
   });
 });
 
-describe('grantGiftPackInTx', () => {
-  it('returns already_granted instead of throwing when this week is already claimed', async () => {
+describe('grantGiftPackInTx (inside a transaction → ON CONFLICT, never a catch)', () => {
+  it('returns already_granted when this week is already claimed, with NO error raised', async () => {
+    const onConflictDoNothing = vi.fn(() => ({
+      returning: vi.fn().mockResolvedValue([]),
+    }));
     const tx = {
-      insert: vi.fn(() => ({
-        values: vi.fn(() => {
-          throw wrappedUniqueViolation();
-        }),
-      })),
+      insert: vi.fn(() => ({ values: vi.fn(() => ({ onConflictDoNothing })) })),
       select: vi.fn(),
       update: vi.fn(),
     } as never;
@@ -159,5 +177,7 @@ describe('grantGiftPackInTx', () => {
     const result = await grantGiftPackInTx(tx, 'child-1', '2026-08-17', () => 0.1);
 
     expect(result).toEqual({ granted: false, reason: 'already_granted' });
+    expect(onConflictDoNothing).toHaveBeenCalled();
   });
 });
+

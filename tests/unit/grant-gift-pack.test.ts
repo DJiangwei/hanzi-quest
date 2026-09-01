@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/db', () => ({ db: { transaction: vi.fn() } }));
 
 import { grantGiftPackInTx, WEEKLY_GIFT_SOURCE } from '@/lib/db/grants';
-import { wrappedUniqueViolation } from './helpers/pg-error';
 
 /** Chainable select stub: each terminal .where() yields the next queued rows array. */
 function selectYielding(rowsQueue: unknown[][]) {
@@ -25,6 +24,10 @@ describe('grantGiftPackInTx', () => {
     const tx = {
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
+          // The idempotency insert: a row comes back, so the week is unclaimed.
+          onConflictDoNothing: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([{ refId: '2026-06-01' }]),
+          })),
           onConflictDoUpdate: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue([{ shards: 1 }]),
           })),
@@ -52,10 +55,17 @@ describe('grantGiftPackInTx', () => {
     }
   });
 
-  it('returns already_granted when the weekly idempotency insert collides (23505)', async () => {
+  it('returns already_granted when the weekly idempotency insert conflicts', async () => {
+    // ON CONFLICT DO NOTHING, not a caught 23505: this runs inside the
+    // caller's transaction, where postgres.js rejects the whole transaction on
+    // any failed statement no matter what the callback catches.
     const tx = {
       insert: vi.fn(() => ({
-        values: vi.fn(() => { throw wrappedUniqueViolation(); }),
+        values: vi.fn(() => ({
+          onConflictDoNothing: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([]),
+          })),
+        })),
       })),
       select: vi.fn(),
       update: vi.fn(),
