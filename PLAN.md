@@ -166,6 +166,10 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #158 | fix(scenes): 看图找字 stimulus validity — compiled `wordId`, counting-char balloon cards, verify script | |
 | #159 | fix(economy): every 23505 idempotency guard was dead — drizzle wraps driver errors, `err.code` never matched | |
 | #160 | feat(piggy): 存钱罐 piggy bank — real pocket money, off by default, ledger-derived balance | |
+| #161 | feat(piggy): 存钱罐 as a 6th kid nav tab, shown only when that child's parent opted in | |
+| #162 | fix(collection): chest was 93.7% flags (pack-size-squared bug) → two-stage pick; zodiac lesson unanswerable; key-vault/champions unbuyable with shards | |
+| #163 | feat(piggy): two-column ledger for the child's piggy-bank history | |
+| #164 | fix(economy): three idempotency guards sit inside a transaction — `.onConflictDoNothing()` replaces the still-broken caught 23505 | |
 
 ### Next up
 
