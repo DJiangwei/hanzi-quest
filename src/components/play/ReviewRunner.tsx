@@ -95,7 +95,7 @@ export function ReviewRunner({ childId, questions, pool }: Props) {
 
   if (q.type === 'translate_pick') {
     return (
-      <>
+      <main className="flex flex-1 flex-col">
         <MidSceneFlag />
         {progress}
         <MultipleChoiceQuiz
@@ -104,13 +104,20 @@ export function ReviewRunner({ childId, questions, pool }: Props) {
           stimulus={<span className="font-hanzi text-6xl">{target.hanzi}</span>}
           choices={choices.map((c) => ({
             key: c.characterId,
+            // meaningEn is guaranteed non-null here by buildReviewSession's
+            // translate_pick eligibility + distractor filters (both require
+            // `c.meaningEn` truthy) — see the invariant test in
+            // tests/unit/review-session.test.ts ("never lets a null-meaningEn
+            // character into a translate_pick question"). Do NOT add a
+            // `?? c.hanzi`-style fallback: that would hide a future builder
+            // regression AND mix a hanzi choice into an all-English question.
             label: <span className="text-lg">{c.meaningEn}</span>,
             isCorrect: c.characterId === q.targetCharacterId,
           }))}
           postRevealAudio={target.hanzi}
           onComplete={onAnswer}
         />
-      </>
+      </main>
     );
   }
 
@@ -120,7 +127,7 @@ export function ReviewRunner({ childId, questions, pool }: Props) {
     // fall through to the audio question rather than showing a blank box.
     if (word?.imageUrl) {
       return (
-        <>
+        <main className="flex flex-1 flex-col">
           <MidSceneFlag />
           {progress}
           <MultipleChoiceQuiz
@@ -141,7 +148,7 @@ export function ReviewRunner({ childId, questions, pool }: Props) {
             }))}
             onComplete={onAnswer}
           />
-        </>
+        </main>
       );
     }
   }
@@ -153,7 +160,7 @@ export function ReviewRunner({ childId, questions, pool }: Props) {
   // Do NOT pass a hint: 💡 is practice-only, and the hint text describes the
   // picture in English, which would give the answer away here.
   return (
-    <>
+    <main className="flex flex-1 flex-col">
       <MidSceneFlag />
       {progress}
       <MultipleChoiceQuiz
@@ -167,6 +174,6 @@ export function ReviewRunner({ childId, questions, pool }: Props) {
         }))}
         onComplete={onAnswer}
       />
-    </>
+    </main>
   );
 }

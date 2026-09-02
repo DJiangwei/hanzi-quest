@@ -155,4 +155,25 @@ describe('buildReviewSession', () => {
     );
     expect(new Set(qs.map((q) => q.id)).size).toBe(qs.length);
   });
+
+  it('never lets a null-meaningEn character into a translate_pick question, as target or distractor', () => {
+    // Renderer trust: ReviewRunner's translate_pick branch renders
+    // `c.meaningEn` with NO fallback, on the strength of this invariant —
+    // a null here would render a blank, unguessable button. `mystery` is
+    // placed LAST in the pool so it lands mid-shuffle (not truncated off
+    // the end by the CHOICE_COUNT slice) if the distractor filter's
+    // `c.meaningEn &&` guard is ever dropped — see the mutation note below.
+    const pool = [
+      poolChar('cat', '猫', 'cat'),
+      poolChar('dog', '狗', 'dog'),
+      poolChar('bird', '鸟', 'bird'),
+      poolChar('fish', '鱼', 'fish'),
+      poolChar('mystery', '谜', null),
+    ];
+    const questions = buildReviewSession([target('cat', '猫')], pool, seq([0]));
+    expect(questions).toHaveLength(1);
+    const q = questions[0];
+    expect(q.type).toBe('translate_pick');
+    expect(q.choiceCharacterIds).not.toContain('mystery');
+  });
 });
