@@ -356,7 +356,9 @@ describe('buildWordOwners', () => {
       poolChar('sing', '唱', 'sing', [{ wordId: 'w1', text: '唱歌', imageUrl: 'http://x/1.png' }]),
       poolChar('song', '歌', 'song', [{ wordId: 'w2', text: '唱歌', imageUrl: 'http://x/1.png' }]),
     ]);
-    expect(owners.get('唱歌')).toEqual(new Set(['sing', 'song']));
+    // Keyed on HANZI, matching validStimulusWords' documented contract
+    // ("word TEXT -> the set of hanzi that word is linked to").
+    expect(owners.get('唱歌')).toEqual(new Set(['唱', '歌']));
   });
 });
 
@@ -496,7 +498,12 @@ export interface ReviewQuestion {
 const CHOICE_COUNT = 4;
 
 /**
- * word text → every character in the pool that owns it.
+ * word text → the set of HANZI in the pool that own it.
+ *
+ * Keyed on hanzi, not characterId, to match `validStimulusWords`' documented
+ * contract exactly. (`characters` is unique on `(hanzi, script)`, so the two
+ * are 1:1 and only `.size` is read — but matching the contract means the next
+ * reader does not have to re-derive that.)
  *
  * Built over the ENTIRE review pool, not one week. `validStimulusWords`
  * (PR #158) rejects a stimulus word shared with another character *in the pool
@@ -511,7 +518,7 @@ export function buildWordOwners(
   for (const char of pool) {
     for (const w of char.words) {
       const set = owners.get(w.text) ?? new Set<string>();
-      set.add(char.characterId);
+      set.add(char.hanzi);
       owners.set(w.text, set);
     }
   }
@@ -1312,6 +1319,7 @@ vi.mock('@/lib/actions/review', () => ({ finishReviewAction: vi.fn() }));
 vi.mock('@/lib/audio/play', () => ({ playSound: vi.fn() }));
 
 import { ReviewRunner } from '@/components/play/ReviewRunner';
+import { MidSceneProvider, useMidScene } from '@/components/play/MidSceneProvider';
 import type { ReviewPoolChar, ReviewQuestion } from '@/lib/review/session';
 
 const pool: ReviewPoolChar[] = [
@@ -1349,11 +1357,24 @@ describe('ReviewRunner', () => {
     expect(container.textContent).toMatch(/[A-Za-z]/);
   });
 
-  it('mounts MidSceneFlag so a nav tap asks before abandoning the session', () => {
-    // Documented landmine: any long-session route must mount it, or KidNavBar
-    // navigates away mid-session with no quit-confirm.
-    render(<ReviewRunner childId="c1" questions={[question()]} pool={pool} />);
-    expect(screen.getByTestId('mid-scene-flag')).toBeInTheDocument();
+  it('flips the mid-scene flag so a nav tap asks before abandoning the session', () => {
+    // Documented landmine: any long-session route must mount MidSceneFlag, or
+    // KidNavBar navigates away mid-session with no quit-confirm.
+    //
+    // MidSceneFlag renders null by design, so assert the BEHAVIOUR through the
+    // real provider rather than adding a marker element to a shared component
+    // for a test's convenience.
+    function Probe() {
+      const { midScene } = useMidScene();
+      return <span data-testid="probe">{String(midScene)}</span>;
+    }
+    render(
+      <MidSceneProvider>
+        <ReviewRunner childId="c1" questions={[question()]} pool={pool} />
+        <Probe />
+      </MidSceneProvider>,
+    );
+    expect(screen.getByTestId('probe')).toHaveTextContent('true');
   });
 
   it('renders an audio_pick question without crashing', () => {
@@ -1374,11 +1395,9 @@ describe('ReviewRunner', () => {
 Run: `pnpm vitest run tests/unit/review-runner.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Check what `MidSceneFlag` renders**
+- [ ] **Step 3: Do NOT modify `MidSceneProvider`**
 
-Run: `grep -n "MidSceneFlag" -A12 src/components/play/MidSceneProvider.tsx`
-
-If it renders `null`, add `data-testid="mid-scene-flag"` to it as a one-line change (an invisible `<span hidden data-testid=… />` is fine) so the landmine is testable at all. Note that in the commit message — it makes an existing rule enforceable rather than merely documented.
+`MidSceneFlag` returns `null` by design (its return type is literally `: null`). The test above asserts the behaviour through the real provider instead of adding a marker element to a shared component for a test's convenience. Leave `src/components/play/MidSceneProvider.tsx` untouched.
 
 - [ ] **Step 4: Write the runner**
 
