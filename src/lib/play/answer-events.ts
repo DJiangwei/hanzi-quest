@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const SELF_RATINGS = ['got_it', 'not_sure', 'dont_know'] as const;
 export type SelfRating = (typeof SELF_RATINGS)[number];
 
-export const ANSWER_SOURCES = ['review', 'practice', 'boss', 'homework', 'study'] as const;
+export const ANSWER_SOURCES = ['review', 'practice', 'boss', 'homework', 'study', 'daily_review'] as const;
 export type AnswerSource = (typeof ANSWER_SOURCES)[number];
 
 export const MAX_EVENTS_PER_CALL = 40;

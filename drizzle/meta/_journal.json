@@ -295,6 +295,13 @@
       "when": 1788180118996,
       "tag": "0041_messy_lightspeed",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1788353635241,
+      "tag": "0042_smiling_paladin",
+      "breakpoints": true
     }
   ]
 }
