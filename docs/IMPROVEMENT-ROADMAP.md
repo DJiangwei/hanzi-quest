@@ -36,10 +36,10 @@ The flywheel: telemetry (A1) → mastery model (V1) → smarter review + distrac
 ### A1 — Per-answer event logging `[x]` (shipped 2026-07-03, PR #132)
 `answer_events` table (migration 0034): source/scene_type/character/word/item identity, correct, `picked_key` (wrong choice tapped), and the flashcard **认识/不确定/不认识 self-assessment** David requested (log-only; all three advance as success). Write-only in v1. See the CLAUDE.md landmine before touching it.
 
-### A2 — Cross-week review loop `[ ]`
+### A2 — Cross-week review loop `[~]`
 Two cheap slices, in order:
-1. **Stale-char distractors**: when compiling a new week, draw some MCQ distractors from *previously cleared weeks'* characters. Passive re-exposure, zero new UI. Needs `recompile-all-weeks.ts` post-merge.
-2. **温故 / Daily mixed review**: a small home-surface session (5–8 questions) sampled from cleared weeks, weighted by A1 error rates + `dont_know`/`not_sure` self-ratings (fallback: least-recently-seen). Reuse `MultipleChoiceQuiz` + the StudyRunner pattern; reward consciously (daily-cap-consuming `'daily_review'` card source, mirroring `'study'`).
+1. **Stale-char distractors** `[ ]`: when compiling a new week, draw some MCQ distractors from *previously cleared weeks'* characters. Passive re-exposure, zero new UI. **Cheaper than this doc assumed** — found while building slice 2: four of five MCQ types sample their distractors at RUNTIME from a `pool` prop already threaded to `SceneRunner`/`BossScene`, so widening that pool needs no `recompile-all-weeks.ts` run after all. The real work is re-deriving PR #158's cross-week stimulus-ambiguity guard (`validStimulusWords`) across the widened pool — exactly what 温故's `buildWordOwners` had to do for its own cross-week pool (see the CLAUDE.md landmine on it) — or the 唱歌-style collision returns one week over.
+2. **温故 / Daily mixed review** `[x]` (shipped 2026-09-02, PR #165): a 6-question home-surface session sampled from cleared weeks, ranked by `reviewScore` (A1 error rates + `dont_know`/`not_sure` self-ratings, blended with recency since last seen) — deliberately NOT `bountyScore`, which ranks unseen characters above weak ones and would defeat retention. Built at request time (`src/lib/review/{selection,session}.ts`, `src/lib/db/review.ts` — no compile step, no `recompile-all-weeks.ts`), reusing `MultipleChoiceQuiz`; rewards a daily-cap-consuming `'daily_review'` card + coins + XP on COMPLETION, never on score. See CLAUDE.md's 温故 paragraph + its three landmines.
 - Guardrails: short and optional — don't gate anything on it. Bilingual chrome rule.
 
 ### A3 — Parent insight page `[ ]`
