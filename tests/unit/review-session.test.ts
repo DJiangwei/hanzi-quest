@@ -119,6 +119,34 @@ describe('buildReviewSession', () => {
     expect(a).toEqual(b);
   });
 
+  it('never selects a translate_pick distractor with the same meaning as the target', () => {
+    // Two characters sharing the same meaning 'cat' — if not filtered from distractors,
+    // the question would have two correct answers and no right one.
+    const pool = [
+      poolChar('cat', '猫', 'cat', []),
+      poolChar('cat2', '咪', 'cat', []), // Same meaning — must be filtered
+      poolChar('dog', '狗', 'dog', []),
+      poolChar('bird', '鸟', 'bird', []),
+      poolChar('fish', '鱼', 'fish', []),
+    ];
+    // Force translate_pick with deterministic shuffle that places cat2 in distractor pool.
+    // With no valid image words, types=['translate_pick', 'audio_pick'].
+    // rng=0.3: Math.floor(0.3 * 2) = 0 → translate_pick;
+    // shuffle with rng=0.3 places cat2 in the first 3 of [cat2,dog,bird,fish],
+    // ensuring the test fails if the same-meaning filter is removed.
+    const questions = buildReviewSession(
+      [target('cat', '猫')],
+      pool,
+      seq([0.3, 0.3, 0.3, 0.3, 0.3, 0.3]),
+    );
+    expect(questions).toHaveLength(1);
+    const q = questions[0];
+    expect(q.type).toBe('translate_pick');
+    expect(q.choiceCharacterIds).toHaveLength(4);
+    expect(q.choiceCharacterIds).toContain('cat'); // target included
+    expect(q.choiceCharacterIds).not.toContain('cat2'); // same-meaning distractor filtered
+  });
+
   it('gives every question a stable unique id', () => {
     const qs = buildReviewSession(
       [target('c1', '猫'), target('c2', '狗')],
