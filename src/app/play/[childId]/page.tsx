@@ -100,7 +100,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     merchantBought,
     piggyEnabled,
     piggyBalance,
-    reviewData,
+    reviewCandidates,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -355,7 +355,7 @@ export default async function PlayHomePage({ params }: PageProps) {
       <DailyReviewCard
         childId={childId}
         available={
-          pickReviewTargets(reviewData.candidates, REVIEW_SESSION_SIZE).length >=
+          pickReviewTargets(reviewCandidates, REVIEW_SESSION_SIZE).length >=
           REVIEW_SESSION_SIZE
         }
       />

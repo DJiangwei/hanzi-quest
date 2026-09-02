@@ -11,16 +11,40 @@ import type { ReviewCandidate } from '@/lib/review/selection';
 import type { ReviewPoolChar } from '@/lib/review/session';
 
 /**
- * Characters from weeks the child has already CLEARED, with the telemetry
- * needed to rank them and the word data needed to build questions.
+ * Ranking data only. No word rows — callers that build questions want
+ * getReviewSessionData instead.
  *
  * Cleared, not merely playable: a week still being taught is covered by
  * practice, and re-drilling it here would duplicate that rather than review.
  */
-export async function getReviewCandidates(childId: string): Promise<{
+export async function getReviewCandidates(childId: string): Promise<ReviewCandidate[]> {
+  const { candidates } = await fetchReviewData(childId, false);
+  return candidates;
+}
+
+/**
+ * Ranking data AND the word pool questions are built from.
+ *
+ * Cleared, not merely playable: a week still being taught is covered by
+ * practice, and re-drilling it here would duplicate that rather than review.
+ */
+export async function getReviewSessionData(childId: string): Promise<{
   candidates: ReviewCandidate[];
   pool: ReviewPoolChar[];
 }> {
+  return fetchReviewData(childId, true);
+}
+
+/**
+ * Shared pipeline behind both exported reads. `withPool` is private to this
+ * module by design — the two exported functions each have a fixed return
+ * shape, so a caller can never receive an empty pool by a missing/mistyped
+ * argument (see the module-level split rationale above the exports).
+ */
+async function fetchReviewData(
+  childId: string,
+  withPool: boolean,
+): Promise<{ candidates: ReviewCandidate[]; pool: ReviewPoolChar[] }> {
   const [child] = await db
     .select({ packId: childProfiles.currentCurriculumPackId })
     .from(childProfiles)
@@ -102,6 +126,28 @@ export async function getReviewCandidates(childId: string): Promise<{
     .groupBy(answerEvents.characterId);
   const statByChar = new Map(stats.map((s) => [s.characterId as string, s]));
 
+  const candidates: ReviewCandidate[] = charIds.map((id) => {
+    const meta = byChar.get(id)!;
+    const s = statByChar.get(id);
+    return {
+      characterId: id,
+      hanzi: meta.hanzi,
+      weekNumber: meta.weekNumber,
+      total: Number(s?.total ?? 0),
+      wrong: Number(s?.wrong ?? 0),
+      dontKnow: Number(s?.dontKnow ?? 0),
+      daysSinceLastSeen:
+        s?.daysSinceLastSeen === null || s?.daysSinceLastSeen === undefined
+          ? null
+          : Number(s.daysSinceLastSeen),
+    };
+  });
+
+  // getReviewCandidates has no use for the pool, so skip the query behind it
+  // entirely rather than merely discarding its result — see the module-level
+  // split rationale above the exports.
+  if (!withPool) return { candidates, pool: [] };
+
   // Words for the pool — image_pick's stimulus and the cross-week ambiguity map.
   const wordRows = await db
     .select({
@@ -120,23 +166,6 @@ export async function getReviewCandidates(childId: string): Promise<{
     list.push({ wordId: w.wordId, text: w.text, imageUrl: w.imageUrl });
     wordsByChar.set(w.characterId, list);
   }
-
-  const candidates: ReviewCandidate[] = charIds.map((id) => {
-    const meta = byChar.get(id)!;
-    const s = statByChar.get(id);
-    return {
-      characterId: id,
-      hanzi: meta.hanzi,
-      weekNumber: meta.weekNumber,
-      total: Number(s?.total ?? 0),
-      wrong: Number(s?.wrong ?? 0),
-      dontKnow: Number(s?.dontKnow ?? 0),
-      daysSinceLastSeen:
-        s?.daysSinceLastSeen === null || s?.daysSinceLastSeen === undefined
-          ? null
-          : Number(s.daysSinceLastSeen),
-    };
-  });
 
   const pool: ReviewPoolChar[] = charIds.map((id) => {
     const meta = byChar.get(id)!;

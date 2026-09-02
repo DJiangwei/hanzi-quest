@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({ select: vi.fn() }));
 vi.mock('@/db', () => ({ db: { select: (...a: unknown[]) => mocks.select(...a) } }));
 
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { getReviewCandidates } from '@/lib/db/review';
+import { characterWord } from '@/db/schema/content';
+import { getReviewCandidates, getReviewSessionData } from '@/lib/db/review';
 
 const dialect = new PgDialect();
 const render = (frag: unknown) => dialect.sqlToQuery(frag as never);
@@ -47,6 +48,15 @@ function queueSelects(...rowSets: unknown[][]) {
   return calls;
 }
 
+/** Row sets for the four selects every non-empty run shares, in order:
+ *  child pack lookup, cleared weeks, characters-in-those-weeks, telemetry stats. */
+const SHARED_ROWS: unknown[][] = [
+  [{ packId: 'pack-1' }],
+  [{ weekId: 'w1', weekNumber: 1 }],
+  [{ characterId: 'c1', weekId: 'w1', hanzi: '你', meaningEn: 'you' }],
+  [],
+];
+
 beforeEach(() => vi.clearAllMocks());
 
 describe('getReviewCandidates', () => {
@@ -68,9 +78,44 @@ describe('getReviewCandidates', () => {
 
   it('returns nothing when no week has been cleared', async () => {
     queueSelects([{ packId: 'pack-1' }], []);
-    await expect(getReviewCandidates('c1')).resolves.toEqual({
+    await expect(getReviewCandidates('c1')).resolves.toEqual([]);
+  });
+});
+
+describe('getReviewSessionData', () => {
+  it('returns nothing when no week has been cleared', async () => {
+    queueSelects([{ packId: 'pack-1' }], []);
+    await expect(getReviewSessionData('c1')).resolves.toEqual({
       candidates: [],
       pool: [],
     });
+  });
+});
+
+describe('getReviewCandidates vs getReviewSessionData — the pool query is skipped', () => {
+  it('getReviewCandidates issues one fewer select, and the skipped one is the word read', async () => {
+    queueSelects(...SHARED_ROWS);
+    await getReviewCandidates('c1');
+    const candidatesSelectCount = mocks.select.mock.calls.length;
+
+    vi.clearAllMocks();
+
+    const calls = queueSelects(
+      ...SHARED_ROWS,
+      [{ characterId: 'c1', wordId: 'wd1', text: '你好', imageUrl: null }],
+    );
+    await getReviewSessionData('c1');
+    const sessionDataSelectCount = mocks.select.mock.calls.length;
+
+    // Pin the actual counts, not just their relationship — a relative-only
+    // assertion would stay green if both grew or shrank by the same amount.
+    expect(candidatesSelectCount).toBe(4);
+    expect(sessionDataSelectCount).toBe(5);
+    expect(candidatesSelectCount).toBe(sessionDataSelectCount - 1);
+
+    // The 5th select in getReviewSessionData — absent from getReviewCandidates
+    // — is the characterWord ⋈ words read that builds the pool.
+    expect(calls).toHaveLength(5);
+    expect(calls[4].from).toBe(characterWord);
   });
 });
