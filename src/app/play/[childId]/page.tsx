@@ -58,6 +58,9 @@ import { listUnseenGifts } from '@/lib/db/gifts';
 import { GiftInbox } from '@/components/play/GiftInbox';
 import { PiggyBankCard } from '@/components/play/PiggyBankCard';
 import { getPiggyBalance, isPiggyEnabled } from '@/lib/db/piggy';
+import { DailyReviewCard } from '@/components/play/DailyReviewCard';
+import { getReviewCandidates } from '@/lib/db/review';
+import { pickReviewTargets, REVIEW_SESSION_SIZE } from '@/lib/review/selection';
 
 function isoDateAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -97,6 +100,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     merchantBought,
     piggyEnabled,
     piggyBalance,
+    reviewCandidates,
   ] = await Promise.all([
     listChildPlayableWeeks(child.id),
     listProgressByChild(child.id),
@@ -117,6 +121,7 @@ export default async function PlayHomePage({ params }: PageProps) {
     // unused balance here is harmless, and folding it into this Promise.all
     // avoids two extra serial round-trips on every home render.
     getPiggyBalance(child.id),
+    getReviewCandidates(child.id),
   ]);
 
   const currentMap = maps.find((m) => m.isCurrent) ?? null;
@@ -346,6 +351,14 @@ export default async function PlayHomePage({ params }: PageProps) {
       />
 
       <WantedPosters childId={childId} posters={bounties} />
+
+      <DailyReviewCard
+        childId={childId}
+        available={
+          pickReviewTargets(reviewCandidates, REVIEW_SESSION_SIZE).length >=
+          REVIEW_SESSION_SIZE
+        }
+      />
 
       <PiggyBankCard
         childId={childId}

@@ -23,7 +23,8 @@ export type CardGrantSource =
   | 'practice'
   | 'homework'
   | 'study'
-  | 'bounty';
+  | 'bounty'
+  | 'daily_review';
 
 export async function pullCardForChild(
   childId: string,

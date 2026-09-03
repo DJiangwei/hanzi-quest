@@ -25,7 +25,8 @@ export type AwardCoinReason =
   | 'boss_courage'
   | 'merchant_purchase'
   | 'bounty_claim'
-  | 'key_vault';
+  | 'key_vault'
+  | 'daily_review';
 
 export const DAILY_LOGIN_AWARD = 20;
 export const STREAK_MILESTONE_AWARD = 100;
