@@ -7,7 +7,7 @@ import { MidSceneFlag } from '@/components/play/MidSceneProvider';
 import { SpeakButton } from '@/components/play/SpeakButton';
 import { CardChestReveal } from '@/components/scenes/fx/CardChestReveal';
 import { WoodSignButton } from '@/components/ui/WoodSignButton';
-import { finishReviewAction } from '@/lib/actions/review';
+import { finishReviewAction, type ReviewCardMessage } from '@/lib/actions/review';
 import type { ReviewPoolChar, ReviewQuestion } from '@/lib/review/session';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import type { SceneAnswerEvent } from '@/lib/play/answer-events';
@@ -28,6 +28,7 @@ export function ReviewRunner({ childId, questions, pool }: Props) {
   const [index, setIndex] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [cards, setCards] = useState<RevealCard[]>([]);
+  const [cardMessage, setCardMessage] = useState<ReviewCardMessage>(null);
   const [done, setDone] = useState(false);
   const events = useRef<SceneAnswerEvent[]>([]);
   const [, start] = useTransition();
@@ -58,15 +59,31 @@ export function ReviewRunner({ childId, questions, pool }: Props) {
     start(async () => {
       const res = await finishReviewAction({ childId, score, events: finalEvents });
       setCards(res.cardGrants);
+      setCardMessage(res.cardMessage);
       setDone(true);
     });
   }
 
   if (done) {
+    // 温故 pays for completion, not score — the 🎉, the chest and the reward
+    // are IDENTICAL at 6/6 and at 1/6. The tally below is information, not a
+    // verdict: no pass/fail language, no praise withheld at a low count.
+    const messageText =
+      cardMessage === 'review_done_today'
+        ? '今天已经温故过啦 / Already reviewed today'
+        : cardMessage === 'daily_cap_reached'
+          ? '今天的卡片已经发完啦,明天再来 / All cards earned for today — come back tomorrow'
+          : null;
     return (
       <main className="mx-auto flex w-full max-w-md flex-col items-center gap-4 px-4 py-10">
+        <div className="text-6xl">🎉</div>
         <h1 className="font-hanzi text-2xl font-extrabold">温故完成！</h1>
         <p className="italic text-[var(--color-sand-700)]">Review complete!</p>
+        <p className="font-hanzi text-base text-[var(--color-ocean-700)]">
+          答对 {correct}/{questions.length}{' '}
+          <span className="text-sm">/ {correct} of {questions.length} right</span>
+        </p>
+        {messageText ? <p className="text-sm text-[var(--color-sand-700)]">{messageText}</p> : null}
         {cards.length > 0 ? (
           <CardChestReveal cards={cards} onDone={() => setCards([])} />
         ) : null}

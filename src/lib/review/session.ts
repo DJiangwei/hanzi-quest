@@ -2,8 +2,15 @@
 //
 // Questions are built at REQUEST time: no week_levels rows, no scene_templates
 // row, no compile step, and therefore no recompile-all-weeks.ts post-merge.
-import { validStimulusWords } from '@/lib/scenes/stimulus-validity';
+import { buildWordOwners, validStimulusWords } from '@/lib/scenes/stimulus-validity';
 import type { ReviewCandidate } from './selection';
+
+// Re-exported for backwards compat — this module used to define its own
+// copy (F4, final-review fix round: the compile-week.ts and session.ts
+// copies were identical bodies and had drifted apart from each other's doc
+// comments; both now import the single definition in stimulus-validity.ts,
+// beside validStimulusWords, which IS the ambiguity guard).
+export { buildWordOwners };
 
 export interface ReviewPoolWord {
   wordId: string;
@@ -15,6 +22,8 @@ export interface ReviewPoolChar {
   characterId: string;
   hanzi: string;
   meaningEn: string | null;
+  /** All readings, tones included — see `pinyinClash` below. */
+  pinyin: string[];
   words: ReviewPoolWord[];
 }
 
@@ -33,31 +42,19 @@ export interface ReviewQuestion {
 const CHOICE_COUNT = 4;
 
 /**
- * word text → the set of HANZI in the pool that own it.
+ * Do two characters CLASH — could the device TTS reading of one also be read
+ * as the other, so an `audio_pick` choice would be correct twice over?
  *
- * Keyed on hanzi, not characterId, to match `validStimulusWords`' documented
- * contract exactly. (`characters` is unique on `(hanzi, script)`, so the two
- * are 1:1 and only `.size` is read — but matching the contract means the next
- * reader does not have to re-derive that.)
- *
- * Built over the ENTIRE review pool, not one week. `validStimulusWords`
- * (PR #158) rejects a stimulus word shared with another character *in the pool
- * distractors are drawn from*; 温故's pool is cross-week by definition, so a
- * map built per-week would let the 唱歌 collision (唱 correct, 歌 offered as a
- * distractor, no right answer) return one week over.
+ * Compared WITH tones: mā and mà sound different and TTS renders them
+ * differently, so only an exact match (after `trim().toLowerCase()`) counts.
+ * The real corpus has four such pairs, all cross-week — 阳/羊, 木/目, 石/十,
+ * 有/友 — which is exactly why a per-week `AudioPickScene` never hit this and
+ * 温故's cross-week pool does (F1, final-review fix round).
  */
-export function buildWordOwners(
-  pool: ReviewPoolChar[],
-): Map<string, Set<string>> {
-  const owners = new Map<string, Set<string>>();
-  for (const char of pool) {
-    for (const w of char.words) {
-      const set = owners.get(w.text) ?? new Set<string>();
-      set.add(char.hanzi);
-      owners.set(w.text, set);
-    }
-  }
-  return owners;
+function pinyinClash(a: readonly string[], b: readonly string[]): boolean {
+  const normalize = (p: string) => p.trim().toLowerCase();
+  const aSet = new Set(a.map(normalize));
+  return b.some((p) => aSet.has(normalize(p)));
 }
 
 function shuffle<T>(items: T[], rng: () => number): T[] {
@@ -74,7 +71,9 @@ function shuffle<T>(items: T[], rng: () => number): T[] {
  *
  * Type eligibility, all judged AGAINST THE CROSS-WEEK POOL:
  *   translate_pick — target has meaningEn; >= 3 others with a different one
- *   audio_pick     — >= 3 other characters (device TTS: correct by construction)
+ *   audio_pick     — >= 3 other characters that don't CLASH on pinyin (see
+ *                    pinyinClash) — a homophone distractor would be correct
+ *                    twice over
  *   image_pick     — a VALID stimulus word (see buildWordOwners); >= 3 others
  */
 export function buildReviewSession(
@@ -111,14 +110,22 @@ export function buildReviewSession(
       types.push('translate_pick');
     }
 
-    types.push('audio_pick');
+    // A homophone offered as a distractor is correct twice over — see
+    // pinyinClash. Only eligible when enough non-clashing others remain.
+    const nonHomophones = others.filter((c) => !pinyinClash(char.pinyin, c.pinyin));
+    if (nonHomophones.length >= CHOICE_COUNT - 1) {
+      types.push('audio_pick');
+    }
 
-    const type = types[Math.floor(rng() * types.length)] ?? 'audio_pick';
+    if (types.length === 0) return;
+    const type = types[Math.floor(rng() * types.length)];
 
     const distractorPool =
       type === 'translate_pick'
         ? others.filter((c) => c.meaningEn && c.meaningEn !== char.meaningEn)
-        : others;
+        : type === 'audio_pick'
+          ? nonHomophones
+          : others;
     const distractors = shuffle(distractorPool, rng).slice(0, CHOICE_COUNT - 1);
     if (distractors.length < CHOICE_COUNT - 1) return;
 

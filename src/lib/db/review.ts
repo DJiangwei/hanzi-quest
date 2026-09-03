@@ -81,6 +81,7 @@ async function fetchReviewData(
       weekId: weekCharacters.weekId,
       hanzi: characters.hanzi,
       meaningEn: characters.meaningEn,
+      pinyinArray: characters.pinyinArray,
     })
     .from(weekCharacters)
     .innerJoin(characters, eq(characters.id, weekCharacters.characterId))
@@ -89,13 +90,18 @@ async function fetchReviewData(
 
   const byChar = new Map<
     string,
-    { hanzi: string; meaningEn: string | null; weekNumber: number }
+    { hanzi: string; meaningEn: string | null; weekNumber: number; pinyinArray: string[] }
   >();
   for (const r of charRows) {
     const wn = weekNumberById.get(r.weekId) ?? 0;
     const cur = byChar.get(r.characterId);
     if (!cur || wn > cur.weekNumber) {
-      byChar.set(r.characterId, { hanzi: r.hanzi, meaningEn: r.meaningEn, weekNumber: wn });
+      byChar.set(r.characterId, {
+        hanzi: r.hanzi,
+        meaningEn: r.meaningEn,
+        weekNumber: wn,
+        pinyinArray: r.pinyinArray,
+      });
     }
   }
   const charIds = Array.from(byChar.keys());
@@ -173,6 +179,7 @@ async function fetchReviewData(
       characterId: id,
       hanzi: meta.hanzi,
       meaningEn: meta.meaningEn,
+      pinyin: meta.pinyinArray,
       words: wordsByChar.get(id) ?? [],
     };
   });

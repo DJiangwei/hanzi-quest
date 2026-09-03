@@ -30,10 +30,13 @@ const FinishReviewSchema = z.object({
  * idempotency source, exactly as in finishStudyLessonAction and
  * finishHomeworkAction (`awardCoins` itself is not idempotent).
  *
- * **Completion pays, not score.** `score` is logged and returned for the
- * summary screen; no reward branches on it. A review that punished wrong
- * answers would be a test, and this product deliberately does not test her —
- * the same reasoning behind `boss_courage` paying out on a FAILED boss.
+ * **Completion pays, not score.** `score` is accepted on the input schema
+ * (mirroring `finishStudyLessonAction`'s shape) but this action never logs
+ * it, returns it, or reads it for any reward branch — the done screen's
+ * tally is the runner's own `correct` count, not this field. A review that
+ * punished wrong answers would be a test, and this product deliberately
+ * does not test her — the same reasoning behind `boss_courage` paying out
+ * on a FAILED boss.
  */
 export async function finishReviewAction(
   input: z.input<typeof FinishReviewSchema>,

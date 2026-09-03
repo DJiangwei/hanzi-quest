@@ -29,7 +29,8 @@ const poolChar = (
   hanzi: string,
   meaningEn: string | null,
   words: { wordId: string; text: string; imageUrl: string | null }[] = [],
-): ReviewPoolChar => ({ characterId: id, hanzi, meaningEn, words });
+  pinyin: string[] = [],
+): ReviewPoolChar => ({ characterId: id, hanzi, meaningEn, words, pinyin });
 
 /** Four plain characters with distinct meanings — enough for any MCQ. */
 const BASE_POOL = [
@@ -85,6 +86,44 @@ describe('buildReviewSession — the PR #158 hazard, cross-week', () => {
     ];
     const questions = buildReviewSession([target('seven', '七')], pool, seq([0]));
     for (const q of questions) expect(q.type).not.toBe('image_pick');
+  });
+});
+
+describe('buildReviewSession — F1, audio_pick homophone clash (final-fix review)', () => {
+  it('never offers a homophone as an audio_pick distractor', () => {
+    // 木(mù) / 目(mù) is one of four real homophone pairs in the corpus, all
+    // cross-week — see pinyinClash's doc comment. The target has no meaning
+    // and no words, so audio_pick is the ONLY buildable type: this pins the
+    // guard rather than getting lucky on rng. rng=0.99 keeps shuffle() close
+    // to identity order (floor(0.99*(i+1)) === i for every i here), which
+    // places mu-eye — first in `others` — inside the slice(0, 3) distractors
+    // whenever the guard is absent; a constant rng of 0 was tried first and
+    // happened to always swap the first element to the END of the array
+    // regardless of the guard, silently vacuous — see the final-fix report.
+    const pool = [
+      poolChar('mu-tree', '木', null, [], ['mù']),
+      poolChar('mu-eye', '目', 'eye', [], ['mù']),
+      ...BASE_POOL,
+    ];
+    const questions = buildReviewSession([target('mu-tree', '木')], pool, seq([0.99]));
+    expect(questions).toHaveLength(1);
+    expect(questions[0].type).toBe('audio_pick');
+    expect(questions[0].choiceCharacterIds).not.toContain('mu-eye');
+  });
+
+  it('drops a target whose only pool-mates are all homophones, rather than building an ambiguous question', () => {
+    // Exactly 3 others (the minimum an MCQ needs) and every one clashes on
+    // pinyin with the target; no meaning and no words rule out the other two
+    // types. No question type survives, so the target must be dropped, not
+    // built with a homophone standing in as a distractor.
+    const pool = [
+      poolChar('mu-tree', '木', null, [], ['mù']),
+      poolChar('mu-eye', '目', null, [], ['mù']),
+      poolChar('other1', '甲', null, [], ['mù']),
+      poolChar('other2', '乙', null, [], ['mù']),
+    ];
+    const questions = buildReviewSession([target('mu-tree', '木')], pool, seq([0]));
+    expect(questions).toEqual([]);
   });
 });
 

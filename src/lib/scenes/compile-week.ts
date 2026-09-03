@@ -20,6 +20,7 @@ import type {
 import { BOSS_LEVEL_KEY, BOSS_MAX_QUESTIONS, BOSS_MIN_CHARS } from './configs';
 import { shuffle } from './sample';
 import {
+  buildWordOwners,
   isCountingChar,
   validStimulusWords,
   type StimulusCandidate,
@@ -363,28 +364,6 @@ function pickRandom<T>(arr: T[]): T {
 function sampleN<T>(arr: T[], n: number): T[] {
   if (arr.length <= n) return shuffle(arr);
   return shuffle(arr).slice(0, n);
-}
-
-/**
- * word TEXT -> the set of this week's hanzi that own it. Powers
- * `validStimulusWords`'s ambiguity check: a word linked to two characters
- * taught the same week (唱歌 -> 唱/歌, 多少 -> 多/少, 大人 -> 人/大, ...)
- * can't identify either one uniquely as an image_pick stimulus. Built once
- * per compile from ALL of the week's words, not just image_pick's own
- * candidates — ownership is a property of the whole week.
- */
-function buildWordOwners(
-  chars: CharacterWithDetails[],
-): Map<string, Set<string>> {
-  const owners = new Map<string, Set<string>>();
-  for (const c of chars) {
-    for (const w of c.words) {
-      const set = owners.get(w.text) ?? new Set<string>();
-      set.add(c.hanzi);
-      owners.set(w.text, set);
-    }
-  }
-  return owners;
 }
 
 function toStimulusCandidates(c: CharacterWithDetails): StimulusCandidate[] {

@@ -1,5 +1,5 @@
-// 'daily_review' has to be accepted by four separate unions before the feature
-// can pay anything. Three are TS-only; coin_reason is a pgEnum and needs a
+// 'daily_review' has to be accepted by six separate unions before the feature
+// can pay anything. Five are TS-only; coin_reason is a pgEnum and needs a
 // migration.
 import { describe, expect, it } from 'vitest';
 import { ANSWER_SOURCES } from '@/lib/play/answer-events';

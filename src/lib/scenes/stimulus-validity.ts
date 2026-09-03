@@ -81,6 +81,42 @@ export interface StimulusCandidate {
 }
 
 /**
+ * word TEXT → the set of hanzi (in the given corpus) that own it.
+ *
+ * Powers `validStimulusWords`'s ambiguity check: a word linked to two
+ * characters taught the same week (唱歌 -> 唱/歌, 多少 -> 多/少, 大人 -> 人/大,
+ * ...) can't identify either one uniquely as an image_pick stimulus. Keyed
+ * on hanzi, not characterId, to match `validStimulusWords`'s contract
+ * exactly (`characters` is unique on `(hanzi, script)`, so the two are 1:1
+ * and only `.size` is read here — but matching the contract means the next
+ * reader does not have to re-derive that).
+ *
+ * Callers decide the corpus this is built over, and that choice matters:
+ * `compile-week.ts` builds it once per compile from ALL of one week's
+ * words, not just image_pick's own candidates — ownership is a property of
+ * the whole week. 温故's review pool (`review/session.ts`) is cross-week by
+ * definition, so building this per-week there would let the 唱歌 collision
+ * (唱 correct, 歌 offered as a distractor, no right answer) return one week
+ * over — the same shape of bug PR #158 fixed for the single-week case.
+ *
+ * Shared by both call sites so a future fix to one can't silently miss the
+ * other — this function IS the ambiguity guard.
+ */
+export function buildWordOwners(
+  chars: readonly { hanzi: string; words: readonly { text: string }[] }[],
+): Map<string, Set<string>> {
+  const owners = new Map<string, Set<string>>();
+  for (const c of chars) {
+    for (const w of c.words) {
+      const set = owners.get(w.text) ?? new Set<string>();
+      set.add(c.hanzi);
+      owners.set(w.text, set);
+    }
+  }
+  return owners;
+}
+
+/**
  * Words that may serve as an `image_pick` stimulus for `hanzi` this week.
  *
  * `wordOwners` maps word TEXT -> the set of hanzi (taught in the same week)
