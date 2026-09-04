@@ -171,6 +171,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #163 | feat(piggy): two-column ledger for the child's piggy-bank history | |
 | #164 | fix(economy): three idempotency guards sit inside a transaction — `.onConflictDoNothing()` replaces the still-broken caught 23505 | |
 | #165 | feat(review): 温故 daily mixed review (A2 slice 2) — cross-week selection engine, request-time session builder, completion-paid | |
+| #166 | docs: landmine — a seeded shuffle decides whether a mutation test can bite | |
 
 ### Next up
 
