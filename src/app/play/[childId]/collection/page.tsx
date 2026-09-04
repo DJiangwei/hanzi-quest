@@ -52,6 +52,15 @@ export default async function CollectionAtlasPage({
 
   return (
     <main className="flex flex-1 flex-col items-center gap-4 p-6">
+      <div className="w-full max-w-md">
+        <LogbookHallCard
+          childId={childId}
+          totalCount={logbookEntries.length}
+          proficientCount={
+            logbookEntries.filter((e) => masteryForChar(e).state === 'proficient').length
+          }
+        />
+      </div>
       <AtlasHub
         childId={childId}
         halls={halls}
@@ -67,15 +76,6 @@ export default async function CollectionAtlasPage({
           childId={childId}
           earnedCount={earnedTrophies.length}
           totalCount={allTrophies.length}
-        />
-      </div>
-      <div className="w-full max-w-md">
-        <LogbookHallCard
-          childId={childId}
-          totalCount={logbookEntries.length}
-          proficientCount={
-            logbookEntries.filter((e) => masteryForChar(e).state === 'proficient').length
-          }
         />
       </div>
     </main>

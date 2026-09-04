@@ -28,12 +28,16 @@ export default async function LogbookPage({
       <header className="w-full max-w-md rounded-3xl border-2 border-sky-300 bg-gradient-to-br from-sky-50 via-sky-100 to-sky-200 p-5 text-center text-sky-950">
         <h1 className="font-hanzi text-2xl font-extrabold">航海日志</h1>
         <p className="text-sm font-semibold">Captain&apos;s Logbook</p>
-        <p className="mt-1 text-xs text-sky-900/80">
-          <span className="font-hanzi">{tiles.length} 个字 · 熟练 {proficient}</span>
-        </p>
-        <p className="text-[11px] italic text-sky-900/70">
-          {tiles.length} characters · {proficient} solid
-        </p>
+        {tiles.length > 0 ? (
+          <div data-testid="logbook-counts">
+            <p className="mt-1 text-xs text-sky-900/80">
+              <span className="font-hanzi">{tiles.length} 个字 · 熟练 {proficient}</span>
+            </p>
+            <p className="text-[11px] italic text-sky-900/70">
+              {tiles.length} characters · {proficient} solid
+            </p>
+          </div>
+        ) : null}
       </header>
 
       <div className="w-full max-w-md">
