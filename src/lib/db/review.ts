@@ -109,13 +109,13 @@ async function fetchReviewData(
   // All-time telemetry per character, plus recency.
   //
   // LEFT JOIN semantics by construction: characters with no answer_events rows
-  // simply have no stat row, and default to total 0 / null recency. That is
+  // simply have no stat row, and default to scored 0 / null recency. That is
   // what NEUTRAL_WEAKNESS exists for — every character from a week cleared
   // before answer_events started (2026-07-03) is in exactly that position.
   const stats = await db
     .select({
       characterId: answerEvents.characterId,
-      total: sql<number>`count(*)`,
+      scored: sql<number>`count(*) filter (where ${answerEvents.correct} is not null)`,
       wrong: sql<number>`count(*) filter (where ${answerEvents.correct} = false)`,
       dontKnow: sql<number>`count(*) filter (where ${answerEvents.selfRating} in ('dont_know', 'not_sure'))`,
       daysSinceLastSeen: sql<
@@ -139,7 +139,7 @@ async function fetchReviewData(
       characterId: id,
       hanzi: meta.hanzi,
       weekNumber: meta.weekNumber,
-      total: Number(s?.total ?? 0),
+      scored: Number(s?.scored ?? 0),
       wrong: Number(s?.wrong ?? 0),
       dontKnow: Number(s?.dontKnow ?? 0),
       daysSinceLastSeen:
