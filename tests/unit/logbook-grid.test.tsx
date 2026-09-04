@@ -44,6 +44,11 @@ describe('LogbookGrid', () => {
     expect(badge.textContent).toMatch(/学习中/);
     expect(badge.textContent).toMatch(/Learning/i);
     expect(badge.className).not.toMatch(/red|rose|danger|warn/i);
+    // Denylist alone lets an amber/orange "warning" palette through — and
+    // `proficient` legitimately uses amber, so the codebase's own "good"
+    // colour sits one step from an uncaught "bad" one. Pin the actual quiet
+    // neutral palette too.
+    expect(badge.className).toMatch(/stone|slate|gray|neutral/);
   });
 
   it('never renders a score, a percentage, or failure language', () => {
@@ -88,5 +93,43 @@ describe('LogbookGrid', () => {
     // themselves are absent — hanzi, pinyin, and the close button are the
     // only children — not merely that their text happens to be blank.
     expect(detail.children).toHaveLength(3);
+  });
+
+  it('reaches the detail from a realistic 30-character grid — production has ~96', async () => {
+    // F1: the detail used to render AFTER the <ul>. With ~24 rows of tiles
+    // that panel sits ~1750px below the fold, so tapping any tile above the
+    // last few rows changed nothing visible. Every other test here renders
+    // ≤3 tiles, which is why the suite never caught it. This one renders
+    // enough tiles to span several grid rows and taps one near the top.
+    const tiles = Array.from({ length: 30 }, (_, i) =>
+      tile({ characterId: `ch${i}`, hanzi: String(i), pinyin: [`p${i}`] }),
+    );
+    render(<LogbookGrid tiles={tiles} />);
+    expect(screen.getAllByTestId(/^logbook-tile-/)).toHaveLength(30);
+
+    // Tile index 2 sits in the grid's first row (grid-cols-4 on phones).
+    const tappedTile = screen.getByTestId('logbook-tile-ch2');
+    expect(tappedTile).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(tappedTile);
+
+    const detail = screen.getByTestId('logbook-detail');
+    expect(detail).toBeInTheDocument();
+    expect(detail.textContent).toMatch(/一起/);
+    expect(tappedTile).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('dismisses the overlay via the backdrop and via Escape', async () => {
+    const tiles = Array.from({ length: 30 }, (_, i) => tile({ characterId: `ch${i}`, hanzi: String(i) }));
+    render(<LogbookGrid tiles={tiles} />);
+    await userEvent.click(screen.getByTestId('logbook-tile-ch5'));
+    expect(screen.getByTestId('logbook-detail')).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByTestId('logbook-detail')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByTestId('logbook-tile-ch5'));
+    const dialog = screen.getByRole('dialog');
+    await userEvent.click(dialog);
+    expect(screen.queryByTestId('logbook-detail')).not.toBeInTheDocument();
   });
 });

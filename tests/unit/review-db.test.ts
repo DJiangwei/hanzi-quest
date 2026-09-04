@@ -92,6 +92,26 @@ describe('getReviewSessionData', () => {
   });
 });
 
+describe('getReviewCandidates — scored aggregate SQL', () => {
+  // F3: the reviewer reverted `scored` to `count(*)` — the exact defect this
+  // branch exists to fix — and the whole suite still passed. Render the real
+  // aggregate SQL through PgDialect and assert the `filter (where ... is not
+  // null)` clause is actually there, rather than trusting a pre-shaped mock
+  // return (a stub that answers with rows proves nothing about the query that
+  // asked for them — this is the same technique the reviewer used to catch a
+  // Critical in the piggy-bank work).
+  it('scored counts only ANSWERED questions — filter(where correct is not null), never bare count(*)', async () => {
+    queueSelects(...SHARED_ROWS);
+    await getReviewCandidates('c1');
+    // Call index 3 is the stats select — pack lookup, cleared weeks,
+    // characters-in-those-weeks, then stats (SHARED_ROWS's own ordering).
+    const statsFields = mocks.select.mock.calls[3][0] as { scored: unknown };
+    const q = render(statsFields.scored);
+    expect(q.sql).toMatch(/filter \(where/i);
+    expect(q.sql).toMatch(/is not null/i);
+  });
+});
+
 describe('getReviewCandidates vs getReviewSessionData — the pool query is skipped', () => {
   it('getReviewCandidates issues one fewer select, and the skipped one is the word read', async () => {
     queueSelects(...SHARED_ROWS);

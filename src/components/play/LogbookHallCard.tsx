@@ -29,14 +29,24 @@ export function LogbookHallCard({ childId, totalCount, proficientCount }: Props)
       </div>
       <div className="rounded-b-[1.4rem] bg-white/90 px-5 py-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="text-xs font-semibold text-stone-700">
-            <span className="font-hanzi">{totalCount} 个字</span>
-            <span className="text-stone-500"> · {totalCount} characters</span>
-            <div className="text-[11px] font-normal text-stone-500">
-              <span className="font-hanzi">熟练 {proficientCount}</span>
-              <span className="italic"> / {proficientCount} solid</span>
+          {/*
+            A brand-new child has 0 unlocked characters — showing "0 个字" here
+            contradicts the page itself, which was fixed to suppress this exact
+            zero. Suppress it here too; the title + tagline above already carry
+            the invitation.
+          */}
+          {totalCount > 0 ? (
+            <div data-testid="logbook-hall-counts" className="text-xs font-semibold text-stone-700">
+              <span className="font-hanzi">{totalCount} 个字</span>
+              <span className="text-stone-500"> · {totalCount} characters</span>
+              <div className="text-[11px] font-normal text-stone-500">
+                <span className="font-hanzi">熟练 {proficientCount}</span>
+                <span className="italic"> / {proficientCount} solid</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <span />
+          )}
           <span className="text-sm font-bold text-sky-900 transition group-hover:translate-x-0.5">
             打开 / Open →
           </span>

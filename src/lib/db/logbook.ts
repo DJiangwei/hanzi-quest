@@ -86,6 +86,7 @@ export async function getLogbookEntries(childId: string): Promise<LogbookEntry[]
     .select({
       characterId: weekCharacters.characterId,
       weekId: weekCharacters.weekId,
+      position: weekCharacters.position,
       hanzi: characters.hanzi,
       pinyin: characters.pinyinArray,
       meaningEn: characters.meaningEn,
@@ -96,8 +97,11 @@ export async function getLogbookEntries(childId: string): Promise<LogbookEntry[]
   if (charRows.length === 0) return [];
 
   // A character taught twice keeps its HIGHEST week number, matching how
-  // review.ts ranks by most recent appearance.
+  // review.ts ranks by most recent appearance. `position` is tracked
+  // alongside, in a separate map, purely to order the final array below — it
+  // is not part of the public LogbookEntry shape.
   const byChar = new Map<string, Omit<LogbookEntry, 'scored' | 'wrong' | 'dontKnow' | 'firstWord' | 'sentence'>>();
+  const positionByChar = new Map<string, number>();
   for (const r of charRows) {
     // Belt and braces against the WHERE above: a character whose week the gate
     // did not unlock is skipped outright rather than defaulting to week 0.
@@ -113,43 +117,62 @@ export async function getLogbookEntries(childId: string): Promise<LogbookEntry[]
         meaningEn: r.meaningEn,
         weekNumber: wn,
       });
+      positionByChar.set(r.characterId, r.position);
     }
   }
-  const charIds = Array.from(byChar.keys());
 
-  // LEFT JOIN semantics by construction: a character with no answer_events rows
-  // has no stat row and defaults to zero evidence. 57 of the 96 characters in
-  // production have only 1-2 scored answers, so this path is the common one.
-  const stats = await db
-    .select({
-      characterId: answerEvents.characterId,
-      scored: sql<number>`count(*) filter (where ${answerEvents.correct} is not null)`,
-      wrong: sql<number>`count(*) filter (where ${answerEvents.correct} = false)`,
-      dontKnow: sql<number>`count(*) filter (where ${answerEvents.selfRating} in ('dont_know', 'not_sure'))`,
-    })
-    .from(answerEvents)
-    .where(and(eq(answerEvents.childId, childId), inArray(answerEvents.characterId, charIds)))
-    .groupBy(answerEvents.characterId);
+  // The curriculum's own order — island by island, then teaching order within
+  // the island — not Postgres's PK-index (uuid) order, which interleaves week
+  // 1 with week 9 and shifts whenever a row is rewritten.
+  const charIds = Array.from(byChar.keys()).sort((a, b) => {
+    const A = byChar.get(a)!;
+    const B = byChar.get(b)!;
+    if (A.weekNumber !== B.weekNumber) return A.weekNumber - B.weekNumber;
+    const posA = positionByChar.get(a) ?? 0;
+    const posB = positionByChar.get(b) ?? 0;
+    if (posA !== posB) return posA - posB;
+    return A.hanzi.localeCompare(B.hanzi);
+  });
+
+  // Mutually independent reads (all keyed only on childId/charIds, no
+  // cross-dependency) — run together rather than one round-trip at a time.
+  // This path runs on every Backpack render as well as the Logbook page.
+  const [stats, wordRows, sentenceRows] = await Promise.all([
+    // LEFT JOIN semantics by construction: a character with no answer_events
+    // rows has no stat row and defaults to zero evidence. 57 of the 96
+    // characters in production have only 1-2 scored answers, so this path is
+    // the common one.
+    db
+      .select({
+        characterId: answerEvents.characterId,
+        scored: sql<number>`count(*) filter (where ${answerEvents.correct} is not null)`,
+        wrong: sql<number>`count(*) filter (where ${answerEvents.correct} = false)`,
+        dontKnow: sql<number>`count(*) filter (where ${answerEvents.selfRating} in ('dont_know', 'not_sure'))`,
+      })
+      .from(answerEvents)
+      .where(and(eq(answerEvents.childId, childId), inArray(answerEvents.characterId, charIds)))
+      .groupBy(answerEvents.characterId),
+    // ORDER BY position is load-bearing: without it Postgres returns rows in
+    // undefined order and the "first word" changes between refreshes.
+    db
+      .select({ characterId: characterWord.characterId, text: words.text })
+      .from(characterWord)
+      .innerJoin(words, eq(words.id, characterWord.wordId))
+      .where(inArray(characterWord.characterId, charIds))
+      .orderBy(asc(characterWord.position)),
+    db
+      .select({ characterId: characterSentence.characterId, text: exampleSentences.text })
+      .from(characterSentence)
+      .innerJoin(exampleSentences, eq(exampleSentences.id, characterSentence.sentenceId))
+      .where(inArray(characterSentence.characterId, charIds)),
+  ]);
   const statByChar = new Map(stats.map((s) => [s.characterId as string, s]));
 
-  // ORDER BY position is load-bearing: without it Postgres returns rows in
-  // undefined order and the "first word" changes between refreshes.
-  const wordRows = await db
-    .select({ characterId: characterWord.characterId, text: words.text })
-    .from(characterWord)
-    .innerJoin(words, eq(words.id, characterWord.wordId))
-    .where(inArray(characterWord.characterId, charIds))
-    .orderBy(asc(characterWord.position));
   const firstWordByChar = new Map<string, string>();
   for (const w of wordRows) {
     if (!firstWordByChar.has(w.characterId)) firstWordByChar.set(w.characterId, w.text);
   }
 
-  const sentenceRows = await db
-    .select({ characterId: characterSentence.characterId, text: exampleSentences.text })
-    .from(characterSentence)
-    .innerJoin(exampleSentences, eq(exampleSentences.id, characterSentence.sentenceId))
-    .where(inArray(characterSentence.characterId, charIds));
   const sentenceByChar = new Map<string, string>();
   for (const s of sentenceRows) {
     if (!sentenceByChar.has(s.characterId)) sentenceByChar.set(s.characterId, s.text);

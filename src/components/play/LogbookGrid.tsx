@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { MasteryState } from '@/lib/mastery/mastery';
 import { SpeakButton } from '@/components/play/SpeakButton';
 
@@ -38,11 +38,23 @@ export function LogbookGrid({ tiles }: { tiles: LogbookTile[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const open = tiles.find((t) => t.characterId === openId) ?? null;
 
+  // Same dismissal contract as CardDetailDialog: Escape closes the overlay
+  // from anywhere on the page, not just via the backdrop/close button.
+  useEffect(() => {
+    if (!openId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openId]);
+
   return (
     <div className="w-full" data-testid="logbook-grid">
       <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5">
         {tiles.map((t) => {
           const badge = BADGE[t.state];
+          const selected = t.characterId === openId;
           return (
             <li key={t.characterId}>
               <button
@@ -50,7 +62,10 @@ export function LogbookGrid({ tiles }: { tiles: LogbookTile[] }) {
                 data-testid={`logbook-tile-${t.characterId}`}
                 onClick={() => setOpenId(t.characterId)}
                 aria-label={`${t.hanzi} ${t.pinyin.join(' ')}`}
-                className="flex w-full flex-col items-center gap-0.5 rounded-2xl border-2 border-stone-200 bg-white/90 px-1 py-2 transition hover:-translate-y-0.5 hover:border-amber-300"
+                aria-pressed={selected}
+                className={`flex w-full flex-col items-center gap-0.5 rounded-2xl border-2 bg-white/90 px-1 py-2 transition hover:-translate-y-0.5 hover:border-amber-300 ${
+                  selected ? 'border-amber-400 ring-2 ring-amber-300' : 'border-stone-200'
+                }`}
               >
                 <span className="font-hanzi text-3xl leading-none text-stone-800">{t.hanzi}</span>
                 <span className="text-[10px] text-stone-500">{t.pinyin.join(' ')}</span>
@@ -69,32 +84,48 @@ export function LogbookGrid({ tiles }: { tiles: LogbookTile[] }) {
         })}
       </ul>
 
+      {/*
+        Below-the-fold fix: with production's ~96 unlocked characters the grid
+        runs to ~24 rows, so a detail panel appended after the <ul> is off
+        screen for almost every tap. Match Backpack's CardDetailDialog
+        instead — she already knows "tap a tile → overlay" from there, and
+        that component already solved backdrop + dismissal + layering.
+      */}
       {open ? (
         <div
-          data-testid="logbook-detail"
-          className="mt-4 rounded-3xl border-2 border-amber-300 bg-amber-50 p-5 text-center"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6 backdrop-blur-sm"
+          onClick={() => setOpenId(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${open.hanzi} ${open.pinyin.join(' ')}`}
         >
-          <div className="font-hanzi text-6xl text-stone-800">{open.hanzi}</div>
-          <div className="mt-1 text-sm text-stone-600">{open.pinyin.join(' ')}</div>
-          {open.meaningEn ? (
-            <div className="mt-1 text-base font-semibold text-stone-800">{open.meaningEn}</div>
-          ) : null}
-          {open.firstWord ? (
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <span className="font-hanzi text-xl text-stone-800">{open.firstWord}</span>
-              <SpeakButton text={open.firstWord} />
-            </div>
-          ) : null}
-          {open.sentence ? (
-            <p className="mt-2 font-hanzi text-sm text-stone-700">{open.sentence}</p>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setOpenId(null)}
-            className="mt-4 rounded-full border-2 border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-700"
+          <div
+            data-testid="logbook-detail"
+            className="w-full max-w-sm rounded-3xl border-2 border-amber-300 bg-amber-50 p-5 text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            <span className="font-hanzi">关闭</span> <span className="italic">/ Close</span>
-          </button>
+            <div className="font-hanzi text-6xl text-stone-800">{open.hanzi}</div>
+            <div className="mt-1 text-sm text-stone-600">{open.pinyin.join(' ')}</div>
+            {open.meaningEn ? (
+              <div className="mt-1 text-base font-semibold text-stone-800">{open.meaningEn}</div>
+            ) : null}
+            {open.firstWord ? (
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <span className="font-hanzi text-xl text-stone-800">{open.firstWord}</span>
+                <SpeakButton text={open.firstWord} />
+              </div>
+            ) : null}
+            {open.sentence ? (
+              <p className="mt-2 font-hanzi text-sm text-stone-700">{open.sentence}</p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setOpenId(null)}
+              className="mt-4 rounded-full border-2 border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-700"
+            >
+              <span className="font-hanzi">关闭</span> <span className="italic">/ Close</span>
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
