@@ -1,5 +1,6 @@
 // A2 温故 — pure review-selection engine (client-safe, no db imports).
 // Second consumer of the A1 answer_events telemetry, after T2 bounties.
+import { masteryForChar } from '@/lib/mastery/mastery';
 
 /** Questions in one 温故 session. */
 export const REVIEW_SESSION_SIZE = 6;
@@ -20,8 +21,12 @@ export interface ReviewCandidate {
   characterId: string;
   hanzi: string;
   weekNumber: number;
-  /** All-time answer_events rows targeting this char. */
-  total: number;
+  /**
+   * answer_events rows targeting this char that carry a real verdict
+   * (`correct IS NOT NULL`). Flashcard self-ratings are NOT counted here —
+   * see masteryForChar's header for why `got_it` cannot be evidence.
+   */
+  scored: number;
   /** correct = false rows. */
   wrong: number;
   /** dont_know / not_sure self-ratings. */
@@ -39,14 +44,19 @@ export interface ReviewCandidate {
  * avoidance behaviour T2 targets. Review targets the opposite population:
  * characters she has already cleared and is now forgetting. Reusing it would
  * fail twice — every character from a week cleared before answer_events
- * started (2026-07-03) has `total === 0` despite being well learned and would
+ * started (2026-07-03) has `scored === 0` despite being well learned and would
  * score 100+, and recency, the core forgetting signal, is not modelled at all.
+ *
+ * The weakness half is `masteryForChar`'s, so the Logbook and 温故 can never
+ * disagree about how well a character is known. That function's denominator
+ * excludes `got_it` self-ratings, which is a deliberate BEHAVIOUR CHANGE from
+ * the version shipped in PR #165: that one divided by `count(*)`, letting five
+ * tapped-through flashcards bury one failed answer.
  */
 export function reviewScore(c: ReviewCandidate): number {
+  const m = masteryForChar(c);
   const weakness =
-    c.total > 0
-      ? Math.round((60 * (c.wrong + c.dontKnow)) / c.total)
-      : NEUTRAL_WEAKNESS;
+    m.missRate === null ? NEUTRAL_WEAKNESS : Math.round(60 * m.missRate);
   const staleness = Math.min(c.daysSinceLastSeen ?? STALE_DEFAULT_DAYS, STALE_CAP);
   return weakness + staleness;
 }

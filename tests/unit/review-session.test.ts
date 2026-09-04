@@ -18,7 +18,7 @@ const target = (id: string, hanzi: string): ReviewCandidate => ({
   characterId: id,
   hanzi,
   weekNumber: 1,
-  total: 4,
+  scored: 4,
   wrong: 2,
   dontKnow: 0,
   daysSinceLastSeen: 5,
