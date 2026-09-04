@@ -11,6 +11,9 @@ import { TrophiesHallCard } from '@/components/play/TrophiesHallCard';
 import { listAllTrophies, listEarnedTrophies } from '@/lib/db/trophies';
 import { getRecentlyObtainedForChild } from '@/lib/db/recent-obtained';
 import { getGlobalShards } from '@/lib/db/grants';
+import { LogbookHallCard } from '@/components/play/LogbookHallCard';
+import { getLogbookEntries } from '@/lib/db/logbook';
+import { masteryForChar } from '@/lib/mastery/mastery';
 
 export default async function CollectionAtlasPage({
   params,
@@ -20,12 +23,13 @@ export default async function CollectionAtlasPage({
   const { childId } = await params;
   await requireChild(childId);
 
-  const [packs, allTrophies, earnedTrophies, recentItems, shards] = await Promise.all([
+  const [packs, allTrophies, earnedTrophies, recentItems, shards, logbookEntries] = await Promise.all([
     listActivePacks(),
     listAllTrophies(),
     listEarnedTrophies(childId),
     getRecentlyObtainedForChild(childId, 3),
     getGlobalShards(childId),
+    getLogbookEntries(childId),
   ]);
   const halls: AtlasHallSummary[] = (
     await Promise.all(
@@ -63,6 +67,15 @@ export default async function CollectionAtlasPage({
           childId={childId}
           earnedCount={earnedTrophies.length}
           totalCount={allTrophies.length}
+        />
+      </div>
+      <div className="w-full max-w-md">
+        <LogbookHallCard
+          childId={childId}
+          totalCount={logbookEntries.length}
+          proficientCount={
+            logbookEntries.filter((e) => masteryForChar(e).state === 'proficient').length
+          }
         />
       </div>
     </main>
