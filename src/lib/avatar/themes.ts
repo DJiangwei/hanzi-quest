@@ -25,7 +25,12 @@ export const THEME_DISPLAY_NAMES: Record<AvatarTheme, { zh: string; en: string }
   unicorn: { zh: '独角兽彩虹', en: 'Unicorn' },
   festival: { zh: '节日', en: 'Festival' },
   continent: { zh: '大洲', en: 'Continent' },
-  season: { zh: '夏季航海', en: 'Summer Voyage' },
+  // Season-NEUTRAL on purpose. The avatar theme is the generic `'season'`, so
+  // naming it after one season means every future season's cosmetics arrive in
+  // the 奖励衣橱 labelled with the previous season's name. Adding a per-season
+  // theme instead would mean an AVATAR_THEMES + REWARD_THEMES edit (and keeping
+  // it out of SHOP_FILTER_THEMES) every single season, forever.
+  season: { zh: '赛季奖励', en: 'Season Rewards' },
   champion: { zh: '霸主', en: 'Champion' },
 };
 

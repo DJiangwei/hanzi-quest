@@ -440,3 +440,39 @@ Yinuo: 航海日志 104 字 across [加勒比海, 里海]  |  温故 candidates 
 ```
 
 8 → 104 characters; 温故 0 → 96 candidates. No migration, no recompile, no post-merge ops.
+## PR #181 — nothing could close a season (2026-09-05)
+
+David noticed the summer season looked finished. It was — and had been for four weeks.
+
+`summer-voyage-2026` ran **2026-06-13 → 2026-08-08** and was still `is_active = true` on 09-05, with the home banner showing a live-looking `还需 N XP` the entire time. Nothing was actually lost: `syncSeasonProgress` banked every reached-but-unclaimed tier, and 小板's 10 tiers is exactly what 1,070 XP buys (tier 10 = 950, tier 11 = 1,100). Yinuo claimed all 30.
+
+Three causes, each of which would have bitten the next launch.
+
+**(a) No close path existed.** `seed-season-summer.ts` ends in `.onConflictDoNothing()` — deliberate, so a re-run can never re-window a live season — and `sync-season-tier-config.ts` updates `tier_config` **only, never** the window or the flag. Both refuse to end a season by design, and nothing else did it either, so retiring one meant a hand-written `UPDATE` against production. Predictably, it never happened.
+
+`scripts/close-season.ts` fills the gap. It lists every season when run bare, closes one by `SEASON_ID`, and **refuses a season that is still running** unless `FORCE=1`: the end-of-season sweep reads `getActiveSeason`, so closing early strands every unclaimed tier with no path back.
+
+**(b) `getActiveSeason` was non-deterministic.** It was `where(isActive).limit(1)` with no `ORDER BY`. Two active rows is not an edge case — it is the **normal state during a changeover**, since `is_active` is set by a seed script and cleared by hand. Postgres may return either row, and possibly a different one between requests; the symptom would have been "the season page sometimes shows the wrong season". Now ordered `startsAt desc`, so an incoming season takes over even if the outgoing one was not closed first.
+
+Pinned by rendering the `orderBy` fragment through `PgDialect`. A behavioural assertion cannot catch this: the mock returns a fixed rowset, so no amount of returned data proves which ordering asked for it.
+
+**(c) The wardrobe label named one particular season.** `THEME_DISPLAY_NAMES.season` was `{ zh: '夏季航海', en: 'Summer Voyage' }`. The avatar theme is the generic `'season'` shared by every season's cosmetics, so **season 2's rewards would have arrived in the 奖励衣橱 wearing season 1's name.** Now `赛季奖励 / Season Rewards`, with a test asserting the label names no particular season — the alternative, a new avatar theme per season, would mean an `AVATAR_THEMES` + `REWARD_THEMES` edit and a `SHOP_FILTER_THEMES` exclusion every season forever.
+
+Also: `SeasonBannerState` gains `ended`, and the banner says `赛季已结束 / Ended` instead of dangling an XP goal or a claim chip at a closed window. Closing a season is a manual op, so this flag will always lag the end date — the banner should tell the truth without waiting to be switched off.
+
+### `docs/season-runbook.md`
+
+The procedure, committed rather than left in a chat: what a season is (three things and no state — season XP is **derived** by summing `xp_events` in the window), the four traps, an ordered launch checklist with the seed run-order dependency, and a calibration section.
+
+That last one matters. Summer's curve put tier 30 at 4,100 XP over 8 weeks; Yinuo finished it, 小板 reached tier 10. At the play rate measured **since** the season ended, copying that curve unchanged would give:
+
+| child | XP in 28 days | per day | projected over 8 weeks | tier reached |
+|---|---|---|---|---|
+| Yinuo | 1,785 | ~64 | ~3,570 | ~27 of 30 |
+| 小板 | 150 | ~5 | ~300 | **~4 of 30** |
+
+A 30-tier track a child can see and never reach is worse than a shorter one she finishes, in a product that softens 畏难情绪 everywhere else.
+
+### Not in this PR, on purpose
+
+**The next season is not launched here.** Two decisions belong to David, and one of them is effectively irreversible: `starts_at` retroactively decides what counts, because season XP is summed from `xp_events` over the window. Production holds **1,785 XP** (Yinuo) and **150** (小板) earned since 08-08 — backdating a new season's start hands Yinuo roughly 15 tiers on day one, forward-dating discards it. Neither is wrong; it is not a default. The theme is his call too.

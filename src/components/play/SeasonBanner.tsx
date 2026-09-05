@@ -30,7 +30,19 @@ export function SeasonBanner({
           Tier {state.currentTier}/{state.totalTiers}
         </span>
       </span>
-      {state.claimableCount > 0 ? (
+      {state.ended ? (
+        /* An ended season keeps its banner — everything reached was auto-banked
+           by the end-of-season sweep, and the track is still worth a look — but
+           it must not keep dangling "还需 N XP", which reads as an achievable
+           goal for a window that closed. */
+        <span
+          data-testid="season-banner-ended"
+          className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-teal-800"
+        >
+          <span className="font-hanzi">赛季已结束</span>{' '}
+          <span className="italic">/ Ended</span>
+        </span>
+      ) : state.claimableCount > 0 ? (
         <span className="animate-bonus-pop rounded-full bg-amber-400 px-2.5 py-1 text-xs font-extrabold text-amber-900">
           🎁 {state.claimableCount} 可领 / Claim
         </span>
