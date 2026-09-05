@@ -6,8 +6,17 @@
 // question bank grow by itself: each new week adds syllables that may collide
 // with ones she already has.
 
-/** Characters offered per question. */
-export const TONE_CHOICE_COUNT = 4;
+/**
+ * The MOST characters a question may offer — a cap, not a target.
+ *
+ * Measured against production on 2026-09-05: across all 176 characters she has
+ * been taught, NOT ONE syllable is known in four different tones, and only one
+ * (ěr / ér / èr) is known in three. Eleven of the twelve groups in map 1 and
+ * all eight in map 2 hold exactly two. A builder that treats four as a quota
+ * therefore invents two options per question, every question — which is
+ * precisely what the first version did.
+ */
+export const TONE_MAX_CHOICES = 4;
 
 const TONE_ROWS = [
   ['āēīōūǖ', 1],
@@ -101,13 +110,25 @@ function shuffle<T>(items: readonly T[], rng: () => number): T[] {
 }
 
 /**
- * Build up to `count` questions, each a character to hear and four to choose
- * from.
+ * Build up to `count` questions. A question is a character to hear plus every
+ * OTHER tone of that same syllable she knows — two options, sometimes three.
  *
- * Two invariants the tests pin, both of which would silently ruin the game:
+ * **Never pad to a fixed option count.** The first version topped up short
+ * questions with characters from anywhere, and the padding did not merely fail
+ * to help: an option that shares no syllable with the answer is eliminable by
+ * reading, so a 4-option question with two fillers is EASIER than the honest
+ * 2-option one, and it rewards scanning for the familiar shape — the opposite
+ * of the discrimination being trained. Worse, the old code then dropped any
+ * pair it could not pad to four, discarding the purest contrasts in the corpus.
+ *
+ * A two-way question is a 50% guess, and that is accepted: this is the standard
+ * shape of a minimal-pair discrimination drill, and no reward anywhere depends
+ * on the answer.
+ *
+ * Three invariants the tests pin, each of which would silently ruin the game:
+ *   • every choice shares the answer's syllable, or the question tests reading;
  *   • no two choices may SOUND the same, or listening cannot separate them;
- *   • at least one distractor comes from the answer's own syllable, or the
- *     question tests reading rather than tone.
+ *   • a question offers at least two, so there is something to discriminate.
  */
 export function buildToneQuestions(
   chars: ToneChar[],
@@ -117,39 +138,52 @@ export function buildToneQuestions(
   const groups = groupMinimalPairs(chars);
   if (groups.length === 0) return [];
 
-  const all = candidates(chars);
-  const questions: ToneQuestion[] = [];
   const usedAnswers = new Set<string>();
+  const bySyllable: ToneQuestion[][] = [];
 
   for (const group of shuffle(groups, rng)) {
+    const built: ToneQuestion[] = [];
     for (const answer of shuffle(group, rng)) {
-      if (questions.length >= count) return questions;
       if (usedAnswers.has(answer.hanzi)) continue;
 
       // Same syllable, DIFFERENT sound — the contrast being taught.
       const sameSyllable = group.filter((c) => c.pinyin !== answer.pinyin);
       if (sameSyllable.length === 0) continue;
 
+      // Only the answer's own syllable. `sameSyllable` is non-empty here, so a
+      // question always ends with the answer plus at least one real contrast —
+      // there is no short-question case left to top up.
       const chosen = [answer];
       const soundsUsed = new Set([answer.pinyin]);
       for (const c of shuffle(sameSyllable, rng)) {
-        if (chosen.length >= TONE_CHOICE_COUNT) break;
+        if (chosen.length >= TONE_MAX_CHOICES) break;
         if (soundsUsed.has(c.pinyin)) continue;
         chosen.push(c);
         soundsUsed.add(c.pinyin);
       }
-      // Top up from anywhere, still refusing a repeated sound.
-      for (const c of shuffle(all, rng)) {
-        if (chosen.length >= TONE_CHOICE_COUNT) break;
-        if (soundsUsed.has(c.pinyin)) continue;
-        chosen.push(c);
-        soundsUsed.add(c.pinyin);
-      }
-      if (chosen.length < TONE_CHOICE_COUNT) continue;
 
       usedAnswers.add(answer.hanzi);
-      questions.push({ id: `tone:${answer.characterId}`, answer, choices: chosen });
+      built.push({ id: `tone:${answer.characterId}`, answer, choices: chosen });
     }
+    if (built.length > 0) bySyllable.push(built);
+  }
+
+  // Deal one question from each syllable in turn, rather than emptying a
+  // syllable before moving on. Since most groups hold exactly two characters,
+  // the straightforward nesting showed the SAME two tiles twice in a row with
+  // only the correct one swapped — which reads as a stuck screen rather than a
+  // second question, and lets the second answer be inferred from the first.
+  const questions: ToneQuestion[] = [];
+  for (let depth = 0; questions.length < count; depth++) {
+    let dealt = false;
+    for (const built of bySyllable) {
+      if (questions.length >= count) break;
+      const q = built[depth];
+      if (!q) continue;
+      questions.push(q);
+      dealt = true;
+    }
+    if (!dealt) break;
   }
   return questions;
 }

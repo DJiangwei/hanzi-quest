@@ -11,6 +11,7 @@ vi.mock('@/lib/hooks/useSpeak', () => ({
 vi.mock('@/lib/hooks/useSpeechSupported', () => ({ useSpeechSupported: () => true }));
 
 import { ToneGameBody } from '@/components/play/ToneGameBody';
+import { toneless } from '@/lib/tones/minimal-pairs';
 
 const c = (hanzi: string, py: string) => ({ characterId: hanzi, hanzi, pinyin: [py] });
 const pool = [
@@ -34,12 +35,45 @@ describe('ToneGameBody', () => {
     expect(arg).toMatch(/^[一-鿿]$/);
   });
 
-  it('offers four characters that are all different', () => {
+  it('offers only characters that share the answer\'s syllable', () => {
+    // The whole point of the game, asserted through the UI rather than the
+    // builder: every option on screen must be a real tone of one syllable. A
+    // filler option is answerable by reading, which is the skill this game
+    // exists NOT to test.
     render(<ToneGameBody chars={pool} />);
     const choices = screen.getAllByTestId(/^tone-choice-/);
-    expect(choices).toHaveLength(4);
-    const labels = choices.map((b) => b.textContent);
-    expect(new Set(labels).size).toBe(4);
+    expect(choices.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(choices.map((b) => b.textContent)).size).toBe(choices.length);
+
+    // Answering reveals each option's pinyin, which is how the test can see
+    // what the child hears.
+    fireEvent.click(choices[0]);
+    const pinyins = screen
+      .getAllByTestId(/^tone-choice-/)
+      .map((b) => (b.textContent ?? '').replace(/[一-鿿]/g, '').trim());
+    expect(pinyins.every((p) => p.length > 0)).toBe(true);
+    expect(new Set(pinyins.map(toneless)).size).toBe(1);
+  });
+
+  it('hides pinyin until she has answered — the tone mark IS the answer', () => {
+    render(<ToneGameBody chars={pool} />);
+    const before = screen.getByTestId('tone-game').textContent ?? '';
+    expect(before).not.toMatch(/[āáǎàēéěèīíǐìōóǒòūúǔù]/);
+
+    fireEvent.click(screen.getAllByTestId(/^tone-choice-/)[0]);
+    const after = screen.getByTestId('tone-game').textContent ?? '';
+    expect(after).toMatch(/[āáǎàēéěèīíǐìōóǒòūúǔù]/);
+  });
+
+  it('lets her replay every option after answering, to compare the sounds', () => {
+    // The moment just after the answer is when hearing mā beside mǎ teaches
+    // the most. Disabling the buttons on answer would throw that moment away.
+    render(<ToneGameBody chars={pool} />);
+    const choices = screen.getAllByTestId(/^tone-choice-/);
+    fireEvent.click(choices[0]);
+    spoken.calls = [];
+    for (const b of screen.getAllByTestId(/^tone-choice-/)) fireEvent.click(b);
+    expect(spoken.calls).toHaveLength(choices.length);
   });
 
   it('marks the right answer without marking the wrong one as failure', () => {

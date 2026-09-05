@@ -105,7 +105,14 @@ export function ToneGameBody({ chars }: Props) {
         <span className="italic">/ Which character was that?</span>
       </p>
 
-      <ul className="grid w-full max-w-md grid-cols-2 gap-3">
+      {/* Two options is the normal case and three is the ceiling in practice, so
+          the row is sized to what the question actually holds — a 2×2 grid with
+          two empty cells would read as something missing. */}
+      <ul
+        className={`grid w-full max-w-md gap-3 ${
+          shuffled.length === 3 ? 'grid-cols-3' : 'grid-cols-2'
+        }`}
+      >
         {shuffled.map((choice) => {
           const isAnswer = choice.hanzi === q.answer.hanzi;
           // After answering, the RIGHT one is marked — the wrong one she picked
@@ -121,21 +128,42 @@ export function ToneGameBody({ chars }: Props) {
               <button
                 type="button"
                 data-testid={`tone-choice-${choice.hanzi}`}
-                disabled={answered}
+                // Deliberately NOT disabled once answered. The moment right
+                // after the answer is when comparing the two sounds teaches the
+                // most, so every option stays tappable to replay — it just no
+                // longer changes what she picked.
                 onClick={() => {
-                  setPicked(choice.hanzi);
+                  if (!answered) setPicked(choice.hanzi);
                   speak(choice.hanzi);
                 }}
                 className={`w-full rounded-2xl border-2 py-5 transition ${state}`}
               >
-                <span className="font-hanzi text-4xl text-[var(--color-ocean-900)]">
+                <span className="font-hanzi block text-4xl text-[var(--color-ocean-900)]">
                   {choice.hanzi}
+                </span>
+                {/* Pinyin appears only AFTER she has committed: the tone mark
+                    IS the answer, so showing it earlier would turn a listening
+                    question into a reading one. Revealing it now names the
+                    contrast she just heard, the same way the flashcard reveals
+                    pinyin on tap. */}
+                <span
+                  className="mt-1 block text-sm text-[var(--color-sand-700)]"
+                  aria-hidden={!answered}
+                >
+                  {answered ? choice.pinyin : '\u00a0'}
                 </span>
               </button>
             </li>
           );
         })}
       </ul>
+
+      {answered ? (
+        <p className="text-xs text-[var(--color-sand-700)]">
+          <span className="font-hanzi">再点一点，听听有什么不一样。</span>{' '}
+          <span className="italic">/ Tap them again to hear the difference.</span>
+        </p>
+      ) : null}
 
       {answered ? (
         <WoodSignButton

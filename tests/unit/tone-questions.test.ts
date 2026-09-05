@@ -16,7 +16,7 @@ import {
   toneless,
   groupMinimalPairs,
   buildToneQuestions,
-  TONE_CHOICE_COUNT,
+  TONE_MAX_CHOICES,
 } from '@/lib/tones/minimal-pairs';
 
 const c = (hanzi: string, py: string) => ({ characterId: hanzi, hanzi, pinyin: [py] });
@@ -98,20 +98,64 @@ describe('buildToneQuestions', () => {
     }
   });
 
-  it('fills every question to the full choice count', () => {
-    for (const q of buildToneQuestions(pool, 20)) {
-      expect(q.choices).toHaveLength(TONE_CHOICE_COUNT);
+  it('offers ONLY characters from the answer\'s own syllable — never a filler', () => {
+    // The bug David found by playing it. An option that shares no syllable
+    // with the answer can be dropped by reading, so padding a 2-way question
+    // out to 4 makes it EASIER than the honest version while teaching her to
+    // scan for the familiar shape instead of listening.
+    //
+    // It is not a rare top-up either: measured against production, not one of
+    // the 20 syllables she knows in more than one tone is known in four, so
+    // padding fired on essentially every question.
+    const padding = [c('鱼', 'yú'), c('大', 'dà'), c('飞', 'fēi'), c('书', 'shū')];
+    for (const q of buildToneQuestions([...pool, ...padding], 30)) {
+      for (const ch of q.choices) {
+        expect(toneless(ch.pinyin)).toBe(toneless(q.answer.pinyin));
+      }
     }
   });
 
-  it('draws at least one distractor from the answer\'s OWN minimal-pair group', () => {
-    // Topping up from elsewhere is allowed, but a question whose distractors
-    // are all unrelated syllables tests reading, not tone.
-    for (const q of buildToneQuestions(pool, 20)) {
-      const same = q.choices.filter(
-        (ch) => ch.hanzi !== q.answer.hanzi && toneless(ch.pinyin) === toneless(q.answer.pinyin),
-      );
-      expect(same.length).toBeGreaterThanOrEqual(1);
+  it('keeps a two-option question rather than discarding it', () => {
+    // 鱼/雨 is the whole yu group: two characters, one contrast. The old
+    // builder threw this away for failing to reach four options — discarding
+    // the purest tone contrasts in the corpus. A 50% guess is the accepted
+    // shape of a minimal-pair drill, and nothing here pays out on the answer.
+    const qs = buildToneQuestions([c('鱼', 'yú'), c('雨', 'yǔ')], 10);
+    expect(qs).toHaveLength(2);
+    for (const q of qs) expect(q.choices).toHaveLength(2);
+  });
+
+  it('uses every tone of a syllable she knows, up to the cap', () => {
+    // 妈/马/吗 is a three-way contrast; offering only two would waste it.
+    const qs = buildToneQuestions([c('妈', 'mā'), c('马', 'mǎ'), c('吗', 'ma')], 10);
+    for (const q of qs) expect(q.choices).toHaveLength(3);
+  });
+
+  it('never exceeds the cap', () => {
+    const five = [
+      c('妈', 'mā'), c('麻', 'má'), c('马', 'mǎ'), c('骂', 'mà'), c('吗', 'ma'),
+    ];
+    for (const q of buildToneQuestions(five, 20)) {
+      expect(q.choices.length).toBeLessThanOrEqual(TONE_MAX_CHOICES);
+      expect(q.choices.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('does not put two questions on the same syllable back to back', () => {
+    // Most syllables she knows have exactly two tones, so a group yields two
+    // questions with the SAME two tiles and only the answer swapped. Emitting
+    // them consecutively reads as a stuck screen, and the second answer is
+    // inferable from the first.
+    const qs = buildToneQuestions(pool, 20);
+    expect(qs.length).toBeGreaterThan(4);
+    for (let i = 1; i < qs.length; i++) {
+      const prev = toneless(qs[i - 1].answer.pinyin);
+      const here = toneless(qs[i].answer.pinyin);
+      // Repeats are allowed only once every syllable has had a turn.
+      if (prev === here) {
+        const seen = new Set(qs.slice(0, i).map((q) => toneless(q.answer.pinyin)));
+        expect(seen.size).toBe(1);
+      }
     }
   });
 

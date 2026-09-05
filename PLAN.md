@@ -173,6 +173,17 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #165 | feat(review): 温故 daily mixed review (A2 slice 2) — cross-week selection engine, request-time session builder, completion-paid | |
 | #166 | docs: landmine — a seeded shuffle decides whether a mutation test can bite | |
 | #167 | feat(mastery): V1 mastery model + 航海日志 Captain's Logbook — one substrate for the Logbook and 温故's ranking, badged only where earned | |
+| #168 | fix(flashcard): the self-assessment was measuring the UI, not the child — 164/164 `got_it`; three identically-styled buttons + a `revealed` behavioural signal | |
+| #169 | feat(maps): Map 2 is now 里海 Caspian Sea; 印度洋 held in reserve as `pirate-class-level-3` | |
+| #170 | feat(maps): Caspian sea-chart backdrop, chosen rather than accepted (`PREVIEW_DIR` / `UPLOAD_FILE`, `ONLY_SLUG`) | |
+| #171 | fix(bounty): 通缉令's weakness term was diluted by `got_it` flashcards; the unseen gate deliberately unchanged | |
+| #172 | feat(admin): C3 error visibility, self-hosted — `error_events` + `/admin/errors`, no third party | |
+| #173 | fix(maps): unlock on PUBLISHED weeks; restore the fifth of CLAUDE.md that #168's window-roll script deleted | |
+| #174 | feat(content): 里海 Map 2 — 80 characters across 10 weeks | |
+| #175 | feat(practice): one wrong option per question comes from a cleared week (A2 slice 1) | |
+| #176 | fix(ai): retry a dropped generation, because the SDK will not | |
+| #177 | feat(tones): 听声调 — a standalone tone game built from her own characters (E2) | |
+| #178 | fix(tones): 听声调 offered options that were not tones of the same syllable — no padding, two-way questions kept | |
 | #168 | fix(flashcard): the self-assessment was measuring the UI — identical button styling + an `answer_events.revealed` behavioural signal (migration 0043) |  |
 | #169 | feat(maps): Map 2 re-themed 印度洋 → 里海 Caspian Sea; Indian Ocean held in reserve as `pirate-class-level-3` |  |
 | #170 | feat(maps): Caspian sea-chart backdrop; ONLY_SLUG + preview/upload split for the art generator |  |
