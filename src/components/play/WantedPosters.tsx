@@ -5,6 +5,7 @@
 // poster pays coins, and clearing all three pays a bounty card.
 
 import { useState, useTransition } from 'react';
+import { hanziWeek } from '@/lib/i18n/hanzi-number';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { claimBountyAction } from '@/lib/actions/bounty';
@@ -77,7 +78,7 @@ export function WantedPosters({ childId, posters: initial }: Props) {
                 <Link
                   href={`/play/${childId}/week/${p.weekId}`}
                   className="font-hanzi text-4xl font-bold text-amber-950 underline-offset-4 hover:underline"
-                  aria-label={`去第${p.weekNumber}周练习 ${p.hanzi} / Practice ${p.hanzi} in week ${p.weekNumber}`}
+                  aria-label={`去${hanziWeek(p.weekNumber)}练习 ${p.hanzi} / Practice ${p.hanzi} in week ${p.weekNumber}`}
                 >
                   {p.hanzi}
                 </Link>

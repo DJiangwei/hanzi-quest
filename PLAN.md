@@ -184,6 +184,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #176 | fix(ai): retry a dropped generation, because the SDK will not | |
 | #177 | feat(tones): 听声调 — a standalone tone game built from her own characters (E2) | |
 | #178 | fix(tones): 听声调 offered options that were not tones of the same syllable — no padding, two-way questions kept | |
+| #179 | feat(ui): week numbers in hanzi everywhere; the chart switcher names its own action | |
 | #168 | fix(flashcard): the self-assessment was measuring the UI — identical button styling + an `answer_events.revealed` behavioural signal (migration 0043) |  |
 | #169 | feat(maps): Map 2 re-themed 印度洋 → 里海 Caspian Sea; Indian Ocean held in reserve as `pirate-class-level-3` |  |
 | #170 | feat(maps): Caspian sea-chart backdrop; ONLY_SLUG + preview/upload split for the art generator |  |

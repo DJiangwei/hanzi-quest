@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { hanziWeek } from '@/lib/i18n/hanzi-number';
 import { SectionCard } from './SectionCard';
 import { BOSS_UNLOCK_PRACTICE_THRESHOLD } from '@/lib/scenes/configs';
 import { formatPence } from '@/lib/piggy/money';
@@ -66,8 +67,9 @@ export function WeekHub({
           ← 航海图 / Map
         </Link>
         <div className="text-right">
-          <div className="text-xs uppercase tracking-widest text-amber-900/70">
-            Week {week.weekNumber}
+          <div className="text-xs tracking-widest text-amber-900/70">
+            <span className="font-hanzi text-sm font-bold">{hanziWeek(week.weekNumber)}</span>{' '}
+            <span className="uppercase">/ Week {week.weekNumber}</span>
           </div>
           <div className="text-base font-extrabold text-amber-950">{week.label}</div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { hanziNumber } from '@/lib/i18n/hanzi-number';
 import { CollectionHudPill } from './CollectionHudPill';
 import { ANCHORS } from '@/lib/decor/anchors';
 import { DECOR_CATALOG } from '@/lib/decor/catalog';
@@ -286,9 +287,13 @@ function IslandNode({ x, y, weekNumber, palmCount, done, isActive, locked }: Isl
           fontSize={done ? 22 : 18}
           fontWeight={700}
           fill={numberColor}
-          fontFamily="system-ui, sans-serif"
+          // `font-hanzi` as a class, not a fontFamily presentation attribute:
+          // var() substitution inside a presentation attribute is not something
+          // to rely on, and a CSS class beats the attribute anyway.
+          className={locked || done ? undefined : 'font-hanzi'}
+          fontFamily={locked || done ? 'system-ui, sans-serif' : undefined}
         >
-          {locked ? '🔒' : done ? '⭐' : weekNumber}
+          {locked ? '🔒' : done ? '⭐' : hanziNumber(weekNumber)}
         </text>
       </g>
     </g>
