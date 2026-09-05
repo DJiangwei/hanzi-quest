@@ -1,3 +1,4 @@
+import Link from 'next/link';
 // src/app/play/[childId]/collection/page.tsx
 import { requireChild } from '@/lib/auth/guards';
 import {
@@ -52,6 +53,17 @@ export default async function CollectionAtlasPage({
 
   return (
     <main className="flex flex-1 flex-col items-center gap-4 p-6">
+      <div className="w-full max-w-md">
+        <Link
+          href={`/play/${childId}/tones`}
+          data-testid="tones-hall-link"
+          className="block rounded-3xl border-2 border-sky-300 bg-white/80 px-5 py-4 text-center transition hover:-translate-y-0.5 hover:border-sky-400"
+        >
+          <span className="text-3xl" aria-hidden>🎧</span>
+          <span className="font-hanzi ml-2 text-lg font-bold text-sky-950">听声调</span>
+          <span className="ml-1 text-sm italic text-sky-900/70">/ Listen for the Tone</span>
+        </Link>
+      </div>
       <div className="w-full max-w-md">
         <LogbookHallCard
           childId={childId}
