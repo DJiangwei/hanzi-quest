@@ -1,7 +1,8 @@
 /**
  * Renames the existing `pirate-class-level-1` pack to bilingual names
  * (Map 1 = 加勒比海 / Caribbean Sea) and inserts the `pirate-class-level-2`
- * placeholder (Map 2 = 印度洋 / Indian Ocean) with zero weeks.
+ * placeholder (Map 2 = 里海 / Caspian Sea) with zero weeks. Re-runnable: an
+ * existing Map 2 row has its theme names synced, not skipped.
  *
  * Usage: pnpm tsx scripts/seed-multi-map.ts
  *
@@ -35,18 +36,32 @@ async function main() {
     .where(eq(curriculumPacks.slug, 'pirate-class-level-2'))
     .limit(1);
 
+  // Map 2's THEME is data, and it has changed once already (印度洋 → 里海,
+  // 2026-09-05). The slug stays `pirate-class-level-2` because it means "the
+  // second map", not "the Indian Ocean" — but the names must be re-syncable,
+  // so an existing row is UPDATED rather than skipped. A skip-if-exists here
+  // is the same trap as the season seed's onConflictDoNothing: the TypeScript
+  // changes and the live row never hears about it.
+  const MAP_2 = {
+    name: 'Caspian Sea / 里海',
+    nameZh: '里海',
+    nameEn: 'Caspian Sea',
+  };
+
   if (existing.length === 0) {
-    console.log('Inserting Map 2 placeholder → Indian Ocean…');
+    console.log(`Inserting Map 2 placeholder → ${MAP_2.nameEn}…`);
     await db.insert(curriculumPacks).values({
       slug: 'pirate-class-level-2',
-      name: 'Indian Ocean / 印度洋',
-      nameZh: '印度洋',
-      nameEn: 'Indian Ocean',
+      ...MAP_2,
       isPublic: true,
       ownerUserId: null,
     });
   } else {
-    console.log('Map 2 already exists, skipping insert.');
+    console.log(`Map 2 exists — syncing its theme to ${MAP_2.nameEn}…`);
+    await db
+      .update(curriculumPacks)
+      .set(MAP_2)
+      .where(eq(curriculumPacks.slug, 'pirate-class-level-2'));
   }
 
   console.log('Done.');

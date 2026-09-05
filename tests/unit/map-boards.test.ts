@@ -5,11 +5,31 @@ import {
   getMapAccent,
   DEFAULT_MAP_ACCENT,
 } from '@/lib/play/map-boards';
+import { MAP_TO_VAULT_CARD, VAULT_TREASURES_BY_SLUG } from '@/lib/collections/keyVaultData';
 
 describe('voyage maps config', () => {
-  it('has Caribbean (10 stops) and Indian Ocean (9 stops)', () => {
-    expect(getVoyageMap('pirate-class-level-1')?.stops).toHaveLength(10);
-    expect(getVoyageMap('pirate-class-level-2')?.stops).toHaveLength(9);
+  it('has Caribbean as map 1 and the Caspian Sea as map 2', () => {
+    expect(getVoyageMap('pirate-class-level-1')?.nameZh).toBe('加勒比海');
+    expect(getVoyageMap('pirate-class-level-2')?.nameZh).toBe('里海');
+    expect(getVoyageMap('pirate-class-level-2')?.nameEn).toBe('Caspian Sea');
+  });
+
+  it('keeps the Indian Ocean ready as map 3 rather than discarding it', () => {
+    // Re-themed out of map 2 on 2026-09-05, kept whole so a future third map
+    // is a seed row plus a backdrop rather than a rewrite.
+    const indian = getVoyageMap('pirate-class-level-3');
+    expect(indian?.nameZh).toBe('印度洋');
+    expect(indian?.stops.map((s) => s.labelEn)).toContain('Maldives Lagoons');
+  });
+
+  it('gives every configured map exactly one stop per week of its map', () => {
+    // VoyageBoard renders `map.stops.map(...)` — ONE medallion per stop. A
+    // 10-week map with 9 stops therefore drops its last island off the board
+    // entirely and the child can never reach it, which is exactly how week 10
+    // went missing in PR #151. The Indian Ocean config shipped with 9.
+    for (const [slug, m] of Object.entries(VOYAGE_MAPS)) {
+      expect(m.stops.length, `${slug} must have 10 stops for a 10-week map`).toBe(10);
+    }
   });
 
   it('returns null for unconfigured packs', () => {
@@ -17,13 +37,25 @@ describe('voyage maps config', () => {
     expect(getVoyageMap('nope')).toBeNull();
   });
 
-  it('gives Indian Ocean a distinct accent and falls back to default elsewhere', () => {
-    const indian = getMapAccent('pirate-class-level-2');
+  it('gives each themed map an accent distinct from the default AND from each other', () => {
+    const caspian = getMapAccent('pirate-class-level-2');
+    const indian = getMapAccent('pirate-class-level-3');
+    expect(caspian).not.toEqual(DEFAULT_MAP_ACCENT);
     expect(indian).not.toEqual(DEFAULT_MAP_ACCENT);
-    expect(indian.pillBg).toBe('#fde4cf');
+    // The accent is the whole point of the per-map chrome — two maps sharing
+    // one would make the header pill stop telling her where she is.
+    expect(caspian).not.toEqual(indian);
     // Caribbean uses the default; unknown packs do too.
     expect(getMapAccent('pirate-class-level-1')).toEqual(DEFAULT_MAP_ACCENT);
     expect(getMapAccent('nope')).toEqual(DEFAULT_MAP_ACCENT);
+  });
+
+  it('never ships a backdrop URL keyed to a slug whose theme has changed', () => {
+    // maps/<slug>.jpg is keyed by SLUG, so re-theming map 2 leaves the OLD
+    // theme's art at the new theme's path. Showing an Indian Ocean picture
+    // under a map labelled 里海 is worse than the procedural sea-chart the
+    // board falls back to, so the URL stays absent until the art is regenerated.
+    expect(getVoyageMap('pirate-class-level-2')?.imageUrl).toBeUndefined();
   });
 
   it('every stop has bilingual labels + an emoji', () => {
@@ -36,5 +68,24 @@ describe('voyage maps config', () => {
         expect(s.emoji).toBeTruthy();
       }
     }
+  });
+});
+
+describe('every map that can be completed has a treasure to award', () => {
+  it('resolves every MAP_TO_VAULT_CARD target to a real treasure', () => {
+    // claimKeyVaultPrize looks the card up by this slug when the tenth key
+    // lands. A mapping pointing at a treasure that does not exist turns the
+    // payoff for collecting an entire map into a silent no-op.
+    for (const [mapSlug, cardSlug] of Object.entries(MAP_TO_VAULT_CARD)) {
+      expect(
+        VAULT_TREASURES_BY_SLUG[cardSlug],
+        `${mapSlug} → ${cardSlug} has no treasure`,
+      ).toBeDefined();
+    }
+  });
+
+  it('gives the Caspian its own treasure and leaves the Indian Ocean its own', () => {
+    expect(MAP_TO_VAULT_CARD['pirate-class-level-2']).toBe('vault-caspian');
+    expect(MAP_TO_VAULT_CARD['pirate-class-level-3']).toBe('vault-indian-ocean');
   });
 });

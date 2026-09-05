@@ -25,6 +25,14 @@ export const VAULT_TREASURES: VaultTreasure[] = [
     loreEn: 'Ten keys, ten islands. You opened the deepest vault in the Caribbean.',
   },
   {
+    slug: 'vault-caspian',
+    nameZh: '里海宝藏',
+    nameEn: 'The Caspian Hoard',
+    emoji: '🔥',
+    loreZh: '十把钥匙点亮了火焰山。世界上最大的湖，把它的宝库交给了你。',
+    loreEn: "Ten keys lit the Burning Mountain. The world's largest lake gave up its hoard.",
+  },
+  {
     slug: 'vault-indian-ocean',
     nameZh: '印度洋宝藏',
     nameEn: 'The Indian Ocean Hoard',
@@ -40,7 +48,9 @@ export const VAULT_TREASURES_BY_SLUG: Record<string, VaultTreasure> =
 /** Map pack slug → the vault treasure earned by collecting all its keys. */
 export const MAP_TO_VAULT_CARD: Record<string, string> = {
   'pirate-class-level-1': 'vault-caribbean',
-  'pirate-class-level-2': 'vault-indian-ocean',
+  'pirate-class-level-2': 'vault-caspian',
+  // Reserve alongside the map-boards entry — see map-boards.ts.
+  'pirate-class-level-3': 'vault-indian-ocean',
 };
 
 export const KEY_VAULT_PACK_SLUG = 'key-vault-v1';

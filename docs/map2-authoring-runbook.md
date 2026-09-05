@@ -1,4 +1,4 @@
-# Map 2 (印度洋 / Indian Ocean) — authoring runbook
+# Map 2 (里海 / Caspian Sea) — authoring runbook
 
 **Status:** prepped & waiting on David's 10 weeks of characters. Map 2 plays with
 **identical game-design logic to Map 1** — the compile (`compileWeekIntoLevels`)
@@ -7,7 +7,7 @@ about the gameplay differs; only the pack + the character list differ.
 
 ## What's already ready (no work needed)
 
-- **Pack exists:** `pirate-class-level-2` (印度洋 / Indian Ocean) is seeded as a
+- **Pack exists:** `pirate-class-level-2` (里海 / Caspian Sea) is seeded as a
   real row; it currently shows as a **locked** card on `/maps` because it has 0
   weeks. `isLocked = weekCount === 0` — so it **auto-unlocks** the moment its
   first week is published. No code change to unlock.
@@ -41,13 +41,13 @@ as Map 1 was.
    ~$0.05 DeepSeek. Idempotent (re-runnable; skips already-published weeks).
 3. `pnpm tsx scripts/backfill-word-images-cloudflare.ts`
    — generates a picture for every new word (CF flux → Blob → `words.image_url`).
-4. Verify: `/maps` now shows 印度洋 **unlocked**; tap a week → review/practice/
+4. Verify: `/maps` now shows 里海 **unlocked**; tap a week → review/practice/
    boss play identically to Map 1, with pictures in 看图找字 / 看图选词.
 
 ## Notes
 
 - Map 2 weeks are **shared-pack** rows (`parent_user_id = NULL`, `child_id =
-  NULL`) like Map 1 — any child whose current map is 印度洋 can play them.
+  NULL`) like Map 1 — any child whose current map is 里海 can play them.
 - A child switches to Map 2 from the in-app `/maps` gateway (`switchMapAction`).
 - Recompile is automatic inside the seeder; no separate `recompile-all-weeks`
   needed for the new pack.
