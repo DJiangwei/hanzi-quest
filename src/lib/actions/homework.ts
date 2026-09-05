@@ -21,6 +21,7 @@ import type { RevealCard } from '@/lib/play/reveal-card';
 import type { CardSkipReason } from '@/lib/actions/play';
 import { logAnswerEventsSafe } from '@/lib/db/answer-events';
 import { MAX_EVENTS_PER_CALL } from '@/lib/play/answer-events';
+import { logError } from '@/lib/db/error-events';
 
 const HOMEWORK_COMPLETE_COINS = 80;
 const HOMEWORK_XP = 30;
@@ -83,7 +84,7 @@ export async function finishHomeworkAction(
       cardMessage = 'daily_cap_reached';
     }
   } catch (err) {
-    console.error('[finishHomeworkAction] reward error:', err);
+    await logError('finishHomeworkAction:reward-error', err);
   }
 
   // Answer-event telemetry (write-only) — guarded, after all primary writes.
@@ -91,7 +92,7 @@ export async function finishHomeworkAction(
     try {
       await logAnswerEventsSafe(child.id, parsed.weekId, 'homework', parsed.events);
     } catch (err) {
-      console.error('[finishHomeworkAction] answer-event log failed:', err);
+      await logError('finishHomeworkAction:answer-event-log-failed', err);
     }
   }
 

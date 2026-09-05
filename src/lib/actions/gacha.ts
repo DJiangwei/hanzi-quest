@@ -9,6 +9,7 @@ import type { GrantedTrophy } from '@/lib/db/trophies';
 import { grantContinentRewards } from '@/lib/db/continent-rewards';
 import { swapShardsInTx, convertDuplicateInTx } from '@/lib/db/grants';
 import { safePackCompleteTrophy } from '@/lib/play/card-grants';
+import { logError } from '@/lib/db/error-events';
 
 // The legacy gacha endpoints (pullFreeFromBoss / pullPaid) were deleted in the
 // 2026-07-05 cleanup — cards flow exclusively through the play-to-earn grants
@@ -51,7 +52,7 @@ export async function swapShardsForItem(
       }
     }
   } catch (err) {
-    console.error('[gacha] swap completion check failed:', err);
+    await logError('gacha:swap-completion-check-failed', err);
   }
   return { ok: true, shardsRemaining: result.shardsRemaining, continentTrophies };
 }

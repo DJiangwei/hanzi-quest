@@ -1,4 +1,5 @@
 import { db } from '@/db';
+import { logError } from '@/lib/db/error-events';
 import { answerEvents } from '@/db/schema';
 import {
   MAX_EVENTS_PER_CALL,
@@ -41,7 +42,7 @@ export async function logAnswerEventsSafe(
     await db.insert(answerEvents).values(rows);
     return rows.length;
   } catch (err) {
-    console.error('[answer-events] logAnswerEventsSafe error:', err);
+    await logError('answer-events:loganswereventssafe-error', err);
     return 0;
   }
 }

@@ -5,6 +5,7 @@ import { assertAdmin } from '@/lib/auth/guards';
 import { db } from '@/db';
 import { characterWord, weekCharacters, words } from '@/db/schema';
 import { fetchAndUploadImage } from '@/lib/ai/pollinations';
+import { logError } from '@/lib/db/error-events';
 
 // Pollinations.ai free tier enforces 1 concurrent request per IP (others
 // return HTTP 402 "Queue full"). At concurrency>1 the success rate
@@ -52,7 +53,7 @@ export async function generateMissingImagesForWeek(weekId: string): Promise<{
             .where(and(eq(words.id, w.id), isNull(words.imageUrl)));
           return { ok: true as const };
         } catch (err) {
-          console.error(`[generateMissingImagesForWeek] ${w.text}:`, err);
+          await logError('generateMissingImagesForWeek:w-text', err);
           return { ok: false as const };
         }
       }),

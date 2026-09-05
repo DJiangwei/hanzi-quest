@@ -2,6 +2,7 @@ import type { UserJSON, WebhookEvent } from '@clerk/nextjs/server';
 import { Webhook } from 'svix';
 import { ensureSchoolCustomPack } from '@/lib/db/curriculum';
 import { deleteUser, upsertUser } from '@/lib/db/users';
+import { logError } from '@/lib/db/error-events';
 
 export const runtime = 'nodejs';
 
@@ -76,17 +77,14 @@ export async function POST(req: Request): Promise<Response> {
       'svix-signature': svixSignature,
     }) as WebhookEvent;
   } catch (err) {
-    console.error('[clerk-webhook] signature verification failed', err);
+    await logError('clerk-webhook:signature', err);
     return Response.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
   try {
     await handleEvent(event);
   } catch (err) {
-    console.error('[clerk-webhook] event handler failed', {
-      type: event.type,
-      err,
-    });
+    await logError('clerk-webhook:handler', err, { context: { type: event.type } });
     return Response.json({ error: 'Handler error' }, { status: 500 });
   }
 

@@ -103,6 +103,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             >
               📊 经济 Economy
             </Link>
+            <Link
+              href="/admin/errors"
+              className="rounded-full border border-[var(--color-sand-300)] px-3 py-1 hover:bg-[var(--color-sand-100)]"
+            >
+              🚨 错误 Errors
+            </Link>
           </nav>
         </div>
       </header>

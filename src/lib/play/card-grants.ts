@@ -14,6 +14,7 @@ import { getActivityForRange } from '@/lib/db/activity';
 import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 import { countCheckInDays, WEEKLY_CHECKIN_THRESHOLD } from '@/lib/db/checkins';
 import { tickQuestProgressSafe } from '@/lib/db/quests';
+import { logError } from '@/lib/db/error-events';
 
 export type CardGrantSource =
   | 'boss_clear'
@@ -49,7 +50,7 @@ export async function safePackCompleteTrophy(childId: string, packSlug: string):
   try {
     await checkAndGrantTrophies(childId, { kind: 'pack-complete', packSlug });
   } catch (err) {
-    console.error('[card-grants] pack-complete trophy check failed:', err);
+    await logError('card-grants:pack-complete-trophy-check-failed', err);
   }
 }
 
@@ -58,7 +59,7 @@ async function safeContinentTrophies(childId: string): Promise<void> {
   try {
     await grantContinentRewards(childId);
   } catch (err) {
-    console.error('[card-grants] continent-complete reward grant failed:', err);
+    await logError('card-grants:continent-complete-reward-grant-failed', err);
   }
 }
 

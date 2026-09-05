@@ -13,6 +13,7 @@ import { awardXp } from '@/lib/db/xp';
 import { pullCardForChild } from '@/lib/play/card-grants';
 import { BOUNTY_REWARD_XP } from '@/lib/bounty/ranking';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import { logError } from '@/lib/db/error-events';
 
 export type ClaimBountyOutcome =
   | { ok: true; coins: number; card: RevealCard | null }
@@ -35,7 +36,7 @@ export async function claimBountyAction(
   try {
     await awardXp(child.id, BOUNTY_REWARD_XP, 'bounty_claim', `${dayUtc}:${characterId}`);
   } catch (err) {
-    console.error('[claimBountyAction] xp award failed:', err);
+    await logError('claimBountyAction:xp-award-failed', err);
   }
 
   let card: RevealCard | null = null;
@@ -56,7 +57,7 @@ export async function claimBountyAction(
         };
       }
     } catch (err) {
-      console.error('[claimBountyAction] bounty card pull failed:', err);
+      await logError('claimBountyAction:bounty-card-pull-failed', err);
     }
   }
 

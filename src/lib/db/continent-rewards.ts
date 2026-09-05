@@ -1,5 +1,6 @@
 // NEVER import this file from client code. It pulls in postgres.
 import { eq } from 'drizzle-orm';
+import { logError } from '@/lib/db/error-events';
 import { db } from '@/db';
 import {
   avatarItems,
@@ -63,7 +64,7 @@ export async function grantContinentRewards(
     try {
       await grantContinentCosmetic(childId, CONTINENT_REWARDS[continent].avatarItemRef);
     } catch (err) {
-      console.error('[continent] cosmetic grant failed:', err);
+      await logError('continent:cosmetic-grant-failed', err);
     }
   }
   return trophies;
