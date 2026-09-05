@@ -1,5 +1,6 @@
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db, type DB } from '@/db';
+import { weekProgress } from '@/db/schema/game';
 import {
   characterSentence,
   characterWord,
@@ -150,6 +151,38 @@ export interface CharacterWithDetails extends CharacterRow {
 export async function getCharactersWithDetailsForWeek(
   weekId: string,
 ): Promise<CharacterWithDetails[]> {
+  return charactersForWeekIds([weekId]);
+}
+
+/**
+ * Characters from weeks the child has CLEARED, minus the week she is in.
+ *
+ * Feeds A2 slice 1: one wrong option per practice question is drawn from
+ * material she finished weeks ago, so recognition keeps being tested under
+ * interference instead of every week becoming an island. Cleared, not merely
+ * unlocked — a week still being taught is practice's own job.
+ *
+ * Deliberately reuses the week read rather than a leaner query: these
+ * characters land in the same `pool` shape the scenes already consume, and a
+ * second shape for "the same thing but for distractors" is how two code paths
+ * start disagreeing about what a character is.
+ */
+export async function getClearedWeekCharacters(
+  childId: string,
+  excludeWeekId: string,
+): Promise<CharacterWithDetails[]> {
+  const clearedWeekIds = await db
+    .select({ weekId: weekProgress.weekId })
+    .from(weekProgress)
+    .where(and(eq(weekProgress.childId, childId), eq(weekProgress.bossCleared, true)));
+  const ids = clearedWeekIds.map((r) => r.weekId).filter((id) => id !== excludeWeekId);
+  if (ids.length === 0) return [];
+  return charactersForWeekIds(ids);
+}
+
+async function charactersForWeekIds(
+  weekIds: string[],
+): Promise<CharacterWithDetails[]> {
   const charPairs = await db
     .select({
       character: characters,
@@ -157,7 +190,7 @@ export async function getCharactersWithDetailsForWeek(
     })
     .from(weekCharacters)
     .innerJoin(characters, eq(characters.id, weekCharacters.characterId))
-    .where(eq(weekCharacters.weekId, weekId))
+    .where(inArray(weekCharacters.weekId, weekIds))
     .orderBy(weekCharacters.position);
 
   if (!charPairs.length) return [];

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
+import { blendDistractors, shuffle } from '@/lib/scenes/sample';
 import { COUNTING_CHAR_VALUES } from '@/lib/scenes/stimulus-validity';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 import { HintBubble } from './HintBubble';
@@ -19,6 +19,14 @@ interface CharacterDetail {
 interface Props {
   target: CharacterDetail;
   pool: CharacterDetail[];
+  /**
+   * Characters from weeks she has already CLEARED (A2 slice 1). SceneRunner
+   * must have already removed any character that owns this scene's stimulus
+   * word — a picture that identifies two of the options has no right answer,
+   * which is the PR #158 defect reappearing across weeks instead of within
+   * one. Defaults to empty, reproducing the pre-slice-1 behaviour exactly.
+   */
+  olderPool?: CharacterDetail[];
   /** A picture (reused from one of the char's words) shown as the stimulus. */
   imageUrl?: string | null;
   /** English description of the picture (the stimulus word's imageHook) —
@@ -30,7 +38,7 @@ interface Props {
   hintRequested?: boolean;
 }
 
-export function ImagePickScene({ target, pool, imageUrl, imageHint, onComplete, onAnswerEvent, hintRequested }: Props) {
+export function ImagePickScene({ target, pool, olderPool = [], imageUrl, imageHint, onComplete, onAnswerEvent, hintRequested }: Props) {
   // A counting character (一...十) never shows a diffusion picture, no
   // matter what `imageUrl`/`imageHint` the caller resolved — a host's
   // pickStimulusImage() fallback can still find SOME word image for one
@@ -47,10 +55,12 @@ export function ImagePickScene({ target, pool, imageUrl, imageHint, onComplete, 
   // object identity) — otherwise a parent re-render reshuffles the options
   // mid-selection, making them jump around.
   const choices = useMemo(() => {
-    const distractors = sampleDistractors(
+    const distractors = blendDistractors(
       pool,
+      olderPool,
       target,
       3,
+      undefined,
       (a, b) => a.characterId === b.characterId,
     );
     return shuffle([target, ...distractors]).map((c) => ({

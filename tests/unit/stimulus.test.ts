@@ -70,6 +70,18 @@ describe('pickStimulusImage', () => {
 
   it('returns nulls when words is undefined, regardless of preferredWordId', () => {
     const result = pickStimulusImage(undefined, 'fallback-hook', 'w1');
-    expect(result).toEqual({ imageUrl: null, imageHint: 'fallback-hook' });
+    expect(result).toEqual({ imageUrl: null, imageHint: 'fallback-hook', wordText: null });
+  });
+
+  it('reports WHICH word it chose, so a caller can exclude that word\'s owners', () => {
+    // A2 slice 1 widens the distractor pool across weeks. Any character that
+    // also owns the pictured word would make the picture identify two of the
+    // options — PR #158's collision, one map apart instead of one week.
+    const words = [
+      { id: 'w1', text: '唱歌', imageUrl: 'u1', imageHook: 'singing', meaningEn: 'to sing' },
+      { id: 'w2', text: '小鱼', imageUrl: 'u2', imageHook: 'a little fish', meaningEn: 'small fish' },
+    ];
+    expect(pickStimulusImage(words, null).wordText).toBe('唱歌');
+    expect(pickStimulusImage(words, null, 'w2').wordText).toBe('小鱼');
   });
 });
