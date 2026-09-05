@@ -34,7 +34,7 @@ import { getEquippedPet } from '@/lib/db/pets';
 import { listOwnedDecorationsForChild } from '@/lib/db/decor';
 import { getActivityForRange } from '@/lib/db/activity';
 import { todayUtcIso } from '@/lib/db/streaks';
-import { MapHeaderPill } from '@/components/play/MapHeaderPill';
+import { MapSwitcherCard } from '@/components/play/MapSwitcherCard';
 import { listMapsForChild } from '@/lib/db/maps';
 import { mondayOfIsoWeek } from '@/lib/utils/iso-week';
 import { countCheckInDays } from '@/lib/db/checkins';
@@ -318,7 +318,7 @@ export default async function PlayHomePage({ params }: PageProps) {
         </span>
       </section>
 
-      <MapHeaderPill
+      <MapSwitcherCard
         childId={childId}
         currentMap={
           currentMap

@@ -18,10 +18,17 @@ describe('VoyageBoard', () => {
     expect(links[0].style.viewTransitionName).toBe('island-w1');
   });
 
-  it('numbers the stops 1..N', () => {
+  it('numbers the stops in HANZI, not digits', () => {
+    // The board shows a week number on every island, on every visit, all year.
+    // 一…十 are the first characters map 1 teaches, so painting the medallions
+    // in hanzi is free re-exposure — the same reasoning as A2's stale
+    // distractors, applied to the chrome instead of the questions. A digit
+    // here teaches nothing.
     render(<VoyageBoard childId="c1" packSlug="pirate-class-level-1" islands={islands} />);
-    expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('一')).toBeInTheDocument();
+    expect(screen.getByText('二')).toBeInTheDocument();
+    expect(screen.queryByText('1')).not.toBeInTheDocument();
+    expect(screen.queryByText('2')).not.toBeInTheDocument();
   });
 
   it('renders locked stops for landmarks beyond the published weeks', () => {

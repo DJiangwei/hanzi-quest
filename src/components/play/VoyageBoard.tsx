@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { hanziNumber } from '@/lib/i18n/hanzi-number';
 import { getVoyageMap, type VoyageStop } from '@/lib/play/map-boards';
 import {
   voyageLayout,
@@ -224,8 +225,17 @@ function StopNode({
     >
       <span className={`relative flex aspect-square w-full items-center justify-center rounded-full border-[5px] border-[#caa24a] bg-gradient-to-b from-[#fbeec3] to-[#e9c877] ${emojiClass} shadow-xl`}>
         {stop.emoji}
-        <span className="absolute -left-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#fbeec3] bg-[#b8232a] text-base font-extrabold text-white shadow-md">
-          {num}
+        {/* The week number in hanzi. Every stop on every visit, all year — the
+            cheapest re-exposure to 一…十 in the product. 1–10 are all single
+            glyphs, so the medallion never has to shrink; the guard is for a
+            future map longer than ten weeks. */}
+        <span
+          data-testid="voyage-stop-number"
+          className={`font-hanzi absolute -left-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#fbeec3] bg-[#b8232a] font-extrabold text-white shadow-md ${
+            hanziNumber(num).length > 1 ? 'text-[11px]' : 'text-lg'
+          }`}
+        >
+          {hanziNumber(num)}
         </span>
         {cleared && (
           <span data-testid="voyage-stop-cleared" className="absolute bottom-0 right-0 text-2xl drop-shadow" aria-hidden="true">

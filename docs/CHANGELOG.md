@@ -357,3 +357,37 @@ Three further polish items, all found by reasoning about the second round rather
 A simulated round against production now reads: eight questions, eight different syllables, every option a genuine tone of the one she heard (习/戏, 子/字, 石/是, 雪/学, 小/笑, 友/游, 田/天, 儿/耳/二). 27 questions available on map 1, 16 on map 2.
 
 **Five guards, each proven by mutation** — the padding restored, the short-question rejection restored, the consecutive-emit restored, pinyin leaked early, and the buttons re-disabled — each watched to fail for its own named reason before being restored.
+
+---
+
+## PR #179 — hanzi week numbers, and a switcher that says what it does (2026-09-05)
+
+Two UI asks from David, both about the chrome rather than the game.
+
+### (a) Every kid-facing week number is a Chinese numeral
+
+His framing: *"某种程度上是巩固学习的成果"* — to a degree, it consolidates what she's learned. He is right in a specific way. The voyage board shows a week number on **every island, on every visit, all year**, and 一 二 三 … 十 are among the very first characters map 1 teaches. Painting those medallions in hanzi turns navigation she performs dozens of times a week into passive re-exposure at zero cost to the play loop — the same reasoning as A2's stale distractors (PR #175), applied to the furniture instead of the questions.
+
+`src/lib/i18n/hanzi-number.ts` is pure and client-safe: `hanziNumber` (1 → 一, 10 → 十, 11 → 十一, 20 → 二十, 42 → 四十二) and `hanziWeek` (3 → 第三周). Above 99 it returns the Arabic digits unchanged — the hundreds rule (一百零五, not 一百五) is a real trap, no map is remotely near it, and an honest digit beats a numeral the function got wrong.
+
+Wired into all five kid-facing surfaces: the `VoyageBoard` medallion badge (the most-seen number in the app), the `IslandMap` fallback board's SVG node, `WeekHub`'s header, `/maps`' per-map week count, and 通缉令's aria-label.
+
+**English keeps its digits.** The rule here is bilingual chrome, not translated chrome: `十周 · 10 weeks` teaches the pairing, while `十周 · 十 weeks` teaches nothing and reads as a bug. Same for the hub — `第三周 / Week 3`.
+
+All ten production week numbers (1–10) are single glyphs, which is why the medallion never has to shrink its text; the two-character guard is there for a future map longer than ten weeks.
+
+### (b) The chart switcher was shaped like a status badge
+
+David: *"目前进去之后仍然需要找一找才知道哪里可以切换航海图，对小朋友并不是很友好"* — you still have to hunt for where to switch charts.
+
+The old `MapHeaderPill` rendered `📍 加勒比海 / Caribbean Sea ⬇` and sat among the coin balance, the level badge and the champion-title chip — **all of which report a fact and do nothing when tapped**. A pill that happens to be a `Link` reads as one more fact. The failure was not that it was too small or too pale; it was that it never named an action.
+
+`MapSwitcherCard` is a full-width control: a 🗺️ chip, the label 当前海域 / Current sea, the sea's name, and — the part that was missing — a white action chip reading **换海域 / Switch** with a chevron, plus real button affordances (2px accent border, shadow, `active:scale-[0.98]`).
+
+Its test now asserts the **action name**, not the sea's name. The old pill rendered the sea's name perfectly, which is exactly why the old test passed while the control failed a six-year-old.
+
+Kept at the top of the HUD column rather than moved down beside the board it controls. On `lg:` the HUD is the left column and that would have worked; on a phone the map pane sits below the entire HUD stack, so associating it with the board would have bought recognition at the cost of being off-screen.
+
+### Verification
+
+Three guards, each proven by mutation: the medallion returned to digits (`Unable to find an element with the text: 一`), the hub returned to `Week N` (`Unable to find … 第三周`), and the switcher's action chip returned to a bare `⬇`. The first two mutations were re-run after their initial confirmation grep returned zero — a count that could not distinguish "mutation didn't apply" from "pattern was wrong", which is precisely the ambiguity that makes a mutation test decorative.

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { switchMapAction } from '@/lib/actions/maps';
 import { getMapAccent } from '@/lib/play/map-boards';
+import { hanziNumber } from '@/lib/i18n/hanzi-number';
 import type { MapForChild } from '@/lib/db/maps';
 
 interface Props {
@@ -72,7 +73,8 @@ export function MapCard({ childId, map }: Props) {
       )}
       {!map.isLocked && (
         <p className="text-xs text-[var(--color-sand-700)]">
-          {map.weekCount} 周 · {map.weekCount} week{map.weekCount === 1 ? '' : 's'}
+          <span className="font-hanzi">{hanziNumber(map.weekCount)} 周</span> ·{' '}
+          {map.weekCount} week{map.weekCount === 1 ? '' : 's'}
         </p>
       )}
     </button>

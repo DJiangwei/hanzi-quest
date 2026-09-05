@@ -103,4 +103,24 @@ describe('WeekHub', () => {
     const back = screen.getByRole('link', { name: /航海图|back|map/i });
     expect(back).toHaveAttribute('href', '/play/c1');
   });
+
+  it('names the week in hanzi, with the English digit beside it', () => {
+    // Same reasoning as the voyage medallions: 一…十 are the first characters
+    // map 1 teaches, and she opens a week hub every time she plays. The
+    // English half keeps its digit — the rule is bilingual chrome, not
+    // translated chrome, and `第三周 / Week 三` would teach nothing.
+    render(
+      <WeekHub
+        childId="c1"
+        week={{ id: 'w1', weekNumber: 3, label: '装备齐 准备出航' }}
+        sections={{
+          review: { done: 0, total: 10 },
+          practice: { done: 0, total: 12 },
+          boss: { done: 0, total: 1, locked: true },
+        }}
+      />,
+    );
+    expect(screen.getByText('第三周')).toBeInTheDocument();
+    expect(screen.getByText(/Week 3/)).toBeInTheDocument();
+  });
 });
