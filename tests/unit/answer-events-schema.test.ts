@@ -46,4 +46,38 @@ describe('SceneAnswerEventSchema', () => {
   it('exports the per-call cap', () => {
     expect(MAX_EVENTS_PER_CALL).toBe(40);
   });
+
+  it('accepts the flashcard reveal signal alongside a self-rating', () => {
+    const r = SceneAnswerEventSchema.safeParse({
+      sceneType: 'flashcard',
+      selfRating: 'got_it',
+      revealed: true,
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('still enforces the correct/selfRating XOR when revealed is present', () => {
+    // `revealed` is an extra observation about the same answer, never a
+    // substitute for one — an event carrying it and nothing else is invalid.
+    expect(
+      SceneAnswerEventSchema.safeParse({ sceneType: 'flashcard', revealed: true }).success,
+    ).toBe(false);
+    expect(
+      SceneAnswerEventSchema.safeParse({
+        sceneType: 'flashcard',
+        correct: true,
+        selfRating: 'got_it',
+        revealed: true,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects a non-boolean revealed', () => {
+    const r = SceneAnswerEventSchema.safeParse({
+      sceneType: 'flashcard',
+      selfRating: 'got_it',
+      revealed: 'yes',
+    });
+    expect(r.success).toBe(false);
+  });
 });

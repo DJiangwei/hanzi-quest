@@ -19,6 +19,12 @@ export const SceneAnswerEventSchema = z
     correct: z.boolean().nullish(),
     selfRating: z.enum(SELF_RATINGS).nullish(),
     pickedKey: z.string().max(128).nullish(),
+    /**
+     * Flashcard only: did she uncover the pinyin or the meaning before
+     * rating herself? A behavioural difficulty signal that self-report bias
+     * cannot reach — see FlashcardScene's RATINGS comment.
+     */
+    revealed: z.boolean().nullish(),
   })
   .refine((e) => (e.correct != null) !== (e.selfRating != null), {
     message: 'exactly one of correct/selfRating must be set',
