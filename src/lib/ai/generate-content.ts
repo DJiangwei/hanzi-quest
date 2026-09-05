@@ -46,6 +46,54 @@ interface GenerateWeekInput {
  * Synchronous: callers (server actions) await this; total wall time is
  * 20–60s for 10 chars.
  */
+/**
+ * Attempts for one AI generation call.
+ *
+ * deepseek-v4-pro is a reasoning model — a probe measured 116 reasoning tokens
+ * against 26 of visible text — so a week's generation is a single long HTTP
+ * call, and long calls are the ones whose connections get dropped. Authoring
+ * Map 2 died on week 1 with `ECONNRESET` after a HTTP 200, and the AI SDK does
+ * NOT retry that: it marks the error `isRetryable: false`, because a 200 that
+ * fails afterwards is not a status it knows how to classify. So the retry has
+ * to live here, where every caller gets it — the two authoring actions and the
+ * seed scripts alike.
+ */
+export const AI_ATTEMPTS = 3;
+
+/** Auth and request-shape failures repeat identically; retrying them wastes a minute. */
+export function isWorthRetrying(err: unknown): boolean {
+  const status = (err as { statusCode?: number })?.statusCode;
+  if (status === 401 || status === 403 || status === 400) return false;
+  return true;
+}
+
+export async function withAiRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  // Injected so tests do not have to sit through the real backoff. Production
+  // never passes it — a shorter wait in prod would defeat the point, since the
+  // failure being waited out is a network path that needs a moment.
+  backoffMs: (attempt: number) => number = (attempt) => 4_000 * attempt,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= AI_ATTEMPTS; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt === AI_ATTEMPTS || !isWorthRetrying(err)) break;
+      const waitMs = backoffMs(attempt);
+      console.warn(
+        `[ai] ${label} attempt ${attempt}/${AI_ATTEMPTS} failed (${
+          err instanceof Error ? err.message.slice(0, 120) : String(err).slice(0, 120)
+        }) — retrying in ${waitMs / 1000}s`,
+      );
+      await new Promise((r) => setTimeout(r, waitMs));
+    }
+  }
+  throw lastErr;
+}
+
 export async function generateWeekContent(
   input: GenerateWeekInput,
 ): Promise<{ jobId: string; content: WeekContent }> {
@@ -61,7 +109,7 @@ export async function generateWeekContent(
   });
 
   try {
-    const result = await generateObject({
+    const result = await withAiRetry('generateWeekContent', () => generateObject({
       model,
       schema: WeekContentSchemaV1,
       schemaName: 'WeekContent',
@@ -74,7 +122,7 @@ export async function generateWeekContent(
         weekLabel: input.weekLabel,
       }),
       temperature: 0.4,
-    });
+    }));
 
     const content = result.object;
 
@@ -189,7 +237,7 @@ export async function regenerateCharacter(
   });
 
   try {
-    const result = await generateObject({
+    const result = await withAiRetry('regenerateCharacter', () => generateObject({
       model,
       schema: PerCharacterSchema,
       schemaName: 'PerCharacter',
@@ -204,7 +252,7 @@ export async function regenerateCharacter(
         '\nProduce content ONLY for this single character. Output the inner per-character object directly (not wrapped in perCharacter[]).',
       ),
       temperature: 0.5,
-    });
+    }));
 
     const c = result.object;
 
