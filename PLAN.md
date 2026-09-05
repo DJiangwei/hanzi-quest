@@ -173,6 +173,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #165 | feat(review): 温故 daily mixed review (A2 slice 2) — cross-week selection engine, request-time session builder, completion-paid | |
 | #166 | docs: landmine — a seeded shuffle decides whether a mutation test can bite | |
 | #167 | feat(mastery): V1 mastery model + 航海日志 Captain's Logbook — one substrate for the Logbook and 温故's ranking, badged only where earned | |
+| #168 | fix(flashcard): the self-assessment was measuring the UI — identical button styling + an `answer_events.revealed` behavioural signal (migration 0043) |  |
 
 ### Next up
 

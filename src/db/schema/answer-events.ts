@@ -22,6 +22,9 @@ export const answerEvents = pgTable(
     correct: boolean('correct'),
     selfRating: text('self_rating'),
     pickedKey: text('picked_key'),
+    // Flashcard only: did she uncover the pinyin/meaning before self-rating?
+    // Nullable — every other scene type leaves it unset.
+    revealed: boolean('revealed'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

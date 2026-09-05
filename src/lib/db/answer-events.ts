@@ -35,6 +35,7 @@ export async function logAnswerEventsSafe(
         correct: r.data.correct ?? null,
         selfRating: r.data.selfRating ?? null,
         pickedKey: r.data.pickedKey ?? null,
+        revealed: r.data.revealed ?? null,
       }));
     if (rows.length === 0) return 0;
     await db.insert(answerEvents).values(rows);

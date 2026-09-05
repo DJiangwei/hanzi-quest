@@ -53,7 +53,90 @@ describe('FlashcardScene self-assessment', () => {
         sceneType: 'flashcard',
         characterId: CHAR,
         selfRating: rating,
+        revealed: false,
       });
     });
   }
+});
+
+/**
+ * Every one of production's 164 flashcard self-ratings is `got_it` — not one
+ * `not_sure`, not one `dont_know`, across two months, while she answered 33
+ * scored questions wrong in the same period. The emit path was verified sound
+ * (all three buttons emit, the schema accepts all three, the write persists
+ * them), so the constant is self-report bias, amplified by a UI that made
+ * 认识 the first button AND painted it green while 不认识 was red.
+ *
+ * `revealed` is the signal that cannot be flattered: tapping to show the
+ * pinyin or the meaning is something she DID, not something she claimed.
+ */
+describe('FlashcardScene reveal signal', () => {
+  it('reports revealed:false when she rates without uncovering anything', () => {
+    const onAnswerEvent = vi.fn();
+    render(<FlashcardScene data={data} onComplete={vi.fn()} onAnswerEvent={onAnswerEvent} />);
+    fireEvent.click(screen.getByRole('button', { name: /^认识/ }));
+    expect(onAnswerEvent.mock.calls[0][0]).toMatchObject({ revealed: false });
+  });
+
+  it('reports revealed:true after she uncovers the meaning', () => {
+    const onAnswerEvent = vi.fn();
+    render(<FlashcardScene data={data} onComplete={vi.fn()} onAnswerEvent={onAnswerEvent} />);
+    fireEvent.click(screen.getByRole('button', { name: /Tap to show meaning/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^认识/ }));
+    expect(onAnswerEvent.mock.calls[0][0]).toMatchObject({ revealed: true });
+  });
+
+  it('reports revealed:true after she uncovers the pinyin', () => {
+    const onAnswerEvent = vi.fn();
+    render(<FlashcardScene data={data} onComplete={vi.fn()} onAnswerEvent={onAnswerEvent} />);
+    fireEvent.click(screen.getByRole('button', { name: /Tap to show pinyin/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^认识/ }));
+    expect(onAnswerEvent.mock.calls[0][0]).toMatchObject({ revealed: true });
+  });
+
+  it('records the reveal even when she then says she does not know it', () => {
+    // The two signals are independent by design — one is behaviour, one is a
+    // claim. A future analysis compares them; neither overrides the other.
+    const onAnswerEvent = vi.fn();
+    render(<FlashcardScene data={data} onComplete={vi.fn()} onAnswerEvent={onAnswerEvent} />);
+    fireEvent.click(screen.getByRole('button', { name: /Tap to show meaning/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^不认识/ }));
+    expect(onAnswerEvent.mock.calls[0][0]).toMatchObject({
+      selfRating: 'dont_know',
+      revealed: true,
+    });
+  });
+});
+
+/**
+ * The colours were half the bias. 认识 was emerald and 不认识 was rose, in a
+ * game where green means correct and red means wrong everywhere else — so
+ * admitting she did not know a character meant pressing a failure button.
+ *
+ * ALLOWLIST, not denylist: the Logbook shipped a `/red|rose|danger|warn/`
+ * check that an amber palette walked straight through (PR #167). Here the
+ * three buttons must be styled IDENTICALLY, which makes "no button is
+ * visually privileged" the literal assertion rather than a proxy for it.
+ */
+describe('FlashcardScene rating buttons carry no verdict', () => {
+  const ratingButtons = () =>
+    [/^认识/, /^不确定/, /^不认识/].map((name) =>
+      screen.getByRole('button', { name }),
+    );
+
+  it('styles all three identically, so none reads as the right answer', () => {
+    render(<FlashcardScene data={data} onComplete={vi.fn()} />);
+    const [a, b, c] = ratingButtons();
+    expect(b.className).toBe(a.className);
+    expect(c.className).toBe(a.className);
+  });
+
+  it('uses no colour family that codes success or failure', () => {
+    render(<FlashcardScene data={data} onComplete={vi.fn()} />);
+    for (const btn of ratingButtons()) {
+      expect(btn.className).not.toMatch(
+        /emerald|green|lime|teal-\d|rose|red|pink|amber|orange|yellow/,
+      );
+    }
+  });
 });

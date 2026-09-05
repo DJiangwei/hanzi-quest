@@ -73,4 +73,22 @@ describe('logAnswerEventsSafe', () => {
     expect(n).toBe(0);
     expect(insertMock).not.toHaveBeenCalled();
   });
+
+  it('persists the flashcard reveal signal', async () => {
+    await logAnswerEventsSafe(CHILD, WEEK, 'review', [
+      { sceneType: 'flashcard', characterId: CHAR, selfRating: 'dont_know', revealed: true },
+    ]);
+    expect(valuesMock).toHaveBeenCalledWith([
+      expect.objectContaining({ selfRating: 'dont_know', revealed: true }),
+    ]);
+  });
+
+  it('writes revealed as null for a scene that never sets it', async () => {
+    // Every non-flashcard scene leaves it unset; null must reach the column
+    // rather than `undefined`, which drizzle would omit from the INSERT.
+    await logAnswerEventsSafe(CHILD, WEEK, 'practice', [
+      { sceneType: 'audio_pick', characterId: CHAR, correct: true },
+    ]);
+    expect(valuesMock).toHaveBeenCalledWith([expect.objectContaining({ revealed: null })]);
+  });
 });

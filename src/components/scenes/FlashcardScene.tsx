@@ -32,11 +32,22 @@ interface Props {
  * review is exposure, not a test; honesty is never punished. The rating
  * only feeds the answer_events telemetry (write-only, for future review
  * weighting + parent insights).
+ *
+ * **Styled identically, on purpose.** These were emerald / amber / rose, and
+ * in this game green means correct and red means wrong everywhere else — so
+ * admitting she did not know a character meant pressing a failure button,
+ * while the easy answer sat first and glowed green. Production bore it out:
+ * every one of 164 self-ratings was `got_it`, across two months in which she
+ * answered 33 scored questions wrong. The words distinguish these buttons
+ * now; nothing about their appearance should.
  */
+const RATING_BUTTON_CLS =
+  'min-h-11 flex-1 rounded-xl border-2 border-[var(--color-ocean-300)] bg-[var(--color-ocean-100)] px-4 py-3 text-[var(--color-ocean-900)] shadow-sm transition-transform active:scale-95 hover:bg-[var(--color-ocean-200)]';
+
 const RATINGS = [
-  { rating: 'got_it', zh: '认识', en: 'Got it', cls: 'bg-emerald-500 hover:bg-emerald-600' },
-  { rating: 'not_sure', zh: '不确定', en: 'Not sure', cls: 'bg-amber-500 hover:bg-amber-600' },
-  { rating: 'dont_know', zh: '不认识', en: "Don't know", cls: 'bg-rose-500 hover:bg-rose-600' },
+  { rating: 'got_it', zh: '认识', en: 'Got it' },
+  { rating: 'not_sure', zh: '不确定', en: 'Not sure' },
+  { rating: 'dont_know', zh: '不认识', en: "Don't know" },
 ] as const;
 
 export function FlashcardScene({ data, onComplete, onAnswerEvent }: Props) {
@@ -148,7 +159,7 @@ export function FlashcardScene({ data, onComplete, onAnswerEvent }: Props) {
         </div>
 
         <div className="flex w-full max-w-md flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
-          {RATINGS.map(({ rating, zh, en, cls }) => (
+          {RATINGS.map(({ rating, zh, en }) => (
             <button
               key={rating}
               type="button"
@@ -157,13 +168,20 @@ export function FlashcardScene({ data, onComplete, onAnswerEvent }: Props) {
                   sceneType: 'flashcard',
                   characterId: data.characterId,
                   selfRating: rating,
+                  // Behaviour, not a claim: uncovering the pinyin or the
+                  // meaning is something she DID, so it cannot be flattered
+                  // the way a self-rating can. The example word and sentence
+                  // are shown ALONGSIDE the character rather than instead of
+                  // recognising it, so they are far less diagnostic and are
+                  // deliberately left out.
+                  revealed: pinyinShown || meaningShown,
                 });
                 onComplete();
               }}
-              className={`min-h-11 flex-1 rounded-xl px-4 py-3 text-white shadow-md transition-transform active:scale-95 ${cls}`}
+              className={RATING_BUTTON_CLS}
             >
               <span className="font-hanzi text-lg">{zh}</span>
-              <span className="ml-1 text-sm opacity-90">/ {en}</span>
+              <span className="ml-1 text-sm opacity-80">/ {en}</span>
             </button>
           ))}
         </div>
