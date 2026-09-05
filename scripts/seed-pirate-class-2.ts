@@ -10,7 +10,8 @@
  * TO AUTHOR MAP 2: paste David's 10 weeks of characters into `LESSONS` below
  * (one entry per week, each a list of hanzi — same shape as Map 1), then run:
  *
- *   pnpm tsx scripts/seed-pirate-class-2.ts            # AI-gen + compile + publish
+ *   pnpm tsx scripts/seed-pirate-class-2.ts            # AI-gen + compile, stops at review
+ *   PUBLISH=1 pnpm tsx scripts/seed-pirate-class-2.ts  # …then publish, after review
  *   pnpm tsx scripts/backfill-word-images-cloudflare.ts  # fill word pictures (CF)
  *
  * Map 2 auto-unlocks on /maps the moment its first week is published
@@ -48,10 +49,67 @@ const PACK_DESCRIPTION =
 //   { label: 'Lesson 1', characters: ['人', '口', '大', '中', '小', ...] },
 // Leave empty until David provides the 10 weeks — the guard below refuses to run.
 const LESSONS: Array<{ label: string; characters: string[] }> = [
-  // { label: 'Lesson 1',  characters: [/* … */] },
-  // { label: 'Lesson 2',  characters: [/* … */] },
-  // … 10 weeks …
+  { label: 'Lesson 1',  characters: ['鱼', '做', '飞', '跑', '要', '吃', '鸟', '他'] },
+  { label: 'Lesson 2',  characters: ['们', '春', '夏', '秋', '冬', '季', '都', '个'] },
+  { label: 'Lesson 3',  characters: ['狗', '猫', '蓝', '落', '真', '开', '说', '也'] },
+  { label: 'Lesson 4',  characters: ['马', '米', '哥', '姐', '来', '黑', '去', '出'] },
+  { label: 'Lesson 5',  characters: ['跳', '着', '你', '了', '又', '弟', '妹', '东'] },
+  { label: 'Lesson 6',  characters: ['就', '还', '快', '得', '西', '乐', '到', '起'] },
+  { label: 'Lesson 7',  characters: ['玩', '捉', '迷', '球', '很', '高', '鸭', '哈'] },
+  { label: 'Lesson 8',  characters: ['方', '爬', '藏', '兴', '向', '对', '能', '叫'] },
+  { label: 'Lesson 9',  characters: ['变', '问', '成', '再', '急', '教', '门', '只'] },
+  { label: 'Lesson 10', characters: ['回', '公', '打', '兔', '请', '过', '吗', '泳'] },
 ];
+
+/**
+ * Publishing is OPT-IN (`PUBLISH=1`), and the default is deliberately the
+ * cautious one.
+ *
+ * A published week is live to the child immediately, and Map 2 unlocks as soon
+ * as one of its weeks is published. AI-generated meanings, words and sentences
+ * have not been read by a human at that point, and this project already
+ * mothballed Story Mode over DeepSeek's Chinese quality — so the default run
+ * generates and compiles, then stops at `awaiting_review`.
+ *
+ * The script's own resume logic makes the second phase cheap: a week already at
+ * `awaiting_review` skips AI generation entirely, so `PUBLISH=1` on a later run
+ * only compiles and publishes. Reviewing costs nothing but time; regenerating
+ * costs ~40 minutes and a fresh round of word art.
+ */
+const PUBLISH = process.env.PUBLISH === '1';
+
+/**
+ * Retry a week's generation on a dropped connection.
+ *
+ * deepseek-v4-pro is a reasoning model — a probe measured 116 reasoning tokens
+ * against 26 of visible text — so a week's generation is a single long HTTP
+ * call, and long calls get their connections dropped. The first attempt at
+ * Map 2 died on week 1 with `ECONNRESET`: HTTP 200, then the body terminated
+ * mid-stream.
+ *
+ * The AI SDK will not retry that: it marks the error `isRetryable: false`,
+ * because a 200 that fails afterwards is not a status it knows how to classify.
+ * So the retry has to live here. Ten sequential multi-minute calls is exactly
+ * the shape that turns a 5% per-call drop rate into a coin flip over the run.
+ */
+async function withRetry<T>(label: string, fn: () => Promise<T>, attempts = 4): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (i === attempts) break;
+      const waitMs = 5_000 * i;
+      console.warn(
+        `[seed:map2] ${label} attempt ${i}/${attempts} failed (${msg.slice(0, 120)}) — retrying in ${waitMs / 1000}s`,
+      );
+      await new Promise((r) => setTimeout(r, waitMs));
+    }
+  }
+  throw lastErr;
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -171,17 +229,23 @@ async function main() {
     if (status !== 'awaiting_review') {
       console.log('[seed:map2] running AI gen…');
       await setWeekStatus(weekId, 'ai_generating');
-      await generateWeekContent({
-        weekId,
-        parentUserId: null,
-        childAge: 6,
-        weekLabel: lesson.label,
-        characters: lesson.characters,
-      });
+      await withRetry(lesson.label, () =>
+        generateWeekContent({
+          weekId,
+          parentUserId: null,
+          childAge: 6,
+          weekLabel: lesson.label,
+          characters: lesson.characters,
+        }),
+      );
     }
 
-    console.log('[seed:map2] compiling levels + publishing…');
+    console.log('[seed:map2] compiling levels…');
     await compileWeekIntoLevels(weekId);
+    if (!PUBLISH) {
+      console.log('[seed:map2] ✓ compiled, left at awaiting_review (set PUBLISH=1 to publish)');
+      continue;
+    }
     await db
       .update(weeksTable)
       .set({ status: 'published', publishedAt: new Date() })
@@ -189,7 +253,11 @@ async function main() {
     console.log('[seed:map2] ✓ published');
   }
 
-  console.log('\n[seed:map2] done. Run scripts/backfill-word-images-cloudflare.ts next for pictures.');
+  console.log(
+    PUBLISH
+      ? '\n[seed:map2] done + published. Run scripts/backfill-word-images-cloudflare.ts next for pictures.'
+      : '\n[seed:map2] done, all weeks at awaiting_review. Review them, then re-run with PUBLISH=1.',
+  );
   process.exit(0);
 }
 

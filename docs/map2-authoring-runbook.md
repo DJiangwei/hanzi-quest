@@ -51,3 +51,37 @@ as Map 1 was.
 - A child switches to Map 2 from the in-app `/maps` gateway (`switchMapAction`).
 - Recompile is automatic inside the seeder; no separate `recompile-all-weeks`
   needed for the new pack.
+
+
+---
+
+## Authoring log — 里海 content (2026-09-05)
+
+Ran end to end; recording what the runbook did not predict.
+
+**Two-phase publish.** `seed-pirate-class-2.ts` now stops at `awaiting_review`
+unless `PUBLISH=1`. Publishing is what makes a week live AND unlocks the map,
+so unreviewed AI output must not reach it by default. The script's own resume
+logic makes the second phase free — a week already at `awaiting_review` skips
+AI generation, so the publish pass ran with **0** regenerations.
+
+**The AI SDK will not retry a dropped connection.** The first run died on week 1:
+DeepSeek returned HTTP 200, then the body terminated with `ECONNRESET`, and the
+error carried `isRetryable: false` — a 200 that fails afterwards is not a status
+the SDK classifies as retryable, so its own retry never fired. deepseek-v4-pro
+is a reasoning model (measured: 116 reasoning tokens against 26 of visible text),
+which makes each week one long call and long calls the ones that get dropped.
+`withRetry` in the seed script covers it. The admin authoring path
+(`/admin/week/new`) calls the same `generateWeekContent` and is still unguarded.
+
+**Review caught four things worth fixing, one of them a real error:** 教 was
+labelled `jiāo` while two of its three words (教室, 教师) read `jiào` — she would
+have read the words in the wrong tone. Also a degenerate word (他 → "他"), an
+over-long one (公共汽车) and two obscure ones (哈密瓜, 哈哈镜). **Editing words
+requires recompiling those weeks** — `image_pick` freezes its `wordId` into
+`scene_config` at compile time (PR #158), so an un-recompiled week still points
+at the unlinked word.
+
+**Cloudflare's daily neuron cap is the real limit on art, not Blob.** 125 images
+exhausted the day's 10,000 free neurons; 115 failed with 429. Budget ~125
+images/day and expect a 10-week pass to span two days.
