@@ -79,7 +79,8 @@ const LESSONS: Array<{ label: string; characters: string[] }> = [
 const PUBLISH = process.env.PUBLISH === '1';
 
 /**
- * Retry a week's generation on a dropped connection.
+ * Retry wrapper kept for the WHOLE-WEEK step (link + generate + compile), which
+ * is wider than the AI call generateWeekContent now retries internally.
  *
  * deepseek-v4-pro is a reasoning model — a probe measured 116 reasoning tokens
  * against 26 of visible text — so a week's generation is a single long HTTP
