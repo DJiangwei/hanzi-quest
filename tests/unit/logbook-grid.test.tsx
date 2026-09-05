@@ -11,6 +11,9 @@ const tile = (over: Partial<LogbookTile>): LogbookTile => ({
   firstWord: over.firstWord ?? '一起',
   sentence: over.sentence ?? '我们一起走。',
   state: over.state ?? 'unrated',
+  packId: over.packId ?? 'pack-1',
+  mapNameZh: over.mapNameZh ?? '加勒比海',
+  mapNameEn: over.mapNameEn ?? 'Caribbean Sea',
   ...over,
 });
 
@@ -131,5 +134,30 @@ describe('LogbookGrid', () => {
     const dialog = screen.getByRole('dialog');
     await userEvent.click(dialog);
     expect(screen.queryByTestId('logbook-detail')).not.toBeInTheDocument();
+  });
+
+  it('groups by map once she has sailed to a second sea', () => {
+    // Week numbers repeat across maps — 加勒比海 week 1 and 里海 week 1 are both
+    // week 1 — so a flat grid would interleave two oceans with no way to tell
+    // which 字 came from which. The Logbook only started spanning maps when
+    // the pool stopped being scoped to the current pack.
+    render(
+      <LogbookGrid
+        tiles={[
+          tile({ characterId: 'a', hanzi: '一', packId: 'p1', mapNameZh: '加勒比海', mapNameEn: 'Caribbean Sea' }),
+          tile({ characterId: 'b', hanzi: '鱼', packId: 'p2', mapNameZh: '里海', mapNameEn: 'Caspian Sea' }),
+        ]}
+      />,
+    );
+    expect(screen.getByTestId('logbook-map-p1')).toHaveTextContent('加勒比海');
+    expect(screen.getByTestId('logbook-map-p2')).toHaveTextContent('里海');
+    expect(screen.getAllByTestId(/^logbook-tile-/)).toHaveLength(2);
+  });
+
+  it('shows no map heading when there is only one sea', () => {
+    // A single map does not need a divider announcing itself; the page header
+    // already counts the characters.
+    render(<LogbookGrid tiles={[tile({ characterId: 'a' }), tile({ characterId: 'b', hanzi: '二' })]} />);
+    expect(screen.queryByTestId(/^logbook-map-/)).not.toBeInTheDocument();
   });
 });

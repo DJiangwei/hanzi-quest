@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { MasteryState } from '@/lib/mastery/mastery';
 import { SpeakButton } from '@/components/play/SpeakButton';
+import { hanziNumber } from '@/lib/i18n/hanzi-number';
 
 export interface LogbookTile {
   characterId: string;
@@ -12,6 +13,11 @@ export interface LogbookTile {
   firstWord: string | null;
   sentence: string | null;
   state: MasteryState;
+  /** Which sea taught it. The Logbook spans every map she has entered, and
+   *  week numbers repeat across maps, so the tiles arrive grouped. */
+  packId: string;
+  mapNameZh: string;
+  mapNameEn: string;
 }
 
 /**
@@ -38,6 +44,17 @@ export function LogbookGrid({ tiles }: { tiles: LogbookTile[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const open = tiles.find((t) => t.characterId === openId) ?? null;
 
+  // Grouping preserves arrival order rather than re-sorting: getLogbookEntries
+  // already ordered by map (curriculum_packs.created_at), then week, then
+  // teaching position — the same order the voyage board uses. Re-deriving it
+  // here would give the Logbook a second opinion about how maps are ordered.
+  const groups: { packId: string; mapNameZh: string; mapNameEn: string; tiles: LogbookTile[] }[] = [];
+  for (const t of tiles) {
+    const last = groups[groups.length - 1];
+    if (last && last.packId === t.packId) last.tiles.push(t);
+    else groups.push({ packId: t.packId, mapNameZh: t.mapNameZh, mapNameEn: t.mapNameEn, tiles: [t] });
+  }
+
   // Same dismissal contract as CardDetailDialog: Escape closes the overlay
   // from anywhere on the page, not just via the backdrop/close button.
   useEffect(() => {
@@ -51,8 +68,25 @@ export function LogbookGrid({ tiles }: { tiles: LogbookTile[] }) {
 
   return (
     <div className="w-full" data-testid="logbook-grid">
+      {groups.map((g) => (
+        <section key={g.packId} className="mb-4 last:mb-0">
+          {/* The heading appears only when there is more than one sea. A single
+              map does not need a divider announcing itself, and the header
+              already counts the characters. */}
+          {groups.length > 1 ? (
+            <h2
+              data-testid={`logbook-map-${g.packId}`}
+              className="mb-1.5 flex items-baseline gap-1.5 border-b border-stone-200 pb-1 text-sm"
+            >
+              <span className="font-hanzi font-extrabold text-stone-700">{g.mapNameZh}</span>
+              <span className="text-xs italic text-stone-500">{g.mapNameEn}</span>
+              <span className="ml-auto font-hanzi text-xs text-stone-500">
+                {hanziNumber(g.tiles.length)} 个字
+              </span>
+            </h2>
+          ) : null}
       <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-        {tiles.map((t) => {
+        {g.tiles.map((t) => {
           const badge = BADGE[t.state];
           const selected = t.characterId === openId;
           return (
@@ -83,6 +117,8 @@ export function LogbookGrid({ tiles }: { tiles: LogbookTile[] }) {
           );
         })}
       </ul>
+        </section>
+      ))}
 
       {/*
         Below-the-fold fix: with production's ~96 unlocked characters the grid

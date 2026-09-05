@@ -20,6 +20,9 @@ export default async function LogbookPage({
     firstWord: e.firstWord,
     sentence: e.sentence,
     state: masteryForChar(e).state,
+    packId: e.packId,
+    mapNameZh: e.mapNameZh,
+    mapNameEn: e.mapNameEn,
   }));
   const proficient = tiles.filter((t) => t.state === 'proficient').length;
 

@@ -3,8 +3,8 @@
 // is a public RPC endpoint, and this one takes a raw childId.
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
+import { listEnteredPackIds, enteredPackCondition } from '@/lib/db/child-packs';
 import { answerEvents } from '@/db/schema/answer-events';
-import { childProfiles } from '@/db/schema/auth';
 import { characterWord, characters, weekCharacters, weeks, words } from '@/db/schema/content';
 import { weekProgress } from '@/db/schema/game';
 import type { ReviewCandidate } from '@/lib/review/selection';
@@ -45,17 +45,13 @@ async function fetchReviewData(
   childId: string,
   withPool: boolean,
 ): Promise<{ candidates: ReviewCandidate[]; pool: ReviewPoolChar[] }> {
-  const [child] = await db
-    .select({ packId: childProfiles.currentCurriculumPackId })
-    .from(childProfiles)
-    .where(eq(childProfiles.id, childId))
-    .limit(1);
-  const packId = child?.packId ?? null;
-
-  // Cleared weeks in the child's current pack (or their own authored weeks).
-  const packCondition = packId
-    ? sql`(${weeks.childId} = ${childId} OR (${weeks.childId} IS NULL AND ${weeks.curriculumPackId} = ${packId}))`
-    : eq(weeks.childId, childId);
+  // Cleared weeks across EVERY map she has entered, not just the current one.
+  // Scoping this to `current_curriculum_pack_id` meant 温故 went dark the day
+  // she finished a map: it needs cleared weeks in the current pack, and a map
+  // she has just arrived in has none. Verified in production 2026-09-05 —
+  // both children had 10 cleared weeks and zero of them in scope.
+  const packIds = await listEnteredPackIds(childId);
+  const packCondition = enteredPackCondition(childId, packIds);
 
   const clearedWeeks = await db
     .select({ weekId: weeks.id, weekNumber: weeks.weekNumber })

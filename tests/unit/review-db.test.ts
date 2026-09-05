@@ -52,6 +52,10 @@ function queueSelects(...rowSets: unknown[][]) {
  *  child pack lookup, cleared weeks, characters-in-those-weeks, telemetry stats. */
 const SHARED_ROWS: unknown[][] = [
   [{ packId: 'pack-1' }],
+  // listEnteredPackIds' second read: the packs she has progress in. 温故 draws
+  // from every map she has entered, not the one she is standing on — scoping
+  // to `current_curriculum_pack_id` made it go dark the day she finished a map.
+  [{ packId: 'pack-1' }],
   [{ weekId: 'w1', weekNumber: 1 }],
   [{ characterId: 'c1', weekId: 'w1', hanzi: '你', meaningEn: 'you' }],
   [],
@@ -63,28 +67,28 @@ describe('getReviewCandidates', () => {
   it('restricts to weeks whose BOSS the child has cleared', async () => {
     // 温故 draws from what she has FINISHED. A week merely started is still
     // being taught; re-drilling it here would duplicate practice, not review.
-    const calls = queueSelects([{ packId: 'pack-1' }], []);
+    const calls = queueSelects([{ packId: 'pack-1' }], [{ packId: 'pack-1' }], []);
     await getReviewCandidates('c1');
-    const progressWhere = render(calls[1].where);
+    const progressWhere = render(calls[2].where);
     expect(progressWhere.sql).toContain('"boss_cleared"');
     expect(progressWhere.params).toContain(true);
   });
 
   it('scopes every read to this child', async () => {
-    const calls = queueSelects([{ packId: 'pack-1' }], []);
+    const calls = queueSelects([{ packId: 'pack-1' }], [{ packId: 'pack-1' }], []);
     await getReviewCandidates('c1');
-    expect(render(calls[1].where).params).toContain('c1');
+    expect(render(calls[2].where).params).toContain('c1');
   });
 
   it('returns nothing when no week has been cleared', async () => {
-    queueSelects([{ packId: 'pack-1' }], []);
+    queueSelects([{ packId: 'pack-1' }], [{ packId: 'pack-1' }], []);
     await expect(getReviewCandidates('c1')).resolves.toEqual([]);
   });
 });
 
 describe('getReviewSessionData', () => {
   it('returns nothing when no week has been cleared', async () => {
-    queueSelects([{ packId: 'pack-1' }], []);
+    queueSelects([{ packId: 'pack-1' }], [{ packId: 'pack-1' }], []);
     await expect(getReviewSessionData('c1')).resolves.toEqual({
       candidates: [],
       pool: [],
@@ -103,9 +107,10 @@ describe('getReviewCandidates — scored aggregate SQL', () => {
   it('scored counts only ANSWERED questions — filter(where correct is not null), never bare count(*)', async () => {
     queueSelects(...SHARED_ROWS);
     await getReviewCandidates('c1');
-    // Call index 3 is the stats select — pack lookup, cleared weeks,
-    // characters-in-those-weeks, then stats (SHARED_ROWS's own ordering).
-    const statsFields = mocks.select.mock.calls[3][0] as { scored: unknown };
+    // Call index 4 is the stats select — pack lookup, entered-packs lookup,
+    // cleared weeks, characters-in-those-weeks, then stats (SHARED_ROWS's
+    // own ordering).
+    const statsFields = mocks.select.mock.calls[4][0] as { scored: unknown };
     const q = render(statsFields.scored);
     expect(q.sql).toMatch(/filter \(where/i);
     expect(q.sql).toMatch(/is not null/i);
@@ -129,13 +134,13 @@ describe('getReviewCandidates vs getReviewSessionData — the pool query is skip
 
     // Pin the actual counts, not just their relationship — a relative-only
     // assertion would stay green if both grew or shrank by the same amount.
-    expect(candidatesSelectCount).toBe(4);
-    expect(sessionDataSelectCount).toBe(5);
+    expect(candidatesSelectCount).toBe(5);
+    expect(sessionDataSelectCount).toBe(6);
     expect(candidatesSelectCount).toBe(sessionDataSelectCount - 1);
 
-    // The 5th select in getReviewSessionData — absent from getReviewCandidates
+    // The 6th select in getReviewSessionData — absent from getReviewCandidates
     // — is the characterWord ⋈ words read that builds the pool.
-    expect(calls).toHaveLength(5);
-    expect(calls[4].from).toBe(characterWord);
+    expect(calls).toHaveLength(6);
+    expect(calls[5].from).toBe(characterWord);
   });
 });
