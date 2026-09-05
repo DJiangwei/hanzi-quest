@@ -122,6 +122,32 @@ describe('listMapsForChild', () => {
     });
   });
 
+  it('counts only PUBLISHED weeks when deciding whether a map is unlocked', async () => {
+    // isLocked is `weekCount === 0`, and the count used to include drafts. So
+    // the moment authoring created 10 draft weeks for a new map, that map went
+    // UNLOCKED on /maps — while getPlayableWeekForChild filters on
+    // status='published', so tapping an island led nowhere. Islands on the
+    // board that cannot be entered is the PR #151 failure wearing a different
+    // hat, and it would have fired the first time Map 2 was authored.
+    const { listMapsForChild } = await import('@/lib/db/maps');
+    mocks.selectChildLimit.mockResolvedValue([{ currentCurriculumPackId: 'p1' }]);
+    mocks.selectPackOrderBy.mockResolvedValue([]);
+    await listMapsForChild('c1');
+
+    // The status filter must live in the JOIN, not the WHERE: a LEFT JOIN
+    // narrowed by a WHERE clause silently becomes an INNER JOIN, which would
+    // drop every zero-week pack out of the list entirely instead of showing it
+    // locked.
+    const { PgDialect } = await import('drizzle-orm/pg-core');
+    const joinCondition = mocks.selectPackLeftJoin.mock.calls[0][1];
+    const q = new PgDialect().sqlToQuery(joinCondition);
+    // Render the real fragment rather than trusting its shape: a drizzle SQL
+    // object parameterises its literals, so JSON.stringify would never show
+    // 'published' even when the filter is correct.
+    expect(`${q.sql} ${JSON.stringify(q.params)}`).toContain('published');
+    expect(q.sql).toContain('status');
+  });
+
   it('marks pack with weekCount=0 as isLocked=true', async () => {
     const result = await listMapsForChild('child_1');
 
