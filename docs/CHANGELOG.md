@@ -314,3 +314,46 @@
 **Landmine:** *There is ONE mastery function and two readers — don't add a third scorer.* `masteryForChar` backs both the 航海日志 Logbook (display) and `reviewScore` (温故's ranking), so the two can never disagree about how well a character is known. V2 smart distractors and A3 parent insights must read the same function rather than inventing their own. It is pure, client-safe and deliberately NOT a stored column — the corpus is 96 characters and hundreds of events; cache only when measurably slow.
 
 **Landmine:** *The Logbook's pool is UNLOCKED weeks; 温故's is CLEARED weeks. They are different on purpose.* `getLogbookEntries` shows what she is learning, including the week in progress; `getReviewSessionData` reviews only weeks whose boss has fallen. The Logbook derives unlocking with the same `listBossWeekIds` + `frontierWeekNumber` + `isWeekUnlockedFrom` trio the home board uses, so it can never show a character from an island the map paints 🔒 — change the rule in the pure helpers so every surface moves together. And mastery NEVER decays in the Logbook: staleness lives in `reviewScore`, where it decides what to practise. A badge that vanished after a gap would punish a child whose play is bursty (151 events one day, then a fortnight of nothing).
+
+---
+
+## PR #177 — 听声调, a standalone tone game (E2, 2026-09-05)
+
+Tones are this project's known weak point. The child is UK-based and English-native, and the pre-generated MeloTTS clips were switched off across the whole app precisely because their tones were wrong — which left tone practice with no substrate at all.
+
+The way out was to stop trying to *produce* a tone and instead let the device do it: the game hands the platform voice a **hanzi**, never a pinyin string (a pinyin string gets read as letters), so the tone is correct by construction. That single fact is the reason the feature is buildable after the clips were scrapped.
+
+`src/lib/tones/minimal-pairs.ts` is pure and client-safe. `toneOf` / `toneless` strip the mark so 妈 and 马 collide on `ma`; `groupMinimalPairs` buckets her own characters by toneless syllable and keeps a group only if it holds more than one **tone** — 十 and 石 are both `shí`, and a question offering both has two correct answers by ear, which is worse than no question. The corpus comes from `getLogbookEntries`, so the question bank grows by itself as each week adds syllables that collide with ones she already knows.
+
+**Shipped with no score, no streak, no rewards and no `answer_events` writes**, and reached from a Backpack hall card rather than the nav. That was the point: the premise — does the iPad's Chinese voice actually separate 妈 from 马? — could only be settled by playing it on a real device, and a standalone page with no economy attached can be deleted rather than migrated away. It is not a compiled scene type, so it needed no `scene_templates` row, no compile slot, no recompile and no migration.
+
+David played it and confirmed the contrast is audible. He also immediately found the bug in PR #178.
+
+---
+
+## PR #178 — the tone game was offering options that weren't tones at all (2026-09-05)
+
+David's report after playing: "选项里面有并不是同音字的，请不用凑数" — some of the options aren't the same syllable; don't pad to fill.
+
+A read-only probe against production made it much worse than a cosmetic complaint. Across all **176 characters** she has been taught:
+
+| pack | characters | minimal-pair groups | groups that can honestly offer 4 options |
+|---|---|---|---|
+| 加勒比海 map 1 | 96 | 12 | **0** (11 hold two tones, one holds three) |
+| 里海 map 2 | 80 | 8 | **0** (all eight hold exactly two) |
+
+`TONE_CHOICE_COUNT = 4` was **never reachable from real data**. The "top up from anywhere" loop was not an occasional filler — it fabricated two of the four options in essentially every question, and `if (chosen.length < TONE_CHOICE_COUNT) continue` then *discarded* any pair it could not pad, throwing away the purest two-way contrasts in the corpus.
+
+The second harm is the one that hides. An option that shares no syllable with the answer is eliminable **by reading**, so a padded four-way question is strictly *easier* than the honest two-way one, and it rewards scanning for the familiar shape — the exact skill this game exists not to test. The padding did not merely fail to help; it inverted the exercise.
+
+**The fix.** `TONE_MAX_CHOICES` (renamed from `TONE_CHOICE_COUNT`, because a name that says "count" invites the next person to pad back up to it) is a cap, never a quota. Choices come only from the answer's own syllable. A two-option question is kept and is correct here: it is the standard shape of a minimal-pair discrimination drill, and the 50% guess rate costs nothing because no reward anywhere reads the answer.
+
+Three further polish items, all found by reasoning about the second round rather than the first:
+
+- **Questions deal round-robin across syllables.** Most groups hold exactly two characters, so the straightforward nesting emitted both of a group's questions consecutively — the same two tiles twice in a row with only the correct one swapped, which reads as a stuck screen and lets the second answer be inferred from the first.
+- **Options stay tappable after answering.** The moment just after the answer is when hearing mā beside mǎ teaches the most; disabling the buttons threw that moment away.
+- **Each option's pinyin is revealed once she has committed** — never before, because the tone mark *is* the answer. Same shape as the flashcard's tap-to-reveal.
+
+A simulated round against production now reads: eight questions, eight different syllables, every option a genuine tone of the one she heard (习/戏, 子/字, 石/是, 雪/学, 小/笑, 友/游, 田/天, 儿/耳/二). 27 questions available on map 1, 16 on map 2.
+
+**Five guards, each proven by mutation** — the padding restored, the short-question rejection restored, the consecutive-emit restored, pinyin leaked early, and the buttons re-disabled — each watched to fail for its own named reason before being restored.
