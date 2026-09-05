@@ -30,6 +30,13 @@ export interface VoyageMap {
    * `scripts/generate-voyage-map-art.ts` and pasting the printed URL here.
    */
   imageUrl?: string;
+  /**
+   * Overrides the generator's shared STYLE prompt for this map's backdrop.
+   * The shared one asks for "a few small tropical islands", which pulls every
+   * sea toward Caribbean turquoise — fine for map 1, wrong for anywhere else.
+   * See scripts/generate-voyage-map-art.ts.
+   */
+  backdropPrompt?: string;
 }
 
 /** Ocean-turquoise default — matches the legacy `--color-ocean` chrome. */
@@ -66,6 +73,19 @@ export const VOYAGE_MAPS: Record<string, VoyageMap> = {
   'pirate-class-level-2': {
     nameZh: '里海',
     nameEn: 'Caspian Sea',
+    // The shared STYLE prompt asks for tropical islands and produced a chart
+    // indistinguishable from the Caribbean's — turquoise water, palm-topped
+    // sand cays. The Caspian is a LANDLOCKED sea ringed by desert and steppe,
+    // so this one names that explicitly and pushes the palette cold.
+    backdropPrompt:
+      'a colorful cartoon treasure map sea chart for children of the Caspian Sea, ' +
+      'a large inland sea completely enclosed by land on every side, deep indigo ' +
+      'and slate-blue water, surrounding desert and dry steppe coastline in ochre ' +
+      'and pale sand, no palm trees, no tropical islands, a single small compass ' +
+      'rose in one corner, a friendly cute sturgeon fish and a small seal, ' +
+      'top-down map view, aged parchment border, bright and playful, ' +
+      'completely free of any text, words, letters, numbers, labels, ' +
+      'dotted lines, dashed lines, routes, paths or trails',
     // Night-sea indigo — deliberately far from both the Caribbean turquoise
     // and the Indian Ocean coral, so the header pill still says where she is.
     accent: {
@@ -73,10 +93,14 @@ export const VOYAGE_MAPS: Record<string, VoyageMap> = {
       pillText: '#3b357a',
       cardBorder: '#8f88c8',
     },
-    // imageUrl intentionally absent: maps/<slug>.jpg still holds the Indian
-    // Ocean art this map was re-themed away from, and a wrong picture is worse
-    // than the procedural sea-chart. Run scripts/generate-voyage-map-art.ts and
-    // paste the URL back. A test pins this.
+    // Regenerated for the Caspian on 2026-09-05 (the path previously held the
+    // Indian Ocean art this map was re-themed away from). Chosen from three
+    // local previews rather than the first roll: this one shows a genuinely
+    // ENCLOSED inland sea in deep indigo — the Caspian's defining feature and
+    // clearly distinct from map 1's turquoise — and leaves the centre empty
+    // for the route, medallions and ship the board draws on top.
+    imageUrl:
+      'https://mfl7ap4djy0w98ey.public.blob.vercel-storage.com/maps/pirate-class-level-2.jpg',
     //
     // Ten real places, anticlockwise round the sea: Azerbaijan → Russia →
     // Kazakhstan → Turkmenistan. The Caspian seal is the only seal living in a

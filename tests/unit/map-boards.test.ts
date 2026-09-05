@@ -50,12 +50,16 @@ describe('voyage maps config', () => {
     expect(getMapAccent('nope')).toEqual(DEFAULT_MAP_ACCENT);
   });
 
-  it('never ships a backdrop URL keyed to a slug whose theme has changed', () => {
-    // maps/<slug>.jpg is keyed by SLUG, so re-theming map 2 leaves the OLD
-    // theme's art at the new theme's path. Showing an Indian Ocean picture
-    // under a map labelled 里海 is worse than the procedural sea-chart the
-    // board falls back to, so the URL stays absent until the art is regenerated.
-    expect(getVoyageMap('pirate-class-level-2')?.imageUrl).toBeUndefined();
+  it('points every backdrop at its OWN slug', () => {
+    // maps/<slug>.jpg is keyed by SLUG, so a URL pasted into the wrong entry
+    // silently gives one sea another sea's picture — the exact hazard when map
+    // 2 was re-themed and its path still held the Indian Ocean art. No test can
+    // check what is INSIDE a JPEG, so this pins the one thing a string can
+    // prove: the filename matches the map it is configured on.
+    for (const [slug, m] of Object.entries(VOYAGE_MAPS)) {
+      if (!m.imageUrl) continue;
+      expect(m.imageUrl, `${slug} backdrop points elsewhere`).toContain(`/maps/${slug}.`);
+    }
   });
 
   it('every stop has bilingual labels + an emoji', () => {
