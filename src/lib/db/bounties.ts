@@ -4,10 +4,10 @@
 
 import { and, asc, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/db';
+import { listEnteredPackIds, enteredPackCondition } from '@/lib/db/child-packs';
 import { bountyPosters } from '@/db/schema/bounties';
 import { answerEvents } from '@/db/schema/answer-events';
 import { characters, weekCharacters, weeks } from '@/db/schema/content';
-import { childProfiles } from '@/db/schema/auth';
 import { awardCoinsInTx } from '@/lib/db/coins';
 import {
   BOUNTY_COOLDOWN_DAYS,
@@ -35,20 +35,26 @@ function isoDaysAgo(dayUtc: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** The playable published weeks for a child (per-family + current-pack shared). */
+/**
+ * The published weeks a bounty may draw from: every map she has entered.
+ *
+ * **Widening this changes little today, and that is the point.** `bountyScore`
+ * gives an unseen character `100 + weekNumber` and a weak one at most ~60, so
+ * while a newly-entered map still holds unseen characters every poster comes
+ * from it — the avoidance-targeting 通缉令 exists for is untouched. What the
+ * widening fixes is the far end: once the current map is fully met, or its
+ * candidates are on cooldown, an earlier map's weak characters become eligible
+ * again instead of being permanently unreachable the moment she sails on.
+ * Retention itself is 温故's job, not this one.
+ */
 async function playableWeekIds(
   childId: string,
 ): Promise<{ weekId: string; weekNumber: number }[]> {
-  const [child] = await db
-    .select({ packId: childProfiles.currentCurriculumPackId })
-    .from(childProfiles)
-    .where(eq(childProfiles.id, childId))
-    .limit(1);
-  const packId = child?.packId ?? null;
-
-  const condition = packId
-    ? sql`(${weeks.childId} = ${childId} OR (${weeks.childId} IS NULL AND ${weeks.curriculumPackId} = ${packId})) AND ${weeks.status} = 'published'`
-    : and(eq(weeks.childId, childId), eq(weeks.status, 'published'));
+  const packIds = await listEnteredPackIds(childId);
+  const condition = and(
+    enteredPackCondition(childId, packIds),
+    eq(weeks.status, 'published'),
+  );
 
   const rows = await db
     .select({ weekId: weeks.id, weekNumber: weeks.weekNumber })

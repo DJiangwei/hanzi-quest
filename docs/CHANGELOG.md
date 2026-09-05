@@ -391,3 +391,52 @@ Kept at the top of the HUD column rather than moved down beside the board it con
 ### Verification
 
 Three guards, each proven by mutation: the medallion returned to digits (`Unable to find an element with the text: 一`), the hub returned to `Week N` (`Unable to find … 第三周`), and the switcher's action chip returned to a bare `⬇`. The first two mutations were re-run after their initial confirmation grep returned zero — a count that could not distinguish "mutation didn't apply" from "pattern was wrong", which is precisely the ambiguity that makes a mutation test decorative.
+
+---
+
+## PR #180 — the learning layer forgot a map the moment she finished it (2026-09-05)
+
+Found by probing production while answering "what's next", not by a bug report.
+
+Both children beat 加勒比海's final boss (Yinuo 09-01, 小板 09-05) and moved to 里海. Three features scoped their character pool to `child_profiles.current_curriculum_pack_id` — the column that changes when a child sails on:
+
+| | promise | actual, 2026-09-05 |
+|---|---|---|
+| 航海日志 | "every character she has met" | **8 characters** (里海 week 1 only), down from 96 |
+| 温故 | 6 characters most worth reviewing | **hidden entirely** — it needs cleared weeks in the current pack, and a freshly-entered map has none |
+| 通缉令 | bounties on her weak characters | still working, but 加勒比海's 96 characters permanently unreachable |
+
+The Logbook figure is not inferred: `getLogbookEntries` was run against production and returned 8 for both children. 温故's is confirmed twice over — the code path, and `answer_events` holding **zero** `daily_review` rows since the feature shipped on 09-02. Yinuo beat the overlord on 09-01, one day before 温故 existed, so **she has never once seen the feature.**
+
+The direction is backwards: the moment a child has finished 96 characters and most needs to retain them, the review system switches off and the logbook that records them empties. `current_curriculum_pack_id` is the right scope for the voyage board, which draws one map, and the wrong scope for anything about what has been *learned*.
+
+### The fix
+
+`src/lib/db/child-packs.ts` — `listEnteredPackIds` (current pack + every pack holding a week she has progress in) and `enteredPackCondition`. All three features call it.
+
+Progress rows define "entered", not `final_boss_clears`: a child who played half a map and switched away has still learned those characters, and a map she has never opened contributes nothing. The current pack is unioned in separately because 小板 switched to 里海 with zero progress there — deriving scope from progress alone would have hidden the map she is standing on.
+
+### Three traps in widening a pool this way
+
+**Week numbers collide across maps.** 加勒比海 week 3 and 里海 week 3 are both `weekNumber: 3`. The unlock frontier is a within-map rule, so it must be computed per pack and unioned. A merged frontier is the **minimum** across maps, which silently locks the frontier island of whichever map is further along.
+
+That test was **vacuous on the first attempt** and the mutation caught it. The obvious fixture — one map finished, another just started — passes against both implementations, because merging only ever tightens the frontier and a cleared week unlocks either way. The difference shows only on an *uncleared* week that a per-map frontier reaches and a merged one does not: 加勒比海 weeks 1-2 beaten with week 3 as her frontier island, 里海 not started. Merged, the frontier becomes `min(3, 1) = 1` and **week 3 — the island she is standing on — vanishes from her own logbook**. The rewritten test fails with `expected ['一','二','鱼'] to deeply equal ['一','二','三','鱼']`, naming the hazard exactly.
+
+**Ordering must put map before week**, via `curriculum_packs.created_at` — the same rule `/maps` and the home board use. Sorting on `weekNumber` alone interleaves two oceans.
+
+**`listEnteredPackIds` uses `select`, not `selectDistinct`**, deduping in JS. A shared helper has to be droppable into any module without obliging that module's suite to grow a mock method — the `logError` lesson from PR #172, where one new call site broke 14 unrelated suites at import time. A source-reading test pins it (narrowed to the call, since the module's own comment explains the choice).
+
+### 通缉令's widening is deliberately near-inert
+
+`bountyScore` gives an unseen character `100 + weekNumber` against a weak one's ~60, so while 里海 still holds unseen characters every poster comes from it — the avoidance-targeting the feature exists for is untouched, and the landmine forbidding a change to that gate still stands. What the widening fixes is the far end: an earlier map's weak characters stop being permanently unreachable. Retention is 温故's job.
+
+### Verified against production
+
+Running the real functions against the prod branch, read-only:
+
+```
+小板:  航海日志 104 字 across [加勒比海, 里海]  |  温故 candidates 96 (card shows at >= 6)
+Yinuo: 航海日志 104 字 across [加勒比海, 里海]  |  温故 candidates 96 (card shows at >= 6)
+```
+
+8 → 104 characters; 温故 0 → 96 candidates. No migration, no recompile, no post-merge ops.

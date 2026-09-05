@@ -1,14 +1,15 @@
 // V1 航海日志 — the read behind the Logbook. SERVER-ONLY, and deliberately NOT
 // under src/lib/actions/: every exported async function in a 'use server' file
 // is a public RPC endpoint, and this one takes a raw childId.
-import { and, asc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
+import { listEnteredPackIds, enteredPackCondition } from '@/lib/db/child-packs';
 import { answerEvents } from '@/db/schema/answer-events';
-import { childProfiles } from '@/db/schema/auth';
 import {
   characterSentence,
   characterWord,
   characters,
+  curriculumPacks,
   exampleSentences,
   weekCharacters,
   weeks,
@@ -23,6 +24,11 @@ export interface LogbookEntry {
   pinyin: string[];
   meaningEn: string | null;
   weekNumber: number;
+  /** Which map taught it. Present so the grid can group by sea, since week
+   *  numbers repeat across maps and a flat list would interleave them. */
+  packId: string;
+  mapNameZh: string;
+  mapNameEn: string;
   firstWord: string | null;
   sentence: string | null;
   scored: number;
@@ -40,22 +46,22 @@ export interface LogbookEntry {
  * unseen content and pad the total with characters she has never met.
  */
 export async function getLogbookEntries(childId: string): Promise<LogbookEntry[]> {
-  const [child] = await db
-    .select({ packId: childProfiles.currentCurriculumPackId })
-    .from(childProfiles)
-    .where(eq(childProfiles.id, childId))
-    .limit(1);
-  const packId = child?.packId ?? null;
-
-  const packCondition = packId
-    ? and(
-        eq(weeks.status, 'published'),
-        or(eq(weeks.childId, childId), and(isNull(weeks.childId), eq(weeks.curriculumPackId, packId))),
-      )
-    : and(eq(weeks.status, 'published'), eq(weeks.childId, childId));
+  // Every map she has entered, not just the one she is standing on. The
+  // Logbook's promise is "every character she has met"; scoping it to
+  // `current_curriculum_pack_id` broke that promise the day she finished a
+  // map — measured in production 2026-09-05, it fell from 96 characters to 8.
+  const packIds = await listEnteredPackIds(childId);
+  const packCondition = and(
+    eq(weeks.status, 'published'),
+    enteredPackCondition(childId, packIds),
+  );
 
   const playable = await db
-    .select({ weekId: weeks.id, weekNumber: weeks.weekNumber })
+    .select({
+      weekId: weeks.id,
+      weekNumber: weeks.weekNumber,
+      packId: weeks.curriculumPackId,
+    })
     .from(weeks)
     .where(packCondition);
   if (playable.length === 0) return [];
@@ -69,18 +75,54 @@ export async function getLogbookEntries(childId: string): Promise<LogbookEntry[]
   // Same trio the home board uses, so the Logbook can never show a character
   // from an island the map paints as 🔒. A bossless week can never be cleared,
   // so leaving it in the candidate set would pin the frontier there forever.
+  //
+  // **Per pack, one map at a time.** Unlocking is a within-map rule and week
+  // numbers COLLIDE across maps — map 1 week 3 and map 2 week 3 are both
+  // `weekNumber: 3`. Running the frontier over a merged list would compare
+  // islands from different oceans and lock or unlock the wrong ones.
   const bossWeekIds = await listBossWeekIds(playable.map((w) => w.weekId));
-  const frontier = frontierWeekNumber(
-    playable.map((w) => ({ id: w.weekId, weekNumber: w.weekNumber, hasBoss: bossWeekIds.has(w.weekId) })),
-    clearedSet,
-  );
-  const unlocked = playable.filter((w) =>
-    isWeekUnlockedFrom(w.weekNumber, frontier, clearedSet.has(w.weekId)),
-  );
+  const byPack = new Map<string, typeof playable>();
+  for (const w of playable) {
+    byPack.set(w.packId, [...(byPack.get(w.packId) ?? []), w]);
+  }
+  const unlocked = [...byPack.values()].flatMap((packWeeks) => {
+    const frontier = frontierWeekNumber(
+      packWeeks.map((w) => ({
+        id: w.weekId,
+        weekNumber: w.weekNumber,
+        hasBoss: bossWeekIds.has(w.weekId),
+      })),
+      clearedSet,
+    );
+    return packWeeks.filter((w) =>
+      isWeekUnlockedFrom(w.weekNumber, frontier, clearedSet.has(w.weekId)),
+    );
+  });
   if (unlocked.length === 0) return [];
 
-  const weekNumberById = new Map(unlocked.map((w) => [w.weekId, w.weekNumber]));
+  const weekById = new Map(unlocked.map((w) => [w.weekId, w]));
   const weekIds = unlocked.map((w) => w.weekId);
+
+  // Maps are ordered by `curriculum_packs.created_at` — there is no order
+  // column (CLAUDE.md landmine), and the same rule orders /maps and the home
+  // board, so the Logbook must not invent a different one.
+  const packRows = await db
+    .select({
+      id: curriculumPacks.id,
+      name: curriculumPacks.name,
+      nameZh: curriculumPacks.nameZh,
+      nameEn: curriculumPacks.nameEn,
+      createdAt: curriculumPacks.createdAt,
+    })
+    .from(curriculumPacks)
+    .where(inArray(curriculumPacks.id, [...new Set(unlocked.map((w) => w.packId))]))
+    .orderBy(asc(curriculumPacks.createdAt));
+  const packOrder = new Map(packRows.map((p, i) => [p.id, i]));
+  // `nameZh ?? name` — school-custom predates the bilingual columns and relies
+  // on this fallback.
+  const packMeta = new Map(
+    packRows.map((p) => [p.id, { zh: p.nameZh ?? p.name, en: p.nameEn ?? p.name }]),
+  );
 
   const charRows = await db
     .select({
@@ -106,16 +148,21 @@ export async function getLogbookEntries(childId: string): Promise<LogbookEntry[]
     // Belt and braces against the WHERE above: a character whose week the gate
     // did not unlock is skipped outright rather than defaulting to week 0.
     // review.ts's `?? 0` would silently admit it as a week-zero entry.
-    const wn = weekNumberById.get(r.weekId);
-    if (wn === undefined) continue;
+    const week = weekById.get(r.weekId);
+    if (week === undefined) continue;
+    const wn = week.weekNumber;
     const cur = byChar.get(r.characterId);
     if (!cur || wn > cur.weekNumber) {
+      const meta = packMeta.get(week.packId);
       byChar.set(r.characterId, {
         characterId: r.characterId,
         hanzi: r.hanzi,
         pinyin: r.pinyin,
         meaningEn: r.meaningEn,
         weekNumber: wn,
+        packId: week.packId,
+        mapNameZh: meta?.zh ?? '',
+        mapNameEn: meta?.en ?? '',
       });
       positionByChar.set(r.characterId, r.position);
     }
@@ -127,6 +174,11 @@ export async function getLogbookEntries(childId: string): Promise<LogbookEntry[]
   const charIds = Array.from(byChar.keys()).sort((a, b) => {
     const A = byChar.get(a)!;
     const B = byChar.get(b)!;
+    // Map first — week numbers repeat across maps, so sorting on weekNumber
+    // alone would interleave 加勒比海 week 1 with 里海 week 1.
+    const packA = packOrder.get(A.packId) ?? 0;
+    const packB = packOrder.get(B.packId) ?? 0;
+    if (packA !== packB) return packA - packB;
     if (A.weekNumber !== B.weekNumber) return A.weekNumber - B.weekNumber;
     const posA = positionByChar.get(a) ?? 0;
     const posB = positionByChar.get(b) ?? 0;

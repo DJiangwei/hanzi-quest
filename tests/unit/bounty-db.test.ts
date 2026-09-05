@@ -106,7 +106,11 @@ describe('generateDailyBounties', () => {
   it('inserts ranked posters for unseen chars of later weeks', async () => {
     mocks.selectResults.push(
       [], // no existing posters
-      [{ packId: 'pack1' }], // child pack (playableWeekIds: child row)
+      [{ packId: 'pack1' }], // listEnteredPackIds: the child's current pack
+      // listEnteredPackIds' second read: packs she has progress in. A bounty
+      // may draw from any map she has entered, so an earlier map's weak
+      // characters stop being unreachable the moment she sails on.
+      [{ packId: 'pack1' }],
       [
         { weekId: 'w1', weekNumber: 1 },
         { weekId: 'w9', weekNumber: 9 },
@@ -125,6 +129,7 @@ describe('generateDailyBounties', () => {
   it('inserts nothing when every char is mastered', async () => {
     mocks.selectResults.push(
       [],
+      [{ packId: 'pack1' }],
       [{ packId: 'pack1' }],
       [{ weekId: 'w1', weekNumber: 1 }],
       [{ characterId: 'ch-old', weekId: 'w1', hanzi: '好' }],
