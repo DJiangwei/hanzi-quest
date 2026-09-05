@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { curriculumPacks, weeks, childProfiles } from '@/db/schema';
 import { mapOrderIndex } from '@/lib/play/map-order';
@@ -85,7 +85,17 @@ export async function listMapsForChild(childId: string): Promise<MapForChild[]> 
       weekCount: sql<number>`coalesce(count(${weeks.id}), 0)::int`,
     })
     .from(curriculumPacks)
-    .leftJoin(weeks, eq(weeks.curriculumPackId, curriculumPacks.id))
+    // The published filter belongs in the JOIN, not the WHERE. isLocked is
+    // `weekCount === 0`, and counting drafts meant a map went UNLOCKED the
+    // moment authoring created its first draft week — while
+    // getPlayableWeekForChild only serves published weeks, so its islands led
+    // nowhere. Putting the condition in a WHERE instead would narrow the LEFT
+    // JOIN into an INNER one and drop zero-week packs out of the list entirely,
+    // rather than showing them locked.
+    .leftJoin(
+      weeks,
+      and(eq(weeks.curriculumPackId, curriculumPacks.id), eq(weeks.status, 'published')),
+    )
     .where(eq(curriculumPacks.isPublic, true))
     .groupBy(curriculumPacks.id)
     .orderBy(curriculumPacks.createdAt);
