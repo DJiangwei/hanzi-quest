@@ -1,5 +1,5 @@
 // NEVER import this file from client code. It pulls in postgres.
-import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   seasons,
@@ -41,10 +41,17 @@ function mapSeason(row: typeof seasons.$inferSelect): SeasonRow {
 
 /** The single active season (is_active = true), or null. */
 export async function getActiveSeason(): Promise<SeasonRow | null> {
+  // ORDER BY is load-bearing, not tidiness. `is_active` is set by a seed
+  // script and cleared by hand, so two active rows is the NORMAL state during
+  // a changeover — and a bare `limit(1)` lets Postgres return either one, and
+  // possibly a different one between requests. Symptom: "the season page
+  // sometimes shows the wrong season". Newest start wins, so the incoming
+  // season takes over even if the outgoing one was not closed first.
   const rows = await db
     .select()
     .from(seasons)
     .where(eq(seasons.isActive, true))
+    .orderBy(desc(seasons.startsAt))
     .limit(1);
   return rows[0] ? mapSeason(rows[0]) : null;
 }
@@ -346,6 +353,13 @@ export interface SeasonBannerState {
   totalTiers: number;
   xpToNext: number | null;
   claimableCount: number;
+  /**
+   * The window has closed. Closing a season is a manual op, so this WILL lag
+   * behind the end date — 夏季航海 ended 2026-08-08 and the home banner went on
+   * advertising it, with a live-looking "还需 N XP", for 28 days. The banner
+   * says so rather than waiting to be switched off.
+   */
+  ended: boolean;
 }
 
 export async function getSeasonBannerState(
@@ -362,5 +376,6 @@ export async function getSeasonBannerState(
     totalTiers: view.tiers.length,
     xpToNext: view.xpToNext,
     claimableCount,
+    ended: view.ended,
   };
 }

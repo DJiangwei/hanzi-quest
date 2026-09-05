@@ -186,6 +186,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #178 | fix(tones): 听声调 offered options that were not tones of the same syllable — no padding, two-way questions kept | |
 | #179 | feat(ui): week numbers in hanzi everywhere; the chart switcher names its own action | |
 | #180 | fix(learning): 温故 / 航海日志 / 通缉令 forgot a map the moment she finished it — pool spans every map entered | |
+| #181 | fix(season): nothing could close a season; `getActiveSeason` was non-deterministic; wardrobe label named one season | |
 | #168 | fix(flashcard): the self-assessment was measuring the UI — identical button styling + an `answer_events.revealed` behavioural signal (migration 0043) |  |
 | #169 | feat(maps): Map 2 re-themed 印度洋 → 里海 Caspian Sea; Indian Ocean held in reserve as `pirate-class-level-3` |  |
 | #170 | feat(maps): Caspian sea-chart backdrop; ONLY_SLUG + preview/upload split for the art generator |  |
