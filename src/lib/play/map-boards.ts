@@ -64,15 +64,53 @@ export const VOYAGE_MAPS: Record<string, VoyageMap> = {
     ],
   },
   'pirate-class-level-2': {
+    nameZh: '里海',
+    nameEn: 'Caspian Sea',
+    // Night-sea indigo — deliberately far from both the Caribbean turquoise
+    // and the Indian Ocean coral, so the header pill still says where she is.
+    accent: {
+      pillBg: '#e2e0f0',
+      pillText: '#3b357a',
+      cardBorder: '#8f88c8',
+    },
+    // imageUrl intentionally absent: maps/<slug>.jpg still holds the Indian
+    // Ocean art this map was re-themed away from, and a wrong picture is worse
+    // than the procedural sea-chart. Run scripts/generate-voyage-map-art.ts and
+    // paste the URL back. A test pins this.
+    //
+    // Ten real places, anticlockwise round the sea: Azerbaijan → Russia →
+    // Kazakhstan → Turkmenistan. The Caspian seal is the only seal living in a
+    // landlocked sea, nine tenths of the world's wild sturgeon are here, and
+    // Yanardag has been burning on leaking natural gas for millennia — the
+    // finale, mirroring how the Caribbean ends at a pirate lair.
+    stops: [
+      { labelZh: '巴库少女塔', labelEn: 'Maiden Tower, Baku', emoji: '🗼' },
+      { labelZh: '戈布斯坦泥火山', labelEn: 'Gobustan Mud Volcanoes', emoji: '🌋' },
+      { labelZh: '火烈鸟盐湖', labelEn: 'Flamingo Salt Lake', emoji: '🦩' },
+      { labelZh: '伏尔加河莲花三角洲', labelEn: 'Volga Lotus Delta', emoji: '🪷' },
+      { labelZh: '里海海豹岛', labelEn: 'Caspian Seal Island', emoji: '🦭' },
+      { labelZh: '鲟鱼浅滩', labelEn: 'Sturgeon Shallows', emoji: '🐟' },
+      { labelZh: '阿克套白垩崖', labelEn: 'Aktau Chalk Cliffs', emoji: '🏔️' },
+      { labelZh: '曼格斯套石谷', labelEn: 'Mangystau Stone Valley', emoji: '🪨' },
+      { labelZh: '土库曼巴希港', labelEn: 'Turkmenbashi Harbour', emoji: '⚓' },
+      { labelZh: '火焰山', labelEn: 'Burning Mountain', emoji: '🔥' },
+    ],
+  },
+  // Reserve, ready for a third map. Re-themed out of map 2 on 2026-09-05 and
+  // kept whole rather than deleted, so opening it later is a seed row plus a
+  // backdrop instead of a rewrite. It shipped with NINE stops against a
+  // ten-week map, which would have dropped week 10 off the board entirely —
+  // the PR #151 failure again; 亚丁湾风暴角 is the tenth, and a test now pins
+  // the count for every map.
+  'pirate-class-level-3': {
     nameZh: '印度洋',
     nameEn: 'Indian Ocean',
-    // Warm spice-route accent (coral/amber) — distinct from Caribbean turquoise.
+    // Warm spice-route accent (coral/amber).
     accent: {
       pillBg: '#fde4cf',
       pillText: '#b4530a',
       cardBorder: '#f0a868',
     },
-    imageUrl: 'https://mfl7ap4djy0w98ey.public.blob.vercel-storage.com/maps/pirate-class-level-2.jpg',
     stops: [
       { labelZh: '毛里求斯瀑布', labelEn: 'Mauritius Waterfall', emoji: '💦' },
       { labelZh: '留尼汪海龟海滩', labelEn: 'Réunion Turtle Beach', emoji: '🐢' },
@@ -83,6 +121,7 @@ export const VOYAGE_MAPS: Record<string, VoyageMap> = {
       { labelZh: '桑给巴尔香料镇', labelEn: 'Zanzibar Spice Town', emoji: '🧺' },
       { labelZh: '孙德尔本斯红树林', labelEn: 'Sundarbans Mangroves', emoji: '🌳' },
       { labelZh: '安达曼丛林', labelEn: 'Andaman Jungle', emoji: '🐯' },
+      { labelZh: '亚丁湾风暴角', labelEn: 'Gulf of Aden Storm Cape', emoji: '🌊' },
     ],
   },
 };

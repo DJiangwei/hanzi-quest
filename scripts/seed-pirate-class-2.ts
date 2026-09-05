@@ -1,5 +1,5 @@
 /**
- * Seed the shared 海盗班 (Pirate Class) Level 2 — Map 2 / 印度洋 (Indian Ocean).
+ * Seed the shared 海盗班 (Pirate Class) Level 2 — Map 2 / 里海 (Caspian Sea).
  *
  * IDENTICAL pipeline to Map 1 (`seed-pirate-class.ts`): same AI scene-gen, same
  * `compileWeekIntoLevels`, same scene-design logic — only the pack + the LESSONS
@@ -40,7 +40,7 @@ if (!process.env.DATABASE_URL) {
 const PACK_SLUG = 'pirate-class-level-2';
 const PACK_NAME = '海盗班 Level 2';
 const PACK_DESCRIPTION =
-  'Giggling Panda Pirate 字卡 LEVEL 2 — 印度洋 / Indian Ocean, 10 weekly lessons.';
+  'Giggling Panda Pirate 字卡 LEVEL 2 — 里海 / Caspian Sea, 10 weekly lessons.';
 
 // ── FILL ME ─────────────────────────────────────────────────────────────────
 // One entry per week. Each `characters` is the week's hanzi (8–10 per week,
@@ -77,7 +77,7 @@ async function main() {
 
   console.log(`[seed:map2] starting… ${LESSONS.length} weeks`);
 
-  // 1. Ensure pack (the 印度洋 placeholder already exists — reuse it).
+  // 1. Ensure pack (the 里海 placeholder already exists — reuse it).
   const [existingPack] = await db
     .select({ id: curriculumPacks.id })
     .from(curriculumPacks)

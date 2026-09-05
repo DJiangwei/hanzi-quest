@@ -78,7 +78,7 @@ These are the "evolve as the user learns more characters" arc. Ordered by depend
 **Guardrails:** low frequency, always skippable, no gating. Distinct from the map final boss (which is a game challenge, not a measurement).
 
 ### V6 — Content pipeline at scale `[ ]`
-Map 2 (印度洋) authoring is prepped (`seed-pirate-class-2.ts`, blocked on David's hanzi list) — **it outranks everything when unblocked**. Beyond it: Maps 3+ need only the documented recipes (voyage entry + overlord + champion set); consider aligning future weekly lists with Yinuo's actual school/textbook sequence (David decision); authoring-time validation script (`verify-week-content.ts`: every char has words, images, audio-able text, sentence) so a half-generated week can't reach a kid.
+Map 2 (里海 / Caspian Sea — re-themed from 印度洋 on 2026-09-05, PR #169; the Indian Ocean is held whole as `pirate-class-level-3` for a third map) authoring is prepped (`seed-pirate-class-2.ts`, blocked on David's hanzi list) — **it outranks everything when unblocked**. Beyond it: Maps 3+ need only the documented recipes (voyage entry + overlord + champion set); consider aligning future weekly lists with Yinuo's actual school/textbook sequence (David decision); authoring-time validation script (`verify-week-content.ts`: every char has words, images, audio-able text, sentence) so a half-generated week can't reach a kid.
 
 ---
 

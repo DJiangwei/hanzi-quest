@@ -20,19 +20,20 @@ describe('MapHeaderPill', () => {
     expect(link).toHaveAttribute('href', '/play/child_1/maps');
   });
 
-  it('applies the map-specific accent colour (Indian Ocean ≠ default)', () => {
+  it('applies the map-specific accent colour (Caspian ≠ default)', () => {
     render(
       <MapHeaderPill
         childId="child_1"
         currentMap={{
           slug: 'pirate-class-level-2',
-          nameZh: '印度洋',
-          nameEn: 'Indian Ocean',
+          nameZh: '里海',
+          nameEn: 'Caspian Sea',
         }}
       />,
     );
-    // Warm spice accent bg (#fde4cf), not the turquoise default.
-    expect(screen.getByRole('link')).toHaveStyle({ backgroundColor: '#fde4cf' });
+    // Night-sea indigo (#e2e0f0), not the turquoise default. Map 2 was
+    // re-themed from the Indian Ocean on 2026-09-05; the accent moved with it.
+    expect(screen.getByRole('link')).toHaveStyle({ backgroundColor: '#e2e0f0' });
   });
 
   it('renders nothing when currentMap is null', () => {
