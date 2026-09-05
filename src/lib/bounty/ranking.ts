@@ -12,8 +12,17 @@ export interface BountyCandidate {
   characterId: string;
   hanzi: string;
   weekNumber: number;
-  /** All-time answer_events rows targeting this char. */
+  /**
+   * All-time answer_events rows targeting this char, flashcard self-ratings
+   * INCLUDED. Only the "has she ever met this?" gate reads this — a character
+   * she has seen, even once on a flashcard, is not an unvisited one.
+   */
   total: number;
+  /**
+   * Rows carrying a real verdict (`correct IS NOT NULL`). The weakness term
+   * divides by this, never by `total` — see bountyScore.
+   */
+  scored: number;
   /** correct=false rows. */
   wrong: number;
   /** dont_know / not_sure self-ratings. */
@@ -24,12 +33,27 @@ export interface BountyCandidate {
  * Score a candidate. 0 = never posted (she's fine on it).
  * Unseen chars (no telemetry at all) outrank every weak char, and later
  * weeks outrank earlier — that's the avoidance being targeted.
+ *
+ * **The two branches want DIFFERENT denominators, and collapsing them breaks
+ * the feature.** The unseen gate asks "has she ever met this?", so it counts
+ * every row including flashcards — a character she tapped 认识 on has been
+ * met, and must not outrank genuinely weak ones. The weakness term asks "how
+ * often does she get it wrong?", which only rows with a verdict can answer:
+ * dividing by `total` there let five tapped-through flashcards bury one failed
+ * answer (17% instead of 100%), the same defect PR #167 fixed in 温故's
+ * reviewScore. In production every one of the 164 flashcard self-ratings is
+ * `got_it`, so that dilution was pure noise favouring well-drilled characters.
  */
 export function bountyScore(c: BountyCandidate): number {
   if (c.total === 0) return 100 + c.weekNumber;
   const misses = c.wrong + c.dontKnow;
   if (misses === 0) return 0;
-  return Math.round((60 * misses) / c.total) + c.weekNumber;
+  // dontKnow rows are NOT inside `scored` (they carry no verdict), so they
+  // join the denominator as well as the numerator — otherwise the ratio can
+  // exceed 1. Same shape as masteryForChar's `evidence`.
+  const evidence = c.scored + c.dontKnow;
+  if (evidence === 0) return 0;
+  return Math.round((60 * misses) / evidence) + c.weekNumber;
 }
 
 /**

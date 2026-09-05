@@ -118,6 +118,19 @@ describe('FlashcardScene reveal signal', () => {
  * three buttons must be styled IDENTICALLY, which makes "no button is
  * visually privileged" the literal assertion rather than a proxy for it.
  */
+describe('FlashcardScene reveal prompts follow the bilingual rule', () => {
+  it('labels both reveal buttons in 中文 AND English', () => {
+    // Their sibling ("Tap to show example word / 例词") was already bilingual;
+    // these two shipped English-only, which is the one thing every kid-facing
+    // label in this game is not allowed to be.
+    render(<FlashcardScene data={data} onComplete={vi.fn()} />);
+    const pinyin = screen.getByRole('button', { name: /Tap to show pinyin/i });
+    const meaning = screen.getByRole('button', { name: /Tap to show meaning/i });
+    expect(pinyin.textContent).toMatch(/拼音/);
+    expect(meaning.textContent).toMatch(/意思/);
+  });
+});
+
 describe('FlashcardScene rating buttons carry no verdict', () => {
   const ratingButtons = () =>
     [/^认识/, /^不确定/, /^不认识/].map((name) =>

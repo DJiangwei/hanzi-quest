@@ -101,6 +101,7 @@ export async function generateDailyBounties(
     .select({
       characterId: answerEvents.characterId,
       total: sql<number>`count(*)`,
+      scored: sql<number>`count(*) filter (where ${answerEvents.correct} is not null)`,
       wrong: sql<number>`count(*) filter (where ${answerEvents.correct} = false)`,
       dontKnow: sql<number>`count(*) filter (where ${answerEvents.selfRating} in ('dont_know', 'not_sure'))`,
     })
@@ -133,6 +134,7 @@ export async function generateDailyBounties(
         hanzi: meta.hanzi,
         weekNumber: meta.weekNumber,
         total: Number(s?.total ?? 0),
+        scored: Number(s?.scored ?? 0),
         wrong: Number(s?.wrong ?? 0),
         dontKnow: Number(s?.dontKnow ?? 0),
       };
