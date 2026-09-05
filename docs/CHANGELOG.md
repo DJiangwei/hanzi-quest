@@ -476,3 +476,68 @@ A 30-tier track a child can see and never reach is worse than a shorter one she 
 ### Not in this PR, on purpose
 
 **The next season is not launched here.** Two decisions belong to David, and one of them is effectively irreversible: `starts_at` retroactively decides what counts, because season XP is summed from `xp_events` over the window. Production holds **1,785 XP** (Yinuo) and **150** (小板) earned since 08-08 — backdating a new season's start hands Yinuo roughly 15 tiers on day one, forward-dating discards it. Neither is wrong; it is not a default. The theme is his call too.
+
+---
+
+## PR #182 — 里海远航 / Caspian Passage, season 2 (2026-09-05)
+
+Summer closed on prod first (`close-season.ts`, verified by calling the real `getActiveSeason()` and getting `null` back). This is what replaces it.
+
+### Cadence: quarterly, 12 weeks
+
+The binding constraint is **content cost, not player appetite**. Each season needs ~5 cards (with Cloudflare art), ~8 cosmetics (an SVG apiece), a trophy, a tier table and three seed runs. Eight-week seasons mean 6.5 a year, which a hobby project cannot feed; twelve weeks gives four, on dates anchored to UK school terms. Dates that are easy to remember matter here, because closing a season is a manual step and 夏季航海 sat open for 28 days precisely because nothing prompted anyone.
+
+### The curve is front-loaded, and that is the point
+
+Measured XP per day, from production:
+
+| | during the summer season | in the four weeks after |
+|---|---|---|
+| Yinuo | 113 | 64 |
+| 小板 | **19** | **5** |
+
+Summer put tier 10 at 950 XP. On 小板's rate a 12-week season buys ~420 XP total, so copying that curve hands her a thirty-rung ladder she climbs four rungs of. Caspian puts **tier 10 at 400** and keeps tier 30 at 4,000 — the lighter player finishes the first third, the heavier one still has a nine-week climb.
+
+A track a child watches without moving is worse than a shorter one she finishes, in a product where `boss_courage` pays out on a *loss*, the boss keeps question progress on retry, and T3 names the rewards before the fight.
+
+### The culture is in the card lore, not on the cosmetics
+
+David asked for a season introducing the countries, peoples and history around the Caspian. Five cards, each carrying one true and checkable fact in both languages:
+
+| card | the fact |
+|---|---|
+| 里海海豹 Caspian Seal | lives in the Caspian and nowhere else on Earth |
+| 鲟鱼 Sturgeon | the Caspian's most famous fish, older than the dinosaurs |
+| 金雕猎手 Golden Eagle Hunter | Kazakh hunters ride out with a golden eagle on one arm |
+| 汗血宝马 Akhal-Teke Horse | from Turkmenistan; travelled the Silk Road into China two thousand years ago |
+| 火之城巴库 Baku, City of Fire | Azerbaijan means "land of fire" — flames rise from the ground |
+
+汗血宝马 is the pick of them: the name is Han-dynasty Chinese, so a child learning Chinese meets the Caspian region through her own language's history.
+
+The eight cosmetics are deliberately **objects, animals and landscape** — a Silk-Road lantern, a caravan compass, a pomegranate charm, a seal pup, the steppe at dusk, a traveller's wide-brimmed hat, and a tier-30 set whose robe uses a woven *pattern* rather than any one people's garment. **No traditional dress.** A six-year-old wearing a people's clothing as a game skin is dressing-up, which teaches the opposite of the respect the content is for. Put the history where it is read, not where it is worn.
+
+### One hall for every season
+
+The cards go into the existing `season-summer-v1` pack. That slug is a **position, not a theme** — the same rule as `pirate-class-level-2` meaning "the second map" rather than "the Indian Ocean" — and renaming it would strand the cards the children already own. The hall now displays as **赛季珍藏 / Season Vault** and `PACK_REGISTRY.grouping` sections it by season, the way flags group by continent. At four seasons a year, a pack per season would add a near-empty Backpack hall every quarter.
+
+### `starts_at` is not backdated
+
+Production held 1,785 XP (Yinuo) and 150 (小板) earned since 夏季航海 ended. Backdating would have handed Yinuo roughly fifteen tiers on day one; David chose to let it lapse. The seed script says so in its header, since the same decision arrives with every season and has no default.
+
+It also **refuses to run while another season is still active**, naming the ones to close — two active rows is a state `getActiveSeason` now orders through deterministically (#181), but not one to create on purpose.
+
+### Verification
+
+Tests resolve every slug a tier names across all four namespaces — cards, cosmetics, trophies, tier table — because those are resolved at *claim* time inside a transaction on a child's device, where a typo is a failed claim in production rather than a compile error. Two guards proven by mutation: a misspelled card slug (`expected undefined to be defined`) and a season cosmetic leaking out of reward-only (`expected false to be true`).
+
+Also reshaped two pre-existing assertions that hardcoded "8 season cosmetics" as a grand total. That number grows by 8 every season and tells whoever it breaks nothing about what it should become; they now count **per season**, which says exactly which set is short.
+
+`pnpm typecheck && lint && test && build` green; 357/357 test files ran, 2230 tests. No migration.
+
+### Post-merge ops (PROD, in this order)
+
+1. `scripts/seed-season-cards.ts` — auto-discovers the 5 new cards
+2. `scripts/seed-festival-avatar-items.ts` — auto-discovers the 8 new cosmetics
+3. `scripts/seed-trophies.ts` — `season-caspian-master`
+4. `scripts/seed-caspian-season.ts` — opens the season (summer already closed)
+5. `scripts/verify-integrity.ts`

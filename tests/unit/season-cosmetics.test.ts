@@ -9,9 +9,18 @@ describe('season cosmetics', () => {
     expect(SHOP_FILTER_THEMES).not.toContain('season');
   });
 
-  it('rewardItems() includes all 8 season cosmetics, all rewardOnly + unpriced', () => {
+  it('every season cosmetic is rewardOnly + unpriced, 8 per season', () => {
+    // Counted PER SEASON, not as one total. A magic grand total grows by 8
+    // every season and tells whoever it breaks nothing about what it should
+    // become; a per-season count says exactly which set is short.
     const season = rewardItems().filter((i) => i.theme === 'season');
-    expect(season).toHaveLength(8);
+    const bySeason = {
+      summer: season.filter((i) => !i.unlockRef.startsWith('season-caspian-')),
+      caspian: season.filter((i) => i.unlockRef.startsWith('season-caspian-')),
+    };
+    expect(bySeason.summer).toHaveLength(8);
+    expect(bySeason.caspian).toHaveLength(8);
+    expect(season).toHaveLength(bySeason.summer.length + bySeason.caspian.length);
     season.forEach((i) => {
       expect(i.rewardOnly).toBe(true);
       expect(i.priceCoins).toBeUndefined();

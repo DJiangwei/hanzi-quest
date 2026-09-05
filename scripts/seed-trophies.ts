@@ -67,6 +67,8 @@ export const TROPHIES: TrophySeed[] = [
 
   { slug: 'season-summer-master', emoji: '⛵', nameZh: '夏季航海大师', nameEn: 'Summer Voyage Master', descriptionZh: '完成夏季航海赛季的全部 30 个档位', descriptionEn: 'Reach tier 30 of the Summer Voyage season', loreZh: '整片夏日海洋都记得你的名字。', loreEn: 'The whole summer sea remembers your name.', category: 'season', displayOrder: 60 },
 
+  { slug: 'season-caspian-master', emoji: '🏺', nameZh: '里海远航大师', nameEn: 'Caspian Passage Master', descriptionZh: '完成里海远航赛季的全部 30 个档位', descriptionEn: 'Reach tier 30 of the Caspian Passage season', loreZh: '从草原到火之城,整条丝路都听过你的名字。', loreEn: 'From the steppe to the city of fire, the whole Silk Road knows your name.', category: 'season', displayOrder: 61 },
+
   { slug: 'champion-caribbean', emoji: '👑', nameZh: '加勒比海霸主', nameEn: 'Lord of the Caribbean', descriptionZh: '击败加勒比海的最终霸主', descriptionEn: 'Defeat the Caribbean final boss', loreZh: '幽灵旗舰沉入海底，王冠属于你。', loreEn: 'The Ghost Galleon sinks — the crown is yours.', category: 'champion', displayOrder: 90 },
 ];
 

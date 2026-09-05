@@ -35,7 +35,11 @@ import {
   OLYMPIC_GROUP_LABELS,
 } from '@/lib/collections/olympicsData';
 import { FESTIVALS_BY_SLUG } from '@/lib/collections/festivalsData';
-import { SEASON_CARDS_BY_SLUG } from '@/lib/collections/seasonCardsData';
+import {
+  SEASON_CARDS_BY_SLUG,
+  SEASON_GROUP_LABELS,
+  SEASON_GROUP_ORDER,
+} from '@/lib/collections/seasonCardsData';
 import { DINOSAURS_BY_SLUG } from '@/lib/collections/dinosaursData';
 import {
   FLAGS_BY_SLUG,
@@ -204,18 +208,27 @@ export const PACK_REGISTRY: Record<string, PackUiMeta> = {
     ItemCard: FestivalCard,
     resolveRevealEmoji: (slug) => FESTIVALS_BY_SLUG[slug]?.emoji ?? null,
   },
+  // The DB slug still says `summer` — it is a POSITION, not a theme (the same
+  // rule as `pirate-class-level-2` meaning "the second map"). Every season's
+  // cards share this one hall, grouped by season, because four seasons a year
+  // would otherwise fill the Backpack with near-empty halls.
   'season-summer-v1': {
-    displayNameZh: '夏季航海',
-    displayNameEn: 'Summer Voyage',
-    sloganZh: '赛季限定，随航海图一起收集。',
-    sloganEn: 'Season-exclusive — earned along the voyage.',
-    themeEmoji: '⛵',
+    displayNameZh: '赛季珍藏',
+    displayNameEn: 'Season Vault',
+    sloganZh: '赛季限定，过期不候。',
+    sloganEn: 'Season-exclusive — once the season ends, that is that.',
+    themeEmoji: '🏺',
     themeBannerClass:
       'bg-gradient-to-br from-cyan-200 via-teal-300 to-sky-500',
     themeAccentClass: 'text-teal-900',
     gridColumns: 3,
     ItemCard: SeasonCard,
     resolveRevealEmoji: (slug) => SEASON_CARDS_BY_SLUG[slug]?.emoji ?? null,
+    grouping: {
+      resolveGroup: (slug) => SEASON_CARDS_BY_SLUG[slug]?.season ?? null,
+      order: SEASON_GROUP_ORDER,
+      labels: SEASON_GROUP_LABELS,
+    },
   },
   'champions-v1': {
     displayNameZh: '海域霸主',

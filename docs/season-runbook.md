@@ -143,10 +143,21 @@ the split knowingly. Do not decide it by copying the previous table.
 
 ---
 
-## Cadence
+## Cadence — **quarterly, 12 weeks** (decided 2026-09-05)
 
-Summer ran 8 weeks and the game has been season-less for 4. A gap is not
-harmful — season XP is derived, so nothing accrues wrongly while none is active
-— but the home banner keeps advertising the finished one, and any XP earned in
-the gap belongs to no season. Decide the gap deliberately: either run seasons
-back-to-back, or close the old one when it ends so the banner goes quiet.
+Four seasons a year, ~12 weeks each, anchored to UK school terms.
+
+The binding constraint is **content cost, not player appetite**: each season
+needs ~5 cards (with Cloudflare art), ~8 cosmetics (an SVG apiece), a trophy, a
+tier table and three seed runs. At 8 weeks that is 6.5 seasons a year, which a
+hobby project cannot feed. Twelve weeks gives four, on dates that are easy to
+remember — and remembering matters, because closing a season is a manual step
+and 夏季航海 sat open for 28 days precisely because nothing prompted anyone.
+
+The theme follows whichever map she is playing when the season opens.
+
+**Season 2 — 里海远航 / Caspian Passage** opened 2026-09-05, 12 weeks, NOT
+backdated (the 1,785 XP Yinuo had banked since 08-08 was allowed to lapse; see
+the `starts_at` rule above). Its curve is front-loaded: tier 10 at **400** XP
+against summer's 950, so the lighter player finishes the first third rather than
+stalling at four rungs of thirty. Tier 30 stays at 4,000.
