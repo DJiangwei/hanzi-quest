@@ -4,6 +4,7 @@ import { dailyQuests, dailyQuestChests } from '@/db/schema';
 import { todayUtcIso } from '@/lib/db/streaks';
 import { QUEST_DEFS, getQuestDef, type QuestContext, type QuestDef } from '@/lib/quests/definitions';
 import { awardXp } from '@/lib/db/xp';
+import { logError } from '@/lib/db/error-events';
 
 // ─── date helpers ────────────────────────────────────────────────────────────
 
@@ -177,6 +178,6 @@ export async function tickQuestProgressSafe(
   try {
     await tickQuestProgress(childId, questKey, amount);
   } catch (err) {
-    console.error('[quests] tickQuestProgressSafe error:', err);
+    await logError('quests:tickquestprogresssafe-error', err);
   }
 }

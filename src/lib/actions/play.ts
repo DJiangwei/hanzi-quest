@@ -55,6 +55,7 @@ import { tickBountyProgress } from '@/lib/db/bounties';
 import { creditPiggy } from '@/lib/db/piggy';
 import { PIGGY_BOSS_CLEAR_PENCE, PIGGY_KEY_VAULT_PENCE } from '@/lib/piggy/rates';
 import { piggyBonus } from '@/lib/piggy/bonus';
+import { logError } from '@/lib/db/error-events';
 
 // ─── XP helpers ──────────────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ async function safeAwardXp(
   try {
     return await awardXp(childId, amount, source, refId);
   } catch (err) {
-    console.error('[play] safeAwardXp error:', err);
+    await logError('play:award-xp', err);
     return { totalXp: 0, level: 1, leveledUp: false };
   }
 }
@@ -112,7 +113,7 @@ async function safeClaimKeyVault(
   try {
     return await claimKeyVaultPrize(childId, packId, packSlug);
   } catch (err) {
-    console.error('[finishLevelAction] key vault claim failed:', err);
+    await logError('finishLevelAction:key-vault', err);
     return { card: null, coins: 0 };
   }
 }
@@ -131,7 +132,7 @@ async function safeCreditPiggy(
     const res = await creditPiggy({ childId, source, refId, pence });
     return res.credited;
   } catch (err) {
-    console.error(`[finishLevelAction] piggy ${source} credit failed:`, err);
+    await logError('finishLevelAction:piggy', err, { context: { source } });
     return false;
   }
 }
@@ -146,7 +147,7 @@ async function safeClaimWeeklyGift(
   try {
     return await claimWeeklyGiftIfDue(childId);
   } catch (err) {
-    console.error('[finishAttemptAction] weekly gift claim failed:', err);
+    await logError('finishAttemptAction:weekly-gift', err);
     return null;
   }
 }
@@ -181,7 +182,7 @@ async function safePullRevealCard(
   try {
     return toRevealCard(await pullCardForChild(childId, source, refId));
   } catch (err) {
-    console.error(`[finishLevelAction] ${source} pullCardForChild failed:`, err);
+    await logError('finishLevelAction:card-grant', err, { context: { source } });
     return null;
   }
 }
@@ -207,7 +208,7 @@ async function pullSectionCard(
     if (res.reason === 'daily_cap_reached') return { card: null, skip: 'daily_cap_reached' };
     return { card: null, skip: null };
   } catch (err) {
-    console.error(`[finishLevelAction] ${source} pullCardForChild failed:`, err);
+    await logError('finishLevelAction:card-grant', err, { context: { source } });
     return { card: null, skip: null };
   }
 }
@@ -425,7 +426,7 @@ export async function finishAttemptAction(
       void tickQuestProgressSafe(child.id, 'perfect_scores', 1);
     }
   } catch (err) {
-    console.error('[finishAttemptAction] XP/quest tick error:', err);
+    await logError('finishAttemptAction:xp-quest', err);
   }
 
   // Answer-event telemetry (write-only) — guarded, after all primary writes.
@@ -433,7 +434,7 @@ export async function finishAttemptAction(
     try {
       await logAnswerEventsSafe(child.id, parsed.weekId, parsed.source ?? 'practice', parsed.events);
     } catch (err) {
-      console.error('[finishAttemptAction] answer-event log failed:', err);
+      await logError('finishAttemptAction:answer-events', err);
     }
     // T2 通缉令: correct answers tick today's wanted posters (repeats count).
     // Guarded — bounty bookkeeping must never break the attempt.
@@ -446,7 +447,7 @@ export async function finishAttemptAction(
         await tickBountyProgress(child.id, today, bountyHits);
       }
     } catch (err) {
-      console.error('[finishAttemptAction] bounty tick failed:', err);
+      await logError('finishAttemptAction:bounty-tick', err);
     }
   }
 
@@ -480,7 +481,7 @@ export async function finishAttemptAction(
         }
       }
     } catch (err) {
-      console.error('[finishAttemptAction] practice card grant failed:', err);
+      await logError('finishAttemptAction:practice-card', err);
     }
   }
 
@@ -774,7 +775,7 @@ export async function finishLevelAction(
       void tickQuestProgressSafe(child.id, 'earn_card', cardGrants.length);
     }
   } catch (err) {
-    console.error('[finishLevelAction] XP/quest tick error:', err);
+    await logError('finishLevelAction:xp-quest', err);
   }
 
   revalidatePath(`/play/${child.id}`);

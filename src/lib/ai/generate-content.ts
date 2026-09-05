@@ -1,4 +1,5 @@
 import { deepseek } from '@ai-sdk/deepseek';
+import { logError } from '@/lib/db/error-events';
 import { generateObject } from 'ai';
 import { db } from '@/db';
 import { completeJob, createJob, failJob } from '@/lib/db/ai-jobs';
@@ -97,7 +98,7 @@ export async function generateWeekContent(
         `[images] week=${input.weekId} attempted=${imgs.attempted} succeeded=${imgs.succeeded} failed=${imgs.failed}`,
       );
     } catch (err) {
-      console.error('[images] failed for week', input.weekId, err);
+      await logError('images:generate', err, { context: { weekId: input.weekId } });
     }
 
     await completeJob(job.id, {
@@ -241,7 +242,7 @@ export async function regenerateCharacter(
         `[images] regen week=${input.weekId} attempted=${imgs.attempted} succeeded=${imgs.succeeded} failed=${imgs.failed}`,
       );
     } catch (err) {
-      console.error('[images] regen failed for week', input.weekId, err);
+      await logError('images:regenerate', err, { context: { weekId: input.weekId } });
     }
 
     await completeJob(job.id, {

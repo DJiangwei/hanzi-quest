@@ -105,8 +105,8 @@ Neon `dev` branch (`ep-dry-bird-…`) created from prod; local `.env.local` + Ve
 ### C2 — Weekly backup `[x]` (shipped 2026-07-05)
 `scripts/backup-db.ts` — pure-TS dump (no pg_dump needed): every public table → gzipped JSONL in `backups/` (gitignored), tables auto-discovered via information_schema. ~330KB for the whole DB. Targets `DATABASE_URL` (dev by default; swap to the `# PROD_DATABASE_URL` line for the real weekly prod backup). David: run it for prod on a loose weekly cadence.
 
-### C3 — Error visibility `[ ]`
-Lightest first: Vercel observability + log drain or Sentry free tier. Success metric: a thrown server-action error produces something David sees, not a silent 500 on a kid's iPad.
+### C3 — Error visibility `[x]` (shipped 2026-09-05, PR #172)
+Shipped **self-hosted** rather than via Sentry: error payloads carry childIds and learning content, and this is a game for two families, so nothing about a child leaves the deployment. `error_events` (migration 0044) + a never-throwing `logError` wired into all 31 server-side call sites, read at `/admin/errors` grouped by `<action>:<what failed>`. **The success metric is only half met, deliberately:** a thrown server-action error is now durable and diagnosable, but nothing pushes it to David — he has to open the page. If the log turns out to be busy, that is the moment to reconsider alerting; if it stays empty, alerting was never worth an account.
 
 ### C4 — Data-integrity check script `[x]` (shipped 2026-07-05)
 `scripts/verify-integrity.ts` — 7 read-only code⟷DB drift checks (packs⟷registry both ways, avatar slots, trophies seed, reward cosmetics seed, shard-exclusive⟺gacha_eligible alignment, word art). Exit 1 on failure. Run after any PR whose post-merge ops include a seed script. 7/7 passing against the prod snapshot at ship time.

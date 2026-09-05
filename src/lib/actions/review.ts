@@ -12,6 +12,7 @@ import { todayUtcIso } from '@/lib/db/streaks';
 import { MAX_EVENTS_PER_CALL } from '@/lib/play/answer-events';
 import { REVIEW_REWARD_COINS, REVIEW_REWARD_XP } from '@/lib/review/selection';
 import type { RevealCard } from '@/lib/play/reveal-card';
+import { logError } from '@/lib/db/error-events';
 
 export type ReviewCardMessage = 'review_done_today' | 'daily_cap_reached' | null;
 
@@ -97,7 +98,7 @@ export async function finishReviewAction(
         res.reason === 'daily_cap_reached' ? 'daily_cap_reached' : 'review_done_today';
     }
   } catch (err) {
-    console.error('[finishReviewAction] reward failed:', err);
+    await logError('finishReviewAction:reward-failed', err);
   }
 
   revalidatePath(`/play/${child.id}`);

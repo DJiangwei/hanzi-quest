@@ -15,6 +15,7 @@ import { creditPiggy } from '@/lib/db/piggy';
 import { PIGGY_FINAL_BOSS_PENCE } from '@/lib/piggy/rates';
 import { piggyBonus } from '@/lib/piggy/bonus';
 import type { EconomyBonus } from '@/lib/actions/play';
+import { logError } from '@/lib/db/error-events';
 
 // childId is validated by requireChild (the real auth gate) — min(1) keeps
 // non-uuid test/dev ids working while still rejecting empty input.
@@ -72,7 +73,7 @@ export async function finishFinalBossAction(
     });
     if (res.credited) bonuses.push(piggyBonus(PIGGY_FINAL_BOSS_PENCE));
   } catch (err) {
-    console.error('[finishFinalBossAction] piggy credit failed:', err);
+    await logError('finishFinalBossAction:piggy', err);
   }
 
   revalidatePath(`/play/${child.id}`);

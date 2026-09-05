@@ -218,6 +218,10 @@ export function SceneRunner({
           ]);
         }
       })
+      // Client-side, so it stays a console.error: routing this to the
+      // error_events table would need a public server action, i.e. an endpoint
+      // anyone could use to append arbitrary rows. C3 is server-side only —
+      // see the logError header and CLAUDE.md's C3 landmine.
       .catch((err) => console.error('[SceneRunner] boss courage claim failed:', err));
   };
 

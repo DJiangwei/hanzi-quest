@@ -12,6 +12,7 @@ import { STUDY_MIN_OWNED } from '@/lib/play/study';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import { logAnswerEventsSafe } from '@/lib/db/answer-events';
 import { MAX_EVENTS_PER_CALL } from '@/lib/play/answer-events';
+import { logError } from '@/lib/db/error-events';
 
 const STUDY_PASS_SCORE = 60; // gentle bar for a 6yo (≈4/6)
 const STUDY_XP = 15;
@@ -81,7 +82,7 @@ export async function finishStudyLessonAction(
         cardMessage = 'daily_cap_reached';
       }
     } catch (err) {
-      console.error('[finishStudyLessonAction] reward error:', err);
+      await logError('finishStudyLessonAction:reward', err);
     }
   }
 
@@ -90,7 +91,7 @@ export async function finishStudyLessonAction(
     try {
       await logAnswerEventsSafe(child.id, null, 'study', parsed.events);
     } catch (err) {
-      console.error('[finishStudyLessonAction] answer-event log failed:', err);
+      await logError('finishStudyLessonAction:answer-events', err);
     }
   }
 

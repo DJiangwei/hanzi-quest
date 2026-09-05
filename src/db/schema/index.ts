@@ -20,3 +20,4 @@ export * from './admin';
 export * from './answer-events';
 export * from './bounties';
 export * from './piggy';
+export * from './error-events';

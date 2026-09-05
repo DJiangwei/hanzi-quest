@@ -177,6 +177,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #169 | feat(maps): Map 2 re-themed 印度洋 → 里海 Caspian Sea; Indian Ocean held in reserve as `pirate-class-level-3` |  |
 | #170 | feat(maps): Caspian sea-chart backdrop; ONLY_SLUG + preview/upload split for the art generator |  |
 | #171 | fix(bounty): 通缉令's weakness term was diluted by got_it flashcards; flashcard reveal prompts made bilingual |  |
+| #172 | feat(admin): C3 error visibility — `error_events` + logError + /admin/errors, self-hosted |  |
 
 ### Next up
 

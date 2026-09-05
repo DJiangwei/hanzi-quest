@@ -19,6 +19,7 @@ import {
 import { MAP_TO_CHAMPION_CARD } from '@/lib/collections/championsData';
 import type { RevealCard } from '@/lib/play/reveal-card';
 import { isUniqueViolation } from '@/lib/errors/pg-errors';
+import { logError } from '@/lib/db/error-events';
 
 const CHAMPIONS_PACK_SLUG = 'champions-v1';
 
@@ -219,7 +220,7 @@ export async function grantMapChampionRewards(
   try {
     await grantChampionCosmetic(childId, cardSlug ?? '');
   } catch (err) {
-    console.error('[final-boss] cosmetic grant failed:', err);
+    await logError('final-boss:cosmetic-grant-failed', err);
   }
 
   return { card, trophies };
