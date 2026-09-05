@@ -87,7 +87,7 @@ export function FlashcardScene({ data, onComplete, onAnswerEvent }: Props) {
               onClick={() => setPinyinShown(true)}
               className="rounded-full border-2 border-dashed border-[var(--color-ocean-300)] px-6 py-2 text-[var(--color-ocean-700)] hover:border-[var(--color-ocean-500)] hover:bg-[var(--color-ocean-100)]"
             >
-              Tap to show pinyin
+              <span className="font-hanzi">拼音</span> / Tap to show pinyin
             </button>
           )}
 
@@ -106,7 +106,7 @@ export function FlashcardScene({ data, onComplete, onAnswerEvent }: Props) {
               onClick={() => setMeaningShown(true)}
               className="text-sm text-[var(--color-sand-700)] hover:text-[var(--color-sand-900)]"
             >
-              Tap to show meaning
+              <span className="font-hanzi">意思</span> / Tap to show meaning
             </button>
           )}
 

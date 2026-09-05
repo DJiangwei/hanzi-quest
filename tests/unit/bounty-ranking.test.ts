@@ -12,6 +12,9 @@ const cand = (over: Partial<BountyCandidate>): BountyCandidate => ({
   hanzi: over.hanzi ?? '字',
   weekNumber: over.weekNumber ?? 1,
   total: over.total ?? 0,
+  // Defaults to "every row was a scored answer", which is what the older
+  // fixtures meant before flashcard rows were split out.
+  scored: over.scored ?? over.total ?? 0,
   wrong: over.wrong ?? 0,
   dontKnow: over.dontKnow ?? 0,
   ...over,
@@ -31,7 +34,36 @@ describe('bountyScore', () => {
     const rareWrong = bountyScore(cand({ total: 10, wrong: 1, weekNumber: 3 }));
     const selfRated = bountyScore(cand({ total: 10, wrong: 0, dontKnow: 5, weekNumber: 3 }));
     expect(halfWrong).toBeGreaterThan(rareWrong);
-    expect(selfRated).toBe(halfWrong);
+    // Both are genuinely weak, and dont_know still counts as a miss — but they
+    // are no longer identical. `selfRated` has ten clean scored answers on top
+    // of its five admissions, so its miss rate is 5/15, not 5/10.
+    expect(selfRated).toBeGreaterThan(rareWrong);
+    expect(selfRated).toBeLessThan(halfWrong);
+  });
+
+  it('does not treat a char met only through got_it flashcards as UNSEEN', () => {
+    // The `total === 0` gate is the whole point of 通缉令: push her into weeks
+    // she has never visited. A character she HAS met — even only on a flashcard
+    // she tapped 认识 on — must not outrank every genuinely weak character.
+    // This is why the fix below cannot simply swap `total` for `scored`.
+    const flashcardedOnly = cand({ total: 5, scored: 0, wrong: 0, dontKnow: 0, weekNumber: 2 });
+    const trulyUnseen = cand({ total: 0, weekNumber: 2 });
+    expect(bountyScore(trulyUnseen)).toBe(100 + 2);
+    expect(bountyScore(flashcardedOnly)).toBeLessThan(bountyScore(trulyUnseen));
+  });
+
+  it('weakness is not diluted by got_it flashcards', () => {
+    // The same defect PR #167 fixed in 温故's reviewScore, still live here:
+    // dividing misses by count(*) lets five tapped-through flashcards bury one
+    // genuinely failed answer. 1 wrong out of 1 SCORED answer is a total miss
+    // rate, however many flashcards sit alongside it.
+    const drilledButFailing = cand({
+      total: 6, // 5 got_it flashcards + 1 scored answer
+      scored: 1,
+      wrong: 1,
+      weekNumber: 3,
+    });
+    expect(bountyScore(drilledButFailing)).toBe(60 + 3);
   });
 
   it('a practiced char with zero misses is never posted', () => {
