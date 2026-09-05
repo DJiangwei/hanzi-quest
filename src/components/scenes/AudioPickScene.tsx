@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
+import { blendDistractors, shuffle } from '@/lib/scenes/sample';
 import { useSpeak } from '@/lib/hooks/useSpeak';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 import type { SceneAnswerEvent } from '@/lib/play/answer-events';
@@ -16,20 +16,29 @@ interface CharacterDetail {
 interface Props {
   target: CharacterDetail;
   pool: CharacterDetail[];
+  /**
+   * Characters from weeks she has already CLEARED (A2 slice 1). One of the
+   * three wrong options is drawn from here, so recognition keeps being
+   * tested under interference instead of every week becoming an island.
+   * Defaults to empty, which reproduces the pre-slice-1 behaviour exactly.
+   */
+  olderPool?: CharacterDetail[];
   onComplete: (correct: boolean) => void;
   /** Telemetry: emits one event per answered question. */
   onAnswerEvent?: (e: SceneAnswerEvent) => void;
   hintRequested?: boolean;
 }
 
-export function AudioPickScene({ target, pool, onComplete, onAnswerEvent, hintRequested }: Props) {
+export function AudioPickScene({ target, pool, olderPool = [], onComplete, onAnswerEvent, hintRequested }: Props) {
   const speak = useSpeak();
 
   const choices = useMemo(() => {
-    const distractors = sampleDistractors(
+    const distractors = blendDistractors(
       pool,
+      olderPool,
       target,
       3,
+      undefined,
       (a, b) => a.characterId === b.characterId,
     );
     return shuffle([target, ...distractors]).map((c) => ({
@@ -37,7 +46,7 @@ export function AudioPickScene({ target, pool, onComplete, onAnswerEvent, hintRe
       label: <span className="text-5xl">{c.hanzi}</span>,
       isCorrect: c.characterId === target.characterId,
     }));
-  }, [pool, target]);
+  }, [pool, olderPool, target]);
 
   return (
     <MultipleChoiceQuiz

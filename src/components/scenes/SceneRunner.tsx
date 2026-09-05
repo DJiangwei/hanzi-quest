@@ -98,6 +98,18 @@ interface Props {
   levels: CompiledLevel[];
   charactersById: Record<string, CharacterDetail>;
   pool: CharacterDetail[];
+  /**
+   * Characters from weeks she has already CLEARED (A2 slice 1). One of the
+   * three wrong options in each MCQ is drawn from here.
+   *
+   * Kept SEPARATE from `pool` rather than merged into it, because `pool` is
+   * also "this week's characters": it resolves the target, it resolves
+   * image_word's frozen word ids, and it feeds `weekChars`, which highlights
+   * the characters she is learning THIS week inside each word option. Merging
+   * would turn that highlight from a scaffold into noise — nearly every
+   * character in every word would light up.
+   */
+  olderPool?: CharacterDetail[];
   /** Where to navigate when the runner finishes. Defaults to the island map. */
   exitHref?: string;
   /** Powerup inventory counts at session start. Defaults to all-zero. */
@@ -115,6 +127,7 @@ export function SceneRunner({
   levels,
   charactersById,
   pool,
+  olderPool = [],
   exitHref,
   initialPowerupCounts = { hint: 0, skip: 0, streak_freeze: 0 },
   showStarterToast = false,
@@ -365,7 +378,7 @@ export function SceneRunner({
       const characterId = currentLevel.config.characterId as string | undefined;
       const c = characterId ? charactersById[characterId] : undefined;
       body = c ? (
-        <AudioPickScene key={currentLevel.id} target={c} pool={pool} onComplete={advance} onAnswerEvent={pushEvent} hintRequested={hintRequested} />
+        <AudioPickScene key={currentLevel.id} target={c} pool={pool} olderPool={olderPool} onComplete={advance} onAnswerEvent={pushEvent} hintRequested={hintRequested} />
       ) : (
         <MissingData />
       );
@@ -389,8 +402,18 @@ export function SceneRunner({
       // card inside ImagePickScene when no word image exists. The stimulus
       // word's imageHook doubles as the free-💡 English description hint.
       // Shared with BossScene via pickStimulusImage so the two can't drift.
-      const { imageUrl: stimulusImageUrl, imageHint: stimulusHint } =
-        pickStimulusImage(c?.words, c?.imageHook ?? null);
+      // The THIRD argument is load-bearing and was missing: compile-week freezes
+      // the validated wordId into scene_config (PR #158) precisely so the runtime
+      // shows that word, and pickStimulusImage takes `preferredWordId` to honour
+      // it. Without it this fell back to "the first word with a picture" — the
+      // exact behaviour PR #158 was written to eliminate — so that fix was inert
+      // in the practice path while working correctly in the boss path.
+      const { imageUrl: stimulusImageUrl, imageHint: stimulusHint, wordText: stimulusWordText } =
+        pickStimulusImage(
+          c?.words,
+          c?.imageHook ?? null,
+          currentLevel.config.wordId as string | undefined,
+        );
       body = c ? (
         <ImagePickScene
           key={currentLevel.id}
@@ -398,6 +421,18 @@ export function SceneRunner({
           imageUrl={stimulusImageUrl}
           imageHint={stimulusHint}
           pool={pool}
+          // Drop any older character that owns this scene's stimulus word.
+          // The compile-time guard (PR #158) only checked the week the word was
+          // frozen in; widening the distractor pool across weeks reopens the
+          // 唱歌 collision one map apart — a picture that identifies two of the
+          // options, so the question has no right answer.
+          olderPool={
+            stimulusWordText
+              ? olderPool.filter(
+                  (o) => !o.words.some((w) => w.text === stimulusWordText),
+                )
+              : olderPool
+          }
           onComplete={advance}
           onAnswerEvent={pushEvent}
           hintRequested={hintRequested}

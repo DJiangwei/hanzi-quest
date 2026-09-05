@@ -37,6 +37,12 @@ export interface StimulusImage {
   imageUrl: string | null;
   /** English description of the picture, revealed by the free 💡 hint. */
   imageHint: string | null;
+  /**
+   * The text of the word actually shown, or null when the caller is rendering
+   * the fallback card. A caller that widens its distractor pool must drop every
+   * character owning this word, or the picture identifies two of the options.
+   */
+  wordText: string | null;
 }
 
 /**
@@ -62,6 +68,10 @@ export function pickStimulusImage(
   return {
     imageUrl: word?.imageUrl ?? null,
     imageHint: word?.imageHook ?? word?.meaningEn ?? fallbackHook,
+    // Which word is actually on screen. A caller widening the distractor pool
+    // has to exclude every character that owns this word, or the picture
+    // identifies two of the options (PR #158's collision, across weeks).
+    wordText: word?.text ?? null,
   };
 }
 
@@ -102,5 +112,6 @@ export function pickValidStimulusImage(
   return {
     imageUrl: safe[0]?.imageUrl ?? null,
     imageHint: safe[0]?.imageHook ?? safe[0]?.meaningEn ?? target.imageHook ?? null,
+    wordText: safe[0]?.text ?? null,
   };
 }

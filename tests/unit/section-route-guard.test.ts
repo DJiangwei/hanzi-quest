@@ -32,6 +32,11 @@ vi.mock('@/lib/db/play', async (importOriginal) => {
 });
 vi.mock('@/lib/db/characters', () => ({
   getCharactersWithDetailsForWeek: mocks.getCharactersWithDetailsForWeek,
+  // A2 slice 1: the page now also reads cleared-week characters for the
+  // stale-distractor pool. Empty here — this suite is about the route guard,
+  // and an unmocked new `@/lib/db/*` import throws at module load rather than
+  // failing an assertion, which is why three unrelated tests broke at once.
+  getClearedWeekCharacters: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('next/navigation', () => ({
   redirect: mocks.redirect,

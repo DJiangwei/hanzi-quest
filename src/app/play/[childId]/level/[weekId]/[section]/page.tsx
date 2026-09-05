@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { SceneRunner, type SceneType } from '@/components/scenes/SceneRunner';
 import { MidSceneFlag } from '@/components/play/MidSceneProvider';
 import { requireChild } from '@/lib/auth/guards';
-import { getCharactersWithDetailsForWeek } from '@/lib/db/characters';
+import { getCharactersWithDetailsForWeek, getClearedWeekCharacters } from '@/lib/db/characters';
 import {
   getSectionStatsForChild,
   listLevelsForWeek,
@@ -45,9 +45,10 @@ export default async function SectionPage({ params }: PageProps) {
     }
   }
 
-  const [allLevels, characters, grantedStarter, initialPowerupCounts] = await Promise.all([
+  const [allLevels, characters, clearedCharacters, grantedStarter, initialPowerupCounts] = await Promise.all([
     listLevelsForWeek(weekId),
     getCharactersWithDetailsForWeek(weekId),
+    getClearedWeekCharacters(child.id, weekId),
     grantStarterPowerupsIfNeeded(child.id),
     getPowerupCounts(child.id),
   ]);
@@ -59,7 +60,11 @@ export default async function SectionPage({ params }: PageProps) {
 
   if (sectionLevels.length === 0) notFound();
 
-  const pool = characters.map((c) => ({
+  // Same mapper for both, so the two pools can never disagree about what a
+  // character is. `pool` stays THIS WEEK's characters — it also resolves the
+  // target, image_word's frozen word ids, and the weekChars highlight — while
+  // `olderPool` carries cleared weeks purely as distractor material.
+  const toDetail = (c: (typeof characters)[number]) => ({
     characterId: c.id,
     hanzi: c.hanzi,
     pinyinArray: c.pinyinArray ?? [],
@@ -83,7 +88,9 @@ export default async function SectionPage({ params }: PageProps) {
           translationEn: c.sentence.meaningEn ?? null,
         }
       : null,
-  }));
+  });
+  const pool = characters.map(toDetail);
+  const olderPool = clearedCharacters.map(toDetail);
   const charactersById = Object.fromEntries(
     pool.map((c) => [c.characterId, c]),
   );
@@ -107,6 +114,7 @@ export default async function SectionPage({ params }: PageProps) {
         levels={compiledLevels}
         charactersById={charactersById}
         pool={pool}
+        olderPool={olderPool}
         exitHref={`/play/${child.id}/week/${week.id}`}
         initialPowerupCounts={initialPowerupCounts}
         showStarterToast={grantedStarter}

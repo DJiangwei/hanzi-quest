@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { sampleDistractors, shuffle } from '@/lib/scenes/sample';
+import { blendDistractors, shuffle } from '@/lib/scenes/sample';
 import type { TranslateDirection } from '@/lib/scenes/configs';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 import { SpeakButton } from '@/components/play/SpeakButton';
@@ -17,6 +17,14 @@ interface CharacterDetail {
 interface Props {
   target: CharacterDetail;
   pool: CharacterDetail[];
+  /**
+   * Characters from weeks she has already CLEARED (A2 slice 1). One wrong
+   * option comes from here. It passes through the SAME meaning filter as the
+   * week pool — an older character with no English meaning, or with the
+   * target's own meaning, would break this question type exactly as a
+   * same-week one would.
+   */
+  olderPool?: CharacterDetail[];
   direction: TranslateDirection;
   onComplete: (correct: boolean) => void;
   /** Telemetry: emits one event per answered question. */
@@ -24,17 +32,27 @@ interface Props {
   hintRequested?: boolean;
 }
 
-export function TranslatePickScene({ target, pool, direction, onComplete, onAnswerEvent, hintRequested }: Props) {
+export function TranslatePickScene({ target, pool, olderPool = [], direction, onComplete, onAnswerEvent, hintRequested }: Props) {
+  // Inlined rather than hoisted into a shared closure: a function defined in
+  // the render body is a new reference every render, so naming it would either
+  // break these memos or force it into the dep array and defeat them.
+  const targetMeaning = target.meaningEn;
   const filteredPool = useMemo(
-    () => pool.filter((c) => Boolean(c.meaningEn) && c.meaningEn !== target.meaningEn),
-    [pool, target.meaningEn],
+    () => pool.filter((c) => Boolean(c.meaningEn) && c.meaningEn !== targetMeaning),
+    [pool, targetMeaning],
+  );
+  const filteredOlder = useMemo(
+    () => olderPool.filter((c) => Boolean(c.meaningEn) && c.meaningEn !== targetMeaning),
+    [olderPool, targetMeaning],
   );
 
   const choices = useMemo(() => {
-    const distractors = sampleDistractors(
+    const distractors = blendDistractors(
       filteredPool,
+      filteredOlder,
       target,
       3,
+      undefined,
       (a, b) => a.characterId === b.characterId,
     );
     const all = shuffle([target, ...distractors]);
@@ -47,7 +65,7 @@ export function TranslatePickScene({ target, pool, direction, onComplete, onAnsw
       ),
       isCorrect: c.characterId === target.characterId,
     }));
-  }, [filteredPool, target, direction]);
+  }, [filteredPool, filteredOlder, target, direction]);
 
   const stimulus =
     direction === 'cn_to_en' ? (
