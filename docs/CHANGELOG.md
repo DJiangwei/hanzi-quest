@@ -693,3 +693,38 @@ Guards proven by mutation: leniency lowered to 1.0 (`expected 1 to be greater th
 `pnpm typecheck && lint && test && build` green; 361/361 test files, 2265 tests. No migration, no recompile, no post-merge ops.
 
 **Next step is a playtest, not more code.** If tracing works on her iPad, integration is a compiled 描字 slot in the review segment (recipe: ARCHITECTURE.md §8 + recompile). If it does not, delete the route, the two components and the dependency.
+
+---
+
+## PR #187 — the boss knew she was wrong but not what she chose (2026-09-06)
+
+Found while building A3 (#184) and deliberately left alone then; this is the fix.
+
+`BossScene.handleAnswer` emitted `{ sceneType: 'boss_question', characterId, correct }` and nothing else. In production that is **152 boss answers, 7 of them wrong, contributing exactly nothing to A3's confusion pairs** — from the highest-pressure surface in the product, which is where being wrong is most informative.
+
+### Why it had nothing to attach
+
+The boss deliberately does **not** wire `onAnswerEvent` into its inner question scenes: they would emit their own events and every question would be logged twice, under `audio_pick` rather than `boss_question`, losing the boss attribution entirely. That is a pre-existing landmine, and it is correct.
+
+So the fix cannot be "forward the inner event". Instead the boss now **consumes** it — capturing only its `pickedKey` and letting it go no further — while continuing to emit its own `boss_question` event.
+
+Two details make that safe:
+
+- **Ordering.** `MultipleChoiceQuiz` calls `onResult` synchronously on tap and `onComplete` 750ms later, so the pick is always recorded before `handleAnswer` reads it. Verified in the source, not assumed.
+- **The captured key is cleared immediately after use**, so a question that somehow completes without an inner pick — a future non-MCQ boss question — cannot inherit the previous question's answer.
+
+### The two retired scenes stay unwired
+
+`VisualPickScene` and `PinyinPickScene` lack an `onAnswerEvent` prop. Adding one is what the retirement landmines exist to prevent: both are `is_active=false`, kept only so already-compiled configs and old `scene_attempts` rows still render, and neither is emitted for any new week. Their picks are not worth reviving a retired component for.
+
+### A test that got stronger rather than just updated
+
+`boss-answer-events.test.tsx` asserted the exact event object and broke, correctly — the shape genuinely changed. Rather than loosening it to `objectContaining`, it now asserts the **specific key tapped**: 海 → `pickedKey: 'c1'` on the correct answer, and 湖 answered with 江 → `pickedKey: 'c3'` on the wrong one. That is exactly the pair A3 could not see before, and a stricter claim than the assertion it replaces.
+
+Two guards proven by mutation: dropping `pickedKey` again (`expected undefined to be truthy`) and forwarding the inner event instead of consuming it (`expected [...] to have a length of 1 but got 2` — the double-log the landmine warns about).
+
+### Scope
+
+**Boss confusions accrue from here forward only.** The 152 historical rows stay blind, and A3's panel still says so for anything before this. Invisible to the child: no behaviour, no rewards, no gating changes — only the data gets thicker.
+
+`pnpm typecheck && lint && test && build` green; 362/362 test files, 2267 tests. No migration.
