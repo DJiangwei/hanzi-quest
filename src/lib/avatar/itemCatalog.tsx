@@ -1784,6 +1784,125 @@ const seasonCaptainCoat: ItemDef = {
   ),
 };
 
+// ─── 里海远航 SEASON COSMETICS ────────────────────────────────────────────────
+//
+// Objects, animals and landscape ONLY — no traditional dress. The season's
+// subject is the peoples and history around the Caspian, and that material
+// belongs in the CARD LORE, where it is a fact a child reads. A six-year-old
+// wearing a people's traditional clothing as a game skin is dressing-up, which
+// teaches the opposite of respect for it.
+
+const seasonCaspianLantern: ItemDef = {
+  unlockRef: 'season-caspian-lantern', slot: 'decor', displayName: '丝路灯笼', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'holding a small Silk-Road caravan lantern', theme: 'season',
+  renderSvg: () => (
+    <g key="season-caspian-lantern">
+      <line x1="72" y1="52" x2="72" y2="58" stroke="#78350f" strokeWidth="1.2" />
+      <path d="M 67 58 L 77 58 L 75 70 L 69 70 Z" fill="#fcd34d" stroke="#b45309" strokeWidth="1.1" />
+      <rect x="66" y="56" width="12" height="2.6" rx="1.2" fill="#b45309" />
+      <rect x="68" y="69" width="8" height="2.4" rx="1.1" fill="#b45309" />
+      <circle cx="72" cy="64" r="2.4" fill="#fff7cd" opacity="0.95" />
+    </g>
+  ),
+};
+
+const seasonCaspianCompass: ItemDef = {
+  unlockRef: 'season-caspian-compass', slot: 'decor', displayName: '商队罗盘', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'holding a brass caravan compass', theme: 'season',
+  renderSvg: () => (
+    <g key="season-caspian-compass">
+      <circle cx="29" cy="64" r="7" fill="#fde68a" stroke="#92400e" strokeWidth="1.3" />
+      <circle cx="29" cy="64" r="4.6" fill="#fffbeb" />
+      <path d="M 29 60 L 30.6 64 L 29 68 L 27.4 64 Z" fill="#b91c1c" />
+      <circle cx="29" cy="64" r="1" fill="#92400e" />
+    </g>
+  ),
+};
+
+const seasonCaspianPomegranate: ItemDef = {
+  unlockRef: 'season-caspian-pomegranate', slot: 'decor', displayName: '石榴挂饰', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'with a ripe pomegranate charm', theme: 'season',
+  renderSvg: () => (
+    <g key="season-caspian-pomegranate">
+      <circle cx="71" cy="66" r="6.2" fill="#dc2626" stroke="#7f1d1d" strokeWidth="1.2" />
+      <path d="M 71 60 l -2 -3.4 l 4 0 Z" fill="#15803d" />
+      <circle cx="69" cy="65" r="1.1" fill="#fca5a5" />
+      <circle cx="73" cy="67" r="1.1" fill="#fca5a5" />
+      <circle cx="70.5" cy="68.5" r="1" fill="#fca5a5" />
+    </g>
+  ),
+};
+
+const seasonCaspianSealDecor: ItemDef = {
+  unlockRef: 'season-caspian-seal-decor', slot: 'decor', displayName: '海豹伙伴', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'with a Caspian seal pup at their side', theme: 'season',
+  renderSvg: () => (
+    <g key="season-caspian-seal-decor">
+      <ellipse cx="28" cy="88" rx="9" ry="5.4" fill="#94a3b8" stroke="#475569" strokeWidth="1.1" />
+      <circle cx="22" cy="84.5" r="4.2" fill="#cbd5e1" stroke="#475569" strokeWidth="1.1" />
+      <circle cx="20.6" cy="83.8" r="0.85" fill="#1e293b" />
+      <circle cx="23.6" cy="83.8" r="0.85" fill="#1e293b" />
+      <path d="M 36 88 l 5 -2.6 l 0 5.2 Z" fill="#94a3b8" stroke="#475569" strokeWidth="0.9" />
+    </g>
+  ),
+};
+
+const seasonCaspianSteppeBg: ItemDef = {
+  unlockRef: 'season-caspian-steppe-bg', slot: 'background', displayName: '草原黄昏', rarity: 'rare',
+  rewardOnly: true, narrativeHint: 'against the steppe at dusk', theme: 'season',
+  renderSvg: () => (
+    <g key="season-caspian-steppe-bg">
+      <rect x="0" y="0" width="100" height="100" fill="#fde9c8" />
+      <rect x="0" y="0" width="100" height="52" fill="#f3b06a" opacity="0.55" />
+      <circle cx="72" cy="26" r="9" fill="#fbbf24" opacity="0.85" />
+      <path d="M 0 58 Q 22 48 44 58 Q 68 68 100 55 L 100 100 L 0 100 Z" fill="#c2a35c" opacity="0.75" />
+      <path d="M 0 72 Q 30 64 58 74 Q 82 82 100 74 L 100 100 L 0 100 Z" fill="#8a7434" opacity="0.6" />
+    </g>
+  ),
+};
+
+const seasonCaspianExplorerHat: ItemDef = {
+  unlockRef: 'season-caspian-explorer-hat', slot: 'hat', displayName: '旅人宽檐帽', rarity: 'rare',
+  rewardOnly: true, narrativeHint: "a wide-brimmed traveller's hat, dust-coloured", theme: 'season',
+  renderSvg: () => (
+    <g key="season-caspian-explorer-hat">
+      <ellipse cx="50" cy="33" rx="23" ry="5.4" fill="#d6c39a" stroke="#7c6a3f" strokeWidth="1.2" />
+      <path d="M 36 33 Q 36 17 50 17 Q 64 17 64 33 Z" fill="#c8b184" stroke="#7c6a3f" strokeWidth="1.2" />
+      <rect x="36" y="28" width="28" height="4" fill="#8a5a2b" />
+    </g>
+  ),
+};
+
+const seasonCaspianSilkroadCoat: ItemDef = {
+  unlockRef: 'season-caspian-silkroad-coat', slot: 'top', displayName: '丝路长袍', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'a long travelling robe patterned like a woven carpet', theme: 'season',
+  renderSvg: () => (
+    <g key="season-caspian-silkroad-coat">
+      <path d="M 26 72 L 28 95 L 72 95 L 74 72 Q 60 64 50 64 Q 40 64 26 72 Z" fill="#7f1d1d" stroke="#450a0a" strokeWidth="1.4" />
+      <path d="M 50 64 L 44 95 L 56 95 Z" fill="#450a0a" />
+      {/* A woven PATTERN, not a garment of any one people. */}
+      <path d="M 33 78 l 3 -3 l 3 3 l -3 3 Z" fill="#fbbf24" />
+      <path d="M 61 78 l 3 -3 l 3 3 l -3 3 Z" fill="#fbbf24" />
+      <path d="M 33 88 l 3 -3 l 3 3 l -3 3 Z" fill="#14b8a6" />
+      <path d="M 61 88 l 3 -3 l 3 3 l -3 3 Z" fill="#14b8a6" />
+      <rect x="27" y="92" width="46" height="2.4" fill="#fbbf24" opacity="0.85" />
+    </g>
+  ),
+};
+
+const seasonCaspianSilkroadHat: ItemDef = {
+  unlockRef: 'season-caspian-silkroad-hat', slot: 'hat', displayName: '丝路头巾', rarity: 'epic',
+  rewardOnly: true, narrativeHint: 'a dust-scarf wrapped against the desert wind', theme: 'season',
+  renderSvg: () => (
+    <g key="season-caspian-silkroad-hat">
+      <path d="M 33 32 Q 33 16 50 16 Q 67 16 67 32 Q 50 27 33 32 Z" fill="#f5e6c8" stroke="#8a5a2b" strokeWidth="1.2" />
+      <path d="M 64 28 Q 74 34 70 46 L 64 42 Z" fill="#e8d3ab" stroke="#8a5a2b" strokeWidth="1" />
+      <rect x="34" y="27" width="32" height="3.2" fill="#b45309" />
+      <circle cx="50" cy="21" r="2.4" fill="#14b8a6" stroke="#0f766e" strokeWidth="0.8" />
+    </g>
+  ),
+};
+
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
 const ALL_ITEMS: ItemDef[] = [
@@ -1879,6 +1998,14 @@ const ALL_ITEMS: ItemDef[] = [
   seasonWheelDecor,
   seasonSunsetBg,
   seasonCaptainCoat,
+  seasonCaspianLantern,
+  seasonCaspianCompass,
+  seasonCaspianPomegranate,
+  seasonCaspianSealDecor,
+  seasonCaspianSteppeBg,
+  seasonCaspianExplorerHat,
+  seasonCaspianSilkroadCoat,
+  seasonCaspianSilkroadHat,
 ];
 
 export const ITEM_CATALOG: Record<string, ItemDef> = Object.fromEntries(

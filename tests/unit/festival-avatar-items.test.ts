@@ -8,7 +8,7 @@ import {
 import { FESTIVAL_THEMES } from '@/lib/calendar/festivals';
 
 describe('festival avatar cosmetics', () => {
-  it('rewardItems() are reward-only + unpriced: 12 festival + 6 continent + 8 season', () => {
+  it('rewardItems() are reward-only + unpriced: 12 festival + 6 continent + 16 season', () => {
     const items = rewardItems();
     for (const i of items) {
       expect(i.rewardOnly).toBe(true);
@@ -20,7 +20,9 @@ describe('festival avatar cosmetics', () => {
     }
     expect(items.filter((i) => i.theme === 'festival')).toHaveLength(12);
     expect(items.filter((i) => i.theme === 'continent')).toHaveLength(6);
-    expect(items.filter((i) => i.theme === 'season')).toHaveLength(8);
+    // Two seasons' worth, 8 each. season-cosmetics.test.ts counts them per
+    // season, which is the assertion that says what is missing when it breaks.
+    expect(items.filter((i) => i.theme === 'season')).toHaveLength(16);
   });
 
   it('reward items are excluded from defaults and from the shop catalog', () => {
