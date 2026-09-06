@@ -95,13 +95,20 @@ export function Bookshelf(): ReactElement {
   ];
   return (
     <group>
-      <Box size={[1.8, 1.5, 0.42]} pos={[0, 0.75, 0]} color={PALETTE.woodDark} />
-      <Box size={[1.64, 1.34, 0.3]} pos={[0, 0.75, 0.06]} color={PALETTE.cream} radius={0.02} />
-      {[0.42, 0.86, 1.3].map((y) => (
-        <Box key={y} size={[1.64, 0.07, 0.34]} pos={[0, y, 0.04]} color={PALETTE.wood} radius={0.02} />
+      {/* Carcass: back slab + two sides + top/bottom, NOT a solid block with a
+          panel laid on its face — that co-planar pair z-fought into a moiré
+          that read as a screen door. Only visible once rendered. */}
+      <Box size={[1.8, 1.5, 0.06]} pos={[0, 0.75, -0.18]} color={PALETTE.cream} radius={0.02} />
+      {[-0.87, 0.87].map((x) => (
+        <Box key={x} size={[0.09, 1.5, 0.42]} pos={[x, 0.75, 0]} color={PALETTE.woodDark} />
+      ))}
+      <Box size={[1.8, 0.1, 0.42]} pos={[0, 1.45, 0]} color={PALETTE.woodDark} />
+      <Box size={[1.8, 0.1, 0.42]} pos={[0, 0.05, 0]} color={PALETTE.woodDark} />
+      {[0.5, 0.98].map((y) => (
+        <Box key={y} size={[1.66, 0.08, 0.4]} pos={[0, y, 0]} color={PALETTE.wood} radius={0.02} />
       ))}
       {books.map(([x, h, c], i) => (
-        <Box key={i} size={[0.09, h * 0.5, 0.24]} pos={[x, 0.46 + (h * 0.5) / 2 - 0.01, 0.06]} color={c} radius={0.015} />
+        <Box key={i} size={[0.11, 0.34 + h * 0.12, 0.26]} pos={[x, (i < 3 ? 0.54 : 1.02) + (0.34 + h * 0.12) / 2, 0.04]} color={c} radius={0.015} />
       ))}
     </group>
   );
@@ -138,12 +145,25 @@ export function PlantFern(): ReactElement {
     <group>
       <Box size={[0.34, 0.3, 0.34]} pos={[0, 0.15, 0]} color={PALETTE.coral} radius={0.05} />
       <Box size={[0.4, 0.08, 0.4]} pos={[0, 0.32, 0]} color={PALETTE.woodDark} radius={0.03} />
-      {[
-        [0, 0.62, 0, 0], [-0.16, 0.55, 0.06, -0.5], [0.16, 0.55, -0.06, 0.5],
-        [0.05, 0.5, 0.16, 0.3], [-0.05, 0.5, -0.16, -0.3],
-      ].map(([x, y, z, tilt], i) => (
-        <Box key={i} size={[0.1, 0.44, 0.1]} pos={[x, y, z]} rot={[0, 0, tilt]} color={PALETTE.leaf} radius={0.04} />
-      ))}
+      {/* Cones, arced outward from a common base. Boxes — flat or otherwise —
+          read as shards at this size; a tapered form reads as a leaf, and
+          arcing them from one point reads as a plant rather than a bouquet.
+          Only visible by rendering it: the box version looked like a crystal. */}
+      {Array.from({ length: 7 }, (_, i) => {
+        const a = (i / 7) * Math.PI * 2;
+        const lean = 0.42;
+        return (
+          <mesh
+            key={i}
+            position={[Math.cos(a) * 0.17, 0.56 + (i % 2) * 0.07, Math.sin(a) * 0.17]}
+            rotation={[Math.sin(a) * lean, -a, -Math.cos(a) * lean]}
+            castShadow
+          >
+            <coneGeometry args={[0.1, 0.46, 6]} />
+            <meshStandardMaterial color={i % 2 ? PALETTE.leaf : '#8ac47a'} roughness={0.8} />
+          </mesh>
+        );
+      })}
     </group>
   );
 }
@@ -167,7 +187,20 @@ export function TeddyBear(): ReactElement {
 
 /** 1×1 — rug-round (flat, sits under everything) */
 export function RugRound(): ReactElement {
-  return <Box size={[1.5, 0.03, 1.5]} pos={[0, 0.015, 0]} color={PALETTE.tealDark} radius={0.014} />;
+  // A cylinder, because the slug says round. A RoundedBox at this scale is a
+  // square with imperceptibly soft corners — it rendered as a teal doormat.
+  return (
+    <group>
+      <mesh position={[0, 0.012, 0]} receiveShadow>
+        <cylinderGeometry args={[0.8, 0.8, 0.024, 40]} />
+        <meshStandardMaterial color={PALETTE.tealDark} roughness={0.95} />
+      </mesh>
+      <mesh position={[0, 0.026, 0]} receiveShadow>
+        <cylinderGeometry args={[0.58, 0.58, 0.006, 40]} />
+        <meshStandardMaterial color={PALETTE.teal} roughness={0.95} />
+      </mesh>
+    </group>
+  );
 }
 
 /** 1×1 wall — window-sunny is 2×1, this is the 1×1 clock */

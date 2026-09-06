@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { ContactShadows, SoftShadows } from '@react-three/drei';
+import { ContactShadows } from '@react-three/drei';
 import { PIECES, PALETTE } from '@/lib/home3d/pieces';
 
 /**
@@ -28,10 +28,15 @@ const FLOOR_ROWS = ROWS - WALL_ROWS;
 
 /**
  * A high, slightly-off-axis three-quarter view — the angle that reads as
- * "dollhouse" rather than "architectural". Tuned so a 1.5-unit bookshelf
- * against the back wall does not occlude the bed in front of it.
+ * "dollhouse" rather than "architectural".
+ *
+ * Tuned BY LOOKING, which is the only way this can be tuned. The first values
+ * were derived arithmetically to frame the whole 8×4 floor, and the result was
+ * half a picture of empty boards with every object too small to identify — the
+ * literal complaint. Aiming slightly BEHIND centre and pulling in fills the
+ * frame with furniture instead of floor.
  */
-const CAMERA = { position: [7.2, 6.4, 8.6] as const, fov: 32, target: [0, 0.6, 0.4] as const };
+const CAMERA = { position: [5.4, 4.6, 6.0] as const, fov: 34, target: [0, 0.75, -0.35] as const };
 
 export interface Placed3D {
   slug: string;
@@ -106,7 +111,6 @@ export function HomeRoom3D({ placements }: { placements: Placed3D[] }) {
       data-testid="home-room-3d"
     >
       <color attach="background" args={['#fbf3e4']} />
-      <SoftShadows size={26} samples={12} focus={0.7} />
       {/* Warm key light from the window side + a cool fill, the two-light setup
           that gives the AC look most of its warmth. */}
       <ambientLight intensity={0.85} color="#fff4e2" />
