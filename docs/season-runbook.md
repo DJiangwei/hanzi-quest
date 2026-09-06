@@ -124,6 +124,19 @@ Prod ops need the commented `# PROD_DATABASE_URL=` swap, and swapping back after
 
 ---
 
+## What a season's cosmetics may be (decided 2026-09-06)
+
+**Objects, animals and landscape. Not traditional dress.** 里海远航 introduces
+the countries and peoples around the Caspian, and all of that material lives in
+the CARD LORE, where a child reads it as a fact. The cosmetics are a lantern, a
+compass, a pomegranate, a seal pup, the steppe at dusk; the tier-30 robe uses a
+woven *pattern* rather than any one people's garment.
+
+A six-year-old wearing a people's clothing as a game skin is dressing-up, which
+teaches the opposite of the respect the content is for. David was asked whether
+this line was drawn too conservatively and confirmed it stands — so it is a
+product rule now, not one PR's judgement call.
+
 ## Calibrating the XP curve — do the arithmetic, don't copy the numbers
 
 Summer's curve (tier 30 at 4,100 XP over 8 weeks) fit Yinuo and not 小板:
