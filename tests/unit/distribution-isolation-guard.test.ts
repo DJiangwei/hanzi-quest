@@ -236,6 +236,27 @@ describe('content authoring is admin-gated (Findings 1, 2, 3)', () => {
   });
 });
 
+describe('child-scoped reads are not public RPC endpoints', () => {
+  // Every exported async function in a 'use server' file is callable by any
+  // client with any arguments (the PR #112 rule). These modules take a raw
+  // childId and skip requireChild on purpose, because their callers are
+  // already gated — which is only safe while they are NOT server actions.
+  it.each([
+    'src/lib/db/insights.ts',
+    'src/lib/db/logbook.ts',
+    'src/lib/db/review.ts',
+    'src/lib/db/child-packs.ts',
+  ])('%s is a plain module, not a server action', (file) => {
+    expect(read(file)).not.toMatch(/^\s*['"]use server['"]/m);
+  });
+
+  it('insights.ts only reads — no insert, update or delete', () => {
+    // A parent-facing analytics page must never mutate a child's data.
+    const src = read('src/lib/db/insights.ts');
+    expect(src).not.toMatch(/db\.(insert|update|delete)\b/);
+  });
+});
+
 describe('存钱罐 never reaches a social surface', () => {
   // A money balance is the most comparative number this app could hold, and
   // the crew rule already forbids ranks and gifts-received tallies (see the
