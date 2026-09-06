@@ -644,3 +644,52 @@ Rewritten to make the claim observable: with `fromOlder = 0` and every older ite
 Three guards proven by mutation: the slot width, the homophone exclusion (`expected true to be false`), and the scene wiring — the last via a **props-capturing mock**, because which predicate a scene passes is invisible to a rendering assertion. That is exactly how PR #158's frozen `wordId` sat un-passed for months.
 
 `pnpm typecheck && lint && test && build` green; 359/359 test files, 2254 tests. No migration, no recompile.
+
+---
+
+## PR #186 — E1 写字: stroke practice, standalone first (2026-09-06)
+
+The roadmap's biggest untouched modality, and the third feature to ship in the shape 听声调 established: **standalone, reward-free, deletable.**
+
+### Feasibility was probed before anything was written
+
+Three questions, answered in that order:
+
+| question | answer |
+|---|---|
+| Is there a usable library? | `hanzi-writer` 3.7.3, MIT, 863KB |
+| Where does stroke data come from? | a **separate** 32MB package, `hanzi-writer-data`, under the **ARPHIC Public License** — not MIT — fetched per character from a CDN by default |
+| Does it cover her corpus? | **176 / 176** characters resolve |
+
+The licence split is why the data is fetched at runtime rather than bundled: vendoring 32MB of ARPHIC-licensed outlines into the deploy means shipping and redistributing them, for a family project that does not need to.
+
+### Standalone, and the pattern has now paid twice
+
+Stroke tracing carries a premise of its own: whether a six-year-old's finger on glass satisfies hanzi-writer's stroke matching often enough to feel like a game rather than a fight. Only the device can answer that.
+
+A compiled scene type would cost a `scene_templates` row, a `compile-week.ts` slot and a `recompile-all-weeks.ts` run — real work to unwind if the answer is no. So `/play/[childId]/write` carries **no score, no streak, no rewards, no `answer_events`**, exactly as the tone game did. That approach was vindicated twice already: the tone premise was confirmed cheaply, and its practice integration then arrived *free* through V2's distractor slot (#185).
+
+### Four seams between an imperative library and a React tree
+
+Each of these fails silently rather than loudly:
+
+1. **Dynamic `import('hanzi-writer')` inside the effect.** The module touches `document` at import time; a top-level import breaks server rendering.
+2. **Teardown on every character change.** hanzi-writer draws into the node it was handed, and `WriteGameBody` keys the tracer on `characterId` so React replaces that node — a surviving instance would paint into a detached one.
+3. **`onComplete` held in a ref assigned inside an effect.** `react-hooks/refs` forbids touching `.current` during render, and it is right to: were the effect to depend on callback identity, a parent re-render would restart the character mid-stroke. A test pins that two re-renders with fresh callbacks create exactly one writer.
+4. **A failure says so.** No stroke data, offline, unreachable CDN → a bilingual message, never an empty square that reads as a broken page.
+
+### Two product decisions, not defaults
+
+`leniency: 1.6` and `showHintAfterMisses: 2`. This is the hardest thing in the product to get exactly right, in a product that softens 畏难情绪 everywhere else — `boss_courage` pays on a loss, the boss keeps progress on retry, rewards are named before the fight. A tracer that rejects a nearly-right stroke would be its harshest surface.
+
+And **换一个 / Skip is always available**, not gated on finishing: a stroke she cannot satisfy must never trap her on one character, the same reasoning that lets a skipped practice scene score 0 rather than block.
+
+### Randomness moved upstream
+
+`react-hooks/purity` rejects `Math.random()` in a render body, and it is the same rule as the MCQ landmine's "randomize upstream". The page shuffles once on the server; the body rotates a window over the result, so each round is a different handful with no impurity in render.
+
+Guards proven by mutation: leniency lowered to 1.0 (`expected 1 to be greater than 1`) and the teardown dependency removed (`expected "vi.fn()" to be called at least once`).
+
+`pnpm typecheck && lint && test && build` green; 361/361 test files, 2265 tests. No migration, no recompile, no post-merge ops.
+
+**Next step is a playtest, not more code.** If tracing works on her iPad, integration is a compiled 描字 slot in the review segment (recipe: ARCHITECTURE.md §8 + recompile). If it does not, delete the route, the two components and the dependency.

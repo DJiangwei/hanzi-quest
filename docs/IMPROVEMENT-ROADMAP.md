@@ -124,7 +124,7 @@ Auth setup + 6 flows on every Vercel Preview deployment (`.github/workflows/e2e-
 
 ## P1-E · Learning-modality gaps
 
-### E1 — Writing / stroke-order practice `[ ]`
+### E1 — Writing / stroke-order practice `[~]` (standalone v1 shipped 2026-09-06, PR #186 — premise unverified; integration deferred until it is)
 Biggest untouched modality. Use [hanzi-writer](https://hanziwriter.org) (free, MIT, stroke data, built-in finger-trace quiz — ideal on iPad). Slice 1: a 描字 scene in the review segment, generously scored. Full new-scene-type recipe (ARCHITECTURE.md §8) + recompile. Scales with any vocabulary size — a flywheel modality.
 
 ### E2 — Tone practice mini-game `[~]` (standalone v1 shipped 2026-09-05, PR #177/#178 — **premise VERIFIED**; economy + practice integration is the remaining slice)

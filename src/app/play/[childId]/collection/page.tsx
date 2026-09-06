@@ -65,6 +65,17 @@ export default async function CollectionAtlasPage({
         </Link>
       </div>
       <div className="w-full max-w-md">
+        <Link
+          href={`/play/${childId}/write`}
+          data-testid="write-hall-link"
+          className="block rounded-3xl border-2 border-amber-300 bg-white/80 px-5 py-4 text-center transition hover:-translate-y-0.5 hover:border-amber-400"
+        >
+          <span className="text-3xl" aria-hidden>🖌️</span>
+          <span className="font-hanzi ml-2 text-lg font-bold text-amber-950">写字</span>
+          <span className="ml-1 text-sm italic text-amber-900/70">/ Stroke Practice</span>
+        </Link>
+      </div>
+      <div className="w-full max-w-md">
         <LogbookHallCard
           childId={childId}
           totalCount={logbookEntries.length}
