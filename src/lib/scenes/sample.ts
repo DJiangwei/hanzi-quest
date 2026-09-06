@@ -35,6 +35,28 @@ export function shuffle<T>(arr: readonly T[]): T[] {
 export const STALE_DISTRACTORS_PER_QUESTION = 1;
 
 /**
+ * How many of a question's wrong options are chosen to be CONFUSABLE with the
+ * answer rather than random (V2 slice 1).
+ *
+ * One, for the same reason only one comes from an older week: three hard
+ * options out of four is a different, harder game than the one she agreed to
+ * play, and this product softens 畏难情绪 deliberately everywhere else.
+ */
+export const CONFUSABLE_DISTRACTORS_PER_QUESTION = 1;
+
+export interface ConfusableSpec<T> {
+  /**
+   * True when `candidate` is a deliberately confusable wrong option for
+   * `target`. Kept as a caller-supplied predicate so this module never learns
+   * about pinyin: what counts as confusable is a property of the QUESTION, not
+   * of the sampler. A tone neighbour is a real distractor when the stimulus is
+   * a sound and irrelevant when it is a picture.
+   */
+  isConfusable: (candidate: T, target: T) => boolean;
+  count?: number;
+}
+
+/**
  * Pick `count` distractors, `fromOlder` of them drawn from previously-cleared
  * weeks and the rest from the week being taught.
  *
@@ -51,6 +73,7 @@ export function blendDistractors<T>(
   count: number,
   fromOlder: number = STALE_DISTRACTORS_PER_QUESTION,
   eq: (a: T, b: T) => boolean = (a, b) => a === b,
+  confusable?: ConfusableSpec<T>,
 ): T[] {
   const week = weekPool.filter((p) => !eq(p, exclude));
   const older = olderPool.filter(
@@ -59,7 +82,22 @@ export function blendDistractors<T>(
 
   const olderWanted = Math.min(fromOlder, count, older.length);
   const picked = shuffle(older).slice(0, olderWanted);
-  picked.push(...shuffle(week).slice(0, count - picked.length));
+
+  // V2 slice 1: reserve one slot for a genuinely confusable option, drawn from
+  // EITHER pool. Optional and best-effort — most characters have no confusable
+  // neighbour in her corpus at all (82 of 176 do), and a question missing one
+  // is simply the pre-V2 question, not a broken one.
+  if (confusable) {
+    const wanted = confusable.count ?? CONFUSABLE_DISTRACTORS_PER_QUESTION;
+    const taken = new Set(picked);
+    const candidates = [...week, ...older].filter(
+      (c) => !taken.has(c) && confusable.isConfusable(c, exclude),
+    );
+    picked.push(...shuffle(candidates).slice(0, Math.max(0, Math.min(wanted, count - picked.length))));
+  }
+
+  const chosen = new Set(picked);
+  picked.push(...shuffle(week.filter((w) => !chosen.has(w))).slice(0, count - picked.length));
 
   // The week could not fill its share — top up from whatever older material
   // is left rather than returning a two-option question.

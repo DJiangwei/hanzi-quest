@@ -17,6 +17,7 @@ import {
   groupMinimalPairs,
   buildToneQuestions,
   TONE_MAX_CHOICES,
+  isToneNeighbour,
 } from '@/lib/tones/minimal-pairs';
 
 const c = (hanzi: string, py: string) => ({ characterId: hanzi, hanzi, pinyin: [py] });
@@ -169,5 +170,30 @@ describe('buildToneQuestions', () => {
     const qs = buildToneQuestions(pool, 30);
     const answers = qs.map((q) => q.answer.hanzi);
     expect(new Set(answers).size).toBe(answers.length);
+  });
+});
+
+describe('isToneNeighbour', () => {
+  it('accepts the same syllable in a different tone', () => {
+    expect(isToneNeighbour('mā', 'mǎ')).toBe(true);
+    expect(isToneNeighbour('xí', 'xì')).toBe(true);
+  });
+
+  it('REFUSES an exact homophone — the guard that makes it safe for audio', () => {
+    // 十 and 石 are both shí. Offering both in a question whose stimulus is a
+    // SOUND gives it two correct answers by ear. This is the same hazard
+    // groupMinimalPairs excludes in the tone game, and the distractor picker
+    // inherits it by reusing this predicate.
+    expect(isToneNeighbour('shí', 'shí')).toBe(false);
+  });
+
+  it('refuses a different syllable, however similar it looks', () => {
+    expect(isToneNeighbour('mā', 'bā')).toBe(false);
+    expect(isToneNeighbour('yú', 'yǔn')).toBe(false);
+  });
+
+  it('is safe on a missing reading rather than throwing mid-question', () => {
+    expect(isToneNeighbour(undefined, 'mā')).toBe(false);
+    expect(isToneNeighbour('mā', undefined)).toBe(false);
   });
 });

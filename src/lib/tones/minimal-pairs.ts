@@ -49,6 +49,20 @@ export function toneless(pinyin: string): string {
   return [...pinyin].map((ch) => BARE[ch] ?? ch).join('');
 }
 
+/**
+ * Are these two readings the SAME syllable in DIFFERENT tones?
+ *
+ * The `!==` half is the load-bearing one. Two characters that read identically
+ * — 十 and 石 are both `shí` — are not a tone contrast at all, and offering
+ * both in a question whose stimulus is a SOUND gives it two correct answers by
+ * ear. That is the exact hazard `groupMinimalPairs` exists to exclude in the
+ * tone game; a distractor picker that reuses this must inherit it.
+ */
+export function isToneNeighbour(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false;
+  return toneless(a) === toneless(b) && a !== b;
+}
+
 export interface ToneChar {
   characterId: string;
   hanzi: string;
