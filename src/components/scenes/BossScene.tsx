@@ -43,7 +43,7 @@ interface Props {
   questionTypes: BossQuestionType[];
   pool: CharacterDetail[];
   onComplete: (won: boolean) => void;
-  /** Telemetry: emits one event per answered boss question (no pickedKey in v1). */
+  /** Telemetry: emits one event per answered boss question. */
   onAnswerEvent?: (e: SceneAnswerEvent) => void;
   /** Fired once each time the kid runs out of lives (courage-award hook). */
   onDefeated?: () => void;
@@ -126,6 +126,23 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
     damageTimer.current = setTimeout(() => setAnim('idle'), DAMAGE_MS);
   };
 
+  /**
+   * Which option the child just tapped, captured from the inner scene.
+   *
+   * The boss still emits its OWN `boss_question` event rather than forwarding
+   * the inner scene's — that would log the question twice and under the wrong
+   * `scene_type`, losing the boss attribution. So the inner event is consumed
+   * here for its `pickedKey` alone and goes no further.
+   *
+   * Ordering is what makes this safe: `MultipleChoiceQuiz` calls `onResult`
+   * synchronously on tap and `onComplete` 750ms later, so the pick is always
+   * recorded before `handleAnswer` reads it.
+   */
+  const lastPicked = useRef<string | null>(null);
+  const capturePick = (e: SceneAnswerEvent) => {
+    lastPicked.current = e.pickedKey ?? null;
+  };
+
   const handleAnswer = (correct: boolean) => {
     // Telemetry — fires for wrong answers too, before any phase change.
     const answered = questions[currentIdx];
@@ -134,8 +151,13 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
         sceneType: 'boss_question',
         characterId: answered.target.characterId,
         correct,
+        pickedKey: lastPicked.current ?? undefined,
       });
     }
+    // Cleared immediately: a question that somehow completes without an inner
+    // pick (a future non-MCQ boss question) must not inherit the previous
+    // question's answer.
+    lastPicked.current = null;
     if (correct) {
       const next = currentIdx + 1;
       if (next >= totalQuestions) {
@@ -235,6 +257,7 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             target={q.target}
             pool={pool}
             onComplete={handleAnswer}
+            onAnswerEvent={capturePick}
           />
         )}
         {q.type === 'visual_pick' && (
@@ -242,6 +265,11 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             key={`boss-${currentIdx}`}
             target={q.target}
             pool={pool}
+            // No `onAnswerEvent`: VisualPickScene is RETIRED (is_active=false) and
+            // kept only so already-compiled configs and old scene_attempts
+            // rows still render. Adding a prop to a retired component is what
+            // the retirement landmines exist to prevent — these questions are
+            // no longer emitted, so their picks are not worth reviving it for.
             onComplete={handleAnswer}
           />
         )}
@@ -260,6 +288,7 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             // wrong answer costs a life.
             imageUrl={pickValidStimulusImage(q.target, pool).imageUrl}
             onComplete={handleAnswer}
+            onAnswerEvent={capturePick}
           />
         )}
         {q.type === 'pinyin_pick' && (
@@ -267,6 +296,11 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             key={`boss-${currentIdx}`}
             target={q.target}
             pool={pool}
+            // No `onAnswerEvent`: PinyinPickScene is RETIRED (is_active=false) and
+            // kept only so already-compiled configs and old scene_attempts
+            // rows still render. Adding a prop to a retired component is what
+            // the retirement landmines exist to prevent — these questions are
+            // no longer emitted, so their picks are not worth reviving it for.
             onComplete={handleAnswer}
           />
         )}
@@ -277,6 +311,7 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             pool={pool}
             direction={currentIdx % 2 === 0 ? 'cn_to_en' : 'en_to_cn'}
             onComplete={handleAnswer}
+            onAnswerEvent={capturePick}
           />
         )}
         {q.type === 'sentence_cloze' && q.target.sentence && (
@@ -287,6 +322,7 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             sentenceText={q.target.sentence.text}
             translationEn={q.target.sentence.translationEn}
             onComplete={handleAnswer}
+            onAnswerEvent={capturePick}
           />
         )}
         {q.type === 'sentence_cloze' && !q.target.sentence && (
@@ -296,6 +332,7 @@ export function BossScene({ weekNumber, characterIds, questionTypes, pool, onCom
             pool={pool}
             direction="cn_to_en"
             onComplete={handleAnswer}
+            onAnswerEvent={capturePick}
           />
         )}
       </div>

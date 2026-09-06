@@ -61,6 +61,10 @@ describe('BossScene answer events', () => {
       sceneType: 'boss_question',
       characterId: 'c1',
       correct: true,
+      // 海 was tapped, so the boss carries c1 as the picked option. The boss
+      // used to record only WHETHER she was wrong, which left A3's confusion
+      // pairs blind to the highest-pressure surface in the product.
+      pickedKey: 'c1',
     });
 
     // Q2 target is c2 (湖) — answer wrongly by picking a different character.
@@ -72,6 +76,9 @@ describe('BossScene answer events', () => {
       sceneType: 'boss_question',
       characterId: 'c2',
       correct: false,
+      // The question was 湖 and she took 江 — exactly the pair A3 could not
+      // see before.
+      pickedKey: 'c3',
     });
     expect(onAnswerEvent).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
