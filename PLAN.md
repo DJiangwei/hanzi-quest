@@ -190,6 +190,7 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #182 | feat(season): 里海远航 season 2 — quarterly cadence, front-loaded curve, culture in the card lore | |
 | #183 | docs: correct three stale entries (CF reset window, PR #50 follow-up, E2 premise); record two decisions | |
 | #184 | feat(insights): A3 parent insight page — most-missed, confusion pairs, activity, over answer_events | |
+| #185 | feat(practice): V2 slice 1 — audio_pick reserves one tone-neighbour distractor | |
 | #168 | fix(flashcard): the self-assessment was measuring the UI — identical button styling + an `answer_events.revealed` behavioural signal (migration 0043) |  |
 | #169 | feat(maps): Map 2 re-themed 印度洋 → 里海 Caspian Sea; Indian Ocean held in reserve as `pirate-class-level-3` |  |
 | #170 | feat(maps): Caspian sea-chart backdrop; ONLY_SLUG + preview/upload split for the art generator |  |

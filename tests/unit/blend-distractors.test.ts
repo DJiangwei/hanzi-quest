@@ -11,7 +11,11 @@
 // this game deliberately softens 畏难情绪 and a question where three of four
 // options are unfamiliar is a different, harder game than the one she agreed to.
 import { describe, expect, it } from 'vitest';
-import { blendDistractors, STALE_DISTRACTORS_PER_QUESTION } from '@/lib/scenes/sample';
+import {
+  blendDistractors,
+  STALE_DISTRACTORS_PER_QUESTION,
+  CONFUSABLE_DISTRACTORS_PER_QUESTION,
+} from '@/lib/scenes/sample';
 
 const week = ['w1', 'w2', 'w3', 'w4', 'w5'];
 const older = ['o1', 'o2', 'o3', 'o4', 'o5'];
@@ -81,5 +85,59 @@ describe('blendDistractors', () => {
     // the older pool, which would make the picture identify two answers.
     const out = blendDistractors(week, older, 'w1', 3, 0);
     expect(out.every((c) => week.includes(c))).toBe(true);
+  });
+
+  it('reserves one slot for a confusable option when one exists (V2 slice 1)', () => {
+    // 82 of her 176 characters have a same-syllable neighbour, so this slot is
+    // fillable often but not always — hence best-effort below.
+    const out = blendDistractors(week, older, 'w1', 3, 1, undefined, {
+      isConfusable: (c) => c === 'w4',
+    });
+    expect(out).toContain('w4');
+    expect(out).toHaveLength(3);
+    expect(out.filter((c) => older.includes(c))).toHaveLength(
+      STALE_DISTRACTORS_PER_QUESTION,
+    );
+  });
+
+  it('takes only ONE confusable option, never a whole set of them', () => {
+    // Three hard options out of four is a different, harder game than the one
+    // she agreed to play; this product softens 畏难情绪 deliberately.
+    //
+    // Observing "only one" needs the confusable candidates to be unreachable
+    // by the RANDOM fill, or a coincidence looks like a stacked question. With
+    // fromOlder = 0 and every older item marked confusable, an older item in
+    // the output can only have arrived through the confusable slot — so its
+    // count IS the slot's width. (The first draft asserted one older item with
+    // fromOlder = 1 and an all-matching predicate, which is a different claim
+    // the code never made: the confusable slot draws from EITHER pool.)
+    expect(CONFUSABLE_DISTRACTORS_PER_QUESTION).toBe(1);
+    for (let i = 0; i < 40; i++) {
+      const out = blendDistractors(week, older, 'w1', 3, 0, undefined, {
+        isConfusable: (c) => older.includes(c),
+      });
+      expect(out).toHaveLength(3);
+      expect(out.filter((c) => older.includes(c))).toHaveLength(1);
+    }
+  });
+
+  it('falls back to the ordinary question when nothing is confusable', () => {
+    // Most characters have no neighbour. A question without one is the
+    // pre-V2 question, not a broken one.
+    const out = blendDistractors(week, older, 'w1', 3, 1, undefined, {
+      isConfusable: () => false,
+    });
+    expect(out).toHaveLength(3);
+    expect(out).not.toContain('w1');
+    expect(new Set(out).size).toBe(3);
+  });
+
+  it('never lets the confusable slot duplicate an already-picked option', () => {
+    for (let i = 0; i < 40; i++) {
+      const out = blendDistractors(week, older, 'w1', 3, 1, undefined, {
+        isConfusable: (c) => older.includes(c),
+      });
+      expect(new Set(out).size).toBe(out.length);
+    }
   });
 });

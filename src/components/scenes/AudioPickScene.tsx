@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { blendDistractors, shuffle } from '@/lib/scenes/sample';
+import { isToneNeighbour } from '@/lib/tones/minimal-pairs';
 import { useSpeak } from '@/lib/hooks/useSpeak';
 import { MultipleChoiceQuiz } from './MultipleChoiceQuiz';
 import type { SceneAnswerEvent } from '@/lib/play/answer-events';
@@ -40,6 +41,16 @@ export function AudioPickScene({ target, pool, olderPool = [], onComplete, onAns
       3,
       undefined,
       (a, b) => a.characterId === b.characterId,
+      // V2 slice 1 — and E2's practice integration, for free. This is the ONE
+      // scene where a tone neighbour trains something: the stimulus IS the
+      // sound, so offering 马 beside 妈 forces the discrimination. In
+      // image_pick or translate_pick the same option would be noise, because
+      // nothing in those questions depends on how the character sounds.
+      //
+      // `isToneNeighbour` refuses an exact homophone (十/石 are both shí), which
+      // here is not a nicety: two options that sound identical would give an
+      // audio question two correct answers by ear.
+      { isConfusable: (c, t) => isToneNeighbour(c.pinyinArray?.[0], t.pinyinArray?.[0]) },
     );
     return shuffle([target, ...distractors]).map((c) => ({
       key: c.characterId,

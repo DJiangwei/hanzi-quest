@@ -596,3 +596,51 @@ Three non-obvious things, now a landmine:
 The isolation guard gains two checks, both proven by mutation: that `insights.ts` (and `logbook.ts`, `review.ts`, `child-packs.ts`) are plain modules rather than `'use server'` files — they take a raw `childId` and skip `requireChild` because their callers are gated, which is only safe while they are not public RPC endpoints — and that `insights.ts` contains no `insert`/`update`/`delete`, since a parent-facing analytics page must never mutate a child's data.
 
 `pnpm typecheck && lint && test && build` green; 358/358 test files, 2237 tests. No migration.
+
+---
+
+## PR #185 — V2 slice 1: tone-neighbour distractors in audio_pick (2026-09-06)
+
+Two probes against production shaped this before a line was written, and both moved it away from what the roadmap described.
+
+**Empirical confusion is too thin to rank on.** A3 had just surfaced 宝←贝, 戏←气, 亮←月 — genuinely informative pairs. But the whole dataset is **17 wrong answers with a recorded choice, 16 distinct pairs**, most of them count 1. The roadmap listed "empirically-confused pairs from `answer_events.picked_key`" as a V2 input; ranking on sixteen samples is fitting noise. It is a *validation* signal for later, not a driver.
+
+**"Similar initial/final" does not survive a 176-character corpus.**
+
+| signal | coverage | usable? |
+|---|---|---|
+| same syllable, any tone | **82 of 176**, 36 groups | yes — the only one that discriminates |
+| same rime | 169 of 176 | no — `-i` alone holds 25 |
+| same initial | 172 of 176 | no |
+
+On a corpus this size, matching on initial or final means matching almost everything, which is "pick at random" wearing a clever name. Only the full syllable narrows.
+
+### Scoped to one scene, on purpose
+
+A confusable distractor is a property of the **question**, not of the character pair. A tone neighbour trains something exactly where the stimulus is a *sound*:
+
+| scene | stimulus | tone neighbour trains? |
+|---|---|---|
+| **audio_pick** | the sound | **yes** — 马 beside 妈 forces the discrimination |
+| image_pick | a picture | no — nothing depends on how it sounds |
+| translate_pick | a meaning | no |
+
+So `blendDistractors` takes a caller-supplied `isConfusable` predicate and never learns about pinyin; `AudioPickScene` composes it from `isToneNeighbour`. This also means **V2 slice 1 IS E2's practice integration** — the thing David asked for on 2026-09-06 — arriving for free: no new scene type, no `scene_templates` row, no compile slot, no recompile.
+
+### The homophone exclusion is load-bearing
+
+`isToneNeighbour` requires the same toneless syllable **and different full readings**. 十 and 石 are both `shí`; two options that sound identical give an audio question **two correct answers by ear**. That is the same hazard `groupMinimalPairs` excludes in the tone game, and reusing the predicate inherits it rather than re-deriving it.
+
+### Best-effort by design
+
+28% of map 1 and 20% of map 2 characters have a real neighbour (and since #180 the older pool spans both maps, so the effective rate is higher than either). A question without one is simply the pre-V2 question. One confusable option, never more — three hard options out of four is a different, harder game than the one she agreed to play, the same reasoning that caps stale distractors at one.
+
+### A test that encoded an invariant the code never promised
+
+The first draft of "takes only ONE confusable option" asserted *one older option* with `fromOlder = 1` and an all-matching predicate — and failed, because the confusable slot draws from **either** pool by design, so an over-broad predicate legitimately yields two. The code was right and the test was wrong.
+
+Rewritten to make the claim observable: with `fromOlder = 0` and every older item marked confusable, an older item in the output can only have arrived through the confusable slot, so its count *is* the slot's width. Mutating the slot to be unbounded now fails with `expected ['o2','o3','o5'] to have a length of 1`.
+
+Three guards proven by mutation: the slot width, the homophone exclusion (`expected true to be false`), and the scene wiring — the last via a **props-capturing mock**, because which predicate a scene passes is invisible to a rendering assertion. That is exactly how PR #158's frozen `wordId` sat un-passed for months.
+
+`pnpm typecheck && lint && test && build` green; 359/359 test files, 2254 tests. No migration, no recompile.
