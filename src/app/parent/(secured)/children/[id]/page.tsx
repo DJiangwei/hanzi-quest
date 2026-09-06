@@ -87,6 +87,22 @@ export default async function EditChildPage({ params }: PageProps) {
         </Link>
       </section>
 
+      <section className="flex flex-col gap-2 rounded-2xl border border-stone-200 bg-white p-4">
+        <h2 className="text-sm font-bold text-[var(--color-ocean-900)]">
+          📊 Learning insights
+        </h2>
+        <p className="text-xs text-[var(--color-sand-700)]">
+          What she actually gets wrong — most-missed characters, confusion
+          pairs, and where her answers come from. For aiming homework.
+        </p>
+        <Link
+          href={`/parent/children/${child.id}/insights`}
+          className="self-start text-sm font-semibold text-[var(--color-ocean-700)] hover:underline"
+        >
+          Open insights →
+        </Link>
+      </section>
+
       <section className="flex flex-col gap-2 rounded-2xl border border-[var(--color-bad-bg)] bg-[var(--color-bad-bg)]/40 p-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-bad)]">
           Danger zone

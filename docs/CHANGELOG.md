@@ -541,3 +541,58 @@ Also reshaped two pre-existing assertions that hardcoded "8 season cosmetics" as
 3. `scripts/seed-trophies.ts` — `season-caspian-master`
 4. `scripts/seed-caspian-season.ts` — opens the season (summer already closed)
 5. `scripts/verify-integrity.ts`
+
+---
+
+## PR #184 — A3 parent insights: what she actually gets wrong (2026-09-06)
+
+505 rows of telemetry had been accumulating since 2026-07-03 and nothing showed any of it to the person authoring the homework. `/parent/children/[id]/insights` is that surface.
+
+Five panels, pure reads over `answer_events`: activity over 30 days, most-missed characters, confusion pairs, self-rating distribution, and where the answers come from.
+
+### It earned itself on the first run
+
+Against production, via the real read function:
+
+```
+Yinuo: 479 answers, 5 active days in 30
+  most missed: 人 3/4   多 2/5   宝 2/7   亮 2/7
+  confusions:  宝←贝  戏←气  亮←月  亮←星  我←水  会←习  多←七  多←子
+               七岁←孩子×2  一起←大象  独唱←唱歌
+小板:  26 answers, 1 active day in 30
+  confusions:  九←看  习←看
+```
+
+**人 wrong three times out of four** is the single most actionable fact in the dataset, and it had never been on a screen. The pairs are not noise either — they sort into recognisable kinds:
+
+- **宝 ← 贝** — she picked the character's own component
+- **戏 ← 气** (xì / qì) and **我 ← 水** — sound confusions, and 戏/气 is exactly the sort of near-pair 听声调 could target
+- **亮 ← 月**, **亮 ← 星** — semantic neighbourhood
+- **多 ← 七**, **多 ← 子**, **会 ← 习** — shape
+
+### Ranking: misses first, then the *smaller* denominator
+
+3 of 4 and 3 of 40 are different facts, and a list ordered on raw miss count buries the first under the second. The table shows both numbers for the same reason.
+
+### Every panel states its own limits
+
+This page exists to aim homework, and aiming at noise is worse than not aiming, so:
+
+- **The boss cannot appear in confusion pairs**, and the panel says so. `BossScene.handleAnswer` emits its own events without a `picked_key`, so 152 boss answers with 7 wrong contribute nothing. A page that silently omitted them would read as "she never gets boss questions wrong". Getting them would mean changing what the gauntlet emits — a behaviour change, not a query fix.
+- **An all-`got_it` self-rating distribution is labelled unusable, not good news.** Production holds 164 of 164 `got_it`, across two months in which she answered 33 scored questions wrong. A parent reading that as mastery would aim homework at precisely the wrong characters. A test pins the wording, and a second pins that it does *not* editorialise when the ratings are genuinely varied.
+
+### `picked_key` is an ID, not a glyph
+
+Three non-obvious things, now a landmine:
+
+1. It is a **TEXT** column holding a uuid, so a `::uuid` cast in SQL throws on any future non-id value. The shape is filtered in JS and the ids looked up.
+2. Which table it points at depends on the scene — `characterId` for the MCQ scenes whose options are characters, `wordId` for `image_word` — so both are consulted.
+3. `flashcard`, `boss_question` and the `study_*` scenes write none at all.
+
+### Guardrails
+
+`(secured)` route group so the PIN gate applies; `requireChild` scopes to the parent's own child and a miss is a 404, matching the sibling piggy-bank page. English-only — the parent surface is exempt from the bilingual rule. `masteryForChar` supplies the state, so the page can never disagree with the Logbook or 温故 about how well a character is known.
+
+The isolation guard gains two checks, both proven by mutation: that `insights.ts` (and `logbook.ts`, `review.ts`, `child-packs.ts`) are plain modules rather than `'use server'` files — they take a raw `childId` and skip `requireChild` because their callers are gated, which is only safe while they are not public RPC endpoints — and that `insights.ts` contains no `insert`/`update`/`delete`, since a parent-facing analytics page must never mutate a child's data.
+
+`pnpm typecheck && lint && test && build` green; 358/358 test files, 2237 tests. No migration.

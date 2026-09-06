@@ -42,7 +42,7 @@ Two cheap slices, in order:
 2. **温故 / Daily mixed review** `[x]` (shipped 2026-09-02, PR #165): a 6-question home-surface session sampled from cleared weeks, ranked by `reviewScore` (A1 error rates + `dont_know`/`not_sure` self-ratings, blended with recency since last seen) — deliberately NOT `bountyScore`, which ranks unseen characters above weak ones and would defeat retention. Built at request time (`src/lib/review/{selection,session}.ts`, `src/lib/db/review.ts` — no compile step, no `recompile-all-weeks.ts`), reusing `MultipleChoiceQuiz`; rewards a daily-cap-consuming `'daily_review'` card + coins + XP on COMPLETION, never on score. See CLAUDE.md's 温故 paragraph + its three landmines.
 - Guardrails: short and optional — don't gate anything on it. Bilingual chrome rule.
 
-### A3 — Parent insight page `[ ]`
+### A3 — Parent insight page `[x]` (shipped 2026-09-06, PR #184)
 `/parent/children/[id]/insights`: per-character accuracy, most-missed list, confusion pairs (from `picked_key`), self-rating distribution, activity trend. Pure read over `answer_events` + `coin_transactions`. Closes the loop into David's homework authoring. Parent-facing → bilingual rule exempt. Guardrails: `(secured)` route group; scope via `getChildOwnedBy`.
 
 ---
