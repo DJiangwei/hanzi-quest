@@ -768,4 +768,29 @@ Raising the constant also exposed a second defect: the CTA copy said `收集 3 �
 
 Choices are 中文 only now. A `word_to_picture` direction was added (read the word, pick the picture), so both directions are picture ↔ 中文. The gloss moved to `MultipleChoiceQuiz`'s new `postRevealNote`, shown **only after she commits** — the same rule as the flashcard's tap-to-reveal pinyin and the tone game's post-answer pinyin. English still lowers the difficulty; it just no longer answers the question.
 
-`pnpm typecheck && lint && test && build` green; 364/364 test files, 2285 tests. No migration.
+### (c) A third bug, found by #189's own post-merge seed
+
+Not reported — surfaced by reading a number I could have skimmed past. Seeding #189's ten new furniture items against prod printed:
+
+```
+Done. Inserted 9 shop_items, skipped 26 (already exist).
+```
+
+Nine, against ten items added. Querying the ten slugs:
+
+```
+{"slug":"treasure-chest","kind":"decor","price_coins":1200,"d":"2026-05-23"}
+{"slug":"wardrobe","kind":"home","price_coins":340,"d":"2026-09-07"}
+```
+
+`treasure-chest` has been an **island decoration** since May. `shop_items.slug` is global rather than namespaced by `kind`, and the seed's existence check is `where(eq(shopItems.slug, …))`, so the new 藏宝箱 furniture never got a row.
+
+Nothing errored, because the furniture shop filters to `kind='home'`: the lookup returned `undefined`, the card rendered permanently disabled, and the piece was simply unbuyable — a dead tile in the shop that PR had just rebuilt to be friendlier. Worth noting how narrowly that stayed contained. Without the kind filter the same collision would have shown the decoration's 1200-coin price on the furniture card and sold the wrong item; the filter is what turned a mis-sale into a no-sale.
+
+Renamed to `pirate-chest`, and `tests/unit/home3d-grid.test.ts` gained the check that was missing: no furniture slug may collide with `DECOR_CATALOG` or with `SURFACES`.
+
+The guard needed two attempts to prove. Reverting only `furniture-catalog.tsx` tripped three *unrelated* 3D-consistency tests (the piece map still said `pirate-chest`), which is a failure with the wrong cause and proves nothing about the new assertion. Reverting **both** sides left the collision as the only defect and produced the intended message — `furniture slugs also used by decor: treasure-chest`. Same discipline as the seeded-shuffle landmine: a mutation that trips the wrong test is not a passing mutation test.
+
+This is the third instance of one family — `getPackBySlug` (collectible vs curriculum packs), `zodiac` vs `zodiac-v1`, and now furniture vs decor. When you mint a slug, check what already answers to it.
+
+`pnpm typecheck && lint && test && build` green; 364/364 test files, 2372 tests. No migration. Post-merge op: re-ran `scripts/seed-home-furniture.ts` against prod (`Inserted 1, skipped 34`), verified both rows coexist (decor 1200 untouched, `pirate-chest` 680 as `kind='home'`), and `verify-integrity.ts` reports 7/7.
