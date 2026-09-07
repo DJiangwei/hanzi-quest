@@ -36,7 +36,7 @@ const FLOOR_ROWS = ROWS - WALL_ROWS;
  * literal complaint. Aiming slightly BEHIND centre and pulling in fills the
  * frame with furniture instead of floor.
  */
-const CAMERA = { position: [5.4, 4.6, 6.0] as const, fov: 34, target: [0, 0.75, -0.35] as const };
+const CAMERA = { position: [5.9, 5.0, 6.6] as const, fov: 33, target: [0.15, 0.85, -0.25] as const };
 
 export interface Placed3D {
   slug: string;
@@ -66,20 +66,48 @@ export function cellToWorld(gridX: number, gridY: number, w: number, h: number) 
 function Room() {
   return (
     <group>
-      {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[COLS, FLOOR_ROWS]} />
-        <meshStandardMaterial color={PALETTE.floor} roughness={0.9} />
+      {/* Floorboards, not one plane. A bare expanse of colour is the single
+          biggest thing that reads as "3D demo" rather than "room" — planks give
+          the eye a scale reference and a direction, and cost eight quads. */}
+      {Array.from({ length: 10 }, (_, i) => (
+        <mesh
+          key={i}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, i % 2 ? 0.001 : 0, -FLOOR_ROWS / 2 + (i + 0.5) * (FLOOR_ROWS / 10)]}
+          receiveShadow
+        >
+          <planeGeometry args={[COLS, FLOOR_ROWS / 10]} />
+          <meshStandardMaterial color={i % 2 ? PALETTE.floor : PALETTE.floorAlt} roughness={0.78} />
+        </mesh>
+      ))}
+
+      {/* Walls in two tones with a picture rail between them. Wainscoting is
+          how a real room stops being a backdrop; the rail also gives the wall
+          items something to sit against instead of floating on flat colour. */}
+      {([
+        [[0, 1.75, -FLOOR_ROWS / 2], [0, 0, 0], [COLS, 3.5]],
+        [[-COLS / 2, 1.75, 0], [0, Math.PI / 2, 0], [FLOOR_ROWS, 3.5]],
+      ] as const).map(([pos, rot, size], i) => (
+        <group key={i}>
+          <mesh position={[...pos]} rotation={[...rot]} receiveShadow>
+            <planeGeometry args={[size[0], size[1]]} />
+            <meshStandardMaterial color={PALETTE.wall} roughness={0.95} />
+          </mesh>
+          {/* Lower band, a shade deeper */}
+          <mesh position={[pos[0], 0.55, pos[2]]} rotation={[...rot]} receiveShadow>
+            <planeGeometry args={[size[0], 1.1]} />
+            <meshStandardMaterial color="#eddcb8" roughness={0.95} />
+          </mesh>
+        </group>
+      ))}
+      {/* Picture rail */}
+      <mesh position={[0, 1.12, -FLOOR_ROWS / 2 + 0.04]}>
+        <boxGeometry args={[COLS, 0.07, 0.08]} />
+        <meshStandardMaterial color={PALETTE.cream} roughness={0.6} />
       </mesh>
-      {/* Back wall */}
-      <mesh position={[0, 1.75, -FLOOR_ROWS / 2]} receiveShadow>
-        <planeGeometry args={[COLS, 3.5]} />
-        <meshStandardMaterial color={PALETTE.wall} roughness={1} />
-      </mesh>
-      {/* Left wall */}
-      <mesh rotation={[0, Math.PI / 2, 0]} position={[-COLS / 2, 1.75, 0]} receiveShadow>
-        <planeGeometry args={[FLOOR_ROWS, 3.5]} />
-        <meshStandardMaterial color={PALETTE.wall} roughness={1} />
+      <mesh position={[-COLS / 2 + 0.04, 1.12, 0]}>
+        <boxGeometry args={[0.08, 0.07, FLOOR_ROWS]} />
+        <meshStandardMaterial color={PALETTE.cream} roughness={0.6} />
       </mesh>
       {/* Skirting — a cheap trick that does a lot: it gives the wall/floor seam
           a shadow line, which is most of what makes a room feel built. */}
@@ -113,19 +141,26 @@ export function HomeRoom3D({ placements }: { placements: Placed3D[] }) {
       <color attach="background" args={['#fbf3e4']} />
       {/* Warm key light from the window side + a cool fill, the two-light setup
           that gives the AC look most of its warmth. */}
-      <ambientLight intensity={0.85} color="#fff4e2" />
+      {/* Hemisphere instead of flat ambient: warm from above, floor-coloured
+          bounce from below. It costs nothing, needs no HDRI or network, and is
+          the single biggest step away from "three.js defaults" — flat ambient
+          at 0.85 was washing every form out. */}
+      <hemisphereLight args={['#fff6e4', '#e0b98a', 1.05]} />
       <directionalLight
-        position={[5, 8, 4]}
-        intensity={1.6}
-        color="#ffe9c9"
+        position={[6, 9, 5]}
+        intensity={2.1}
+        color="#fff0d2"
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.02}
         shadow-camera-left={-7}
         shadow-camera-right={7}
         shadow-camera-top={7}
         shadow-camera-bottom={-7}
       />
-      <directionalLight position={[-6, 4, -3]} intensity={0.35} color="#cfe4ff" />
+      {/* Cool rim from behind-left, so silhouettes separate from the wall. */}
+      <directionalLight position={[-7, 5, -4]} intensity={0.5} color="#cfe4ff" />
 
       <Room />
 
@@ -151,7 +186,7 @@ export function HomeRoom3D({ placements }: { placements: Placed3D[] }) {
 
       {/* The single biggest contributor to "these objects are in a room"
           rather than "these objects are floating". */}
-      <ContactShadows position={[0, 0.002, 0]} opacity={0.42} scale={12} blur={2.2} far={4} resolution={512} />
+      <ContactShadows position={[0, 0.002, 0]} opacity={0.55} scale={11} blur={1.7} far={3.2} resolution={1024} />
     </Canvas>
   );
 }

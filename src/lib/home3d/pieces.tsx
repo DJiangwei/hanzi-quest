@@ -24,21 +24,38 @@ import type { ReactElement } from 'react';
 
 /** Warm, low-saturation palette. Deliberately narrow so the room reads as one set. */
 export const PALETTE = {
-  wood: '#c89b6a',
-  woodDark: '#a37a4e',
-  cream: '#f5ead6',
-  teal: '#5fb0a8',
-  tealDark: '#3f8880',
-  coral: '#e88a6f',
-  leaf: '#79b56a',
-  sky: '#a9d6e8',
-  wall: '#f0e2cb',
-  floor: '#d8b58a',
-  fabric: '#efd9c2',
+  wood: '#d9a463',
+  woodDark: '#b07c46',
+  cream: '#fdf6e7',
+  teal: '#4fc0b4',
+  tealDark: '#2f9b90',
+  coral: '#f79274',
+  leaf: '#6fc45e',
+  sky: '#9fd9f0',
+  wall: '#fbf0da',
+  floor: '#e8cfa8',
+  floorAlt: '#dfc39a',
+  fabric: '#fbeddb',
   night: '#3a4a7a',
 } as const;
 
-const R = 0.06;
+/**
+ * Roughness by material, not one value for everything.
+ *
+ * The first pass gave every surface 0.75–0.95 and the room read as felt. A
+ * painted chest catching a little more light than the rug beside it is most of
+ * what separates "toy" from "clay" — the difference is small per object and
+ * large across a scene.
+ */
+export const FINISH = {
+  painted: 0.42,
+  wood: 0.62,
+  fabric: 0.95,
+  leaf: 0.72,
+} as const;
+
+/** Bigger than it looks necessary. Chunky rounding is the AC read. */
+const R = 0.09;
 
 function Box({
   size,
@@ -46,24 +63,26 @@ function Box({
   color,
   radius = R,
   rot,
+  finish = FINISH.wood,
 }: {
   size: [number, number, number];
   pos: [number, number, number];
   color: string;
   radius?: number;
   rot?: [number, number, number];
+  finish?: number;
 }) {
   return (
     <RoundedBox
       args={size}
       radius={Math.min(radius, Math.min(...size) / 2.05)}
-      smoothness={3}
+      smoothness={4}
       position={pos}
       rotation={rot}
       castShadow
       receiveShadow
     >
-      <meshStandardMaterial color={color} roughness={0.75} />
+      <meshStandardMaterial color={color} roughness={finish} />
     </RoundedBox>
   );
 }
@@ -73,11 +92,13 @@ export function BedCozy(): ReactElement {
   return (
     <group>
       <Box size={[1.8, 0.34, 0.9]} pos={[0, 0.22, 0]} color={PALETTE.wood} />
-      <Box size={[1.7, 0.22, 0.82]} pos={[0, 0.45, 0]} color={PALETTE.fabric} />
+      <Box size={[1.7, 0.22, 0.82]} pos={[0, 0.45, 0]} color={PALETTE.fabric} finish={FINISH.fabric} />
       {/* Headboard, tall enough to read from the fixed camera angle. */}
       <Box size={[0.16, 0.75, 0.9]} pos={[-0.88, 0.42, 0]} color={PALETTE.woodDark} />
-      <Box size={[0.5, 0.14, 0.66]} pos={[-0.6, 0.6, 0]} color={PALETTE.cream} />
-      <Box size={[1.0, 0.1, 0.86]} pos={[0.32, 0.58, 0]} color={PALETTE.teal} />
+      <Box size={[0.5, 0.14, 0.66]} pos={[-0.6, 0.6, 0]} color={PALETTE.cream} finish={FINISH.fabric} />
+      <Box size={[1.0, 0.12, 0.86]} pos={[0.32, 0.58, 0]} color={PALETTE.teal} finish={FINISH.fabric} />
+      {/* Turned-back edge, so the blanket has a fold rather than being a slab. */}
+      <Box size={[0.22, 0.09, 0.86]} pos={[-0.19, 0.62, 0]} color={PALETTE.tealDark} finish={FINISH.fabric} radius={0.04} />
       {[-0.8, 0.8].map((x) =>
         [-0.35, 0.35].map((z) => (
           <Box key={`${x}${z}`} size={[0.12, 0.16, 0.12]} pos={[x, 0.08, z]} color={PALETTE.woodDark} radius={0.02} />
@@ -90,8 +111,10 @@ export function BedCozy(): ReactElement {
 /** 2×1 — bookshelf */
 export function Bookshelf(): ReactElement {
   const books: [number, number, string][] = [
-    [-0.62, 0.42, PALETTE.coral], [-0.5, 0.5, PALETTE.teal], [-0.39, 0.44, PALETTE.night],
-    [0.3, 0.46, PALETTE.leaf], [0.42, 0.52, PALETTE.coral], [0.53, 0.4, PALETTE.sky],
+    [-0.68, 0.9, PALETTE.coral], [-0.55, 1.0, PALETTE.teal], [-0.43, 0.85, PALETTE.night],
+    [-0.31, 0.95, PALETTE.leaf], [-0.19, 0.8, PALETTE.sky], [0.5, 0.9, PALETTE.coral],
+    [0.62, 0.75, PALETTE.night], [-0.68, 0.85, PALETTE.leaf], [-0.55, 0.95, PALETTE.sky],
+    [-0.43, 1.0, PALETTE.coral], [0.38, 0.8, PALETTE.teal], [0.5, 0.9, PALETTE.night],
   ];
   return (
     <group>
@@ -108,7 +131,8 @@ export function Bookshelf(): ReactElement {
         <Box key={y} size={[1.66, 0.08, 0.4]} pos={[0, y, 0]} color={PALETTE.wood} radius={0.02} />
       ))}
       {books.map(([x, h, c], i) => (
-        <Box key={i} size={[0.11, 0.34 + h * 0.12, 0.26]} pos={[x, (i < 3 ? 0.54 : 1.02) + (0.34 + h * 0.12) / 2, 0.04]} color={c} radius={0.015} />
+        <Box key={i} size={[0.1, 0.3 + h * 0.14, 0.26]} pos={[x, (i < 7 ? 0.55 : 1.03) + (0.3 + h * 0.14) / 2, 0.04]}
+          color={c} radius={0.015} finish={FINISH.painted} />
       ))}
     </group>
   );
@@ -123,7 +147,14 @@ export function DeskStudy(): ReactElement {
         <Box key={x} size={[0.12, 0.72, 0.7]} pos={[x, 0.36, 0]} color={PALETTE.woodDark} radius={0.03} />
       ))}
       <Box size={[0.5, 0.04, 0.36]} pos={[0.25, 0.79, 0.05]} color={PALETTE.cream} radius={0.01} />
-      <Box size={[0.3, 0.22, 0.2]} pos={[-0.5, 0.88, -0.1]} color={PALETTE.teal} radius={0.03} />
+      <Box size={[0.3, 0.22, 0.2]} pos={[-0.5, 0.88, -0.1]} color={PALETTE.teal} radius={0.03} finish={FINISH.painted} />
+      {/* Desk lamp: base, arm, warm shade. */}
+      <Box size={[0.24, 0.05, 0.24]} pos={[0.66, 0.79, -0.16]} color={PALETTE.coral} radius={0.02} finish={FINISH.painted} />
+      <Box size={[0.05, 0.34, 0.05]} pos={[0.66, 0.97, -0.16]} color={PALETTE.coral} radius={0.02} finish={FINISH.painted} />
+      <mesh position={[0.66, 1.2, -0.16]} rotation={[0.25, 0, 0]} castShadow>
+        <coneGeometry args={[0.17, 0.2, 14, 1, true]} />
+        <meshStandardMaterial color="#ffd98a" roughness={0.5} side={2} />
+      </mesh>
     </group>
   );
 }
@@ -132,7 +163,7 @@ export function DeskStudy(): ReactElement {
 export function ToyChest(): ReactElement {
   return (
     <group>
-      <Box size={[0.82, 0.5, 0.6]} pos={[0, 0.25, 0]} color={PALETTE.coral} />
+      <Box size={[0.82, 0.5, 0.6]} pos={[0, 0.25, 0]} color={PALETTE.coral} finish={FINISH.painted} />
       <Box size={[0.86, 0.14, 0.64]} pos={[0, 0.55, 0]} color={PALETTE.woodDark} />
       <Box size={[0.14, 0.08, 0.06]} pos={[0, 0.48, 0.31]} color={PALETTE.cream} radius={0.02} />
     </group>
