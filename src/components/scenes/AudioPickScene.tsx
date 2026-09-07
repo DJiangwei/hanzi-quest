@@ -57,7 +57,16 @@ export function AudioPickScene({ target, pool, olderPool = [], onComplete, onAns
       label: <span className="text-5xl">{c.hanzi}</span>,
       isCorrect: c.characterId === target.characterId,
     }));
-  }, [pool, olderPool, target]);
+    // Keyed on the target's STABLE ID, never on `pool` / `olderPool` / `target`
+    // object identity. SceneRunner rebuilds those arrays inline on every
+    // render — one of them is an inline `.filter(...)` in JSX — and it holds
+    // ten pieces of state plus a transition, so a hint tap, a coin toast or a
+    // finishing transition re-renders it. With identity deps that reshuffles
+    // the options WHILE she is reaching for one, which on a touch screen
+    // punishes a correct decision. ImagePickScene has always done this; the
+    // other three had not.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target.characterId]);
 
   return (
     <MultipleChoiceQuiz

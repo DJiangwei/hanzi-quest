@@ -32,6 +32,14 @@ interface Props {
   /** Pre-recorded clip for `postRevealAudio`; preferred over TTS when present. */
   postRevealAudioUrl?: string | null;
   /**
+   * Shown only AFTER she has answered. For an English gloss beside a Chinese
+   * question: visible up front it makes the question answerable without
+   * reading any 中文, which is the whole thing being practised — the same
+   * reason the flashcard reveals pinyin on tap and the tone game reveals it
+   * only once she has committed.
+   */
+  postRevealNote?: ReactNode;
+  /**
    * Override the default 750ms auto-advance delay after reveal. Used by
    * SentenceClozeScene so the full sentence playback (~2-3s) isn't cut off.
    */
@@ -47,6 +55,7 @@ export function MultipleChoiceQuiz({
   hintRequested,
   postRevealAudio,
   postRevealAudioUrl,
+  postRevealNote,
   postRevealHoldMs,
 }: Props) {
   const [revealed, setRevealed] = useState<string | null>(null);
@@ -101,6 +110,14 @@ export function MultipleChoiceQuiz({
           </p>
         ) : null}
         <div className="flex items-center justify-center">{stimulus}</div>
+        {postRevealNote && revealed ? (
+          <p
+            data-testid="mcq-post-reveal-note"
+            className="text-center text-sm font-semibold text-[var(--color-sand-700)]"
+          >
+            {postRevealNote}
+          </p>
+        ) : null}
       </div>
       {/* Right pane: answer choices */}
       <ShakeWrap triggerKey={triggerKey}>

@@ -728,3 +728,44 @@ Two guards proven by mutation: dropping `pickedKey` again (`expected undefined t
 **Boss confusions accrue from here forward only.** The 152 historical rows stay blind, and A3's panel still says so for anything before this. Invisible to the child: no behaviour, no rewards, no gating changes — only the data gets thicker.
 
 `pnpm typecheck && lint && test && build` green; 362/362 test files, 2267 tests. No migration.
+
+---
+
+## PR #190 — two bugs David found by watching her play (2026-09-07)
+
+### (a) The options moved under her finger
+
+> *"在答题过程中随机变换位置…在ipad上触屏操作很容易让小朋友失望"*
+
+The stable-id rule is already a landmine in CLAUDE.md, and `ImagePickScene` obeyed it. **The other three MCQ scenes did not:**
+
+| scene | shuffle deps |
+|---|---|
+| `AudioPickScene` | `[pool, olderPool, target]` |
+| `TranslatePickScene` | `[filteredPool, filteredOlder, target, direction]` |
+| `SentenceClozeScene` | `[pool, target]` |
+| `ImagePickScene` | `[target.characterId]` ✓ |
+
+`SceneRunner` rebuilds those arrays on every render — one is an inline `.filter(...)` in JSX — and it holds ten `useState` values plus a `useTransition`. So **tapping 💡 hint** reshuffles the choices while she is reaching for one. A coin toast or a finishing transition does the same.
+
+On a touch screen this is worse than it sounds: she decides, commits her finger, and the answer slides away. **It punishes a correct decision**, which is the one thing a product built around softening 畏难情绪 must never do.
+
+Why it showed up on the new map: A2 slice 1 (#175) added `olderPool` to those dependency arrays, and #180 made it cross-map and therefore always non-empty.
+
+All three now key on `target.characterId`. `tests/unit/option-drift.test.tsx` re-renders each scene with **fresh array identities and a toggling `hintRequested`** — the real trigger — and each fix was reverted individually to watch its own case fail.
+
+### (b) Study mode repeated cards, and its choices gave the answer away in English
+
+Two problems in one lesson.
+
+**The repeat.** `buildStudyLesson` filled six questions with `shuffledOwned[i % shuffledOwned.length]`, so a pack with three owned cards asked about each of them twice. Targets are now distinct, and `STUDY_MIN_OWNED` rises from 3 to **6** — equal to the lesson size, so the entry point waits for enough material rather than silently shrinking, which would hide from her why today's practice was different.
+
+A no-repeat test needs a `size` **larger** than the owned count to discriminate: with `owned >= size` the cycling index yields distinct targets anyway, so the obvious test passes against the broken code. The first draft did exactly that, and the mutation caught it.
+
+Raising the constant also exposed a second defect: the CTA copy said `收集 3 张` as a literal while the gate read `STUDY_MIN_OWNED`. Left alone, the page would have asked for three and refused at five. **Derive user-facing counts from the constant.**
+
+**The English.** `picture_to_word` rendered every choice as 中文 *with the English gloss underneath*, so the whole question was answerable without reading a single character — the one thing the lesson exists to practise.
+
+Choices are 中文 only now. A `word_to_picture` direction was added (read the word, pick the picture), so both directions are picture ↔ 中文. The gloss moved to `MultipleChoiceQuiz`'s new `postRevealNote`, shown **only after she commits** — the same rule as the flashcard's tap-to-reveal pinyin and the tone game's post-answer pinyin. English still lowers the difficulty; it just no longer answers the question.
+
+`pnpm typecheck && lint && test && build` green; 364/364 test files, 2285 tests. No migration.
