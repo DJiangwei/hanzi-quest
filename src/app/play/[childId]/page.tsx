@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { IslandMap } from '@/components/play/IslandMap';
 import { VoyageBoard } from '@/components/play/VoyageBoard';
 import { getVoyageMap } from '@/lib/play/map-boards';
+import { hasFinalBoss } from '@/lib/scenes/final-boss-maps';
 import { AvatarRender } from '@/components/play/AvatarRender';
 import { WeekStrip } from '@/components/play/WeekStrip';
 import { LevelBadge } from '@/components/play/LevelBadge';
@@ -130,7 +131,12 @@ export default async function PlayHomePage({ params }: PageProps) {
   // Final-boss state for the CURRENT map (drives the voyage-board lair node) +
   // the latest champion title (highest map order among beaten maps with a title).
   const [finalBossState, beatenPackIds] = await Promise.all([
-    currentMap
+    // `hasFinalBoss` gates this, not just "is the map cleared". A map with no
+    // roster entry must not advertise a lair the scene can only answer with a
+    // developer message — same rule as the 🔒 islands: never paint an action
+    // the child cannot take. Uses the PURE slug list, never the roster (which
+    // holds React components — RSC hazard).
+    currentMap && hasFinalBoss(currentMap.slug)
       ? Promise.all([
           isMapFullyCleared(child.id, currentMap.packId),
           getFinalBossClear(child.id, currentMap.packId),
