@@ -18,6 +18,16 @@ const HomeRoom3D = dynamic(() => import('./HomeRoom3D').then((m) => m.HomeRoom3D
   ),
 });
 
-export function Room3DMount({ placements }: { placements: Placed3D[] }) {
-  return <HomeRoom3D placements={placements} />;
+export function Room3DMount({
+  placements,
+  wallpaperSlug,
+  floorSlug,
+}: {
+  placements: Placed3D[];
+  wallpaperSlug?: string;
+  floorSlug?: string;
+}) {
+  return (
+    <HomeRoom3D placements={placements} wallpaperSlug={wallpaperSlug} floorSlug={floorSlug} />
+  );
 }

@@ -64,3 +64,53 @@ describe('3D piece registry', () => {
     }
   });
 });
+
+describe('3D covers the whole 2D catalog', () => {
+  // Two catalogs now describe the same home. Every gap here is a piece of
+  // furniture she owns that vanishes when she taps 立体视图, or a wallpaper
+  // that silently falls back to cream — neither raises an error.
+  it('every furniture slug has a 3D piece', async () => {
+    const { FURNITURE_CATALOG } = await import('@/lib/home/furniture-catalog');
+    const missing = FURNITURE_CATALOG.filter((f) => !PIECES[f.slug]).map((f) => f.slug);
+    expect(missing, `no 3D piece for: ${missing.join(', ')}`).toEqual([]);
+    expect(FURNITURE_CATALOG.length).toBe(25);
+  });
+
+  it('every wallpaper and floor slug has a 3D colour set', async () => {
+    const { SURFACES } = await import('@/lib/home/surfaces');
+    const { WALLPAPERS_3D, FLOORS_3D } = await import('@/lib/home3d/surfaces3d');
+    const missing = SURFACES.filter((s) =>
+      s.kind === 'wallpaper' ? !WALLPAPERS_3D[s.slug] : !FLOORS_3D[s.slug],
+    ).map((s) => s.slug);
+    expect(missing, `no 3D surface for: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('every room default resolves in 3D', async () => {
+    // A room whose own default is missing would open to the fallback cream on
+    // a child's very first visit — the worst case to leave uncovered.
+    const { ROOM_DEFAULT_SURFACES } = await import('@/lib/home/surfaces');
+    const { WALLPAPERS_3D, FLOORS_3D } = await import('@/lib/home3d/surfaces3d');
+    for (const [room, d] of Object.entries(ROOM_DEFAULT_SURFACES)) {
+      expect(WALLPAPERS_3D[d.wallpaper], `${room} wallpaper`).toBeDefined();
+      expect(FLOORS_3D[d.floor], `${room} floor`).toBeDefined();
+    }
+  });
+
+  it('the yard is the only room that opens outdoors', async () => {
+    // `outdoor` drives whether the shell draws walls or a sky. Marking an
+    // indoor surface outdoor would delete a room's walls.
+    const { ROOM_DEFAULT_SURFACES } = await import('@/lib/home/surfaces');
+    const { wallpaper3D, floor3D } = await import('@/lib/home3d/surfaces3d');
+    for (const [room, d] of Object.entries(ROOM_DEFAULT_SURFACES)) {
+      const isOutdoor = Boolean(wallpaper3D(d.wallpaper).outdoor || floor3D(d.floor).outdoor);
+      expect(isOutdoor, room).toBe(room === 'yard');
+    }
+  });
+
+  it('an unknown slug falls back instead of throwing', async () => {
+    // A surface bought after this map was written must not crash her home.
+    const { wallpaper3D, floor3D } = await import('@/lib/home3d/surfaces3d');
+    expect(wallpaper3D('wall-does-not-exist').base).toBeTruthy();
+    expect(floor3D(undefined).base).toBeTruthy();
+  });
+});

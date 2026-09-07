@@ -2,7 +2,9 @@
 
 import { Canvas } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
-import { PIECES, PALETTE } from '@/lib/home3d/pieces';
+import type { Surface3D } from '@/lib/home3d/surfaces3d';
+import { PIECES } from '@/lib/home3d/pieces';
+import { floor3D, wallpaper3D } from '@/lib/home3d/surfaces3d';
 
 /**
  * SPIKE — one bedroom, real 3D geometry, LOCKED camera.
@@ -63,7 +65,7 @@ export function cellToWorld(gridX: number, gridY: number, w: number, h: number) 
   return { x, z };
 }
 
-function Room() {
+function Room({ wall, ground, outdoor }: { wall: Surface3D; ground: Surface3D; outdoor: boolean }) {
   return (
     <group>
       {/* Floorboards, not one plane. A bare expanse of colour is the single
@@ -77,53 +79,86 @@ function Room() {
           receiveShadow
         >
           <planeGeometry args={[COLS, FLOOR_ROWS / 10]} />
-          <meshStandardMaterial color={i % 2 ? PALETTE.floor : PALETTE.floorAlt} roughness={0.78} />
+          <meshStandardMaterial color={i % 2 ? ground.base : ground.alt} roughness={0.78} />
         </mesh>
       ))}
 
       {/* Walls in two tones with a picture rail between them. Wainscoting is
           how a real room stops being a backdrop; the rail also gives the wall
           items something to sit against instead of floating on flat colour. */}
-      {([
-        [[0, 1.75, -FLOOR_ROWS / 2], [0, 0, 0], [COLS, 3.5]],
-        [[-COLS / 2, 1.75, 0], [0, Math.PI / 2, 0], [FLOOR_ROWS, 3.5]],
-      ] as const).map(([pos, rot, size], i) => (
-        <group key={i}>
-          <mesh position={[...pos]} rotation={[...rot]} receiveShadow>
-            <planeGeometry args={[size[0], size[1]]} />
-            <meshStandardMaterial color={PALETTE.wall} roughness={0.95} />
+      {/* Indoors: two walls, wainscot and picture rail. Outdoors: a big soft
+          backdrop instead, because a yard with two walls reads as a cell. */}
+      {outdoor ? (
+        /* Unlit and oversized. A sky is a backdrop, not a surface in the
+           room: lighting it drags it toward the ground bounce (it came back
+           grey-green), and a plane that does not overshoot the frame shows its
+           own edges behind the lawn. */
+        <mesh position={[0, 4, -FLOOR_ROWS / 2 - 2.2]}>
+          <planeGeometry args={[COLS * 6, 24]} />
+          <meshBasicMaterial color={wall.base} />
+        </mesh>
+      ) : (
+        ([
+          [[0, 1.75, -FLOOR_ROWS / 2], [0, 0, 0], [COLS, 3.5]],
+          [[-COLS / 2, 1.75, 0], [0, Math.PI / 2, 0], [FLOOR_ROWS, 3.5]],
+        ] as const).map(([pos, rot, size], i) => (
+          <group key={i}>
+            <mesh position={[...pos]} rotation={[...rot]} receiveShadow>
+              <planeGeometry args={[size[0], size[1]]} />
+              <meshStandardMaterial color={wall.base} roughness={0.95} />
+            </mesh>
+            <mesh position={[pos[0], 0.55, pos[2]]} rotation={[...rot]} receiveShadow>
+              <planeGeometry args={[size[0], 1.1]} />
+              <meshStandardMaterial color={wall.alt} roughness={0.95} />
+            </mesh>
+          </group>
+        ))
+      )}
+      {!outdoor && (
+        <>
+          <mesh position={[0, 1.12, -FLOOR_ROWS / 2 + 0.04]}>
+            <boxGeometry args={[COLS, 0.07, 0.08]} />
+            <meshStandardMaterial color={wall.trim} roughness={0.6} />
           </mesh>
-          {/* Lower band, a shade deeper */}
-          <mesh position={[pos[0], 0.55, pos[2]]} rotation={[...rot]} receiveShadow>
-            <planeGeometry args={[size[0], 1.1]} />
-            <meshStandardMaterial color="#eddcb8" roughness={0.95} />
+          <mesh position={[-COLS / 2 + 0.04, 1.12, 0]}>
+            <boxGeometry args={[0.08, 0.07, FLOOR_ROWS]} />
+            <meshStandardMaterial color={wall.trim} roughness={0.6} />
           </mesh>
-        </group>
-      ))}
-      {/* Picture rail */}
-      <mesh position={[0, 1.12, -FLOOR_ROWS / 2 + 0.04]}>
-        <boxGeometry args={[COLS, 0.07, 0.08]} />
-        <meshStandardMaterial color={PALETTE.cream} roughness={0.6} />
-      </mesh>
-      <mesh position={[-COLS / 2 + 0.04, 1.12, 0]}>
-        <boxGeometry args={[0.08, 0.07, FLOOR_ROWS]} />
-        <meshStandardMaterial color={PALETTE.cream} roughness={0.6} />
-      </mesh>
+        </>
+      )}
       {/* Skirting — a cheap trick that does a lot: it gives the wall/floor seam
           a shadow line, which is most of what makes a room feel built. */}
-      <mesh position={[0, 0.09, -FLOOR_ROWS / 2 + 0.03]}>
-        <boxGeometry args={[COLS, 0.18, 0.06]} />
-        <meshStandardMaterial color={PALETTE.cream} roughness={0.8} />
-      </mesh>
-      <mesh position={[-COLS / 2 + 0.03, 0.09, 0]}>
-        <boxGeometry args={[0.06, 0.18, FLOOR_ROWS]} />
-        <meshStandardMaterial color={PALETTE.cream} roughness={0.8} />
-      </mesh>
+      {!outdoor && (
+        <>
+          <mesh position={[0, 0.09, -FLOOR_ROWS / 2 + 0.03]}>
+            <boxGeometry args={[COLS, 0.18, 0.06]} />
+            <meshStandardMaterial color={wall.trim} roughness={0.8} />
+          </mesh>
+          <mesh position={[-COLS / 2 + 0.03, 0.09, 0]}>
+            <boxGeometry args={[0.06, 0.18, FLOOR_ROWS]} />
+            <meshStandardMaterial color={wall.trim} roughness={0.8} />
+          </mesh>
+        </>
+      )}
     </group>
   );
 }
 
-export function HomeRoom3D({ placements }: { placements: Placed3D[] }) {
+export function HomeRoom3D({
+  placements,
+  wallpaperSlug,
+  floorSlug,
+}: {
+  placements: Placed3D[];
+  wallpaperSlug?: string;
+  floorSlug?: string;
+}) {
+  const wall = wallpaper3D(wallpaperSlug);
+  const ground = floor3D(floorSlug);
+  // The yard has no walls: its "wallpaper" is a sky and its "floor" a lawn.
+  // Detecting that from the SURFACE rather than the room id means a future
+  // room that equips a sky gets the same treatment for free.
+  const outdoor = Boolean(wall.outdoor || ground.outdoor);
   return (
     <Canvas
       // `demand`: nothing moves, so the scene renders once and then costs
@@ -138,14 +173,17 @@ export function HomeRoom3D({ placements }: { placements: Placed3D[] }) {
       style={{ width: '100%', aspectRatio: '4 / 3', touchAction: 'pan-y' }}
       data-testid="home-room-3d"
     >
-      <color attach="background" args={['#fbf3e4']} />
+      <color attach="background" args={[outdoor ? wall.base : '#fbf3e4']} />
       {/* Warm key light from the window side + a cool fill, the two-light setup
           that gives the AC look most of its warmth. */}
       {/* Hemisphere instead of flat ambient: warm from above, floor-coloured
           bounce from below. It costs nothing, needs no HDRI or network, and is
           the single biggest step away from "three.js defaults" — flat ambient
-          at 0.85 was washing every form out. */}
-      <hemisphereLight args={['#fff6e4', '#e0b98a', 1.05]} />
+          at 0.85 was washing every form out.
+          The bounce colour is the FLOOR's, not a constant: hardcoding a warm
+          tan turned the blue living room grey and the yard's sky grey-green,
+          because every cool surface was being lit by sand. */}
+      <hemisphereLight args={['#fff6e4', ground.base, 1.05]} />
       <directionalLight
         position={[6, 9, 5]}
         intensity={2.1}
@@ -162,7 +200,7 @@ export function HomeRoom3D({ placements }: { placements: Placed3D[] }) {
       {/* Cool rim from behind-left, so silhouettes separate from the wall. */}
       <directionalLight position={[-7, 5, -4]} intensity={0.5} color="#cfe4ff" />
 
-      <Room />
+      <Room wall={wall} ground={ground} outdoor={outdoor} />
 
       {placements.map((p) => {
         const Piece = PIECES[p.slug];
