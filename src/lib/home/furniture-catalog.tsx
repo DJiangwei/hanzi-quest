@@ -715,7 +715,7 @@ function NightstandComponent(): ReactElement {
   );
 }
 
-/** 1×1 — treasure-chest */
+/** 1×1 — pirate-chest (NOT treasure-chest: that slug is an island decoration) */
 function TreasureChestComponent(): ReactElement {
   return (
     <g aria-hidden>
@@ -1113,7 +1113,7 @@ export const FURNITURE_CATALOG: FurnitureDef[] = [
     nameZh: '上下铺', nameEn: 'Bunk Bed', rarity: 'rare', priceCoins: 520, Component: BunkBedComponent },
   { slug: 'nightstand', category: 'furniture', surface: 'floor', footprint: { w: 1, h: 1 },
     nameZh: '床头柜', nameEn: 'Nightstand', rarity: 'common', priceCoins: 180, Component: NightstandComponent },
-  { slug: 'treasure-chest', category: 'furniture', surface: 'floor', footprint: { w: 1, h: 1 },
+  { slug: 'pirate-chest', category: 'furniture', surface: 'floor', footprint: { w: 1, h: 1 },
     nameZh: '藏宝箱', nameEn: 'Treasure Chest', rarity: 'epic', priceCoins: 680, Component: TreasureChestComponent },
   { slug: 'rug-star', category: 'rug', surface: 'floor', footprint: { w: 2, h: 1 },
     nameZh: '星星地毯', nameEn: 'Star Rug', rarity: 'rare', priceCoins: 320, Component: RugStarComponent },

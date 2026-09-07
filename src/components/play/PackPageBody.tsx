@@ -222,7 +222,13 @@ export function PackPageBody({
             {canStudy ? (
               <>📖 学习 / Study</>
             ) : (
-              <span className="text-sm">📖 收集 3 张即可学习 / Collect 3 to study</span>
+              <span className="text-sm">
+                {/* Derived, not typed. The gate already read
+                    STUDY_MIN_OWNED while this sentence said "3", so
+                    raising the minimum would have left the page asking
+                    for three and then refusing at five. */}
+                📖 收集 {STUDY_MIN_OWNED} 张即可学习 / Collect {STUDY_MIN_OWNED} to study
+              </span>
             )}
           </button>
         );

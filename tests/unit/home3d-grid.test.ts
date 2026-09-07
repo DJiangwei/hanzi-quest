@@ -114,3 +114,27 @@ describe('3D covers the whole 2D catalog', () => {
     expect(floor3D(undefined).base).toBeTruthy();
   });
 });
+
+describe('shop slugs are globally unique across catalogs', () => {
+  it('no furniture slug collides with an island decoration', async () => {
+    // `shop_items.slug` is global across kinds, not namespaced by it. A new
+    // furniture item named `treasure-chest` collided with the island
+    // decoration of the same name from 2026-05-23: the seed skipped it (the
+    // row already existed, as kind='decor'), and because the furniture shop
+    // filters to kind='home' the lookup returned undefined and the card
+    // rendered permanently disabled. Unbuyable, and nothing raised an error.
+    const { FURNITURE_CATALOG } = await import('@/lib/home/furniture-catalog');
+    const { DECOR_CATALOG } = await import('@/lib/decor/catalog');
+    const decorSlugs = new Set(Object.keys(DECOR_CATALOG));
+    const clashes = FURNITURE_CATALOG.map((f) => f.slug).filter((s) => decorSlugs.has(s));
+    expect(clashes, `furniture slugs also used by decor: ${clashes.join(', ')}`).toEqual([]);
+  });
+
+  it('no furniture slug collides with a wallpaper or floor', async () => {
+    const { FURNITURE_CATALOG } = await import('@/lib/home/furniture-catalog');
+    const { SURFACES } = await import('@/lib/home/surfaces');
+    const surfaceSlugs = new Set(SURFACES.map((s) => s.slug));
+    const clashes = FURNITURE_CATALOG.map((f) => f.slug).filter((s) => surfaceSlugs.has(s));
+    expect(clashes).toEqual([]);
+  });
+});

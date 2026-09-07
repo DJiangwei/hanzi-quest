@@ -101,15 +101,38 @@ export function StudyRunner({ childId, packSlug, packNameZh, packNameEn, questio
         stimulus={<CardArt packSlug={packSlug} slug={q.target.slug} imageUrl={q.target.imageUrl} emoji={emojiFor(q.target.slug)} owned size="lg" alt={q.target.nameEn} />}
         choices={q.choices.map((c: StudyCardLite) => ({
           key: c.id,
-          label: (
-            <span className="flex flex-col items-center">
-              <span className="font-hanzi text-2xl">{c.nameZh}</span>
-              <span className="text-xs text-[var(--color-sand-600)]">{c.nameEn}</span>
-            </span>
-          ),
+          // 中文 ONLY. The choices used to carry the English gloss underneath,
+          // which made the whole question answerable without reading a single
+          // character — the one thing this lesson exists to practise.
+          label: <span className="font-hanzi text-2xl">{c.nameZh}</span>,
           isCorrect: c.id === q.target.id,
         }))}
         postRevealAudio={q.target.nameZh}
+        postRevealNote={q.target.nameEn}
+        onComplete={onAnswer}
+      />
+    );
+  }
+
+  if (q.type === 'word_to_picture') {
+    // The other direction: read the 中文, find what it means. Same skill from
+    // the opposite side, and it needs no English at all.
+    return (
+      <MultipleChoiceQuiz
+        key={q.id}
+        prompt={<span className="font-hanzi text-lg">看词选图 / Read the word, pick the picture</span>}
+        stimulus={
+          <span className="flex flex-col items-center gap-2">
+            <span className="font-hanzi text-5xl text-[var(--color-ocean-900)]">{q.target.nameZh}</span>
+            <SpeakButton text={q.target.nameZh} />
+          </span>
+        }
+        choices={q.choices.map((c: StudyCardLite) => ({
+          key: c.id,
+          label: <CardArt packSlug={packSlug} slug={c.slug} imageUrl={c.imageUrl} emoji={emojiFor(c.slug)} owned size="md" alt={c.nameEn} />,
+          isCorrect: c.id === q.target.id,
+        }))}
+        postRevealNote={q.target.nameEn}
         onComplete={onAnswer}
       />
     );
@@ -126,6 +149,7 @@ export function StudyRunner({ childId, packSlug, packNameZh, packNameEn, questio
         label: <CardArt packSlug={packSlug} slug={c.slug} imageUrl={c.imageUrl} emoji={emojiFor(c.slug)} owned size="md" alt={c.nameEn} />,
         isCorrect: c.id === q.target.id,
       }))}
+      postRevealNote={`${q.target.nameZh} — ${q.target.nameEn}`}
       onComplete={onAnswer}
     />
   );

@@ -11,6 +11,7 @@ vi.mock('@/lib/actions/crew', () => ({ giftCardAction: vi.fn() }));
 
 const NO_GIFTING = { crew: [], ownersByItem: {}, giftsSentToday: 0 };
 
+import { STUDY_MIN_OWNED } from '@/lib/play/study';
 import { PackPageBody } from '@/components/play/PackPageBody';
 import type { CollectibleItem } from '@/lib/db/collections';
 
@@ -20,15 +21,17 @@ function item(id: string): CollectibleItem {
 const items = ['a', 'b', 'c', 'd'].map(item);
 
 describe('PackPageBody study button', () => {
-  it('shows the 学习 CTA enabled when ≥3 owned', () => {
-    render(<PackPageBody childId="c1" packSlug="animals-v1" items={items} ownedItemIds={['a', 'b', 'c']} ownedItems={[]} balance={0} shardCount={0} {...NO_GIFTING} />);
+  it('shows the 学习 CTA enabled at the minimum owned count', () => {
+    render(<PackPageBody childId="c1" packSlug="animals-v1" items={items} ownedItemIds={['a', 'b', 'c', 'd', 'e', 'f']} ownedItems={[]} balance={0} shardCount={0} {...NO_GIFTING} />);
     const btn = screen.getByTestId('study-cta');
     expect(btn).toBeEnabled();
     expect(btn).toHaveTextContent(/学习/);
   });
-  it('shows the collect-3 hint when fewer than 3 owned', () => {
+  it('shows the collect hint below the minimum, quoting the real number', () => {
     render(<PackPageBody childId="c1" packSlug="animals-v1" items={items} ownedItemIds={['a']} ownedItems={[]} balance={0} shardCount={0} {...NO_GIFTING} />);
     expect(screen.getByTestId('study-cta')).toBeDisabled();
-    expect(screen.getByText(/收集 3 张/)).toBeInTheDocument();
+    // Quotes STUDY_MIN_OWNED rather than a literal: the copy used to say "3"
+    // while the gate read the constant, so the two could disagree silently.
+    expect(screen.getByText(new RegExp(`收集 ${STUDY_MIN_OWNED} 张`))).toBeInTheDocument();
   });
 });

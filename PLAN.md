@@ -193,6 +193,8 @@ Production at <https://hanzi-adventure.vercel.app>. Distributed to friends & fam
 | #185 | feat(practice): V2 slice 1 — audio_pick reserves one tone-neighbour distractor | |
 | #186 | feat(write): E1 写字 stroke practice — standalone hanzi-writer tracing, no rewards | |
 | #187 | fix(telemetry): the boss recorded that she was wrong but never which option she took | |
+| #189 | feat(home): ten more furniture pieces; picture-first shop grid | |
+| #190 | fix(play): options drifted under her finger; study mode repeated cards and leaked English | |
 | #168 | fix(flashcard): the self-assessment was measuring the UI — identical button styling + an `answer_events.revealed` behavioural signal (migration 0043) |  |
 | #169 | feat(maps): Map 2 re-themed 印度洋 → 里海 Caspian Sea; Indian Ocean held in reserve as `pirate-class-level-3` |  |
 | #170 | feat(maps): Caspian sea-chart backdrop; ONLY_SLUG + preview/upload split for the art generator |  |

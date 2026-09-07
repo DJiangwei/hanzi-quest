@@ -23,7 +23,8 @@ vi.mock('@/lib/db/answer-events', () => ({
 
 import { finishStudyLessonAction } from '@/lib/actions/study';
 
-const ownedThree = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+// Six: STUDY_MIN_OWNED, so the lesson has distinct targets.
+const ownedThree = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }, { id: 'e' }, { id: 'f' }];
 
 beforeEach(() => {
   vi.clearAllMocks();
