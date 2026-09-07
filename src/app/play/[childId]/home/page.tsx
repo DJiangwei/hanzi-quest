@@ -4,6 +4,7 @@ import { getHomeState } from '@/lib/db/home';
 import { getRoomSurfaces } from '@/lib/db/home-surfaces';
 import { getSurface } from '@/lib/home/surfaces';
 import { HomeRoomView } from '@/components/home/HomeRoomView';
+import { HomeViewSwitch } from '@/components/home3d/HomeViewSwitch';
 
 interface PageProps {
   params: Promise<{ childId: string }>;
@@ -41,12 +42,18 @@ export default async function HomePage({ params }: PageProps) {
           </Link>
         </div>
       ) : (
-        <HomeRoomView
-          childId={child.id}
-          ownedSlugs={ownedSlugs}
+        <HomeViewSwitch
+          twoD={
+            <HomeRoomView
+              childId={child.id}
+              ownedSlugs={ownedSlugs}
+              placements={placements}
+              roomSurfaces={roomSurfaces}
+              ownedSurfaceSlugs={ownedSurfaceSlugs}
+            />
+          }
           placements={placements}
           roomSurfaces={roomSurfaces}
-          ownedSurfaceSlugs={ownedSurfaceSlugs}
         />
       )}
     </main>
