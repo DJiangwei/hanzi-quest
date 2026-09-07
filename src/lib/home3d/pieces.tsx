@@ -785,7 +785,7 @@ export const PIECES: Record<string, () => ReactElement> = {
   wardrobe: Wardrobe,
   'bunk-bed': BunkBed,
   nightstand: Nightstand,
-  'treasure-chest': TreasureChest,
+  'pirate-chest': TreasureChest,
   'rug-star': RugStar,
   'map-pirate': MapPirate,
   'shelf-wall': ShelfWall,

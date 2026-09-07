@@ -163,7 +163,7 @@ describe('the furniture shop is friendly, not chatty', () => {
   const all = [
     makeShopItem('bed-cozy', 300),
     makeShopItem('poster-stars', 90),
-    makeShopItem('treasure-chest', 680),
+    makeShopItem('pirate-chest', 680),
   ];
 
   it('prints a price ONCE per card', () => {
@@ -185,7 +185,7 @@ describe('the furniture shop is friendly, not chatty', () => {
     render(
       <HomeTabBody childId="c" homeShopItems={all} ownedShopItemIds={new Set()} coinBalance={0} />,
     );
-    const card = screen.getByTestId('treasure-chest');
+    const card = screen.getByTestId('pirate-chest');
     expect(card).toHaveAttribute('data-state', 'tooExpensive');
     expect(card).toBeDisabled();
     const text = card.textContent ?? '';
@@ -214,7 +214,7 @@ describe('the furniture shop is friendly, not chatty', () => {
     render(
       <HomeTabBody childId="c" homeShopItems={all} ownedShopItemIds={new Set()} coinBalance={9999} />,
     );
-    for (const slug of ['wardrobe', 'bunk-bed', 'treasure-chest', 'map-pirate', 'globe-desk', 'yard-bench']) {
+    for (const slug of ['wardrobe', 'bunk-bed', 'pirate-chest', 'map-pirate', 'globe-desk', 'yard-bench']) {
       expect(screen.getByTestId(slug), slug).toBeInTheDocument();
     }
   });
