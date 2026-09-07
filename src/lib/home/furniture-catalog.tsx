@@ -83,10 +83,16 @@ function ClockRoundComponent(): ReactElement {
       {/* Hour markers */}
       {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg, i) => {
         const rad = (deg - 90) * (Math.PI / 180);
-        const x1 = 6.25 + 3.4 * Math.cos(rad);
-        const y1 = 6.25 + 3.4 * Math.sin(rad);
-        const x2 = 6.25 + 4 * Math.cos(rad);
-        const y2 = 6.25 + 4 * Math.sin(rad);
+        // Rounded, and that is not cosmetic: an unrounded float serialises to
+        // a different string on the server than the client renders as a number
+        // (3.305513627132909 vs 3.3055136271329095), which React reports as a
+        // hydration mismatch on every shop render. Harmless in itself, but
+        // console noise is what let a real shader error hide earlier today.
+        const r = (n: number) => Math.round(n * 1000) / 1000;
+        const x1 = r(6.25 + 3.4 * Math.cos(rad));
+        const y1 = r(6.25 + 3.4 * Math.sin(rad));
+        const x2 = r(6.25 + 4 * Math.cos(rad));
+        const y2 = r(6.25 + 4 * Math.sin(rad));
         return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#8b6020" strokeWidth={i % 3 === 0 ? 0.6 : 0.3} />;
       })}
       {/* Hands */}
@@ -657,6 +663,167 @@ function FlowerBedComponent(): ReactElement {
 
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
 
+
+// ─── NEW (2026-09-07) ─────────────────────────────────────────────────────────
+// Ten additions, weighted to the pirate-adventure direction the art is locked
+// to. Each needs three things and this is the first: a flat SVG drawn in a
+// footprint.w×footprint.h box of 12.5-unit cells.
+
+/** 2×1 — wardrobe */
+function WardrobeComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      <rect x={2} y={0.5} width={21} height={11.5} rx={1.4} fill="#8b5e3c" />
+      <rect x={2.8} y={1.3} width={9.2} height={10} rx={1} fill="#c89b6a" />
+      <rect x={12.5} y={1.3} width={9.2} height={10} rx={1} fill="#c89b6a" />
+      <circle cx={11.4} cy={6.3} r={0.7} fill="#f5e8d0" />
+      <circle cx={13.1} cy={6.3} r={0.7} fill="#f5e8d0" />
+      <rect x={2} y={0.5} width={21} height={1.2} rx={1.2} fill="#6f4a2e" />
+    </g>
+  );
+}
+
+/** 2×1 — bunk-bed */
+function BunkBedComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      <rect x={0.5} y={1} width={24} height={2.6} rx={1.2} fill="#f5e8d0" stroke="#c9a97e" strokeWidth={0.4} />
+      <rect x={4} y={1.4} width={16} height={1.8} rx={0.9} fill="#f79274" />
+      <rect x={0.5} y={7.4} width={24} height={2.6} rx={1.2} fill="#f5e8d0" stroke="#c9a97e" strokeWidth={0.4} />
+      <rect x={4} y={7.8} width={16} height={1.8} rx={0.9} fill="#4fc0b4" />
+      {[1, 23.4].map((x) => (
+        <rect key={x} x={x} y={0.6} width={1.2} height={11.4} rx={0.6} fill="#8b5e3c" />
+      ))}
+      {[3.6, 5.2, 6.8].map((y) => (
+        <rect key={y} x={20.5} y={y} width={3.4} height={0.5} rx={0.25} fill="#8b5e3c" />
+      ))}
+    </g>
+  );
+}
+
+/** 1×1 — nightstand */
+function NightstandComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      <rect x={1.5} y={3} width={9.5} height={8.5} rx={1.2} fill="#c89b6a" />
+      <rect x={1.5} y={3} width={9.5} height={1} rx={1} fill="#8b5e3c" />
+      <rect x={2.6} y={5} width={7.3} height={2.6} rx={0.7} fill="#b07c46" />
+      <rect x={2.6} y={8.2} width={7.3} height={2.6} rx={0.7} fill="#b07c46" />
+      <circle cx={6.25} cy={6.3} r={0.6} fill="#f5e8d0" />
+      <circle cx={6.25} cy={9.5} r={0.6} fill="#f5e8d0" />
+    </g>
+  );
+}
+
+/** 1×1 — treasure-chest */
+function TreasureChestComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      <rect x={1.4} y={5.6} width={9.7} height={5.8} rx={1} fill="#8b5e3c" />
+      <path d="M 1.4 6 Q 6.25 1.6 11.1 6 Z" fill="#a3703f" />
+      <rect x={1.4} y={5.2} width={9.7} height={1.1} rx={0.5} fill="#6f4a2e" />
+      {[3.2, 9.2].map((x) => (
+        <rect key={x} x={x} y={3.4} width={0.9} height={8} rx={0.4} fill="#ffd166" />
+      ))}
+      <rect x={5.4} y={6.6} width={1.7} height={2.2} rx={0.5} fill="#ffd166" />
+      <circle cx={6.25} cy={7.4} r={0.45} fill="#8b5e3c" />
+    </g>
+  );
+}
+
+/** 2×1 — rug-star */
+function RugStarComponent(): ReactElement {
+  const star = (cx: number, cy: number, r: number) =>
+    Array.from({ length: 5 }, (_, i) => {
+      const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      const b = a + Math.PI / 5;
+      const q = (n: number) => Math.round(n * 1000) / 1000;
+      return `${q(cx + Math.cos(a) * r)},${q(cy + Math.sin(a) * r)} ${q(cx + Math.cos(b) * r * 0.42)},${q(cy + Math.sin(b) * r * 0.42)}`;
+    }).join(' ');
+  return (
+    <g aria-hidden>
+      <rect x={1} y={2.4} width={23} height={7.7} rx={3.4} fill="#3b4a86" />
+      <rect x={2.2} y={3.4} width={20.6} height={5.7} rx={2.6} fill="#4f5fa6" />
+      {[6, 12.5, 19].map((cx, i) => (
+        <polygon key={cx} points={star(cx, 6.25, i === 1 ? 2.5 : 1.8)} fill="#ffd166" />
+      ))}
+    </g>
+  );
+}
+
+/** 2×1 wall — map-pirate */
+function MapPirateComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      <rect x={1} y={1} width={23} height={10.5} rx={0.8} fill="#8b5e3c" />
+      <rect x={1.8} y={1.8} width={21.4} height={8.9} rx={0.5} fill="#f0dcae" />
+      <path d="M 3.4 8.6 Q 7 5.4 10.6 7.6 Q 14 9.6 17.6 6.2 Q 20 4 21.6 5.4" stroke="#c9a97e" strokeWidth={0.5} fill="none" />
+      <path d="M 4 4 q 2.4 -1.4 4.6 0.4 q 2.2 1.8 4.4 0" stroke="#a3703f" strokeWidth={0.4} fill="none" strokeDasharray="1 0.8" />
+      <path d="M 18.4 3.2 l 1.1 1.1 l -1.1 1.1 l -1.1 -1.1 Z" fill="#b8232a" />
+      <path d="M 6 9.6 l 1 1 M 7 9.6 l -1 1" stroke="#b8232a" strokeWidth={0.6} />
+    </g>
+  );
+}
+
+/** 2×1 wall — shelf-wall */
+function ShelfWallComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      <rect x={1} y={7.6} width={23} height={1.4} rx={0.6} fill="#8b5e3c" />
+      {[3, 4.4, 5.8].map((x, i) => (
+        <rect key={x} x={x} y={3.6} width={1.1} height={4} rx={0.3} fill={['#f26d6d', '#4fc0b4', '#3b4a86'][i]} />
+      ))}
+      <circle cx={12} cy={6.2} r={1.5} fill="#6fc45e" />
+      <rect x={11.4} y={6.6} width={1.2} height={1.1} rx={0.3} fill="#c9663f" />
+      <rect x={17} y={4.8} width={4.4} height={2.8} rx={0.6} fill="#ffd166" />
+      <rect x={17} y={4.8} width={4.4} height={0.9} rx={0.5} fill="#ffe29a" />
+    </g>
+  );
+}
+
+/** 1×1 wall — lantern-hanging */
+function LanternHangingComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      <rect x={5.9} y={0.6} width={0.7} height={2.6} rx={0.3} fill="#6f4a2e" />
+      <path d="M 3.4 3.6 L 9.1 3.6 L 8.1 9.6 L 4.4 9.6 Z" fill="#ffd166" stroke="#b07c46" strokeWidth={0.5} />
+      <rect x={3} y={3} width={6.5} height={1.1} rx={0.5} fill="#8b5e3c" />
+      <rect x={4} y={9.3} width={4.5} height={1} rx={0.4} fill="#8b5e3c" />
+      <circle cx={6.25} cy={6.4} r={1.3} fill="#fff3c4" />
+    </g>
+  );
+}
+
+/** 1×1 — globe-desk */
+function GlobeDeskComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      <rect x={4.2} y={10.4} width={4.1} height={1.2} rx={0.5} fill="#8b5e3c" />
+      <rect x={5.9} y={7.4} width={0.7} height={3.2} rx={0.3} fill="#8b5e3c" />
+      <circle cx={6.25} cy={5.4} r={3.6} fill="#7fc3e8" />
+      <path d="M 3.6 4 q 1.8 1.2 3.4 0.2 q 1.4 -0.9 2.5 0.5" fill="none" stroke="#6fc45e" strokeWidth={1.5} strokeLinecap="round" />
+      <path d="M 4.2 7.2 q 2 -0.8 3.8 0.4" fill="none" stroke="#6fc45e" strokeWidth={1.2} strokeLinecap="round" />
+      <path d="M 2.65 5.4 a 3.6 3.6 0 0 0 7.2 0" fill="none" stroke="#ffd166" strokeWidth={0.6} />
+    </g>
+  );
+}
+
+/** 2×1 — yard-bench */
+function YardBenchComponent(): ReactElement {
+  return (
+    <g aria-hidden>
+      {[4.2, 5.9].map((y) => (
+        <rect key={y} x={1.6} y={y} width={21.8} height={1.3} rx={0.6} fill="#c89b6a" />
+      ))}
+      <rect x={1.6} y={7.9} width={21.8} height={1.5} rx={0.7} fill="#b07c46" />
+      {[2.6, 21].map((x) => (
+        <rect key={x} x={x} y={2.4} width={1.4} height={9.4} rx={0.6} fill="#8b5e3c" />
+      ))}
+      <rect x={1.6} y={2.4} width={21.8} height={1.2} rx={0.6} fill="#c89b6a" />
+    </g>
+  );
+}
+
 export const FURNITURE_CATALOG: FurnitureDef[] = [
   // wall_art — wall surface
   {
@@ -939,6 +1106,27 @@ export const FURNITURE_CATALOG: FurnitureDef[] = [
     priceCoins: 250,
     Component: FlowerBedComponent,
   },
+  // ─── added 2026-09-07 ───────────────────────────────────────────────────────
+  { slug: 'wardrobe', category: 'furniture', surface: 'floor', footprint: { w: 2, h: 1 },
+    nameZh: '衣柜', nameEn: 'Wardrobe', rarity: 'common', priceCoins: 340, Component: WardrobeComponent },
+  { slug: 'bunk-bed', category: 'furniture', surface: 'floor', footprint: { w: 2, h: 1 },
+    nameZh: '上下铺', nameEn: 'Bunk Bed', rarity: 'rare', priceCoins: 520, Component: BunkBedComponent },
+  { slug: 'nightstand', category: 'furniture', surface: 'floor', footprint: { w: 1, h: 1 },
+    nameZh: '床头柜', nameEn: 'Nightstand', rarity: 'common', priceCoins: 180, Component: NightstandComponent },
+  { slug: 'treasure-chest', category: 'furniture', surface: 'floor', footprint: { w: 1, h: 1 },
+    nameZh: '藏宝箱', nameEn: 'Treasure Chest', rarity: 'epic', priceCoins: 680, Component: TreasureChestComponent },
+  { slug: 'rug-star', category: 'rug', surface: 'floor', footprint: { w: 2, h: 1 },
+    nameZh: '星星地毯', nameEn: 'Star Rug', rarity: 'rare', priceCoins: 320, Component: RugStarComponent },
+  { slug: 'map-pirate', category: 'wall_art', surface: 'wall', footprint: { w: 2, h: 1 },
+    nameZh: '航海图', nameEn: 'Pirate Map', rarity: 'rare', priceCoins: 380, Component: MapPirateComponent },
+  { slug: 'shelf-wall', category: 'wall_art', surface: 'wall', footprint: { w: 2, h: 1 },
+    nameZh: '壁架', nameEn: 'Wall Shelf', rarity: 'common', priceCoins: 260, Component: ShelfWallComponent },
+  { slug: 'lantern-hanging', category: 'window_light', surface: 'wall', footprint: { w: 1, h: 1 },
+    nameZh: '吊灯笼', nameEn: 'Hanging Lantern', rarity: 'common', priceCoins: 220, Component: LanternHangingComponent },
+  { slug: 'globe-desk', category: 'plant_toy', surface: 'floor', footprint: { w: 1, h: 1 },
+    nameZh: '地球仪', nameEn: 'Desk Globe', rarity: 'rare', priceCoins: 300, Component: GlobeDeskComponent },
+  { slug: 'yard-bench', category: 'furniture', surface: 'floor', footprint: { w: 2, h: 1 },
+    nameZh: '院子长椅', nameEn: 'Garden Bench', rarity: 'common', priceCoins: 280, Component: YardBenchComponent },
 ];
 
 export const FURNITURE_BY_SLUG = new Map<string, FurnitureDef>(

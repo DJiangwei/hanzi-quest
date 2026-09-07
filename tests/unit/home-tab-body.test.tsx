@@ -48,17 +48,18 @@ describe('HomeTabBody', () => {
         coinBalance={500}
       />,
     );
-    // furniture group header
-    expect(screen.getByText(/家具.*Furniture/i)).toBeInTheDocument();
-    // wall_art group header
-    expect(screen.getByText(/墙饰.*Wall Art/i)).toBeInTheDocument();
+    // Section headings are now emoji + 中文 + English in separate spans, so
+    // match the parts rather than one run of text.
+    expect(screen.getByText('家具')).toBeInTheDocument();
+    expect(screen.getByText('/ Furniture')).toBeInTheDocument();
+    expect(screen.getByText('墙饰')).toBeInTheDocument();
     // item names
     expect(screen.getByText('温馨小床')).toBeInTheDocument();
     expect(screen.getByText('Cozy Bed')).toBeInTheDocument();
     expect(screen.getByText('星空海报')).toBeInTheDocument();
   });
 
-  it('E3 multi-buy: an owned item offers 再买一个 until the cap, then 已满 disables', () => {
+  it('E3 multi-buy: an owned item stays buyable until the cap, then reads 满', () => {
     const { rerender } = render(
       <HomeTabBody
         childId="child-1"
@@ -68,8 +69,12 @@ describe('HomeTabBody', () => {
         coinBalance={500}
       />,
     );
-    const buyAgain = screen.getByRole('button', { name: /再买一个/i });
-    expect(buyAgain).toBeEnabled();
+    // The card IS the button now, and its state is on the element rather than
+    // in a sentence: `再买一个 / Buy another 🪙 320` was a paragraph to read
+    // twenty-five times.
+    const card = screen.getByTestId('bed-cozy');
+    expect(card).toBeEnabled();
+    expect(card).toHaveAttribute('data-state', 'buy');
     expect(screen.getByTestId('owned-count-bed-cozy').textContent).toContain('×1');
 
     rerender(
@@ -81,8 +86,9 @@ describe('HomeTabBody', () => {
         coinBalance={500}
       />,
     );
-    const maxed = screen.getByRole('button', { name: /已满/i });
+    const maxed = screen.getByTestId('bed-cozy');
     expect(maxed).toBeDisabled();
+    expect(maxed).toHaveAttribute('data-state', 'maxed');
   });
 
   it('disables buy button when balance is insufficient', () => {
@@ -110,8 +116,8 @@ describe('HomeTabBody', () => {
         coinBalance={500}
       />,
     );
-    // find buy button for poster-stars (90 coins)
-    const buyBtn = screen.getByRole('button', { name: /购买.*90/ });
+    // The card itself is the buy target.
+    const buyBtn = screen.getByTestId('poster-stars');
     await act(async () => {
       fireEvent.click(buyBtn);
     });
@@ -150,5 +156,66 @@ describe('HomeTabBody', () => {
     expect(screen.getByText('温馨小床')).toBeInTheDocument();
     const placeholderBtns = screen.getAllByRole('button', { name: /即将上线/ });
     expect(placeholderBtns.length).toBeGreaterThan(0);
+  });
+});
+
+describe('the furniture shop is friendly, not chatty', () => {
+  const all = [
+    makeShopItem('bed-cozy', 300),
+    makeShopItem('poster-stars', 90),
+    makeShopItem('treasure-chest', 680),
+  ];
+
+  it('prints a price ONCE per card', () => {
+    // The old card showed 🪙300 in the row and again inside the button label.
+    // Scoped to one card: the component renders the whole catalog and several
+    // items happen to cost 300, so a page-wide count measures the catalog, not
+    // the card — the first draft of this test asserted exactly that and failed.
+    render(
+      <HomeTabBody childId="c" homeShopItems={all} ownedShopItemIds={new Set()} coinBalance={9999} />,
+    );
+    const card = screen.getByTestId('bed-cozy');
+    const hits = (card.textContent ?? '').match(/300/g) ?? [];
+    expect(hits).toHaveLength(1);
+  });
+
+  it('says nothing scolding when she cannot afford something', () => {
+    // A shop is where a child meets "no" most often, and this product softens
+    // 畏难情绪 everywhere else. The state is a grey chip, not a sentence.
+    render(
+      <HomeTabBody childId="c" homeShopItems={all} ownedShopItemIds={new Set()} coinBalance={0} />,
+    );
+    const card = screen.getByTestId('treasure-chest');
+    expect(card).toHaveAttribute('data-state', 'tooExpensive');
+    expect(card).toBeDisabled();
+    const text = card.textContent ?? '';
+    expect(text).not.toMatch(/不够|买不起|cannot|can't|afford|no money/i);
+  });
+
+  it('never shows grid-cell counts — that is developer information', () => {
+    render(
+      <HomeTabBody childId="c" homeShopItems={all} ownedShopItemIds={new Set()} coinBalance={9999} />,
+    );
+    expect(screen.queryByText(/格 \/ cell/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/1×1|2×1/)).not.toBeInTheDocument();
+  });
+
+  it('keeps the whole card tappable, so there is one target not two', () => {
+    render(
+      <HomeTabBody childId="c" homeShopItems={all} ownedShopItemIds={new Set()} coinBalance={9999} />,
+    );
+    const card = screen.getByTestId('bed-cozy');
+    expect(card.tagName).toBe('BUTTON');
+    // and it still says what it does, for a screen reader
+    expect(card).toHaveAccessibleName(/温馨小床.*300/);
+  });
+
+  it('offers the ten new items alongside the originals', () => {
+    render(
+      <HomeTabBody childId="c" homeShopItems={all} ownedShopItemIds={new Set()} coinBalance={9999} />,
+    );
+    for (const slug of ['wardrobe', 'bunk-bed', 'treasure-chest', 'map-pirate', 'globe-desk', 'yard-bench']) {
+      expect(screen.getByTestId(slug), slug).toBeInTheDocument();
+    }
   });
 });

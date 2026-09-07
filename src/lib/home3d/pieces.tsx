@@ -565,6 +565,197 @@ export function YardFlowerBed(): ReactElement {
   );
 }
 
+
+// ─── added 2026-09-07 ─────────────────────────────────────────────────────────
+
+/** 2×1 — wardrobe */
+export function Wardrobe(): ReactElement {
+  return (
+    <group>
+      <Box size={[1.7, 1.9, 0.55]} pos={[0, 0.95, 0]} color={PALETTE.woodDark} />
+      {[-0.42, 0.42].map((x) => (
+        <Box key={x} size={[0.78, 1.7, 0.06]} pos={[x, 0.97, 0.28]} color={PALETTE.wood} radius={0.03} />
+      ))}
+      {[-0.05, 0.05].map((x) => (
+        <Box key={x} size={[0.05, 0.16, 0.06]} pos={[x, 0.95, 0.32]} color={PALETTE.cream} radius={0.02} finish={FINISH.painted} />
+      ))}
+      <Box size={[1.78, 0.1, 0.62]} pos={[0, 1.94, 0]} color="#9a6b45" />
+    </group>
+  );
+}
+
+/** 2×1 — bunk-bed */
+export function BunkBed(): ReactElement {
+  return (
+    <group>
+      {[-0.82, 0.82].map((x) =>
+        [-0.4, 0.4].map((z) => (
+          <Box key={`${x}${z}`} size={[0.11, 1.9, 0.11]} pos={[x, 0.95, z]} color={PALETTE.woodDark} radius={0.04} />
+        )),
+      )}
+      {[0.44, 1.34].map((y, i) => (
+        <group key={y}>
+          <Box size={[1.72, 0.14, 0.86]} pos={[0, y, 0]} color={PALETTE.wood} />
+          <Box size={[1.6, 0.14, 0.78]} pos={[0, y + 0.13, 0]} color={PALETTE.fabric} finish={FINISH.fabric} />
+          <Box size={[1.0, 0.1, 0.78]} pos={[0.3, y + 0.21, 0]} color={i ? PALETTE.coral : PALETTE.teal} finish={FINISH.fabric} />
+          <Box size={[0.42, 0.12, 0.6]} pos={[-0.55, y + 0.21, 0]} color={PALETTE.cream} finish={FINISH.fabric} />
+        </group>
+      ))}
+      {/* Ladder */}
+      {[0.5, 0.78, 1.06, 1.34].map((y) => (
+        <Box key={y} size={[0.34, 0.05, 0.05]} pos={[0.95, y, 0.28]} color={PALETTE.wood} radius={0.02} />
+      ))}
+    </group>
+  );
+}
+
+/** 1×1 — nightstand */
+export function Nightstand(): ReactElement {
+  return (
+    <group>
+      <Box size={[0.72, 0.68, 0.6]} pos={[0, 0.34, 0]} color={PALETTE.wood} />
+      {[0.24, 0.5].map((y) => (
+        <Box key={y} size={[0.6, 0.22, 0.05]} pos={[0, y, 0.3]} color={PALETTE.woodDark} radius={0.02} />
+      ))}
+      {[0.24, 0.5].map((y) => (
+        <Box key={`k${y}`} size={[0.11, 0.05, 0.05]} pos={[0, y, 0.34]} color={PALETTE.cream} radius={0.02} finish={FINISH.painted} />
+      ))}
+      <Box size={[0.78, 0.06, 0.66]} pos={[0, 0.7, 0]} color="#9a6b45" />
+    </group>
+  );
+}
+
+/** 1×1 — treasure-chest */
+export function TreasureChest(): ReactElement {
+  return (
+    <group>
+      <Box size={[0.82, 0.44, 0.56]} pos={[0, 0.22, 0]} color="#8b5e3c" />
+      {/* Domed lid: a half-cylinder is what makes a box read as a chest. */}
+      <mesh position={[0, 0.46, 0]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.28, 0.28, 0.82, 18, 1, false, 0, Math.PI]} />
+        <meshStandardMaterial color="#a3703f" roughness={FINISH.wood} />
+      </mesh>
+      {[-0.26, 0.26].map((x) => (
+        <Box key={x} size={[0.07, 0.72, 0.6]} pos={[x, 0.32, 0]} color="#ffd166" radius={0.02} finish={FINISH.painted} />
+      ))}
+      <Box size={[0.16, 0.2, 0.06]} pos={[0, 0.4, 0.29]} color="#ffd166" radius={0.03} finish={FINISH.painted} />
+    </group>
+  );
+}
+
+/** 2×1 — rug-star */
+export function RugStar(): ReactElement {
+  return (
+    <group>
+      <Box size={[1.78, 0.024, 0.86]} pos={[0, 0.012, 0]} color="#3b4a86" finish={FINISH.fabric} radius={0.06} />
+      <Box size={[1.6, 0.008, 0.7]} pos={[0, 0.026, 0]} color="#4f5fa6" finish={FINISH.fabric} radius={0.05} />
+      {[-0.52, 0, 0.52].map((x, i) => (
+        <mesh key={x} position={[x, 0.032, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[i === 1 ? 0.19 : 0.14, 5]} />
+          <meshStandardMaterial color="#ffd166" roughness={FINISH.fabric} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** 2×1 wall — map-pirate */
+export function MapPirate(): ReactElement {
+  return (
+    <group>
+      <Box size={[1.7, 0.95, 0.06]} pos={[0, 0, 0]} color="#8b5e3c" radius={0.02} />
+      <Box size={[1.54, 0.8, 0.03]} pos={[0, 0, 0.04]} color="#f0dcae" radius={0.015} finish={FINISH.painted} />
+      <Box size={[0.9, 0.03, 0.02]} pos={[-0.2, 0.12, 0.06]} color="#c9a97e" radius={0.008} />
+      <Box size={[0.6, 0.03, 0.02]} pos={[0.25, -0.1, 0.06]} color="#c9a97e" radius={0.008} />
+      {/* The X. */}
+      {[0.6, -0.6].map((r) => (
+        <Box key={r} size={[0.16, 0.035, 0.02]} pos={[0.42, 0.24, 0.07]} rot={[0, 0, r]} color="#b8232a" radius={0.01} finish={FINISH.painted} />
+      ))}
+    </group>
+  );
+}
+
+/** 2×1 wall — shelf-wall */
+export function ShelfWall(): ReactElement {
+  return (
+    <group>
+      <Box size={[1.7, 0.08, 0.26]} pos={[0, -0.1, 0.06]} color="#8b5e3c" />
+      {[-0.62, -0.5, -0.38].map((x, i) => (
+        <Box key={x} size={[0.09, 0.34, 0.2]} pos={[x, 0.11, 0.06]} color={['#f26d6d', '#4fc0b4', '#3b4a86'][i]} radius={0.015} finish={FINISH.painted} />
+      ))}
+      <mesh position={[0.02, 0.14, 0.06]} castShadow>
+        <sphereGeometry args={[0.13, 12, 10]} />
+        <meshStandardMaterial color="#6fc45e" roughness={FINISH.leaf} />
+      </mesh>
+      <Box size={[0.16, 0.12, 0.16]} pos={[0.02, 0.0, 0.06]} color="#c9663f" radius={0.02} finish={FINISH.painted} />
+      <Box size={[0.36, 0.22, 0.2]} pos={[0.56, 0.05, 0.06]} color="#ffd166" radius={0.03} finish={FINISH.painted} />
+    </group>
+  );
+}
+
+/** 1×1 wall — lantern-hanging */
+export function LanternHanging(): ReactElement {
+  return (
+    <group>
+      <Box size={[0.04, 0.24, 0.04]} pos={[0, 0.36, 0]} color="#6f4a2e" radius={0.015} />
+      <Box size={[0.44, 0.08, 0.32]} pos={[0, 0.22, 0]} color="#8b5e3c" radius={0.02} />
+      <mesh position={[0, -0.02, 0]} castShadow>
+        <cylinderGeometry args={[0.15, 0.21, 0.42, 6]} />
+        <meshStandardMaterial color="#ffd166" roughness={0.45} emissive="#ffcf6a" emissiveIntensity={0.35} />
+      </mesh>
+      <Box size={[0.36, 0.07, 0.28]} pos={[0, -0.25, 0]} color="#8b5e3c" radius={0.02} />
+    </group>
+  );
+}
+
+/** 1×1 — globe-desk */
+export function GlobeDesk(): ReactElement {
+  return (
+    <group>
+      <Box size={[0.36, 0.07, 0.3]} pos={[0, 0.035, 0]} color={PALETTE.woodDark} radius={0.02} />
+      <Box size={[0.06, 0.24, 0.06]} pos={[0, 0.19, 0]} color={PALETTE.woodDark} radius={0.02} />
+      <mesh position={[0, 0.52, 0]} castShadow receiveShadow>
+        <sphereGeometry args={[0.27, 20, 16]} />
+        <meshStandardMaterial color="#7fc3e8" roughness={0.5} />
+      </mesh>
+      {/* Continents: a few flattened patches, enough to read as land. */}
+      {[
+        [0.3, 0.5, 0.11], [-0.9, -0.2, 0.09], [1.9, 0.1, 0.08], [2.7, -0.6, 0.07],
+      ].map(([a, b, r], i) => (
+        <mesh key={i} position={[Math.cos(a) * Math.cos(b) * 0.27, 0.52 + Math.sin(b) * 0.27, Math.sin(a) * Math.cos(b) * 0.27]} castShadow>
+          <sphereGeometry args={[r, 10, 8]} />
+          <meshStandardMaterial color="#6fc45e" roughness={FINISH.leaf} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.52, 0]} rotation={[0, 0, 0.35]}>
+        <torusGeometry args={[0.3, 0.018, 8, 28, Math.PI]} />
+        <meshStandardMaterial color="#ffd166" roughness={FINISH.painted} />
+      </mesh>
+    </group>
+  );
+}
+
+/** 2×1 — yard-bench */
+export function YardBench(): ReactElement {
+  return (
+    <group>
+      {[-0.16, 0.16].map((z) => (
+        <Box key={z} size={[1.74, 0.09, 0.24]} pos={[0, 0.46, z]} color={PALETTE.wood} radius={0.03} />
+      ))}
+      {[0.66, 0.86].map((y) => (
+        <Box key={y} size={[1.74, 0.16, 0.07]} pos={[0, y, -0.3]} color={PALETTE.wood} radius={0.03} />
+      ))}
+      {[-0.74, 0.74].map((x) => (
+        <group key={x}>
+          <Box size={[0.1, 0.5, 0.1]} pos={[x, 0.23, -0.24]} color={PALETTE.woodDark} radius={0.03} />
+          <Box size={[0.1, 0.5, 0.1]} pos={[x, 0.23, 0.22]} color={PALETTE.woodDark} radius={0.03} />
+          <Box size={[0.09, 0.5, 0.09]} pos={[x, 0.72, -0.3]} color={PALETTE.woodDark} radius={0.03} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
 export const PIECES: Record<string, () => ReactElement> = {
   'bed-cozy': BedCozy,
   bookshelf: Bookshelf,
@@ -591,4 +782,14 @@ export const PIECES: Record<string, () => ReactElement> = {
   'yard-picnic-table': YardPicnicTable,
   'yard-tree': YardTree,
   'yard-flower-bed': YardFlowerBed,
+  wardrobe: Wardrobe,
+  'bunk-bed': BunkBed,
+  nightstand: Nightstand,
+  'treasure-chest': TreasureChest,
+  'rug-star': RugStar,
+  'map-pirate': MapPirate,
+  'shelf-wall': ShelfWall,
+  'lantern-hanging': LanternHanging,
+  'globe-desk': GlobeDesk,
+  'yard-bench': YardBench,
 };
