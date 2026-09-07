@@ -80,6 +80,24 @@ const SEASON_SUBJECT: Record<string, string> = {
     'a happy grey dolphin leaping above sunny ocean waves, full body, centered, plain light background',
   'season-kraken':
     'a friendly golden cartoon kraken octopus with big eyes, full body, centered, plain light background',
+
+  // 里海远航 / Caspian Passage. Each card's subject is an animal, a place or a
+  // trade good — never a people's traditional dress, which is the season's
+  // stated line (a six-year-old wearing someone's clothing as a game skin is
+  // dressing-up, not learning). The eagle card is therefore the EAGLE, not the
+  // Kazakh hunter its lore names, and the prompt says "perched", never
+  // "hunting": a prey-or-weapon prompt is a likely NSFW false positive, the
+  // same reason `boxing` above describes gloves and no opponent.
+  'season-caspian-seal':
+    'a cute plump grey seal pup with big dark eyes, sitting on a smooth rock, full body, centered, plain light background',
+  'season-caspian-sturgeon':
+    'a long ancient sturgeon fish with a pointed snout and rows of bony plates along its back, side view, full body, centered, plain light background',
+  'season-caspian-eagle':
+    'a majestic golden eagle perched calmly on a thick leather falconry glove, wings folded, side view, full body, centered, plain light background',
+  'season-caspian-horse':
+    'a slender elegant Akhal-Teke horse with a shining metallic golden coat and a long neck, standing, side view, full body, centered, plain light background',
+  'season-caspian-baku':
+    'three tall curved skyscrapers shaped like giant flames, glowing orange and gold, standing together as one landmark, bold outlines, full building, centered, plain light background',
 };
 
 /** Per-slug subject prompts for the 奥运会 / Olympics pack. Written out in full
