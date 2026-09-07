@@ -73,7 +73,7 @@ describe('3D covers the whole 2D catalog', () => {
     const { FURNITURE_CATALOG } = await import('@/lib/home/furniture-catalog');
     const missing = FURNITURE_CATALOG.filter((f) => !PIECES[f.slug]).map((f) => f.slug);
     expect(missing, `no 3D piece for: ${missing.join(', ')}`).toEqual([]);
-    expect(FURNITURE_CATALOG.length).toBe(25);
+    expect(FURNITURE_CATALOG.length).toBe(35);
   });
 
   it('every wallpaper and floor slug has a 3D colour set', async () => {
