@@ -104,7 +104,40 @@ async function main() {
     return n > 0 ? [`${n} words have image_hook but NULL image_url (authoring image-gen failed?)`] : [];
   });
 
+  // Map readiness — reported ALWAYS, and deliberately NOT a pass/fail check.
+  //
+  // A map with published weeks but no overlord cannot be finished, and until
+  // 2026-09-07 the home board still drew its 👑 lair (the scene then answered
+  // with an English developer string). That is a real gap, but it is a KNOWN
+  // one that takes a creature, a card, a crown, a trophy and a title to close
+  // — so failing the run would leave this script red for weeks, and a gate
+  // that is permanently red is a gate everyone learns to ignore. It prints
+  // instead, every time, right above the verdict.
+  const readiness = await sql`
+    select cp.slug, cp.name_zh, cp.name_en,
+           count(w.id) filter (where w.status = 'published')::int weeks
+    from curriculum_packs cp
+    left join weeks w on w.curriculum_pack_id = cp.id
+    where cp.owner_user_id is null
+    group by cp.slug, cp.name_zh, cp.name_en
+    order by cp.slug`;
+  const { FINAL_BOSS_MAP_SLUGS } = await import('../src/lib/scenes/final-boss-maps');
+
   await sql.end();
+
+  console.log('\nMap readiness (informational — not a pass/fail check):');
+  for (const m of readiness) {
+    if (m.weeks === 0) {
+      console.log(`   ·  ${m.name_zh ?? m.slug}: no published weeks (locked placeholder)`);
+    } else if (FINAL_BOSS_MAP_SLUGS.includes(m.slug)) {
+      console.log(`   ✅ ${m.name_zh ?? m.slug}: ${m.weeks} weeks, overlord registered`);
+    } else {
+      console.log(
+        `   ⚠️  ${m.name_zh ?? m.slug}: ${m.weeks} published weeks but NO overlord — ` +
+          `the map cannot be finished, and the next map can never unlock`,
+      );
+    }
+  }
 
   let failed = 0;
   for (const c of checks) {
