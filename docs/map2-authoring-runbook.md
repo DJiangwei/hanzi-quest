@@ -1,5 +1,12 @@
 # Map 2 (里海 / Caspian Sea) — authoring runbook
 
+> **Superseded for new work — see `docs/new-map-runbook.md`.** This file is the
+> historical record of *preparing* map 2: what was ready before authoring began.
+> It is not an ordered procedure, which is why it did not prevent the two
+> defects 里海 shipped with (the missing recompile and the missing overlord).
+> Kept for the map-2 specifics; open the new-map runbook for map 3.
+
+
 **Status:** prepped & waiting on David's 10 weeks of characters. Map 2 plays with
 **identical game-design logic to Map 1** — the compile (`compileWeekIntoLevels`)
 and AI scene-gen (`generateWeekContent`) code is **pack-agnostic**, so nothing

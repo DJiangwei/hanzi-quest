@@ -112,6 +112,7 @@ It is **not** a multi-tenant SaaS. Optimize for the kids' daily fun and actual l
 | Visual polish, palette, fonts | `~/.claude/projects/-Users-jiangwei-Claude-Chinese/memory/art_direction.md` + `GAME-DESIGN.md` §5 |
 | Reward formulas, coins, gacha rules | `GAME-DESIGN.md` §6 |
 | Retire a season / launch the next one | `docs/season-runbook.md` (traps + ordered checklist) |
+| Open a NEW MAP (author + art + compile + overlord) | `docs/new-map-runbook.md` — the ordered procedure; 里海 shipped broken twice without it |
 | "Is this in scope?" | `GAME-DESIGN.md` §9 (non-goals) + `PLAN.md` §4 (decisions log) |
 | Picking the next chunk of work | `PLAN.md` §1 (status) — and **ask David first** |
 | "When/why was X built?" — per-PR history | `docs/CHANGELOG.md` (grep the PR number or feature name) |
