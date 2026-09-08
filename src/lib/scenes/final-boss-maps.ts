@@ -14,7 +14,10 @@
  * finished an entire map.
  */
 
-export const FINAL_BOSS_MAP_SLUGS: readonly string[] = ['pirate-class-level-1'];
+export const FINAL_BOSS_MAP_SLUGS: readonly string[] = [
+  'pirate-class-level-1',
+  'pirate-class-level-2',
+];
 
 /** True when this map has an overlord to fight. */
 export function hasFinalBoss(packSlug: string | null | undefined): boolean {
