@@ -14,6 +14,10 @@ describe('final boss roster', () => {
     }
   });
   it('returns null for a map with no overlord yet', () => {
-    expect(getFinalBoss('pirate-class-level-2')).toBeNull();
+    // Map 3 (印度洋) is reserve config with no roster entry. This used to name
+    // map 2, which was true until 里海 gained the Flame Titan — a fixture that
+    // silently stopped describing reality is exactly what this suite exists to
+    // catch, so it must point at a map that genuinely has no overlord.
+    expect(getFinalBoss('pirate-class-level-3')).toBeNull();
   });
 });

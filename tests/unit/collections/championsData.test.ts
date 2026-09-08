@@ -4,7 +4,10 @@ import { mapOrderIndex } from '@/lib/play/map-order';
 
 const SLUGS: Record<string, string> = {
   pack1: 'pirate-class-level-1',
-  pack2: 'pirate-class-level-2',
+  // `pack2` is the "beaten map with NO champion title" fixture. It named
+  // pirate-class-level-2 until 里海 gained one, at which point the assertion
+  // silently stopped testing anything — it must name a map with no title.
+  pack2: 'pirate-class-level-3',
 };
 const slugFor = (id: string) => SLUGS[id];
 

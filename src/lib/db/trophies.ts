@@ -69,6 +69,7 @@ const PACK_TO_TROPHY: Record<string, string> = {
 /** Map from map pack slug → its champion (final-boss) trophy slug. */
 export const MAP_TO_CHAMPION_TROPHY: Record<string, string> = {
   'pirate-class-level-1': 'champion-caribbean',
+  'pirate-class-level-2': 'champion-caspian',
 };
 
 /** Map from scene type → first-perfect-score trophy slug */

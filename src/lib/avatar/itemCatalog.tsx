@@ -1604,6 +1604,29 @@ const championCaribbean: ItemDef = {
   ),
 };
 
+const championCaspian: ItemDef = {
+  unlockRef: 'champion-caspian',
+  slot: 'hat',
+  displayName: '里海霸主王冠',
+  rarity: 'epic',
+  rewardOnly: true,
+  narrativeHint: 'a dark iron crown whose points burn like flames',
+  theme: 'champion',
+  renderSvg: () => (
+    <g key="champion-caspian">
+      {/* iron band + peaks, deliberately unlike the Caribbean gold so the two
+          champion crowns are distinguishable in the wardrobe at a glance */}
+      <path d="M 30 30 L 34 19 L 42 27 L 50 15 L 58 27 L 66 19 L 70 30 Z" fill="#4a413c" stroke="#241715" strokeWidth="1.2" />
+      <rect x="30" y="30" width="40" height="6" rx="2" fill="#5c524b" stroke="#241715" strokeWidth="1" />
+      {/* flames on the peaks */}
+      <path d="M 50 15 Q 53 9 50 5 Q 47 9 50 15 Z" fill="#ff7a18" />
+      <path d="M 34 19 Q 36 14 34 11 Q 32 14 34 19 Z" fill="#ff7a18" opacity="0.9" />
+      <path d="M 66 19 Q 68 14 66 11 Q 64 14 66 19 Z" fill="#ff7a18" opacity="0.9" />
+      <circle cx="50" cy="33" r="2" fill="#ffd54a" />
+    </g>
+  ),
+};
+
 const continentAfrica: ItemDef = {
   unlockRef: 'continent-africa', slot: 'hat', displayName: '非洲探险帽', rarity: 'epic',
   rewardOnly: true, narrativeHint: 'a khaki safari pith helmet', theme: 'continent',
@@ -1984,6 +2007,7 @@ const ALL_ITEMS: ItemDef[] = [
   festivalWinter,
   festivalDumpling,
   championCaribbean,
+  championCaspian,
   continentAsia,
   continentEurope,
   continentAfrica,
