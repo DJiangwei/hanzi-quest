@@ -98,6 +98,7 @@ It is **not** a multi-tenant SaaS. Optimize for the kids' daily fun and actual l
 6. **Branch protection on `main`** is enforced (PR + CI required, admin bypass). Always work on a feature branch + PR. Never push to main.
 7. **Use SSH for git push** (HTTPS will fail — David's setup).
 8. **This is NOT the Next.js you know** — Next.js 16 App Router with renamed primitives. Read `node_modules/next/dist/docs/` before non-trivial work, and heed deprecation notices.
+9. **Every bug gets written down here, the same day it is fixed.** Whether David reported it or you found it yourself, a fixed bug is only half delivered until the lesson is in the **Landmines** section below, in its subsystem's group. This is the rule the file exists for: the product grows by adding maps and content, and each new map re-runs every mistake the last one made — a bug that stays only in a commit message will be rebuilt by whoever ships map 3. Write what was **wrong about the assumption**, not just what changed; "renamed the slug" helps nobody, "`shop_items.slug` is global across kinds, so check what already answers to a slug before minting it" prevents the next one. Include the evidence that exposed it (the seed's off-by-one count, the 93.7% flags measurement, the 164/164 self-ratings) — the number is what makes the entry believable a year later. A landmine that duplicates an existing one gets MERGED into it, not appended; this file is read on every turn of every session, so its cost is paid continuously.
 
 ---
 
