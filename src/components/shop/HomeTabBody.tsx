@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 import { useShopPurchase } from '@/lib/hooks/use-shop-purchase';
 import { ShopToast } from '@/components/shop/ShopToast';
 import { FurnitureCard, type CardState } from '@/components/shop/FurnitureCard';
@@ -44,6 +46,7 @@ export function HomeTabBody({
   ownedShopItemCounts = {},
   coinBalance,
 }: Props) {
+  const router = useRouter();
   const { purchase, pending, feedback, clearFeedback } = useShopPurchase(childId);
 
   const shopItemBySlug = new Map<string, ShopItemRow>(
@@ -99,7 +102,20 @@ export function HomeTabBody({
                     state={state}
                     ownedCount={ownedCount}
                     pending={pending}
-                    onBuy={() => shopItem && purchase(shopItem.id)}
+                    onBuy={() => {
+                      // Buying and placing are ONE act now: the tile carries her
+                      // to the room with this piece armed as a ghost, and the
+                      // coins are spent by the confirm bar there — in the same
+                      // transaction as the placement, so a cell that turns out
+                      // to be occupied never charges her.
+                      //
+                      // The selection travels in the URL, not in storage: the
+                      // shop and the room are different routes, and a stored
+                      // selection would survive the back button and re-arm a
+                      // ghost days later. Surfaces below keep buying in place —
+                      // a wallpaper is equipped, never placed on the grid.
+                      if (shopItem) router.push(`/play/${childId}/home?place=${furniture.slug}`);
+                    }}
                     preview={
                       <svg
                         viewBox={`0 0 ${w * cell} ${h * cell}`}

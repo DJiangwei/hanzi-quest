@@ -12,7 +12,7 @@ import {
   buyLabel,
   DISABLED_LABEL,
 } from '@/lib/home3d/confirm-bar';
-import { resolvePieceSelection } from '@/lib/home3d/piece-selection';
+import { resolvePieceSelection, selectionFromPlaceParam } from '@/lib/home3d/piece-selection';
 
 describe('confirmState', () => {
   it('shows "place" for an owned copy on a legal cell', () => {
@@ -172,5 +172,70 @@ describe('resolvePieceSelection', () => {
         copyCap: 3,
       }),
     ).toEqual({ copyIndex: 1, shopItemId: null });
+  });
+});
+
+describe('selectionFromPlaceParam — the shop → room hand-off', () => {
+  const shopItemIdBySlug = new Map([['chair-wood', 'item-chair']]);
+
+  it('arms nothing when there is no place param', () => {
+    expect(
+      selectionFromPlaceParam({
+        slug: null,
+        ownedSlugs: [],
+        shopItemIdBySlug,
+        placedCopyIndicesBySlug: new Map(),
+        copyCap: 3,
+      }),
+    ).toBeNull();
+  });
+
+  it('arms a purchase when she owns none', () => {
+    const armed = selectionFromPlaceParam({
+      slug: 'chair-wood',
+      ownedSlugs: [],
+      shopItemIdBySlug,
+      placedCopyIndicesBySlug: new Map(),
+      copyCap: 3,
+    });
+    expect(armed).toEqual({ slug: 'chair-wood', copyIndex: 0, shopItemId: 'item-chair' });
+  });
+
+  it('arms a SPARE she already owns rather than charging her again', () => {
+    // owns 2, one already placed → copy 1 is spare, so no purchase.
+    const armed = selectionFromPlaceParam({
+      slug: 'chair-wood',
+      ownedSlugs: ['chair-wood', 'chair-wood'],
+      shopItemIdBySlug,
+      placedCopyIndicesBySlug: new Map([['chair-wood', [0]]]),
+      copyCap: 3,
+    });
+    expect(armed?.shopItemId, 'a spare must not trigger a purchase').toBeNull();
+    expect(armed?.copyIndex).toBe(1);
+  });
+
+  it('arms nothing for a slug that is not sold', () => {
+    expect(
+      selectionFromPlaceParam({
+        slug: 'not-a-thing',
+        ownedSlugs: [],
+        shopItemIdBySlug,
+        placedCopyIndicesBySlug: new Map(),
+        copyCap: 3,
+      }),
+    ).toBeNull();
+  });
+
+  it('arms nothing at the copy cap with every copy already placed', () => {
+    // A stale link must open the room quietly, never a ghost she cannot place.
+    expect(
+      selectionFromPlaceParam({
+        slug: 'chair-wood',
+        ownedSlugs: ['chair-wood', 'chair-wood', 'chair-wood'],
+        shopItemIdBySlug,
+        placedCopyIndicesBySlug: new Map([['chair-wood', [0, 1, 2]]]),
+        copyCap: 3,
+      }),
+    ).toBeNull();
   });
 });

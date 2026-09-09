@@ -3,12 +3,15 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({
   purchaseShopItemAction: vi.fn(),
+  push: vi.fn(),
 }));
 
 vi.mock('@/lib/actions/shop', () => ({
   purchaseShopItemAction: mocks.purchaseShopItemAction,
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: mocks.push }),
+}));
 
 import { HomeTabBody } from '@/components/shop/HomeTabBody';
 import type { ShopItemRow } from '@/lib/db/shop';
@@ -106,7 +109,10 @@ describe('HomeTabBody', () => {
     });
   });
 
-  it('calls purchaseShopItemAction when buy button is clicked', async () => {
+  it('sends a furniture tap to the room to be placed — it does NOT buy on the spot', async () => {
+    // Buying and placing are one act now. Charging her here would take the
+    // coins before she has chosen a cell, and a cell that turns out to be
+    // occupied would then need a refund instead of never charging at all.
     mocks.purchaseShopItemAction.mockResolvedValue({ coinsAfter: 410 });
     render(
       <HomeTabBody
@@ -121,10 +127,11 @@ describe('HomeTabBody', () => {
     await act(async () => {
       fireEvent.click(buyBtn);
     });
-    expect(mocks.purchaseShopItemAction).toHaveBeenCalledWith(
-      'shop-poster-stars',
-      { childId: 'child-1' },
-    );
+    expect(mocks.push).toHaveBeenCalledWith('/play/child-1/home?place=poster-stars');
+    expect(
+      mocks.purchaseShopItemAction,
+      'the shop must not charge her before she has picked a spot',
+    ).not.toHaveBeenCalled();
   });
 
   it('renders SVG previews for each item with a shop_items row', () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   getFurniture,
   FURNITURE_CATALOG,
@@ -17,7 +17,7 @@ import {
   buyLabel,
   type ConfirmState,
 } from '@/lib/home3d/confirm-bar';
-import { resolvePieceSelection } from '@/lib/home3d/piece-selection';
+import { resolvePieceSelection, selectionFromPlaceParam } from '@/lib/home3d/piece-selection';
 import { buyAndPlaceFurnitureAction, type BuyAndPlaceOutcome } from '@/lib/actions/home';
 import { Room3DMount } from './Room3DMount';
 import type { Placed3D, GhostSpec } from './HomeRoom3D';
@@ -93,8 +93,37 @@ export function Room3DPanel({
   coinBalance: number;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [room, setRoom] = useState<HomeRoomId>('bedroom');
-  const [selected, setSelected] = useState<Selected | null>(null);
+  // Arm the piece the shop sent us, once, from `?place=<slug>`. A lazy
+  // initializer rather than an effect: there is nothing to re-fire, and it
+  // cannot fight react-hooks/set-state-in-effect. An unknown or now-maxed slug
+  // simply opens the room with no ghost.
+  const placeParam = searchParams.get('place');
+  const [selected, setSelected] = useState<Selected | null>(() => {
+    const armed = selectionFromPlaceParam({
+      slug: placeParam,
+      ownedSlugs,
+      shopItemIdBySlug: new Map(homeShopItems.map((i) => [i.slug, i.id])),
+      placedCopyIndicesBySlug: placements.reduce((m, p) => {
+        m.set(p.slug, [...(m.get(p.slug) ?? []), p.copyIndex]);
+        return m;
+      }, new Map<string, number[]>()),
+      copyCap: HOME_FURNITURE_COPY_CAP,
+    });
+    if (!armed) return null;
+    const def = getFurniture(armed.slug);
+    if (!def) return null;
+    const shopItem = homeShopItems.find((i) => i.slug === armed.slug) ?? null;
+    return {
+      slug: armed.slug,
+      w: def.footprint.w,
+      h: def.footprint.h,
+      copyIndex: armed.copyIndex,
+      shopItemId: armed.shopItemId,
+      priceCoins: shopItem?.priceCoins ?? def.priceCoins,
+    };
+  });
   const [ghostCell, setGhostCell] = useState<{ gridX: number; gridY: number } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
