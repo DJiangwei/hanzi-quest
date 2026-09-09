@@ -708,11 +708,17 @@ Put the decision in a pure function and test THAT:
 
 ```ts
 // src/lib/home3d/pick.ts  — PURE
-import { worldToCell } from '@/lib/home3d/coords';
+import { worldToCell, WALL_ROWS } from '@/lib/home3d/coords';
 
 /**
  * A floor-plane hit point → the cell a w×h footprint anchored there occupies,
  * clamped so a drag past the edge rests against it rather than vanishing.
+ *
+ * The FLOOR STARTS AT `WALL_ROWS`, not 0: `worldToCell` already folds the wall
+ * rows into its `gridY`, so a lower bound of 0 lets a tall piece anchor inside
+ * the wall. Two real catalog items are 2 cells tall (`yard-swing`, `yard-tree`),
+ * so this is reachable, and it is silent — no error, and no test with h=1 can
+ * see it.
  */
 export function pickCell(
   point: { x: number; z: number },
@@ -722,7 +728,7 @@ export function pickCell(
   const { gridX, gridY } = worldToCell(point.x, point.z, w, h);
   return {
     gridX: Math.min(Math.max(gridX, 0), cols - w),
-    gridY: Math.min(Math.max(gridY, 0), rows - h),
+    gridY: Math.min(Math.max(gridY, WALL_ROWS), rows - h),
   };
 }
 ```
@@ -744,8 +750,12 @@ describe('pickCell', () => {
     expect(pickCell({ x: 99, z: 0 }, 2, 1, 8, 6).gridX).toBe(6);
   });
 
-  it('clamps a drag past the top edge to 0', () => {
-    expect(pickCell({ x: -99, z: -99 }, 1, 1, 8, 6)).toEqual({ gridX: 0, gridY: 0 });
+  it('clamps a drag past the top edge to the first FLOOR row, not row 0', () => {
+    expect(pickCell({ x: -99, z: -99 }, 1, 1, 8, 6)).toEqual({ gridX: 0, gridY: WALL_ROWS });
+  });
+
+  it('never resolves a 2-tall piece into the wall zone', () => {
+    expect(pickCell({ x: 0, z: -99 }, 2, 2, 8, 6).gridY).toBe(WALL_ROWS);
   });
 });
 ```
