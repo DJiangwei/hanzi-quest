@@ -43,6 +43,9 @@ interface Selected {
 /** Quiet, non-scolding text for a tray chip that has nothing to offer today. */
 const UNAVAILABLE_NOTE = '暂时买不到 / not available';
 
+/** Button label when a piece is selected but no floor cell is chosen yet. */
+const NO_CELL_LABEL = '👇 先选个格子 / Pick a spot first';
+
 function outcomeNotice(outcome: BuyAndPlaceOutcome): string | null {
   switch (outcome.status) {
     case 'placed':
@@ -214,6 +217,7 @@ export function Room3DPanel({
   );
 
   const handleFloorPick = useCallback((gridX: number, gridY: number) => {
+    setNotice(null);
     setGhostCell({ gridX, gridY });
   }, []);
 
@@ -323,7 +327,9 @@ export function Room3DPanel({
               }`}
             >
               {!confirm
-                ? DISABLED_LABEL.illegal
+                ? selected && !ghostCell
+                  ? NO_CELL_LABEL
+                  : DISABLED_LABEL.illegal
                 : confirm.kind === 'place'
                   ? PLACE_LABEL
                   : confirm.kind === 'buy'
@@ -340,7 +346,7 @@ export function Room3DPanel({
         data-testid="piece-tray"
         className="flex gap-2 overflow-x-auto pb-1"
         role="listbox"
-        aria-label="Furniture to place"
+        aria-label="要放的家具 / Furniture to place"
       >
         {FURNITURE_CATALOG.map((def) => {
           const shopItem = shopItemBySlug.get(def.slug);
