@@ -64,3 +64,46 @@ describe('buyAndPlaceFurnitureAction', () => {
     expect(out).toEqual({ status: 'placed' });
   });
 });
+
+describe('the error handling stays OUTSIDE the transaction', () => {
+  it('has no catch between db.transaction( and its closing paren', async () => {
+    // Structural, deliberately not behavioural. A mocked @/db cannot reproduce
+    // Postgres abort semantics, so moving this catch inside the callback still
+    // passes every behavioural test here — verified. But inside the callback a
+    // catch cannot stop the transaction's own rejection escaping, and it would
+    // defeat the rollback the whole design rests on: a rejected cell must
+    // refund by construction, never by compensation. Same class as CLAUDE.md's
+    // in-transaction landmine, and pinned the same way logError's test pins
+    // its import.
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync('src/lib/actions/home.ts', 'utf8');
+    const fnStart = src.indexOf('export async function buyAndPlaceFurnitureAction');
+    expect(fnStart, 'buyAndPlaceFurnitureAction not found').toBeGreaterThan(-1);
+
+    // Find the db.transaction call with purchaseShopItemInTx — unique to this function
+    const fnEnd = src.indexOf('\nexport', fnStart + 1);
+    const fnBody = src.slice(fnStart, fnEnd);
+    const txCall = fnStart + fnBody.indexOf('await db.transaction(async (tx) => {');
+    expect(txCall, 'db.transaction(async (tx) => not found in buyAndPlaceFurnitureAction').toBeGreaterThanOrEqual(fnStart);
+
+    // Walk parens from `db.transaction(` to its match.
+    let depth = 0;
+    let end = -1;
+    for (let i = src.indexOf('(', txCall); i < src.length; i++) {
+      if (src[i] === '(') depth++;
+      else if (src[i] === ')') {
+        depth--;
+        if (depth === 0) { end = i; break; }
+      }
+    }
+    expect(end, 'unbalanced parens after db.transaction(').toBeGreaterThan(txCall);
+
+    const insideTx = src.slice(txCall, end);
+    expect(insideTx, 'a catch inside db.transaction() cannot roll back — move it out')
+      .not.toContain('catch');
+
+    const afterTx = src.slice(end, end + 400);
+    expect(afterTx, 'the catch that maps the outcome must follow the transaction')
+      .toContain('catch');
+  });
+});

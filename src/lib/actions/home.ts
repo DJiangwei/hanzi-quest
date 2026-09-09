@@ -95,6 +95,10 @@ export async function buyAndPlaceFurnitureAction(
 ): Promise<BuyAndPlaceOutcome> {
   const { child } = await requireChild(childId);
 
+  // The catch block MUST stay outside db.transaction(). A catch inside the callback
+  // cannot stop the transaction's own rejection from escaping — Postgres aborts the tx
+  // and rejects db.transaction() itself, bypassing any inner catch. The rejection then
+  // rolls back both purchase and placement by construction; no compensation catch needed.
   try {
     await db.transaction(async (tx) => {
       if (shopItemId) await purchaseShopItemInTx(tx, child.id, shopItemId);
