@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { Placed3D } from './HomeRoom3D';
+import type { Placed3D, GhostSpec } from './HomeRoom3D';
 
 /**
  * Client-only mount for the 3D room.
@@ -22,12 +22,23 @@ export function Room3DMount({
   placements,
   wallpaperSlug,
   floorSlug,
+  ghost,
+  onFloorPick,
 }: {
   placements: Placed3D[];
   wallpaperSlug?: string;
   floorSlug?: string;
+  /** Absent → today's view-only behaviour, unchanged. */
+  ghost?: GhostSpec;
+  onFloorPick?: (gridX: number, gridY: number) => void;
 }) {
   return (
-    <HomeRoom3D placements={placements} wallpaperSlug={wallpaperSlug} floorSlug={floorSlug} />
+    <HomeRoom3D
+      placements={placements}
+      wallpaperSlug={wallpaperSlug}
+      floorSlug={floorSlug}
+      ghost={ghost}
+      onFloorPick={onFloorPick}
+    />
   );
 }

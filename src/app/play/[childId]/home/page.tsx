@@ -1,7 +1,8 @@
-import Link from 'next/link';
 import { requireChild } from '@/lib/auth/guards';
 import { getHomeState } from '@/lib/db/home';
 import { getRoomSurfaces } from '@/lib/db/home-surfaces';
+import { getCoinBalance } from '@/lib/db/coins';
+import { listShopItemsByKind } from '@/lib/db/shop';
 import { getSurface } from '@/lib/home/surfaces';
 import { HomeRoomView } from '@/components/home/HomeRoomView';
 import { HomeViewSwitch } from '@/components/home3d/HomeViewSwitch';
@@ -14,9 +15,11 @@ export default async function HomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const [{ ownedSlugs, placements }, roomSurfaces] = await Promise.all([
+  const [{ ownedSlugs, placements }, roomSurfaces, coinBalance, homeShopItems] = await Promise.all([
     getHomeState(child.id),
     getRoomSurfaces(child.id),
+    getCoinBalance(child.id).then((b) => b.balance),
+    listShopItemsByKind('home'),
   ]);
   // Owned slugs include all kind='home' purchases; surfaces are the ones in the catalog.
   const ownedSurfaceSlugs = ownedSlugs.filter((s) => getSurface(s) !== undefined);
@@ -28,34 +31,37 @@ export default async function HomePage({ params }: PageProps) {
       </h1>
 
       {ownedSlugs.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--color-sunset-400)] bg-white/70 p-8 text-center text-sm text-[var(--color-sand-900)]">
-          <p className="text-4xl">🛋️</p>
-          <p className="mt-3 font-semibold">家里还没有家具 / No furniture yet</p>
-          <p className="mt-1 text-[var(--color-sand-700)]">
-            去商店买家具吧 / Buy furniture in the shop
+        // An empty room, not a dead end. Buying and placing are one act now
+        // (a shop tap routes straight into this room with the piece
+        // ghosted), so a child with nothing yet must still land IN the room
+        // — an empty-state screen with only a link back to the shop closed
+        // the loop: shop → room → empty state → shop, with no way to ever
+        // place a first piece. The encouraging copy stays, above the room,
+        // rather than replacing it.
+        <div className="rounded-2xl border-2 border-dashed border-[var(--color-sunset-400)] bg-white/70 p-4 text-center text-sm text-[var(--color-sand-900)]">
+          <p className="font-semibold">
+            <span aria-hidden>🛋️</span> 家里还没有家具，去下面摆第一件吧 / No furniture
+            yet — place your first piece below
           </p>
-          <Link
-            href={`/play/${childId}/shop`}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-ocean-700)] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[var(--color-ocean-800)]"
-          >
-            🛒 去商店 / To shop
-          </Link>
         </div>
-      ) : (
-        <HomeViewSwitch
-          twoD={
-            <HomeRoomView
-              childId={child.id}
-              ownedSlugs={ownedSlugs}
-              placements={placements}
-              roomSurfaces={roomSurfaces}
-              ownedSurfaceSlugs={ownedSurfaceSlugs}
-            />
-          }
-          placements={placements}
-          roomSurfaces={roomSurfaces}
-        />
-      )}
+      ) : null}
+      <HomeViewSwitch
+        childId={child.id}
+        twoD={
+          <HomeRoomView
+            childId={child.id}
+            ownedSlugs={ownedSlugs}
+            placements={placements}
+            roomSurfaces={roomSurfaces}
+            ownedSurfaceSlugs={ownedSurfaceSlugs}
+          />
+        }
+        placements={placements}
+        roomSurfaces={roomSurfaces}
+        ownedSlugs={ownedSlugs}
+        homeShopItems={homeShopItems}
+        coinBalance={coinBalance}
+      />
     </main>
   );
 }

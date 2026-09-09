@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Room3DPanel, type RoomSurfacePair } from './Room3DPanel';
 import type { HomePlacement } from '@/lib/db/home';
+import type { ShopItemRow } from '@/lib/db/shop';
 
 /**
  * 2D / 3D toggle for the home.
@@ -18,15 +20,29 @@ import type { HomePlacement } from '@/lib/db/home';
  * lived on its own route.
  */
 export function HomeViewSwitch({
+  childId,
   twoD,
   placements,
   roomSurfaces,
+  ownedSlugs,
+  homeShopItems,
+  coinBalance,
 }: {
+  childId: string;
   twoD: ReactNode;
   placements: HomePlacement[];
   roomSurfaces?: Record<string, RoomSurfacePair>;
+  /** Owned furniture slugs WITH multiplicity — the 3D panel's buy-and-place flow. */
+  ownedSlugs: string[];
+  homeShopItems: ShopItemRow[];
+  coinBalance: number;
 }) {
-  const [threeD, setThreeD] = useState(false);
+  // Arriving from the shop with a piece to place opens straight into 3D —
+  // otherwise she lands on the 2D room and the ghost she was promised is
+  // nowhere, which reads as the tap having done nothing. 2D stays the default
+  // for an ordinary visit.
+  const searchParams = useSearchParams();
+  const [threeD, setThreeD] = useState(() => searchParams.get('place') !== null);
 
   return (
     <div className="flex flex-col gap-3">
@@ -52,7 +68,14 @@ export function HomeViewSwitch({
         </button>
       </div>
       {threeD ? (
-        <Room3DPanel placements={placements} roomSurfaces={roomSurfaces} />
+        <Room3DPanel
+          childId={childId}
+          placements={placements}
+          roomSurfaces={roomSurfaces}
+          ownedSlugs={ownedSlugs}
+          homeShopItems={homeShopItems}
+          coinBalance={coinBalance}
+        />
       ) : (
         twoD
       )}

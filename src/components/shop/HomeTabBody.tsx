@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 import { useShopPurchase } from '@/lib/hooks/use-shop-purchase';
 import { ShopToast } from '@/components/shop/ShopToast';
 import { FurnitureCard, type CardState } from '@/components/shop/FurnitureCard';
@@ -44,6 +46,7 @@ export function HomeTabBody({
   ownedShopItemCounts = {},
   coinBalance,
 }: Props) {
+  const router = useRouter();
   const { purchase, pending, feedback, clearFeedback } = useShopPurchase(childId);
 
   const shopItemBySlug = new Map<string, ShopItemRow>(
@@ -99,7 +102,34 @@ export function HomeTabBody({
                     state={state}
                     ownedCount={ownedCount}
                     pending={pending}
-                    onBuy={() => shopItem && purchase(shopItem.id)}
+                    onBuy={() => {
+                      if (!shopItem) return;
+                      // Buying and placing are ONE act ONLY for FLOOR pieces: the
+                      // tile carries her to the room with the piece armed as a
+                      // ghost, and the confirm bar there spends the coins in the
+                      // same transaction as the placement, so a cell that turns
+                      // out to be occupied never charges her.
+                      //
+                      // WALL items (poster-stars, framed-fish, clock-round,
+                      // window-sunny, map-pirate, shelf-wall, lantern-hanging,
+                      // lamp-string) do NOT route here. The 3D room's raycaster
+                      // (`FloorPicker` in HomeRoom3D.tsx) only ever hits the
+                      // floor plane, and `pickCell` clamps every cell it returns
+                      // into the floor band — so a wall item's ghost could never
+                      // land on a legal cell, and the combined buy-and-place
+                      // transaction would refuse to charge her for something she
+                      // could never confirm. Wall items buy the plain way instead
+                      // — exactly like a wallpaper or floor surface below — and
+                      // are placed afterward in the 2D room's own wall-band
+                      // editor, which this branch never touches. Don't "unify"
+                      // this later without first teaching the 3D room to
+                      // raycast walls.
+                      if (furniture.surface === 'floor') {
+                        router.push(`/play/${childId}/home?place=${furniture.slug}`);
+                      } else {
+                        purchase(shopItem.id);
+                      }
+                    }}
                     preview={
                       <svg
                         viewBox={`0 0 ${w * cell} ${h * cell}`}

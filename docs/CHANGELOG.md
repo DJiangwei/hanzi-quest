@@ -731,6 +731,41 @@ Two guards proven by mutation: dropping `pickedKey` again (`expected undefined t
 
 ---
 
+## PR #197 — buying and placing furniture become one act (2026-09-09)
+
+> *"关于家的3D视角部分，能否把购买和edit功能全部都3D化？"*
+
+The 3D room was a **view**. Editing happened on the 2D grid and buying happened in a 2D shop — two errands, neither of them where she was actually looking at her room. Now: tap a piece in the shop, it ghosts into the 3D room under her finger, green cells accept it, one confirm buys and places it.
+
+### The constraint that shaped the design
+
+Per-card 3D previews were the obvious reading of the request and are **not buildable**. Each `<Canvas>` holds a WebGL context, browsers cap around 8–16 and **silently discard the oldest**, and the furniture shop has ~54 tiles. It would have blanked cards at random, worst on the iPad this is for. So the one context is spent where the decision happens — in the room — and the shop grid keeps the flat SVG thumbnails PR #189 had just made usable.
+
+### Buy and place in one transaction
+
+`buyAndPlaceFurnitureAction` runs `purchaseShopItemInTx` then `placeFurnitureInTx` inside one `db.transaction`. The order is load-bearing: the purchase inserts the `shop_purchases` row the placement's ownership check reads. Both throw, so an occupied cell rejects the whole transaction and **the coins are never debited** — refunded by construction rather than by compensation. There is no window in which she has paid for furniture that is not in her room.
+
+### One validator, two callers
+
+`placeFurnitureInTx`'s bounds / surface-zone / collision rules were extracted verbatim into a pure `canPlaceAt`, which the 3D room also calls to paint cells green or red. The server still validates independently — sharing the function is about the two never *disagreeing*, the same lesson as the 🔒 islands, where a board that advertises what a route then bounces is worse than no board.
+
+### Four bugs the process caught
+
+1. **The rollback had no guard.** The implementer reported honestly that moving the try/catch inside the transaction still passed all four tests — a mocked `@/db` cannot reproduce Postgres abort semantics. The single claim the design rests on was untested. Pinned with a structural test that reads the action's source, the same remedy CLAUDE.md's in-transaction landmine already prescribes.
+2. **A Critical bug that originated in the plan.** `pickCell` clamped `gridY` to a lower bound of `0`, but `worldToCell` already folds `WALL_ROWS` in — so `yard-swing` (2×2) and `yard-tree` (1×2) would anchor inside the wall. It survived three read-throughs because every test used `h = 1`, and a 1-tall piece clamps identically either way.
+3. **A plan gap found while scoping.** The shop is `/shop` and the room is `/home` — two routes — and the plan never said how a selection survives the trip. Decided in favour of a URL parameter over `sessionStorage`: stateless, back-button safe, and it cannot re-arm a ghost days later.
+4. **An English-only aria-label and a stale error notice** that stayed on screen contradicting the re-enabled confirm button beneath it.
+
+### Verification
+
+Executed as nine subagent tasks, each with an independent review; every guard mutation-tested. Two implementers were killed mid-flight (a session rate limit and a stream watchdog) after finishing but before committing; both times the work was verified against the tree rather than trusted, then committed as salvage, and the reviews ran afterwards.
+
+`pnpm typecheck && lint && test && build` green — **373/373 test files** against 373 on disk, 2450 tests. Several full-suite runs flaked under machine load (six unrelated files one run, a different one the next, all passing in isolation); the clean run is the one reported. The first `pnpm build` failed on a Google Fonts fetch and passed on retry — transient, not the diff.
+
+No migration.
+
+---
+
 ## PR #190 — two bugs David found by watching her play (2026-09-07)
 
 ### (a) The options moved under her finger

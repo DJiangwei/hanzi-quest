@@ -1,10 +1,26 @@
 'use client';
 
-import { Canvas } from '@react-three/fiber';
+import { useCallback, useEffect } from 'react';
+import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
 import type { Surface3D } from '@/lib/home3d/surfaces3d';
 import { PIECES } from '@/lib/home3d/pieces';
 import { floor3D, wallpaper3D } from '@/lib/home3d/surfaces3d';
+import { COLS, ROWS, FLOOR_ROWS, cellToWorld } from '@/lib/home3d/coords';
+import { pickCell } from '@/lib/home3d/pick';
+import { GhostPiece } from './GhostPiece';
+
+export { cellToWorld };
+
+/** What's being previewed on the floor, fully controlled by the caller. */
+export interface GhostSpec {
+  slug: string;
+  gridX: number;
+  gridY: number;
+  w: number;
+  h: number;
+  legal: boolean;
+}
 
 /**
  * SPIKE — one bedroom, real 3D geometry, LOCKED camera.
@@ -20,13 +36,6 @@ import { floor3D, wallpaper3D } from '@/lib/home3d/surfaces3d';
  * stays cheap if nothing hard-codes this angle. So the view is `CAMERA`, and a
  * later stepped rotation is a change of one value plus wall culling.
  */
-
-/** Grid, matching the 2D room exactly: 8 cols × 6 rows, one world unit per cell. */
-const COLS = 8;
-const ROWS = 6;
-/** Rows at the back that are WALL rather than floor, as in RoomDef.wallRows. */
-const WALL_ROWS = 2;
-const FLOOR_ROWS = ROWS - WALL_ROWS;
 
 /**
  * A high, slightly-off-axis three-quarter view — the angle that reads as
@@ -48,21 +57,6 @@ export interface Placed3D {
   w: number;
   h: number;
   surface: 'wall' | 'floor';
-}
-
-/**
- * Grid cell → world position, origin at the room's centre.
- *
- * Exported for test: this mapping is the ONE place the 3D room can silently
- * disagree with the 2D one. Both read the same `gridX/gridY` from
- * `home_placements`, so an off-by-one here puts her bed inside a wall while
- * every other surface still shows it correctly.
- */
-export function cellToWorld(gridX: number, gridY: number, w: number, h: number) {
-  const x = gridX + w / 2 - COLS / 2;
-  const zRow = gridY - WALL_ROWS;
-  const z = zRow + h / 2 - FLOOR_ROWS / 2;
-  return { x, z };
 }
 
 function Room({ wall, ground, outdoor }: { wall: Surface3D; ground: Surface3D; outdoor: boolean }) {
@@ -144,14 +138,74 @@ function Room({ wall, ground, outdoor }: { wall: Surface3D; ground: Surface3D; o
   );
 }
 
+/**
+ * `Canvas frameloop="demand"` renders once and stops — a moving ghost would
+ * sit frozen on screen with no error. This forces one extra frame whenever
+ * `dep` changes, without switching the whole canvas to a continuous loop
+ * (which would cost the iPad battery win for the far more common case of
+ * just looking at the room).
+ */
+function Invalidator({ dep }: { dep: string }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    invalidate();
+  }, [dep, invalidate]);
+  return null;
+}
+
+/**
+ * An invisible floor-sized plane whose only job is to be raycast against.
+ * three.js does not exempt invisible objects from raycasting (verified
+ * against this repo's pinned three/R3F versions — there is no `.visible`
+ * check anywhere in the intersect path), so a fully transparent material is
+ * enough to keep it out of the picture while it keeps taking pointer events.
+ * Sized and positioned to exactly match the floorboards drawn in `Room`.
+ */
+function FloorPicker({
+  w,
+  h,
+  onPick,
+}: {
+  w: number;
+  h: number;
+  onPick: (gridX: number, gridY: number) => void;
+}) {
+  const handlePick = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      const { gridX, gridY } = pickCell({ x: e.point.x, z: e.point.z }, w, h, COLS, ROWS);
+      onPick(gridX, gridY);
+    },
+    [w, h, onPick],
+  );
+
+  return (
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0.003, 0]}
+      onPointerMove={handlePick}
+      onPointerDown={handlePick}
+    >
+      <planeGeometry args={[COLS, FLOOR_ROWS]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
+}
+
 export function HomeRoom3D({
   placements,
   wallpaperSlug,
   floorSlug,
+  ghost,
+  onFloorPick,
 }: {
   placements: Placed3D[];
   wallpaperSlug?: string;
   floorSlug?: string;
+  /** Absent → today's view-only behaviour, unchanged. */
+  ghost?: GhostSpec;
+  /** Absent → the floor takes no pointer events, unchanged. */
+  onFloorPick?: (gridX: number, gridY: number) => void;
 }) {
   const wall = wallpaper3D(wallpaperSlug);
   const ground = floor3D(floorSlug);
@@ -170,7 +224,10 @@ export function HomeRoom3D({
       dpr={[1, 2]}
       camera={{ position: [...CAMERA.position], fov: CAMERA.fov }}
       onCreated={({ camera }) => camera.lookAt(...CAMERA.target)}
-      style={{ width: '100%', aspectRatio: '4 / 3', touchAction: 'pan-y' }}
+      // A ghost being dragged must own touch input — 'pan-y' would let the
+      // same gesture scroll the page on her iPad instead of moving the piece.
+      // Read-only viewing (no ghost) stays 'pan-y' so the room can scroll.
+      style={{ width: '100%', aspectRatio: '4 / 3', touchAction: ghost ? 'none' : 'pan-y' }}
       data-testid="home-room-3d"
     >
       <color attach="background" args={[outdoor ? wall.base : '#fbf3e4']} />
@@ -225,6 +282,24 @@ export function HomeRoom3D({
       {/* The single biggest contributor to "these objects are in a room"
           rather than "these objects are floating". */}
       <ContactShadows position={[0, 0.002, 0]} opacity={0.55} scale={11} blur={1.7} far={3.2} resolution={1024} />
+
+      {onFloorPick ? (
+        <FloorPicker w={ghost?.w ?? 1} h={ghost?.h ?? 1} onPick={onFloorPick} />
+      ) : null}
+
+      {ghost ? (
+        <>
+          <GhostPiece
+            slug={ghost.slug}
+            gridX={ghost.gridX}
+            gridY={ghost.gridY}
+            w={ghost.w}
+            h={ghost.h}
+            legal={ghost.legal}
+          />
+          <Invalidator dep={`${ghost.slug}:${ghost.gridX}:${ghost.gridY}:${ghost.w}:${ghost.h}:${ghost.legal}`} />
+        </>
+      ) : null}
     </Canvas>
   );
 }

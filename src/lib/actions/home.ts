@@ -9,6 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { requireChild } from '@/lib/auth/guards';
 import { db } from '@/db';
 import { placeFurnitureInTx, removeFurnitureInTx } from '@/lib/db/home';
+import { purchaseShopItemInTx } from '@/lib/db/shop';
 import {
   setRoomSurface,
   InvalidSurfaceError,
@@ -22,6 +23,7 @@ import {
   CellOccupiedError,
   InvalidPlacementError,
 } from '@/lib/errors/home-errors';
+import { InsufficientCoinsError, AlreadyOwnedError } from '@/lib/errors/shop-errors';
 
 export interface PlaceFurnitureResult {
   ok: boolean;
@@ -59,6 +61,63 @@ export async function placeFurnitureAction(
 
   revalidatePath(`/play/${childId}/home`);
   return { ok: true };
+}
+
+export type BuyAndPlaceOutcome =
+  | { status: 'placed' }
+  | { status: 'insufficient'; required: number; available: number }
+  | { status: 'occupied' }
+  | { status: 'illegal'; reason: string }
+  | { status: 'already_owned' };
+
+/**
+ * Buy a piece and put it in the room as ONE transaction.
+ *
+ * Order is load-bearing: the purchase inserts the `shop_purchases` row that
+ * `placeFurnitureInTx`'s ownership check then reads. Reversed, it always fails.
+ *
+ * Both helpers throw, which is what makes this composable — a rejected cell
+ * rolls the purchase back by construction, so there is never a moment where she
+ * has paid for a piece that is not in her room. The errors are mapped to an
+ * outcome OUTSIDE `db.transaction(...)`: a catch inside the callback cannot stop
+ * the transaction's own rejection escaping, and would defeat the rollback.
+ *
+ * `shopItemId === null` places a copy she already owns — no purchase at all.
+ */
+export async function buyAndPlaceFurnitureAction(
+  childId: string,
+  room: HomeRoomId,
+  slug: string,
+  x: number,
+  y: number,
+  copyIndex: number,
+  shopItemId: string | null,
+): Promise<BuyAndPlaceOutcome> {
+  const { child } = await requireChild(childId);
+
+  // The catch block MUST stay outside db.transaction(). A catch inside the callback
+  // cannot stop the transaction's own rejection from escaping — Postgres aborts the tx
+  // and rejects db.transaction() itself, bypassing any inner catch. The rejection then
+  // rolls back both purchase and placement by construction; no compensation catch needed.
+  try {
+    await db.transaction(async (tx) => {
+      if (shopItemId) await purchaseShopItemInTx(tx, child.id, shopItemId);
+      await placeFurnitureInTx(tx, child.id, room, slug, x, y, copyIndex);
+    });
+  } catch (err) {
+    if (err instanceof InsufficientCoinsError) {
+      return { status: 'insufficient', required: err.required, available: err.available };
+    }
+    if (err instanceof AlreadyOwnedError) return { status: 'already_owned' };
+    if (err instanceof CellOccupiedError) return { status: 'occupied' };
+    if (err instanceof InvalidPlacementError || err instanceof FurnitureNotOwnedError) {
+      return { status: 'illegal', reason: err.message };
+    }
+    throw err;
+  }
+
+  revalidatePath(`/play/${childId}/home`);
+  return { status: 'placed' };
 }
 
 export interface SetSurfaceResult {

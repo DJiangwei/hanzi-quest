@@ -8,11 +8,9 @@ import { homePlacements, shopItems, shopPurchases } from '@/db/schema';
 import {
   getFurniture,
   HOME_FURNITURE_COPY_CAP,
-  type Surface,
 } from '@/lib/home/furniture-catalog';
 import { getRoom } from '@/lib/home/rooms';
-import { cellsForFootprint, cellKey } from '@/lib/home/grid';
-import { cellZone } from '@/lib/home/rooms';
+import { canPlaceAt } from '@/lib/home/placement-rules';
 import {
   FurnitureNotOwnedError,
   CellOccupiedError,
@@ -127,58 +125,26 @@ export async function placeFurnitureInTx(
     throw new InvalidPlacementError(`Unknown room: "${room}"`);
   }
 
-  // 4. Validate in-bounds
-  const fp = def.footprint;
-  if (x < 0 || y < 0 || x + fp.w > roomDef.cols || y + fp.h > roomDef.rows) {
-    throw new InvalidPlacementError(
-      `Footprint at (${x},${y}) with size ${fp.w}×${fp.h} is out of bounds for room "${room}" (${roomDef.cols}×${roomDef.rows})`,
-    );
-  }
-
-  // 5. Validate surface zone: every cell in the footprint must match item's surface
-  const cells = cellsForFootprint(x, y, fp);
-  for (const cell of cells) {
-    const zone = cellZone(roomDef, cell.x, cell.y) as Surface;
-    if (zone !== def.surface) {
-      throw new InvalidPlacementError(
-        `Cell (${cell.x},${cell.y}) is in zone "${zone}" but item "${slug}" requires surface "${def.surface}"`,
-      );
-    }
-  }
-
-  // 6. Collision check: no OTHER placement occupies any footprint cell
-  const existingPlacements = await tx
+  // 4-6. Bounds, surface zone and collision — shared verbatim with the 3D room
+  // so the two can never disagree about which cells are legal.
+  const existing = await tx
     .select({
       slug: homePlacements.furnitureSlug,
       copyIndex: homePlacements.copyIndex,
-      x: homePlacements.gridX,
-      y: homePlacements.gridY,
+      gridX: homePlacements.gridX,
+      gridY: homePlacements.gridY,
     })
     .from(homePlacements)
-    .where(
-      and(
-        eq(homePlacements.childId, childId),
-        eq(homePlacements.room, room),
-      ),
+    .where(and(eq(homePlacements.childId, childId), eq(homePlacements.room, room)));
+
+  const verdict = canPlaceAt(room, slug, x, y, existing, copyIndex);
+  if (!verdict.ok) {
+    if (verdict.reason === 'occupied') {
+      throw new CellOccupiedError(room, verdict.cell!.x, verdict.cell!.y);
+    }
+    throw new InvalidPlacementError(
+      `Cannot place "${slug}" at (${x},${y}) in "${room}": ${verdict.reason}`,
     );
-
-  // Build occupied cell set from OTHER items (skip only the copy being moved —
-  // a second copy of the same slug still blocks cells)
-  const occupiedByOther = new Set<string>();
-  for (const p of existingPlacements) {
-    if (p.slug === slug && p.copyIndex === copyIndex) continue; // being moved — skip
-    const otherDef = getFurniture(p.slug);
-    if (!otherDef) continue;
-    const otherCells = cellsForFootprint(p.x, p.y, otherDef.footprint);
-    for (const c of otherCells) {
-      occupiedByOther.add(cellKey(c.x, c.y));
-    }
-  }
-
-  for (const cell of cells) {
-    if (occupiedByOther.has(cellKey(cell.x, cell.y))) {
-      throw new CellOccupiedError(room, cell.x, cell.y);
-    }
   }
 
   // 7. Upsert on (childId, furnitureSlug, copyIndex) unique key
