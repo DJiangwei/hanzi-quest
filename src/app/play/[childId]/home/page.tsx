@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { requireChild } from '@/lib/auth/guards';
 import { getHomeState } from '@/lib/db/home';
 import { getRoomSurfaces } from '@/lib/db/home-surfaces';
+import { getCoinBalance } from '@/lib/db/coins';
+import { listShopItemsByKind } from '@/lib/db/shop';
 import { getSurface } from '@/lib/home/surfaces';
 import { HomeRoomView } from '@/components/home/HomeRoomView';
 import { HomeViewSwitch } from '@/components/home3d/HomeViewSwitch';
@@ -14,9 +16,11 @@ export default async function HomePage({ params }: PageProps) {
   const { childId } = await params;
   const { child } = await requireChild(childId);
 
-  const [{ ownedSlugs, placements }, roomSurfaces] = await Promise.all([
+  const [{ ownedSlugs, placements }, roomSurfaces, coinBalance, homeShopItems] = await Promise.all([
     getHomeState(child.id),
     getRoomSurfaces(child.id),
+    getCoinBalance(child.id).then((b) => b.balance),
+    listShopItemsByKind('home'),
   ]);
   // Owned slugs include all kind='home' purchases; surfaces are the ones in the catalog.
   const ownedSurfaceSlugs = ownedSlugs.filter((s) => getSurface(s) !== undefined);
@@ -43,6 +47,7 @@ export default async function HomePage({ params }: PageProps) {
         </div>
       ) : (
         <HomeViewSwitch
+          childId={child.id}
           twoD={
             <HomeRoomView
               childId={child.id}
@@ -54,6 +59,9 @@ export default async function HomePage({ params }: PageProps) {
           }
           placements={placements}
           roomSurfaces={roomSurfaces}
+          ownedSlugs={ownedSlugs}
+          homeShopItems={homeShopItems}
+          coinBalance={coinBalance}
         />
       )}
     </main>

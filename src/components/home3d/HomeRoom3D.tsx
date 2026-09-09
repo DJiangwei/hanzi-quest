@@ -224,7 +224,10 @@ export function HomeRoom3D({
       dpr={[1, 2]}
       camera={{ position: [...CAMERA.position], fov: CAMERA.fov }}
       onCreated={({ camera }) => camera.lookAt(...CAMERA.target)}
-      style={{ width: '100%', aspectRatio: '4 / 3', touchAction: 'pan-y' }}
+      // A ghost being dragged must own touch input — 'pan-y' would let the
+      // same gesture scroll the page on her iPad instead of moving the piece.
+      // Read-only viewing (no ghost) stays 'pan-y' so the room can scroll.
+      style={{ width: '100%', aspectRatio: '4 / 3', touchAction: ghost ? 'none' : 'pan-y' }}
       data-testid="home-room-3d"
     >
       <color attach="background" args={[outdoor ? wall.base : '#fbf3e4']} />

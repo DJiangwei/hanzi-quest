@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { Room3DPanel, type RoomSurfacePair } from './Room3DPanel';
 import type { HomePlacement } from '@/lib/db/home';
+import type { ShopItemRow } from '@/lib/db/shop';
 
 /**
  * 2D / 3D toggle for the home.
@@ -18,13 +19,22 @@ import type { HomePlacement } from '@/lib/db/home';
  * lived on its own route.
  */
 export function HomeViewSwitch({
+  childId,
   twoD,
   placements,
   roomSurfaces,
+  ownedSlugs,
+  homeShopItems,
+  coinBalance,
 }: {
+  childId: string;
   twoD: ReactNode;
   placements: HomePlacement[];
   roomSurfaces?: Record<string, RoomSurfacePair>;
+  /** Owned furniture slugs WITH multiplicity — the 3D panel's buy-and-place flow. */
+  ownedSlugs: string[];
+  homeShopItems: ShopItemRow[];
+  coinBalance: number;
 }) {
   const [threeD, setThreeD] = useState(false);
 
@@ -52,7 +62,14 @@ export function HomeViewSwitch({
         </button>
       </div>
       {threeD ? (
-        <Room3DPanel placements={placements} roomSurfaces={roomSurfaces} />
+        <Room3DPanel
+          childId={childId}
+          placements={placements}
+          roomSurfaces={roomSurfaces}
+          ownedSlugs={ownedSlugs}
+          homeShopItems={homeShopItems}
+          coinBalance={coinBalance}
+        />
       ) : (
         twoD
       )}
