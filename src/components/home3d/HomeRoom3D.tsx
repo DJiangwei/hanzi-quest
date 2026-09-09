@@ -1,13 +1,26 @@
 'use client';
 
-import { Canvas } from '@react-three/fiber';
+import { useCallback, useEffect } from 'react';
+import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
 import type { Surface3D } from '@/lib/home3d/surfaces3d';
 import { PIECES } from '@/lib/home3d/pieces';
 import { floor3D, wallpaper3D } from '@/lib/home3d/surfaces3d';
-import { COLS, FLOOR_ROWS, cellToWorld } from '@/lib/home3d/coords';
+import { COLS, ROWS, FLOOR_ROWS, cellToWorld } from '@/lib/home3d/coords';
+import { pickCell } from '@/lib/home3d/pick';
+import { GhostPiece } from './GhostPiece';
 
 export { cellToWorld };
+
+/** What's being previewed on the floor, fully controlled by the caller. */
+export interface GhostSpec {
+  slug: string;
+  gridX: number;
+  gridY: number;
+  w: number;
+  h: number;
+  legal: boolean;
+}
 
 /**
  * SPIKE — one bedroom, real 3D geometry, LOCKED camera.
@@ -125,14 +138,74 @@ function Room({ wall, ground, outdoor }: { wall: Surface3D; ground: Surface3D; o
   );
 }
 
+/**
+ * `Canvas frameloop="demand"` renders once and stops — a moving ghost would
+ * sit frozen on screen with no error. This forces one extra frame whenever
+ * `dep` changes, without switching the whole canvas to a continuous loop
+ * (which would cost the iPad battery win for the far more common case of
+ * just looking at the room).
+ */
+function Invalidator({ dep }: { dep: string }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    invalidate();
+  }, [dep, invalidate]);
+  return null;
+}
+
+/**
+ * An invisible floor-sized plane whose only job is to be raycast against.
+ * three.js does not exempt invisible objects from raycasting (verified
+ * against this repo's pinned three/R3F versions — there is no `.visible`
+ * check anywhere in the intersect path), so a fully transparent material is
+ * enough to keep it out of the picture while it keeps taking pointer events.
+ * Sized and positioned to exactly match the floorboards drawn in `Room`.
+ */
+function FloorPicker({
+  w,
+  h,
+  onPick,
+}: {
+  w: number;
+  h: number;
+  onPick: (gridX: number, gridY: number) => void;
+}) {
+  const handlePick = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      const { gridX, gridY } = pickCell({ x: e.point.x, z: e.point.z }, w, h, COLS, ROWS);
+      onPick(gridX, gridY);
+    },
+    [w, h, onPick],
+  );
+
+  return (
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0.003, 0]}
+      onPointerMove={handlePick}
+      onPointerDown={handlePick}
+    >
+      <planeGeometry args={[COLS, FLOOR_ROWS]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
+}
+
 export function HomeRoom3D({
   placements,
   wallpaperSlug,
   floorSlug,
+  ghost,
+  onFloorPick,
 }: {
   placements: Placed3D[];
   wallpaperSlug?: string;
   floorSlug?: string;
+  /** Absent → today's view-only behaviour, unchanged. */
+  ghost?: GhostSpec;
+  /** Absent → the floor takes no pointer events, unchanged. */
+  onFloorPick?: (gridX: number, gridY: number) => void;
 }) {
   const wall = wallpaper3D(wallpaperSlug);
   const ground = floor3D(floorSlug);
@@ -206,6 +279,24 @@ export function HomeRoom3D({
       {/* The single biggest contributor to "these objects are in a room"
           rather than "these objects are floating". */}
       <ContactShadows position={[0, 0.002, 0]} opacity={0.55} scale={11} blur={1.7} far={3.2} resolution={1024} />
+
+      {onFloorPick ? (
+        <FloorPicker w={ghost?.w ?? 1} h={ghost?.h ?? 1} onPick={onFloorPick} />
+      ) : null}
+
+      {ghost ? (
+        <>
+          <GhostPiece
+            slug={ghost.slug}
+            gridX={ghost.gridX}
+            gridY={ghost.gridY}
+            w={ghost.w}
+            h={ghost.h}
+            legal={ghost.legal}
+          />
+          <Invalidator dep={`${ghost.slug}:${ghost.gridX}:${ghost.gridY}:${ghost.w}:${ghost.h}:${ghost.legal}`} />
+        </>
+      ) : null}
     </Canvas>
   );
 }
