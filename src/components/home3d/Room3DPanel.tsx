@@ -264,13 +264,24 @@ export function Room3DPanel({
         copyIndex,
         shopItemId,
       );
+      // Refresh on EVERY outcome, not just success. `occupied` / `insufficient`
+      // / `already_owned` mean the server just told us something the client's
+      // props don't yet know — another tab placed something, a purchase
+      // elsewhere changed the balance, a copy got placed since this page
+      // loaded. Refreshing only on `placed` left client and server diverged
+      // exactly when they'd already disagreed once, so the same tap on the
+      // same stale cell/balance would fail forever.
       if (outcome.status === 'placed') {
         clearSelection();
         setNotice(null);
-        router.refresh();
+        // Strip `?place=<slug>` now that it has done its job. Left in the
+        // URL, a reload re-runs the lazy `useState` initializer and re-arms
+        // a FRESH full-price purchase of the piece she just bought.
+        router.replace(`/play/${childId}/home`);
       } else {
         setNotice(outcomeNotice(outcome));
       }
+      router.refresh();
     });
   }, [selected, ghostCell, confirm, pending, childId, room, clearSelection, router]);
 

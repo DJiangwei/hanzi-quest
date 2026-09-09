@@ -103,18 +103,32 @@ export function HomeTabBody({
                     ownedCount={ownedCount}
                     pending={pending}
                     onBuy={() => {
-                      // Buying and placing are ONE act now: the tile carries her
-                      // to the room with this piece armed as a ghost, and the
-                      // coins are spent by the confirm bar there — in the same
-                      // transaction as the placement, so a cell that turns out
-                      // to be occupied never charges her.
+                      if (!shopItem) return;
+                      // Buying and placing are ONE act ONLY for FLOOR pieces: the
+                      // tile carries her to the room with the piece armed as a
+                      // ghost, and the confirm bar there spends the coins in the
+                      // same transaction as the placement, so a cell that turns
+                      // out to be occupied never charges her.
                       //
-                      // The selection travels in the URL, not in storage: the
-                      // shop and the room are different routes, and a stored
-                      // selection would survive the back button and re-arm a
-                      // ghost days later. Surfaces below keep buying in place —
-                      // a wallpaper is equipped, never placed on the grid.
-                      if (shopItem) router.push(`/play/${childId}/home?place=${furniture.slug}`);
+                      // WALL items (poster-stars, framed-fish, clock-round,
+                      // window-sunny, map-pirate, shelf-wall, lantern-hanging,
+                      // lamp-string) do NOT route here. The 3D room's raycaster
+                      // (`FloorPicker` in HomeRoom3D.tsx) only ever hits the
+                      // floor plane, and `pickCell` clamps every cell it returns
+                      // into the floor band — so a wall item's ghost could never
+                      // land on a legal cell, and the combined buy-and-place
+                      // transaction would refuse to charge her for something she
+                      // could never confirm. Wall items buy the plain way instead
+                      // — exactly like a wallpaper or floor surface below — and
+                      // are placed afterward in the 2D room's own wall-band
+                      // editor, which this branch never touches. Don't "unify"
+                      // this later without first teaching the 3D room to
+                      // raycast walls.
+                      if (furniture.surface === 'floor') {
+                        router.push(`/play/${childId}/home?place=${furniture.slug}`);
+                      } else {
+                        purchase(shopItem.id);
+                      }
                     }}
                     preview={
                       <svg

@@ -1,10 +1,19 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({
   purchaseShopItemAction: vi.fn(),
   push: vi.fn(),
 }));
+
+// These mocks are module-level singletons shared across every test in this
+// file — without a reset, a click in one test (e.g. routing a floor item to
+// the room) leaves `mocks.push` already-called for the next test that
+// asserts it was NOT called (e.g. a wall item buying in place).
+beforeEach(() => {
+  mocks.purchaseShopItemAction.mockReset();
+  mocks.push.mockReset();
+});
 
 vi.mock('@/lib/actions/shop', () => ({
   purchaseShopItemAction: mocks.purchaseShopItemAction,
@@ -109,10 +118,13 @@ describe('HomeTabBody', () => {
     });
   });
 
-  it('sends a furniture tap to the room to be placed — it does NOT buy on the spot', async () => {
-    // Buying and placing are one act now. Charging her here would take the
-    // coins before she has chosen a cell, and a cell that turns out to be
-    // occupied would then need a refund instead of never charging at all.
+  it('sends a FLOOR furniture tap to the room to be placed — it does NOT buy on the spot', async () => {
+    // Buying and placing are one act now, for floor pieces only. Charging her
+    // here would take the coins before she has chosen a cell, and a cell that
+    // turns out to be occupied would then need a refund instead of never
+    // charging at all. `bed-cozy` is `surface: 'floor'` in the catalog — read,
+    // not guessed (a wall-item fixture here would pin the wrong behaviour;
+    // see the sibling wall-item test below).
     mocks.purchaseShopItemAction.mockResolvedValue({ coinsAfter: 410 });
     render(
       <HomeTabBody
@@ -123,15 +135,41 @@ describe('HomeTabBody', () => {
       />,
     );
     // The card itself is the buy target.
-    const buyBtn = screen.getByTestId('poster-stars');
+    const buyBtn = screen.getByTestId('bed-cozy');
     await act(async () => {
       fireEvent.click(buyBtn);
     });
-    expect(mocks.push).toHaveBeenCalledWith('/play/child-1/home?place=poster-stars');
+    expect(mocks.push).toHaveBeenCalledWith('/play/child-1/home?place=bed-cozy');
     expect(
       mocks.purchaseShopItemAction,
       'the shop must not charge her before she has picked a spot',
     ).not.toHaveBeenCalled();
+  });
+
+  it('buys a WALL furniture tap directly in the shop — it does NOT navigate to the room (C1)', async () => {
+    // The 3D room only ever raycasts the floor plane, so a wall item's ghost
+    // can never land on a legal cell — routing it through the same
+    // buy-and-place flow as floor items would make 8 catalog items
+    // permanently unbuyable. `poster-stars` is `surface: 'wall'` in the
+    // catalog — read, not guessed.
+    mocks.purchaseShopItemAction.mockResolvedValue({ coinsAfter: 410 });
+    render(
+      <HomeTabBody
+        childId="child-1"
+        homeShopItems={homeShopItems}
+        ownedShopItemIds={new Set()}
+        coinBalance={500}
+      />,
+    );
+    const buyBtn = screen.getByTestId('poster-stars');
+    await act(async () => {
+      fireEvent.click(buyBtn);
+    });
+    expect(mocks.purchaseShopItemAction).toHaveBeenCalledWith(
+      'shop-poster-stars',
+      expect.objectContaining({ childId: 'child-1' }),
+    );
+    expect(mocks.push, 'a wall item must never route to the 3D room').not.toHaveBeenCalled();
   });
 
   it('renders SVG previews for each item with a shop_items row', () => {
