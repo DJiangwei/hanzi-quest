@@ -580,7 +580,7 @@ git commit -am "feat(home): buyAndPlaceFurnitureAction — one transaction, purc
 ### Task 5: The ghost piece
 
 **Files:**
-- Create: `src/components/home3d/GhostPiece.tsx`
+- Create: `src/lib/home3d/ghost.ts` (pure) and `src/components/home3d/GhostPiece.tsx`
 - Test: `tests/unit/home3d-ghost.test.tsx`
 
 **Interfaces:**
@@ -594,7 +594,7 @@ jsdom has no WebGL, so assert the PROPS the ghost computes, not its pixels. Expo
 ```ts
 // tests/unit/home3d-ghost.test.tsx
 import { describe, it, expect } from 'vitest';
-import { ghostTint, ghostTiles } from '@/components/home3d/GhostPiece';
+import { ghostTint, ghostTiles } from '@/lib/home3d/ghost';
 
 describe('ghost feedback', () => {
   it('is green when legal and red when not', () => {
@@ -612,22 +612,31 @@ describe('ghost feedback', () => {
 
 - [ ] **Step 3: Write the component**
 
+First create the PURE module — it must NOT live in the component file:
+
+```ts
+// src/lib/home3d/ghost.ts   — PURE. No three, no drei, no React.
+import { cellsForFootprint } from '@/lib/home/grid';
+
+/** Green when the cell accepts the piece, red when it does not. */
+export function ghostTint(legal: boolean): string {
+  return legal ? '#4ade80' : '#f87171';
+}
+
+/** Which cells the footprint highlights. */
+export function ghostTiles(gridX: number, gridY: number, w: number, h: number) {
+  return cellsForFootprint(gridX, gridY, { w, h });
+}
+```
+
+Then the component, which imports them:
+
 ```tsx
 'use client';
 import type { ReactElement } from 'react';
 import { PIECES } from '@/lib/home3d/pieces';
 import { cellToWorld } from '@/lib/home3d/coords';
-import { cellsForFootprint } from '@/lib/home/grid';
-
-/** Exported for test — the colour decision, without a WebGL context. */
-export function ghostTint(legal: boolean): string {
-  return legal ? '#4ade80' : '#f87171';
-}
-
-/** Exported for test — which cells the footprint highlights. */
-export function ghostTiles(gridX: number, gridY: number, w: number, h: number) {
-  return cellsForFootprint(gridX, gridY, { w, h });
-}
+import { ghostTint, ghostTiles } from '@/lib/home3d/ghost';
 
 export function GhostPiece({
   slug, gridX, gridY, w, h, legal,
@@ -672,7 +681,8 @@ git add -A && git commit -m "feat(home3d): translucent ghost piece with legal/il
 
 **Files:**
 - Modify: `src/components/home3d/HomeRoom3D.tsx`
-- Test: `tests/unit/home3d-pickable.test.tsx`
+- Create: `src/lib/home3d/pick.ts` (pure)
+- Test: `tests/unit/home3d-pick.test.ts`
 
 **Interfaces:**
 - Consumes: `worldToCell`, `GhostPiece`.
@@ -686,33 +696,59 @@ The Canvas is `frameloop="demand"`: it renders once and then stops. A ghost that
 
 Take the first. Add a tiny `<Invalidator dep={...} />` child that calls `invalidate()` in a `useEffect` on the dep.
 
-- [ ] **Step 2: Write the failing test**
+- [ ] **Step 2: Write the failing test — as a PURE test, not a render**
 
-```tsx
-// tests/unit/home3d-pickable.test.tsx
-// The scene cannot render in jsdom, so assert the WIRING via a props-capturing
-// mock — a rendering assertion could not see either of these anyway.
-import { describe, it, expect, vi } from 'vitest';
+**Do not render the Canvas.** Nothing in this repo mocks `@react-three/fiber`,
+jsdom has no WebGL, and `pieces.tsx` imports `RoundedBox` from drei — so an
+import chain through a scene component drags the whole 3D stack into the test.
+The existing `tests/unit/home3d-grid.test.ts` is pure, and that is the pattern
+to follow.
 
-const ghostProps = vi.fn();
-vi.mock('@/components/home3d/GhostPiece', () => ({
-  GhostPiece: (p: unknown) => { ghostProps(p); return null; },
-  ghostTint: () => '#000',
-  ghostTiles: () => [],
-}));
+Put the decision in a pure function and test THAT:
 
-describe('HomeRoom3D edit wiring', () => {
-  it('renders no ghost when the prop is absent (view-only is the default)', async () => {
-    // …render with placements only, assert ghostProps not called
+```ts
+// src/lib/home3d/pick.ts  — PURE
+import { worldToCell } from '@/lib/home3d/coords';
+
+/**
+ * A floor-plane hit point → the cell a w×h footprint anchored there occupies,
+ * clamped so a drag past the edge rests against it rather than vanishing.
+ */
+export function pickCell(
+  point: { x: number; z: number },
+  w: number, h: number,
+  cols: number, rows: number,
+) {
+  const { gridX, gridY } = worldToCell(point.x, point.z, w, h);
+  return {
+    gridX: Math.min(Math.max(gridX, 0), cols - w),
+    gridY: Math.min(Math.max(gridY, 0), rows - h),
+  };
+}
+```
+
+```ts
+// tests/unit/home3d-pick.test.ts
+import { describe, it, expect } from 'vitest';
+import { pickCell } from '@/lib/home3d/pick';
+import { cellToWorld } from '@/lib/home3d/coords';
+
+describe('pickCell', () => {
+  it('resolves a hit at a cell centre to that cell', () => {
+    const p = cellToWorld(3, 4, 1, 1);
+    expect(pickCell({ x: p.x, z: p.z }, 1, 1, 8, 6)).toEqual({ gridX: 3, gridY: 4 });
   });
 
-  it('passes the ghost through with its legality', async () => {
-    // …render with ghost={{...legal:false}}, assert ghostProps got legal:false
+  it('clamps a drag past the right edge to the last legal anchor', () => {
+    // a 2-wide piece can anchor at most at x = cols - w = 6
+    expect(pickCell({ x: 99, z: 0 }, 2, 1, 8, 6).gridX).toBe(6);
+  });
+
+  it('clamps a drag past the top edge to 0', () => {
+    expect(pickCell({ x: -99, z: -99 }, 1, 1, 8, 6)).toEqual({ gridX: 0, gridY: 0 });
   });
 });
 ```
-
-> Fill the render calls in using the existing `tests/unit/home3d-*.test.tsx` files as the pattern for mocking `@react-three/fiber`'s `Canvas`.
 
 - [ ] **Step 3: Implement, keeping view-only the default**
 
@@ -741,9 +777,35 @@ Confirm bar shows:
 - purchase → `🪙<price>  买下并放这里 / Buy & place here`
 - illegal cell or not affordable → disabled + a quiet grey chip, **never a scolding sentence** (the shop's `tooExpensive` rule)
 
-- [ ] **Step 2: Write tests for the bilingual labels and the disabled states**
+- [ ] **Step 2: Write tests for the confirm-bar decision — pure, not rendered**
 
-Assert the ACTION name is present in both languages, and that an illegal cell disables the confirm. Follow `tests/unit/bilingual-chrome.test.tsx` for the label pattern.
+`Room3DPanel` mounts a Canvas, so it cannot be rendered in jsdom (see Task 6).
+Put the decision in a pure function and test that:
+
+```ts
+// src/lib/home3d/confirm-bar.ts — PURE
+export type ConfirmState =
+  | { kind: 'place' }                              // owned copy, legal cell
+  | { kind: 'buy'; priceCoins: number }            // legal cell, affordable
+  | { kind: 'disabled'; why: 'illegal' | 'poor' };
+
+export function confirmState(args: {
+  legal: boolean; owned: boolean; priceCoins: number; coins: number;
+}): ConfirmState {
+  if (!args.legal) return { kind: 'disabled', why: 'illegal' };
+  if (args.owned) return { kind: 'place' };
+  if (args.coins < args.priceCoins) return { kind: 'disabled', why: 'poor' };
+  return { kind: 'buy', priceCoins: args.priceCoins };
+}
+```
+
+Test every branch, including that an illegal cell wins over affordability (she
+should not be told she is poor when the real problem is where she is pointing).
+
+The bilingual labels are asserted in whatever component test the implementer can
+write WITHOUT mounting the Canvas — if none is possible, assert the label
+constants from a pure module instead. Both labels must appear: `放这里 / Place
+here` and `买下并放这里 / Buy & place here`.
 
 - [ ] **Step 3: Implement**
 
