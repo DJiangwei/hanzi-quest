@@ -5,6 +5,9 @@ import { ContactShadows } from '@react-three/drei';
 import type { Surface3D } from '@/lib/home3d/surfaces3d';
 import { PIECES } from '@/lib/home3d/pieces';
 import { floor3D, wallpaper3D } from '@/lib/home3d/surfaces3d';
+import { COLS, FLOOR_ROWS, cellToWorld } from '@/lib/home3d/coords';
+
+export { cellToWorld };
 
 /**
  * SPIKE — one bedroom, real 3D geometry, LOCKED camera.
@@ -20,13 +23,6 @@ import { floor3D, wallpaper3D } from '@/lib/home3d/surfaces3d';
  * stays cheap if nothing hard-codes this angle. So the view is `CAMERA`, and a
  * later stepped rotation is a change of one value plus wall culling.
  */
-
-/** Grid, matching the 2D room exactly: 8 cols × 6 rows, one world unit per cell. */
-const COLS = 8;
-const ROWS = 6;
-/** Rows at the back that are WALL rather than floor, as in RoomDef.wallRows. */
-const WALL_ROWS = 2;
-const FLOOR_ROWS = ROWS - WALL_ROWS;
 
 /**
  * A high, slightly-off-axis three-quarter view — the angle that reads as
@@ -48,21 +44,6 @@ export interface Placed3D {
   w: number;
   h: number;
   surface: 'wall' | 'floor';
-}
-
-/**
- * Grid cell → world position, origin at the room's centre.
- *
- * Exported for test: this mapping is the ONE place the 3D room can silently
- * disagree with the 2D one. Both read the same `gridX/gridY` from
- * `home_placements`, so an off-by-one here puts her bed inside a wall while
- * every other surface still shows it correctly.
- */
-export function cellToWorld(gridX: number, gridY: number, w: number, h: number) {
-  const x = gridX + w / 2 - COLS / 2;
-  const zRow = gridY - WALL_ROWS;
-  const z = zRow + h / 2 - FLOOR_ROWS / 2;
-  return { x, z };
 }
 
 function Room({ wall, ground, outdoor }: { wall: Surface3D; ground: Surface3D; outdoor: boolean }) {
